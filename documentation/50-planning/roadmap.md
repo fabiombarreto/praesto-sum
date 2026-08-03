@@ -35,12 +35,12 @@ Phases are sequential; a phase opens only when the previous one meets its exit c
 ### Now
 
 - Validate the seeded drafts (vision, glossary, requirements) with the owner.
-- Resolve pending decision 3 — PWA frontend stack & tooling — as an ADR (analysis panel in progress).
+- Freeze the MVP scope: confirm the **Must** set in [functional-requirements](../20-requirements/functional-requirements.md).
 
 ### Next
 
-- Freeze the MVP scope: confirm the **Must** set in [functional-requirements](../20-requirements/functional-requirements.md).
-- Close Phase 0 and open Phase 1 (MVP Tasks).
+- Close Phase 0 (exit criteria: docs approved — decisions 1–3 are already resolved as ADRs).
+- Open Phase 1 (MVP Tasks): scaffold the [ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md) stack.
 
 ### Later
 
@@ -76,6 +76,7 @@ Newest first. One row per meaningful delivery, added in the same session it happ
 
 | Date | Delivered |
 |---|---|
+| 2026-08-03 | Decision 3 resolved: React 19 SPA + Vite + Hono + Drizzle stack ([ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md)) — all foundational technical decisions closed |
 | 2026-08-03 | Decision 2 resolved: single installable PWA as the sole MVP interface ([ADR-0004](../60-decisions/ADR-0004-single-pwa-as-sole-interface.md)) |
 | 2026-08-03 | Decision 1 resolved: canonical data on Cloudflare D1 + Workers, PWA-first ([ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md)) |
 | 2026-08-03 | Project named **Praesto Sum**, short form `praesto` ([ADR-0002](../60-decisions/ADR-0002-name-the-project-praesto-sum.md)) |

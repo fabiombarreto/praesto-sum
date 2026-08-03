@@ -1,35 +1,45 @@
 ---
 status: draft
-last_updated: 2026-08-02
-review_trigger: "the tech stack is chosen, or a setup step fails on a fresh machine"
+last_updated: 2026-08-03
+review_trigger: "a setup step changes, fails on a fresh machine, or the scaffold validates the planned commands"
 ---
 
 # Dev Environment
 
 > **Purpose:** Everything needed to set up the development machine and the commands used day to day.
-> **Update when:** The tech stack is chosen, a setup step changes, or a step fails on a fresh machine.
+> **Update when:** A setup step changes, a step fails on a fresh machine, or the scaffold validates (or corrects) the planned commands below.
+
+> The commands in this document are **planned** per [ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md) and are validated when the scaffold lands. Target (QA-004): clean machine to running dev environment in ≤ 1 hour.
 
 ## Prerequisites
 
-- **Operating system:** Windows 11 (the owner's current development machine).
-- **git** — recommended as the first setup step: the repository at `C:/repos/assistente-pessoal` is not yet a git repository, and initializing it protects the documentation already written. This is a recommendation, not a decision — no ADR mandates it yet, and the git workflow itself is drafted in [engineering-conventions.md](engineering-conventions.md).
-
-Further prerequisites (runtime, package manager, editor tooling) are TBD — see the pending decisions queue in [60-decisions/index.md](../60-decisions/index.md).
+- **Operating system:** Windows 11 (the owner's development machine).
+- **git** — repository initialized 2026-08-03, branch `main`.
+- **Node.js LTS** (bundles npm — the only package manager used).
+- **Cloudflare account** (free plan) with `wrangler login` completed once, for deploys and remote D1 migrations. Local dev needs no account.
+- **Microsoft VC++ Redistributable kept current** — a known workerd crash on Windows is mitigated by this (CON-001; see Known issues).
 
 ## Setup step by step
 
-TBD — see the pending decisions queue in [60-decisions/index.md](../60-decisions/index.md). A reproducible setup sequence (install runtime, install dependencies, first run) can only be written once the programming language & tech stack decision is made.
+1. Install Node.js LTS.
+2. `git clone` the repository.
+3. `npm ci` (exact versions from the committed lockfile).
+4. Copy `.dev.vars.example` → `.dev.vars` and fill the secrets (API bearer token, VAPID keys).
+5. `npm run db:migrate` (applies migrations to the local D1).
+6. `npm run dev` — one process: Vite HMR + real workerd + local D1.
 
 ## Day-to-day commands
 
-TBD — see the pending decisions queue in [60-decisions/index.md](../60-decisions/index.md). This section will hold the run / test / build commands once the stack and its tooling exist.
-
 | Action | Command |
 |---|---|
-| Run | TBD |
-| Test | TBD |
-| Build | TBD |
+| Run (dev, one command) | `npm run dev` |
+| Test | `npm test` |
+| Type-check + lint + format check | `npm run check` |
+| Generate migration from schema change | `npm run db:generate` |
+| Apply migrations (local) | `npm run db:migrate` |
+| Export data snapshot (JSON + iCalendar, ADR-0003) | `npm run db:snapshot` |
+| Deploy (build + assets + API + cron, one Worker) | `npm run deploy` |
 
 ## Known issues and troubleshooting
 
-None yet.
+- **workerd crash on Windows:** if `npm run dev` crashes workerd on startup, update the Microsoft VC++ Redistributable — documented cause on Windows 11.

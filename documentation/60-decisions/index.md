@@ -15,11 +15,10 @@ One file per decision, named `ADR-nnnn-short-kebab-title.md` and copied from [ad
 
 ## Pending decisions queue
 
-The order is deliberate: the data posture constrains the interface, and both constrain the stack. Decisions 1 and 2 were resolved on 2026-08-03 by [ADR-0003](ADR-0003-store-canonical-data-in-cloudflare-d1.md) (canonical data on Cloudflare D1 + Workers; also fixed the backend runtime) and [ADR-0004](ADR-0004-single-pwa-as-sole-interface.md) (single installable PWA as the sole MVP interface). Numbers are stable and never reused.
+The order was deliberate: the data posture constrained the interface, and both constrained the stack. Decisions 1–3 were resolved on 2026-08-03 by [ADR-0003](ADR-0003-store-canonical-data-in-cloudflare-d1.md) (canonical data on Cloudflare D1 + Workers), [ADR-0004](ADR-0004-single-pwa-as-sole-interface.md) (single installable PWA as the sole MVP interface) and [ADR-0005](ADR-0005-implementation-stack-react-vite-hono-drizzle.md) (React SPA + Vite + Hono + Drizzle stack). Numbers are stable and never reused.
 
 | # | Topic | Why it comes at this position | Blocks what |
 |---|---|---|---|
-| 3 | PWA frontend stack & tooling (backend runtime fixed by ADR-0003; interface shape fixed by ADR-0004) | Falls out of decisions 1 and 2, both now resolved | Start of implementation |
 | 4 | External calendar integration posture (e.g. Google Calendar sync now vs later) | Trade-off of privacy × convenience — the owner arbitrates; can be decided after the MVP scope is set | Calendar-sync requirements and integration design |
 
 ## Decisions index
@@ -30,3 +29,4 @@ The order is deliberate: the data posture constrains the interface, and both con
 | [ADR-0002](ADR-0002-name-the-project-praesto-sum.md) | Name the project Praesto Sum | accepted | 2026-08-03 |
 | [ADR-0003](ADR-0003-store-canonical-data-in-cloudflare-d1.md) | Store canonical data in Cloudflare D1 behind Cloudflare Workers | accepted | 2026-08-03 |
 | [ADR-0004](ADR-0004-single-pwa-as-sole-interface.md) | Adopt a single installable PWA as the sole interface | accepted | 2026-08-03 |
+| [ADR-0005](ADR-0005-implementation-stack-react-vite-hono-drizzle.md) | Implementation stack — React 19 SPA + Vite + Hono + Drizzle ORM | accepted | 2026-08-03 |
