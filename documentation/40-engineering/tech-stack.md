@@ -18,7 +18,7 @@ Every row is filled in only when its origin ADR is accepted. The hosting/runtime
 | Hosting / runtime | Cloudflare Workers (serverless, free plan) + cron triggers | n/a | [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md) |
 | Storage | Cloudflare D1 (SQLite-class, managed; canonical copy) | n/a | [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md) |
 | Language | Constrained to JavaScript/TypeScript/WASM by the Workers runtime; final choice TBD — decision 3 in [60-decisions/index.md](../60-decisions/index.md) | TBD | ADR-0003 (constraint) |
-| UI | Single responsive web/PWA client; framework TBD — decision 3 in [60-decisions/index.md](../60-decisions/index.md) | TBD | ADR-0003 (shape) |
+| UI | Single installable PWA; framework TBD — decision 3 in [60-decisions/index.md](../60-decisions/index.md) | TBD | [ADR-0004](../60-decisions/ADR-0004-single-pwa-as-sole-interface.md) |
 | Integrations | Web Push (VAPID) for notifications; external calendar TBD — decision 4 in [60-decisions/index.md](../60-decisions/index.md) | TBD | ADR-0003 (partial) |
 | Tooling | TBD — see the pending decisions queue in [60-decisions/index.md](../60-decisions/index.md) | TBD | TBD |
 

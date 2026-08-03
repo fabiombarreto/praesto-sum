@@ -46,7 +46,7 @@ The only confirmed actor is the owner. The external calendar provider is shown d
 
 ## Containers (C4 level 2)
 
-> Shape fixed by [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md); the PWA's frontend stack is still open (decision 3 in the [pending decisions queue](../60-decisions/index.md)).
+> Shape fixed by [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md) and [ADR-0004](../60-decisions/ADR-0004-single-pwa-as-sole-interface.md); the PWA's frontend stack is still open (decision 3 in the [pending decisions queue](../60-decisions/index.md)).
 
 ```mermaid
 flowchart TB
@@ -105,6 +105,6 @@ No technical debt exists yet — there is no code.
 |---|---|
 | Documentation and artifact language | [ADR-0001](../60-decisions/ADR-0001-write-all-artifacts-in-english.md) — all artifacts in English |
 | Data storage and ownership posture | [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md) — canonical data in Cloudflare D1 behind Workers, mandatory local snapshots |
-| Interface type | TBD — decision 2 in the [pending decisions queue](../60-decisions/index.md) (owner signaled PWA-first) |
+| Interface type | [ADR-0004](../60-decisions/ADR-0004-single-pwa-as-sole-interface.md) — single installable PWA as the sole MVP interface |
 | PWA frontend stack & tooling | TBD — decision 3 in the [pending decisions queue](../60-decisions/index.md) (backend runtime fixed by ADR-0003) |
 | External calendar integration posture | TBD — decision 4 in the [pending decisions queue](../60-decisions/index.md) |

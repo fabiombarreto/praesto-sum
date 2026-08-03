@@ -62,7 +62,7 @@ The requirements seeded below are **candidates, not commitments**. The MVP is de
 | ID | Requirement | MoSCoW | Status |
 |---|---|---|---|
 | FR-040 | The owner can search Tasks and Events by text. | Should | proposed |
-| FR-041 | A due Reminder produces a notification the owner actually perceives. Delivery mechanism per [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md): Web Push to the installed PWA, fired by a server-side scheduler; fallback channels may be added. Final interface posture: decision 2 in [60-decisions/index.md](../60-decisions/index.md). | Must | proposed |
+| FR-041 | A due Reminder produces a notification the owner actually perceives. Delivery mechanism per [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md): Web Push to the installed PWA ([ADR-0004](../60-decisions/ADR-0004-single-pwa-as-sole-interface.md)), fired by a server-side scheduler; fallback channels may be added. | Must | proposed |
 | FR-042 | The owner can export all personal data on demand, in an open, documented format. | Must | proposed |
 | FR-043 | Personal data is backed up automatically. | Should | proposed |
 
