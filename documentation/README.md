@@ -63,8 +63,8 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 10-product/vision.md | active | 2026-08-03 |
 | 10-product/glossary.md | active | 2026-08-03 |
 | 20-requirements/functional-requirements.md | active | 2026-08-03 |
-| 20-requirements/quality-attributes.md | draft | 2026-08-02 |
-| 20-requirements/constraints.md | draft | 2026-08-03 |
+| 20-requirements/quality-attributes.md | active | 2026-08-03 |
+| 20-requirements/constraints.md | active | 2026-08-03 |
 | 30-architecture/architecture-overview.md | draft | 2026-08-03 |
 | 30-architecture/domain-model.md | draft | 2026-08-03 |
 | 40-engineering/tech-stack.md | draft | 2026-08-03 |

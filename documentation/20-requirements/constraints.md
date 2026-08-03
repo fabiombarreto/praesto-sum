@@ -1,5 +1,5 @@
 ---
-status: draft
+status: active
 last_updated: 2026-08-03
 review_trigger: "a constraint is challenged by a decision under analysis, or the owner states time or budget limits"
 ---
@@ -32,7 +32,7 @@ review_trigger: "a constraint is challenged by a decision under analysis, or the
 
 ## Personal principles as constraints
 
-> Draft pending owner validation: these two principles are seeded from the project's stated intent and become hard constraints once the owner confirms them.
+> Confirmed by the owner on 2026-08-03 — these principles are hard constraints.
 
 | ID | Constraint | Consequence for decisions |
 |---|---|---|

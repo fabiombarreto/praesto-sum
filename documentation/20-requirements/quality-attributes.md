@@ -1,6 +1,6 @@
 ---
-status: draft
-last_updated: 2026-08-02
+status: active
+last_updated: 2026-08-03
 review_trigger: "the owner validates or reorders these priorities, or an architectural decision is evaluated against a scenario here"
 ---
 
@@ -20,7 +20,7 @@ review_trigger: "the owner validates or reorders these priorities, or an archite
 
 ## Prioritized attributes
 
-> Seed content: draft pending owner validation. The scenarios are written to hold regardless of the outcome of the pending decisions queue in [60-decisions/index.md](../60-decisions/index.md); every pending decision must satisfy them.
+> Validated by the owner on 2026-08-03. The scenarios held through decisions 1–3 ([ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md)..[0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md)); every future decision must satisfy them.
 
 ### QA-001 — Privacy and data ownership
 
@@ -48,7 +48,7 @@ review_trigger: "the owner validates or reorders these priorities, or an archite
 
 ## What we deliberately do NOT prioritize
 
-> Draft pending owner validation. Recording these prevents accidentally paying for qualities nobody asked for.
+> Validated by the owner on 2026-08-03. Recording these prevents accidentally paying for qualities nobody asked for.
 
 | Not prioritized | Why |
 |---|---|

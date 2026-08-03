@@ -11,9 +11,9 @@ review_trigger: "a milestone completes, a phase closes, or a backlog idea is tri
 
 ## Current phase
 
-> **Phase 0 — Documentation & foundational decisions** · started 2026-08-02 · **in progress**
+> **Phase 1 — MVP Tasks** · started 2026-08-03 · **in progress**
 
-The project is documentation-first: no code exists yet, no tech stack has been chosen, and the repository is not yet under version control. Phase 0 produces the document set and resolves the pending technical decisions tracked in the [decisions index](../60-decisions/index.md).
+Phase 0 (documentation & foundational decisions) was completed on 2026-08-03: the full document set was validated by the owner and decisions 1–3 were resolved as ADRs ([decisions index](../60-decisions/index.md)). Phase 1 builds the first working software — Task management per the frozen MVP scope — starting with the scaffold of the [ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md) stack.
 
 ## Phases and milestones
 
@@ -34,12 +34,12 @@ Phases are sequential; a phase opens only when the previous one meets its exit c
 
 ### Now
 
-- Validate the remaining seeded drafts (quality attributes, constraints) — the last Phase 0 gate.
-- Close Phase 0 and open Phase 1 (MVP Tasks): scaffold the [ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md) stack.
+- Scaffold the [ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md) stack and validate the planned commands in [dev-environment](../40-engineering/dev-environment.md).
+- Create the root `CLAUDE.md` pointing AI sessions at [documentation/README.md](../README.md).
 
 ### Next
 
-- Implement the Phase 1 FR set in vertical slices, starting with Task CRUD + quick capture.
+- Implement the Phase 1 FR set in vertical slices, starting with Task CRUD + quick capture (FR-001..004, FR-045).
 
 ### Later
 
@@ -75,6 +75,7 @@ Newest first. One row per meaningful delivery, added in the same session it happ
 
 | Date | Delivered |
 |---|---|
+| 2026-08-03 | **Phase 0 closed** — quality attributes and constraints confirmed; full document set validated by the owner |
 | 2026-08-03 | Vision, glossary and requirements validated by the owner; MVP scope frozen (Phase 1 = Tasks; FR-009/010/026/044/045 added; FR-040 promoted to Must) |
 | 2026-08-03 | Decision 3 resolved: React 19 SPA + Vite + Hono + Drizzle stack ([ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md)) — all foundational technical decisions closed |
 | 2026-08-03 | Decision 2 resolved: single installable PWA as the sole MVP interface ([ADR-0004](../60-decisions/ADR-0004-single-pwa-as-sole-interface.md)) |
