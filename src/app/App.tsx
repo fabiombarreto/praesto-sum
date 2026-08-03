@@ -1,0 +1,220 @@
+import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import type { TaskDto } from "../shared/api";
+import {
+  ApiError,
+  completeTask,
+  createTask,
+  deleteTask,
+  getToken,
+  listTasks,
+  reopenTask,
+  setToken,
+} from "./api";
+
+/**
+ * Phase 1 walking skeleton: capture a Task, see it, complete it.
+ *
+ * It exists to prove the whole stack end to end (PWA → Worker → D1) and to be
+ * the surface the remaining Phase 1 requirements grow into — recurrence
+ * (FR-009), misses (FR-011/FR-012), reminders (FR-041/FR-044), search (FR-040).
+ * Styling is deliberately minimal; the design pass is its own slice.
+ */
+export function App() {
+  const [authorized, setAuthorized] = useState<boolean>(getToken() !== null);
+
+  if (!authorized) {
+    return <TokenGate onAuthorized={() => setAuthorized(true)} />;
+  }
+  return <TaskBoard onUnauthorized={() => setAuthorized(false)} />;
+}
+
+function TokenGate({ onAuthorized }: { onAuthorized: () => void }) {
+  const [value, setValue] = useState("");
+
+  return (
+    <main style={styles.page}>
+      <h1 style={styles.title}>Praesto Sum</h1>
+      <p style={styles.muted}>Paste the API token for this device.</p>
+      <form
+        style={styles.row}
+        onSubmit={(event) => {
+          event.preventDefault();
+          const token = value.trim();
+          if (!token) return;
+          setToken(token);
+          onAuthorized();
+        }}
+      >
+        <input
+          style={styles.input}
+          type="password"
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          placeholder="API token"
+          aria-label="API token"
+        />
+        <button style={styles.button} type="submit">
+          Save
+        </button>
+      </form>
+    </main>
+  );
+}
+
+function TaskBoard({ onUnauthorized }: { onUnauthorized: () => void }) {
+  const [tasks, setTasks] = useState<TaskDto[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [title, setTitle] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const handleFailure = useCallback(
+    (cause: unknown) => {
+      if (cause instanceof ApiError && cause.status === 401) {
+        onUnauthorized();
+        return;
+      }
+      setError(cause instanceof Error ? cause.message : "Unexpected error");
+    },
+    [onUnauthorized],
+  );
+
+  const refresh = useCallback(async () => {
+    try {
+      setTasks(await listTasks());
+      setError(null);
+    } catch (cause) {
+      handleFailure(cause);
+    }
+  }, [handleFailure]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  async function run(action: () => Promise<unknown>) {
+    setBusy(true);
+    try {
+      await action();
+      await refresh();
+    } catch (cause) {
+      handleFailure(cause);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const open = tasks?.filter((task) => task.status === "open") ?? [];
+  const closed = tasks?.filter((task) => task.status !== "open") ?? [];
+
+  return (
+    <main style={styles.page}>
+      <h1 style={styles.title}>Praesto Sum</h1>
+
+      <form
+        style={styles.row}
+        onSubmit={(event) => {
+          event.preventDefault();
+          const trimmed = title.trim();
+          if (!trimmed || busy) return;
+          void run(async () => {
+            await createTask({ title: trimmed });
+            setTitle("");
+          });
+        }}
+      >
+        <input
+          style={styles.input}
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          placeholder="What needs doing?"
+          aria-label="Task title"
+          autoFocus
+        />
+        <button style={styles.button} type="submit" disabled={busy}>
+          Add
+        </button>
+      </form>
+
+      {error !== null && <p style={styles.error}>{error}</p>}
+      {tasks === null && error === null && <p style={styles.muted}>Loading…</p>}
+
+      <ul style={styles.list}>
+        {open.map((task) => (
+          <li key={task.id} style={styles.item}>
+            <button
+              style={styles.link}
+              type="button"
+              disabled={busy}
+              onClick={() => void run(() => completeTask(task.id))}
+            >
+              ○
+            </button>
+            <span style={styles.grow}>{task.title}</span>
+            <button
+              style={styles.link}
+              type="button"
+              disabled={busy}
+              onClick={() => void run(() => deleteTask(task.id))}
+              aria-label={`Delete ${task.title}`}
+            >
+              ×
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      {closed.length > 0 && (
+        <>
+          <h2 style={styles.subtitle}>Closed</h2>
+          <ul style={styles.list}>
+            {closed.map((task) => (
+              <li key={task.id} style={styles.item}>
+                <button
+                  style={styles.link}
+                  type="button"
+                  disabled={busy || task.status === "missed"}
+                  onClick={() => void run(() => reopenTask(task.id))}
+                >
+                  {task.status === "done" ? "●" : "!"}
+                </button>
+                <span style={{ ...styles.grow, ...styles.closedText }}>{task.title}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      {tasks !== null && tasks.length === 0 && (
+        <p style={styles.muted}>Nothing here yet. Add the first one above.</p>
+      )}
+    </main>
+  );
+}
+
+const styles = {
+  page: {
+    fontFamily: "system-ui, sans-serif",
+    maxWidth: "34rem",
+    margin: "0 auto",
+    padding: "1.5rem 1rem 4rem",
+  },
+  title: { fontSize: "1.5rem", margin: "0 0 1rem" },
+  subtitle: { fontSize: "0.9rem", textTransform: "uppercase", opacity: 0.6, marginTop: "2rem" },
+  muted: { opacity: 0.6 },
+  error: { color: "#b00020" },
+  row: { display: "flex", gap: "0.5rem", marginBottom: "1rem" },
+  input: { flex: 1, padding: "0.6rem", fontSize: "1rem" },
+  button: { padding: "0.6rem 1rem", fontSize: "1rem", cursor: "pointer" },
+  list: { listStyle: "none", padding: 0, margin: 0 },
+  item: { display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.5rem 0" },
+  grow: { flex: 1 },
+  closedText: { opacity: 0.5, textDecoration: "line-through" },
+  link: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    fontSize: "1.1rem",
+    padding: 0,
+    lineHeight: 1,
+  },
+} as const satisfies Record<string, CSSProperties>;

@@ -1,0 +1,37 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "praesto",
+  "main": "./src/worker/index.ts",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Static assets = the Vite client build.
+  // Do NOT set "directory" here: @cloudflare/vite-plugin injects it into the
+  // generated dist/praesto/wrangler.json at build time (it becomes "../client").
+  "assets": {
+    "not_found_handling": "single-page-application",
+    // REQUIRED. With "single-page-application", navigation requests are served
+    // index.html straight from asset storage and never reach the Worker.
+    // This forces /api/* to the Worker. Without it the API 200s with HTML on
+    // direct navigation — a bug that only shows up in production.
+    "run_worker_first": ["/api/*"],
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "praesto-db",
+      // Replace with the id printed by: wrangler d1 create praesto-db
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "./migrations",
+    },
+  ],
+
+  // Reminders sweep. To disable, set to [] — commenting the key does NOT disable it.
+  "triggers": {
+    "crons": ["*/5 * * * *"],
+  },
+
+  "observability": { "enabled": true },
+  "upload_source_maps": true,
+}

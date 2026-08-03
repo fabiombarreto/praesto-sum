@@ -48,14 +48,28 @@ nor this explicit warning is incomplete.
 
 ## Detected test suites
 
-No automated test suites were detected at `*init` time — the project has
-no code yet (Phase 1 scaffold pending). The guardrail above still applies
-the moment any suite is added: record its run command and prerequisites
-here, then keep it green on every subsequent change.
+| Tier | Framework | Config / location | Run command | Prerequisites |
+|------|-----------|-------------------|-------------|---------------|
+| integration | Vitest 4 + `@cloudflare/vitest-pool-workers` | `vitest.config.ts`, tests in `test/*.test.ts` | `npm test` (watch: `npm run test:watch`) | `npm ci`; migrations are applied automatically into the ephemeral D1 by `test/apply-migrations.ts`. No dev server, no browser, no network. |
 
-Planned per ADR-0005 (record actual commands here when the scaffold
-lands): Vitest + `@cloudflare/vitest-pool-workers` running Hono routes,
-`scheduled()` and the data layer against an ephemeral local D1 inside
-real workerd (`npm test`), plus pure-function unit tests for domain logic
-in `src/shared/`. If you believe a change deserves tests that do not
-exist yet, say so to the user rather than proceeding silently.
+These run the real Worker inside workerd with real bindings: Hono routes, the
+auth gate and the Drizzle data layer are exercised against an ephemeral D1
+built from `migrations/`. There is **no browser/e2e tier yet** — the UI is
+verified manually via `npm run dev`. When the first e2e suite lands, add its
+row here with the exact command and prerequisites.
+
+Notes that bite:
+
+- Storage isolation is per test **file**, not per test. `reset()` from
+  `cloudflare:test` wipes the schema too — any test calling it must re-run
+  `applyD1Migrations(env.DB, env.TEST_MIGRATIONS)` immediately.
+- The API token used by tests is the miniflare binding `API_BEARER_TOKEN` in
+  `vitest.config.ts`; read it in tests via `env.API_BEARER_TOKEN` rather than
+  hardcoding it.
+- Coverage is not configured: `@vitest/coverage-v8` does not work inside
+  workerd. Only `@vitest/coverage-istanbul` would, pinned to the exact Vitest
+  version.
+
+Also mandatory before finishing any change: `npm run check`
+(`wrangler types --check` + `tsc -b` + ESLint + Prettier). A green test run
+with a red `check` is not done.

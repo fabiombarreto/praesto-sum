@@ -1,0 +1,15 @@
+dist
+coverage
+node_modules
+.wrangler
+migrations
+worker-configuration.d.ts
+package-lock.json
+
+# Prose is governed by documentation/00-meta/documentation-guidelines.md, not by
+# Prettier: reflowing validated documents creates churn and can disturb their
+# deliberate structure (tables, frontmatter, ADR layout). Prettier owns code.
+documentation/
+docs/
+CLAUDE.md
+PRPs/

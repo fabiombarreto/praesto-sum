@@ -4,3 +4,24 @@
 
 # relay — per-feature worktrees (ephemeral)
 .worktrees/
+
+# node / build
+node_modules/
+dist/
+coverage/
+
+# cloudflare local state (D1 sqlite, deploy redirect, workerd cache)
+.wrangler/
+
+# local secrets (dotenv syntax) — never commit
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+.env
+.env.*
+!.env.example
+
+# NOTE: worker-configuration.d.ts is deliberately NOT ignored.
+# `npm run check` uses `wrangler types --check`, which validates the committed
+# file against wrangler.jsonc without rewriting it. Regenerate with
+# `npm run cf-typegen` whenever wrangler.jsonc changes, and commit the result.

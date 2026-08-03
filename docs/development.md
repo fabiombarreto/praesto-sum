@@ -1,6 +1,6 @@
 # Development
 
-> Derived from `documentation/40-engineering/dev-environment.md` (authoritative). Commands are PLANNED per ADR-0005 and validated when the scaffold lands — update both files with reality at that moment.
+> Derived from `documentation/40-engineering/dev-environment.md` (authoritative). All commands below were executed and verified at the 2026-08-03 scaffold.
 
 ## Setup (clean machine → running, target ≤ 1 hour)
 
@@ -17,12 +17,15 @@ Cloudflare account (free) + `wrangler login` are needed only for deploys and rem
 
 | Action | Command |
 |---|---|
-| Dev (everything, one process) | `npm run dev` |
+| Dev (everything, one process) | `npm run dev` → http://127.0.0.1:5173 |
 | Tests | `npm test` |
-| Type-check + lint + format | `npm run check` |
+| Quality gate (types + `tsc -b` + lint + format) | `npm run check` |
 | New migration from schema change | `npm run db:generate` then `npm run db:migrate` |
-| Export data snapshot (JSON + iCalendar) | `npm run db:snapshot` |
+| Regenerate binding types after editing `wrangler.jsonc` | `npm run cf-typegen` |
+| Exercise the PWA (service worker only exists in prod builds) | `npm run preview` |
 | Deploy (assets + API + cron, one Worker) | `npm run deploy` |
+
+`npm run db:snapshot` (FR-042 export) does not exist yet — it lands with the export slice.
 
 ## Adding a feature (the loop)
 

@@ -1,0 +1,6 @@
+# drizzle-kit generate writes 0000_*.sql here, plus meta/_journal.json and
+# meta/*_snapshot.json. COMMIT meta/ together with the .sql files: without the
+# snapshots, drizzle-kit recomputes the diff from zero and emits a duplicate
+# CREATE TABLE migration.
+#
+# wrangler reads only the top-level .sql files and ignores meta/.

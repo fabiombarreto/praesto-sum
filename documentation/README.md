@@ -11,7 +11,7 @@ review_trigger: "any document is created, renamed, merged or changes status"
 
 ## What is this project
 
-A personal assistant built by its single user — the owner — to organize personal life: calendar and tasks (to-dos) first, other life areas later. The project is documentation-first: everything is defined here before implementation starts. No code exists yet and no tech stack has been chosen; the open technical questions live in the [pending decisions queue](60-decisions/index.md).
+A personal assistant built by its single user — the owner — to organize personal life: calendar and tasks (to-dos) first, other life areas later. The project is documentation-first: everything is defined here before implementation starts. Phase 0 closed on 2026-08-03 with the full document set validated and decisions 1–3 resolved as ADRs; Phase 1 (MVP Tasks) is now in progress. The only remaining pending decision is external calendar integration — see the [pending decisions queue](60-decisions/index.md).
 
 > **Praesto Sum** — Latin for "I am ready, at your service" ([ADR-0002](60-decisions/ADR-0002-name-the-project-praesto-sum.md)). Short form for the future repository and CLI: **praesto**.
 
@@ -67,10 +67,10 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 20-requirements/constraints.md | active | 2026-08-03 |
 | 30-architecture/architecture-overview.md | draft | 2026-08-03 |
 | 30-architecture/domain-model.md | draft | 2026-08-03 |
-| 40-engineering/tech-stack.md | draft | 2026-08-03 |
-| 40-engineering/engineering-conventions.md | draft | 2026-08-03 |
-| 40-engineering/dev-environment.md | draft | 2026-08-03 |
-| 40-engineering/testing-strategy.md | draft | 2026-08-02 |
+| 40-engineering/tech-stack.md | active | 2026-08-03 |
+| 40-engineering/engineering-conventions.md | active | 2026-08-03 |
+| 40-engineering/dev-environment.md | active | 2026-08-03 |
+| 40-engineering/testing-strategy.md | active | 2026-08-03 |
 | 50-planning/roadmap.md | active | 2026-08-03 |
 | 60-decisions/index.md | active | 2026-08-03 |
 | 60-decisions/ADR-0001-write-all-artifacts-in-english.md | accepted | 2026-08-02 |

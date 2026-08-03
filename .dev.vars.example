@@ -1,0 +1,14 @@
+# Local development secrets — dotenv syntax.
+# Copy to .dev.vars (git-ignored). Loaded automatically by `vite dev`.
+#
+# Production: wrangler secret put <KEY>  (or: wrangler secret bulk <file.json>)
+#
+# WARNING: if a .dev.vars.<environment> file exists, this base .dev.vars is NOT
+# loaded at all — there is no merge. Redeclare every key in the env-specific file.
+
+API_BEARER_TOKEN="replace-me-locally"
+
+# Generate with: npx web-push generate-vapid-keys --json
+VAPID_SUBJECT="mailto:you@example.com"
+VAPID_PUBLIC_KEY="replace-me-locally"
+VAPID_PRIVATE_KEY="replace-me-locally"

@@ -34,12 +34,13 @@ Phases are sequential; a phase opens only when the previous one meets its exit c
 
 ### Now
 
-- Scaffold the [ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md) stack and validate the planned commands in [dev-environment](../40-engineering/dev-environment.md).
-- Create the root `CLAUDE.md` pointing AI sessions at [documentation/README.md](../README.md).
+- Grow the Task slice: dates in the UI (FR-005), listing/filtering (FR-007), search (FR-040).
+- Then the two pieces the owner feels daily: Reminders + Web Push (FR-041/FR-044) and the export command (FR-042 — a day-1 safeguard of [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md)).
 
 ### Next
 
-- Implement the Phase 1 FR set in vertical slices, starting with Task CRUD + quick capture (FR-001..004, FR-045).
+- Recurrence and misses (FR-009, FR-011, FR-012) — the `scheduled()` sweep of [ADR-0006](../60-decisions/ADR-0006-recurrence-model.md); the schema and its invariant indexes are already in place.
+- First real deploy: create the D1 database, set the secrets, apply migrations remotely.
 
 ### Later
 
@@ -75,6 +76,7 @@ Newest first. One row per meaningful delivery, added in the same session it happ
 
 | Date | Delivered |
 |---|---|
+| 2026-08-03 | **Phase 1 scaffold shipped** — stack installed and verified end to end (PWA → Worker → D1): Phase 1 schema + first migration, token-gated API, Task create/list/complete/delete, 12 tests green, `npm run check` green, build and deploy dry-run clean |
 | 2026-08-03 | Recurrence model decided after market research ([ADR-0006](../60-decisions/ADR-0006-recurrence-model.md)); vision gains principle 6 (honest mirror) and FR-011/FR-012 |
 | 2026-08-03 | **Phase 0 closed** — quality attributes and constraints confirmed; full document set validated by the owner |
 | 2026-08-03 | Vision, glossary and requirements validated by the owner; MVP scope frozen (Phase 1 = Tasks; FR-009/010/026/044/045 added; FR-040 promoted to Must) |

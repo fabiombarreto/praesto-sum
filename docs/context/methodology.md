@@ -1,7 +1,7 @@
 ---
 tdd: false
 tdd_evidence: null
-test_frameworks: []
+test_frameworks: ["vitest"]
 docs_sync: true
 figma_track: false
 visual_first_approval: auto
@@ -23,9 +23,10 @@ or an explicit user declaration can.
   explicitly declares a pragmatic test-after philosophy for a solo personal
   project (automated tests where regressions hurt, manual verification where
   they don't).
-- Planned test tooling per ADR-0005 (not yet scaffolded): Vitest +
-  `@cloudflare/vitest-pool-workers`. Add to `test_frameworks` when the
-  scaffold lands and the first suite exists.
+- Test tooling landed with the Phase 1 scaffold (2026-08-03): Vitest 4 +
+  `@cloudflare/vitest-pool-workers`, running in real workerd against an
+  ephemeral D1 (`npm test`). Recorded in `test_frameworks` above — this is
+  informative only and does NOT activate the TDD track.
 
 ### How to activate
 
