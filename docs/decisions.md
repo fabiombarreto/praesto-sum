@@ -64,6 +64,15 @@ Atualizado pelo Docs Updater após cada aprovação de implementação.
 
 ---
 
+## [2026-08-03] Recurrence: shared rule, per-entity instantiation, missed recording
+
+**Context:** FR-009/FR-026 need a shared model; research (Todoist, Things, Taskwarrior, Habitica, RFC 5545/Google) + owner's template+realizations proposal.
+**Decision:** One `recurrence_series` rule table + one shared expansion function. Tasks: materialized current occurrence (max one open per series; superseded-without-completion → `missed`, permanent record). Events: master + `event_exceptions`, virtual expansion, no materialization. Owner explicitly chose missed-recording over silent skipping (honest-mirror principle; FR-011/FR-012).
+**Reason:** Follows the domain asymmetry (Tasks have per-occurrence state; Events have no completion); avoids each pure model's documented failure mode.
+**Areas affected:** tasks, events, reminders · Source: `documentation/60-decisions/ADR-0006-recurrence-model.md`
+
+---
+
 <!-- Template for future entries:
 
 ## [YYYY-MM-DD] Title of the decision

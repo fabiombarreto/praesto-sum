@@ -23,7 +23,7 @@ review_trigger: "the owner validates the seeded requirements or confirms the MVP
 
 ## MVP scope
 
-**Frozen by the owner on 2026-08-03.** The MVP is **Phase 1 — Tasks**: FR-001..005 and FR-007 (Task CRUD, dates, listing/filtering), FR-009 (Task recurrence), FR-040 (search), FR-041 (notifications), FR-042 (export — day-1 safeguard of [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md)), FR-044 (standalone Reminders) and FR-045 (quick capture). Exit criterion: the owner manages daily Tasks in Praesto Sum instead of the current scattered notes. Phase 2 (Calendar) follows per the [traceability](#traceability) below.
+**Frozen by the owner on 2026-08-03.** The MVP is **Phase 1 — Tasks**: FR-001..005 and FR-007 (Task CRUD, dates, listing/filtering), FR-009 (Task recurrence per ADR-0006), FR-011/FR-012 (miss visibility and repeated-miss notifications — added 2026-08-03 with ADR-0006), FR-040 (search), FR-041 (notifications), FR-042 (export — day-1 safeguard of [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md)), FR-044 (standalone Reminders) and FR-045 (quick capture). Exit criterion: the owner manages daily Tasks in Praesto Sum instead of the current scattered notes. Phase 2 (Calendar) follows per the [traceability](#traceability) below.
 
 ## Functional requirements — Tasks
 
@@ -39,8 +39,10 @@ review_trigger: "the owner validates the seeded requirements or confirms the MVP
 | FR-006 | A Task can carry an optional priority level. | Should | accepted |
 | FR-007 | The owner can list Tasks and filter them by completion status, dates and priority. | Must | accepted |
 | FR-008 | A Task can be assigned to a Life Area. | Could | accepted |
-| FR-009 | A Task can recur on a schedule (e.g. "pay rent on the 5th"); the shared recurrence model (rules, exceptions, end conditions) is designed during Phase 1. | Should | accepted |
+| FR-009 | A Task can recur on a schedule (e.g. "pay rent on the 5th"), per the model in [ADR-0006](../60-decisions/ADR-0006-recurrence-model.md): shared rule, materialized current occurrence (at most one open per series), occurrences superseded without completion recorded as `missed`. | Should | accepted |
 | FR-010 | A Task can be linked to any number of Events and vice versa (N:N); the link is navigable from both sides. | Should | accepted |
+| FR-011 | Missed occurrences of recurring Tasks are permanently recorded and constantly visible: per-series adherence (miss counts, streaks, completion rate) and a view of recent misses. | Should | accepted |
+| FR-012 | When the same recurring Task is missed repeatedly, the assistant proactively notifies the owner (threshold and cadence defined at design time). | Should | accepted |
 
 ## Functional requirements — Calendar
 
@@ -98,7 +100,7 @@ Mapping of requirements to the phases confirmed by the owner on 2026-08-03 (see 
 
 | Requirement(s) | Roadmap phase |
 |---|---|
-| FR-001 … FR-005, FR-007, FR-009 (Tasks) | Phase 1 — MVP Tasks |
+| FR-001 … FR-005, FR-007, FR-009, FR-011, FR-012 (Tasks) | Phase 1 — MVP Tasks |
 | FR-040, FR-041, FR-042, FR-044, FR-045 (cross-cutting) | Phase 1 — MVP Tasks |
 | FR-020 … FR-026 (Calendar), FR-010 (Task ↔ Event links) | Phase 2 — Calendar |
 | FR-006, FR-008, FR-043 | Unscheduled — assigned at a later triage |

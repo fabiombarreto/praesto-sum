@@ -78,6 +78,7 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md | accepted | 2026-08-03 |
 | 60-decisions/ADR-0004-single-pwa-as-sole-interface.md | accepted | 2026-08-03 |
 | 60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md | accepted | 2026-08-03 |
+| 60-decisions/ADR-0006-recurrence-model.md | accepted | 2026-08-03 |
 
 ## How AI assistants should use this folder
 

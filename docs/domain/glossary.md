@@ -13,5 +13,5 @@
 
 - Litmus test: "Can I finish it?" → Task. "Does it occupy a slot in my day whether or not I act?" → Event. "Just a nudge — about one of the other two, or on its own?" → Reminder.
 - Tasks never become Events (no time-blocking conversion). They relate through an **N:N link**.
-- Recurrence applies to **both** Tasks and Events (model under research — resolution lands as ADR-0006).
+- Recurrence applies to **both** Tasks and Events (ADR-0006): shared rule in a Recurrence Series; Tasks materialize the current occurrence (done/missed history as real rows); Events are master + exceptions, expanded virtually.
 - A Reminder points to at most ONE Task or ONE Event — never both — or to nothing (standalone).

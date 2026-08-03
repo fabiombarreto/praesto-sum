@@ -45,6 +45,6 @@ Concepts that may matter for future Life Areas but are **not yet modeled**. List
 | Concept | Why it might matter | Status |
 |---|---|---|
 | Future Life Area candidates (e.g. finances, health, habits, notes) | Would each bring their own vocabulary | TBD — pending owner input |
-| Recurrence | Confirmed for both Tasks and Events (2026-08-03); the shared model (rules, exceptions, end conditions) still needs design | Modeled with the MVP requirements |
+| Recurrence | Resolved by [ADR-0006](../60-decisions/ADR-0006-recurrence-model.md): shared rule (Recurrence Series); Tasks materialize the current occurrence with `missed` recording; Events are master + exceptions, expanded virtually | Resolved 2026-08-03 |
 | Project / grouping of Tasks | Larger goals may need Tasks grouped | Not needed for the seed scope |
 | Priority / urgency | Ordering Tasks may need a canonical scale | Not needed for the seed scope |

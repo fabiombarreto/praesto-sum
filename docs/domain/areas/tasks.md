@@ -9,14 +9,15 @@
 - A Task has a completion lifecycle `open → done`, and completion is undoable (FR-003).
 - A Task may carry a **deadline** (complete *by* a date) OR a **scheduled date** (do *on* a date) — distinct semantics, never conflated (FR-005).
 - Tasks never convert into Events; a Task may be linked to any number of Events and vice versa, navigable from both sides (FR-010, Phase 2).
-- Tasks can recur (FR-009, Phase 1); the recurrence model (rules, exceptions, end conditions) is shared with Events and designed during Phase 1.
+- Tasks can recur (FR-009, Phase 1) per ADR-0006: a **Recurrence Series** holds the shared rule + template; each occurrence is a real Task row; **at most one open occurrence per active series** (unique index); completing spawns the next (calendar- or completion-anchored per series).
+- An occurrence superseded without completion becomes **`missed`** (terminal, system-written) — every skipped cycle leaves a permanent record. Done + missed rows are the realization history powering adherence visibility (FR-011) and repeated-miss notifications (FR-012) — the honest-mirror principle (vision principle 6).
 - Tasks are listable and filterable by completion status, dates and priority (FR-007); priority is optional (FR-006, unscheduled).
 - A Task may belong to a Life Area (FR-008, unscheduled).
 - Capture must be near-zero friction on any device (FR-045 — vision principle 5).
 
 ## Phase 1 FR set
 
-FR-001..005, FR-007, FR-009 + cross-cutting FR-040/041/042/044/045. Exit criterion: the owner manages daily Tasks in the assistant instead of scattered notes.
+FR-001..005, FR-007, FR-009, FR-011, FR-012 + cross-cutting FR-040/041/042/044/045. Exit criterion: the owner manages daily Tasks in the assistant instead of scattered notes.
 
 ## Relationships
 
@@ -32,4 +33,4 @@ FR-001..005, FR-007, FR-009 + cross-cutting FR-040/041/042/044/045. Exit criteri
 
 ## Open Questions
 
-- Recurrence model — under research (owner proposed single-record template + occurrence-log entity); resolution lands as ADR-0006.
+- None — the recurrence model was resolved by `documentation/60-decisions/ADR-0006-recurrence-model.md` (2026-08-03).

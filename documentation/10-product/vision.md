@@ -36,13 +36,14 @@ There is exactly one user: the owner, who is also the developer. There are no ot
 
 ## Product principles
 
-> All five principles validated by the owner on 2026-08-03.
+> All six principles validated by the owner on 2026-08-03.
 
 1. **Simplicity over completeness** — a small set of features that work every day beats a large set that mostly sits idle. Every addition must justify its ongoing cost.
 2. **Owner's data under owner's control** — the owner decides where the data lives, in what format, and who (if anyone) else can reach it. Resolved for storage in [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md): canonical data in Cloudflare D1 by explicit consent, with mandatory local export snapshots.
 3. **Sustainable for one person to maintain** — a solo developer must be able to understand, fix and evolve the whole system indefinitely. Complexity that one person cannot carry is out.
 4. **The assistant adapts to the owner, not the opposite** — the domain model and the workflows follow how the owner actually lives; the owner never reshapes habits to fit the tool.
 5. **Effortless in, effortless out** — adding information and finding it again must be near-zero friction; the moment capture or retrieval feels like work, the assistant loses to memory, paper and old habits.
+6. **Honest mirror** — the assistant never hides the owner's misses: repeated failure of the same commitments is recorded, kept constantly visible and proactively surfaced, so the owner can replan or change behavior. In the owner's words: "if I keep failing the same tasks, it is on me to reorganize — but the assistant must show me."
 
 ## Life Areas
 
@@ -70,5 +71,7 @@ Daily use is confirmed intent (2026-08-03). The two working criteria:
 
 - **Daily real use** — the assistant becomes the place the owner actually organizes their days, replacing Google Calendar and the scattered notes described in the problem statement. Mirror failure signal: drifting back to the old tools.
 - **Found-again rate** — information put into the assistant is reliably found when needed. Mirror failure signal: "I know I noted this somewhere" happening inside the assistant too.
+
+A third signal was declared explicitly (2026-08-03): **stale data is project-level failure** — if tasks/habits sit outdated because the assistant is not being used, the product itself has failed, regardless of its features.
 
 Concrete, measurable versions remain to be defined by the owner.

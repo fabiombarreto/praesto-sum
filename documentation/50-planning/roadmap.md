@@ -22,7 +22,7 @@ Phase 0 (documentation & foundational decisions) was completed on 2026-08-03: th
 | Phase | Scope | Exit criteria |
 |---|---|---|
 | **0 — Documentation & decisions** | Write the full document set; resolve foundational technical decisions | All docs approved by the owner **and** pending decisions 1–3 (data posture, interface type, language & stack) resolved as ADRs |
-| **1 — MVP Tasks** | First working software: Task management (FR-001..005, 007, 009, 040, 041, 042, 044, 045) | The owner manages daily Tasks in the assistant instead of the current scattered notes (confirmed 2026-08-03) |
+| **1 — MVP Tasks** | First working software: Task management (FR-001..005, 007, 009, 011, 012, 040, 041, 042, 044, 045) | The owner manages daily Tasks in the assistant instead of the current scattered notes (confirmed 2026-08-03) |
 | **2 — Calendar** | Events and Reminders; calendar view of daily life (FR-020..026, FR-010) | The owner replaces Google Calendar for day-to-day use (confirmed 2026-08-03) |
 | **Later — future Life Areas** | Other Life Areas beyond tasks and calendar | TBD — pending owner input |
 
@@ -75,6 +75,7 @@ Newest first. One row per meaningful delivery, added in the same session it happ
 
 | Date | Delivered |
 |---|---|
+| 2026-08-03 | Recurrence model decided after market research ([ADR-0006](../60-decisions/ADR-0006-recurrence-model.md)); vision gains principle 6 (honest mirror) and FR-011/FR-012 |
 | 2026-08-03 | **Phase 0 closed** — quality attributes and constraints confirmed; full document set validated by the owner |
 | 2026-08-03 | Vision, glossary and requirements validated by the owner; MVP scope frozen (Phase 1 = Tasks; FR-009/010/026/044/045 added; FR-040 promoted to Must) |
 | 2026-08-03 | Decision 3 resolved: React 19 SPA + Vite + Hono + Drizzle stack ([ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md)) — all foundational technical decisions closed |

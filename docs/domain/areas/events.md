@@ -9,7 +9,7 @@
 - An Event is anchored to a specific date/time (start required, end optional) and occupies a calendar slot (FR-020).
 - An Event has NO completion state — it occurs or is cancelled, never "done" (glossary distinction).
 - Events never convert into Tasks and vice versa; they relate through N:N links (FR-010).
-- Events can recur ("meeting every Monday", FR-026), sharing the recurrence model designed with FR-009.
+- Events can recur ("meeting every Monday", FR-026) per ADR-0006: the recurring Event is ONE master record referencing a Recurrence Series; occurrences are expanded virtually over the visible window (never materialized); "only this" edits become Event Exception records (cancel/move); "this and future" is deferred to an explicit series split.
 - Day view (chronological, FR-023) is Must; week view (FR-024) is Should.
 - A Reminder can be attached to an Event, firing at a chosen moment relative to its start (FR-025).
 
@@ -30,4 +30,4 @@ FR-020..026 + FR-010. Exit criterion: the owner replaces Google Calendar for day
 
 ## Open Questions
 
-- Recurrence model — under research (owner suggested a recurring Event may be a single record with rule/start/end + occurrence records); resolution lands as ADR-0006.
+- None — the recurrence model was resolved by `documentation/60-decisions/ADR-0006-recurrence-model.md` (2026-08-03); the owner's single-record + exceptions intuition was adopted as proposed.
