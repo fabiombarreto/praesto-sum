@@ -1,0 +1,67 @@
+# Praesto Sum
+
+Personal assistant built by its single user (the owner) to organize personal life — Tasks and Calendar first, more Life Areas later. Latin: "I am ready, at your service" (short form: `praesto`). Currently opening Phase 1 (MVP Tasks): documentation is complete and owner-validated; the code scaffold is pending.
+
+## Project documentation — read FIRST, keep updated ALWAYS
+
+The `documentation/` folder is the project's **authoritative source of truth**: vision, requirements (FR/QA/CON), architecture, ADRs and roadmap — all owner-validated.
+
+- **ALWAYS read `documentation/README.md` before changing anything in this project.** It is the entry point and holds the maintenance map.
+- **ALWAYS update the affected `documentation/` docs in the same session as the change.** The maintenance map in `documentation/README.md` says exactly which doc each kind of change touches. "Affected docs updated" is part of the Definition of Done — never "later".
+- Any non-obvious product or technical choice becomes an ADR in `documentation/60-decisions/` immediately (append-only — never edit accepted ADRs).
+- `docs/` (this relay context system) is **derived** from `documentation/`. On any conflict, `documentation/` wins — update both together.
+
+## Tech stack (ADR-0003..0005 — pin exact versions at scaffold)
+
+- Cloudflare Workers (free plan) + D1 + cron triggers + static assets — one Worker serves everything
+- React 19 SPA + TypeScript strict + Vite + `@cloudflare/vite-plugin` + `vite-plugin-pwa` (injectManifest)
+- Hono 4 API (bearer token on every route) · Drizzle ORM · `web-push` under `nodejs_compat`
+- npm (`save-exact`) · Vitest + `@cloudflare/vitest-pool-workers` · Prettier + `tsc --noEmit` + minimal ESLint
+
+## Essential commands (planned per ADR-0005 — validate at scaffold)
+
+- `npm run dev` — Vite HMR + real workerd + local D1, one process
+- `npm test` · `npm run check` — tests / type-check + lint + format gate
+- `npm run db:generate` · `npm run db:migrate` — drizzle-kit → wrangler d1 migrations
+- `npm run deploy` — vite build && wrangler deploy (assets + API + cron)
+
+## Key patterns
+
+1. One Worker serves everything — SPA assets, `/api/*` (Hono), `scheduled()` cron. No second service, no sync engine, no offline writes (ADR-0003).
+2. Types flow from `src/worker/db/schema.ts` (Drizzle) outward — never hand-duplicate entity types.
+3. Exact version pins; upgrades are deliberate changelog-in-hand events, never incidental.
+
+## Context & Domain
+
+Before implementing anything, read:
+- docs/context/architecture.md — stack and patterns
+- docs/context/conventions.md — naming and code standards
+- docs/context/constraints.md — what NOT to do
+- docs/context/methodology.md — methodology declaration (TDD opt-in)
+- docs/context/testing.md — mandatory test guardrail (see section below)
+- docs/domain/areas/[relevant-area].md — business rules for the area being changed
+- docs/decision-gate.md — mandatory gate before planning or coding
+
+Domain areas:
+- tasks
+- events
+- reminders
+- life-areas
+
+## Test Guardrail (mandatory — every change)
+
+Applies to EVERY code change, including small or single-file ones, and
+whether or not a relay command was used. Do NOT skip this silently. It is
+NOT waived by the Decision Gate scope exemptions.
+
+- Before finishing, check which test suites cover the code you changed
+  (see docs/context/testing.md) and state whether tests exist.
+- If your change alters tested behavior, UPDATE those tests to match —
+  never leave them stale, never delete/skip/weaken them to force a pass.
+- Run the suites covering your change; treat all tiers equally and at a
+  minimum run the e2e suite.
+- If you CANNOT run them for any reason, do not stay silent: at the end of
+  your response warn the user, say exactly why, and give copy-pasteable
+  manual run instructions. Full protocol: docs/context/testing.md
+
+Full index: docs/KNOWLEDGE_BASE.md

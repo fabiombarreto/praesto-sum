@@ -1,0 +1,6 @@
+# Claude — ignore session/cache/local artifacts, but commit project-wide settings
+.claude/*
+!.claude/settings.json
+
+# relay — per-feature worktrees (ephemeral)
+.worktrees/
