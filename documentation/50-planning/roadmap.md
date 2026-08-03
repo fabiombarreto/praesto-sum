@@ -1,5 +1,5 @@
 ---
-status: draft
+status: active
 last_updated: 2026-08-03
 review_trigger: "a milestone completes, a phase closes, or a backlog idea is triaged"
 ---
@@ -17,13 +17,13 @@ The project is documentation-first: no code exists yet, no tech stack has been c
 
 ## Phases and milestones
 
-> Draft pending owner validation — phase cut lines and exit criteria below were seeded by an assistant and must be confirmed (or reshaped) by the owner.
+> Phase cut lines and exit criteria for Phases 1–2 confirmed by the owner on 2026-08-03. The FR → phase mapping lives in the [functional-requirements traceability](../20-requirements/functional-requirements.md#traceability).
 
 | Phase | Scope | Exit criteria |
 |---|---|---|
 | **0 — Documentation & decisions** | Write the full document set; resolve foundational technical decisions | All docs approved by the owner **and** pending decisions 1–3 (data posture, interface type, language & stack) resolved as ADRs |
-| **1 — MVP Tasks** | First working software: Task management | TBD — pending owner input (candidate: the owner manages daily Tasks in the assistant instead of the current method) |
-| **2 — Calendar** | Events and Reminders; calendar view of daily life | TBD — pending owner input |
+| **1 — MVP Tasks** | First working software: Task management (FR-001..005, 007, 009, 040, 041, 042, 044, 045) | The owner manages daily Tasks in the assistant instead of the current scattered notes (confirmed 2026-08-03) |
+| **2 — Calendar** | Events and Reminders; calendar view of daily life (FR-020..026, FR-010) | The owner replaces Google Calendar for day-to-day use (confirmed 2026-08-03) |
 | **Later — future Life Areas** | Other Life Areas beyond tasks and calendar | TBD — pending owner input |
 
 Phases are sequential; a phase opens only when the previous one meets its exit criteria. Pending decision 4 (external calendar integration posture) is expected to be resolved before or during Phase 2 — see the pending decisions queue in [60-decisions/index.md](../60-decisions/index.md).
@@ -34,13 +34,12 @@ Phases are sequential; a phase opens only when the previous one meets its exit c
 
 ### Now
 
-- Validate the seeded drafts (vision, glossary, requirements) with the owner.
-- Freeze the MVP scope: confirm the **Must** set in [functional-requirements](../20-requirements/functional-requirements.md).
+- Validate the remaining seeded drafts (quality attributes, constraints) — the last Phase 0 gate.
+- Close Phase 0 and open Phase 1 (MVP Tasks): scaffold the [ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md) stack.
 
 ### Next
 
-- Close Phase 0 (exit criteria: docs approved — decisions 1–3 are already resolved as ADRs).
-- Open Phase 1 (MVP Tasks): scaffold the [ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md) stack.
+- Implement the Phase 1 FR set in vertical slices, starting with Task CRUD + quick capture.
 
 ### Later
 
@@ -76,6 +75,7 @@ Newest first. One row per meaningful delivery, added in the same session it happ
 
 | Date | Delivered |
 |---|---|
+| 2026-08-03 | Vision, glossary and requirements validated by the owner; MVP scope frozen (Phase 1 = Tasks; FR-009/010/026/044/045 added; FR-040 promoted to Must) |
 | 2026-08-03 | Decision 3 resolved: React 19 SPA + Vite + Hono + Drizzle stack ([ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md)) — all foundational technical decisions closed |
 | 2026-08-03 | Decision 2 resolved: single installable PWA as the sole MVP interface ([ADR-0004](../60-decisions/ADR-0004-single-pwa-as-sole-interface.md)) |
 | 2026-08-03 | Decision 1 resolved: canonical data on Cloudflare D1 + Workers, PWA-first ([ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md)) |
