@@ -37,10 +37,10 @@ Something the owner intends to do; it has no fixed position on the calendar by i
 - Title
 - Description (optional)
 - Deadline (optional — date to complete *by*) **or** scheduled date (optional — the specific date it is to be done *on*); distinct semantics, resolved 2026-08-03
-- Status — lifecycle: `open → done`. Additional states (e.g. cancelled): TBD — pending owner input.
+- Status — lifecycle: `open → done`, nothing else in the MVP (resolved 2026-08-03); deletion covers abandonment, and any new state is a future migration.
 - Life Area it belongs to
 - Linked Events (zero or more — N:N, resolved 2026-08-03)
-- Recurrence (confirmed 2026-08-03; shared model designed with the MVP requirements)
+- Recurrence (confirmed 2026-08-03; model under research — owner proposed a single-record template + separate occurrence-log entity; resolution lands as ADR-0006)
 
 ### Event
 
@@ -52,7 +52,7 @@ Something that occupies a specific position in time on the calendar.
 - Location (optional)
 - Life Area it belongs to
 - Linked Tasks (zero or more — N:N, resolved 2026-08-03)
-- Recurrence (confirmed 2026-08-03; shared model designed with the MVP requirements)
+- Recurrence (confirmed 2026-08-03; model under research — see the Task recurrence note; resolution lands as ADR-0006)
 
 ### Reminder
 
@@ -68,15 +68,15 @@ A named domain of the owner's personal life that groups Tasks and Events.
 
 - Name
 - Description (optional)
-- Initial set of Life Areas: TBD — pending owner input.
+- Initial set of Life Areas: none pre-created — the owner creates areas as needed (resolved 2026-08-03).
 
 ## Domain rules and invariants
 
 > Draft — seed rules and open questions, pending owner validation.
 
 1. A Reminder never points to both a Task and an Event at once; it points to one of them or to nothing (standalone) — resolved 2026-08-03.
-2. Does a Task with a deadline or a scheduled date appear on the calendar alongside Events? TBD — pending owner input.
-3. Can a Task or Event exist without a Life Area, or is there a default area (e.g. "Unsorted")? TBD — pending owner input.
+2. A Task with a deadline or a scheduled date DOES appear on the calendar views alongside Events, visually distinct (day-level item, no time slot) — resolved 2026-08-03.
+3. A Task or Event MAY exist without a Life Area; area-less items surface in an implicit "Unsorted" grouping in the UI — no default area is stored — resolved 2026-08-03.
 4. Tasks and Events are always distinct and never convert into one another; they relate through an N:N link — resolved 2026-08-03.
 
 ## Expected evolution

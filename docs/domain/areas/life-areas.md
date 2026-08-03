@@ -12,7 +12,7 @@
 - A concept that genuinely does not fit this shape triggers a glossary + domain-model change with its own ADR — never a silent workaround.
 - New areas enter scope ONLY via the roadmap triage rules (`documentation/50-planning/roadmap.md`) — an idea becomes an FR only when accepted.
 
-## Open Questions
+## Resolved 2026-08-03
 
-- Can a Task or Event exist without a Life Area, or is there a default area (e.g. "Unsorted")? TBD — pending owner input (domain-model invariant 3).
-- Initial set of Life Areas at scaffold time: TBD — pending owner input.
+- A Task or Event MAY exist without a Life Area; area-less items surface in an implicit "Unsorted" grouping in the UI (no stored default area) — capture must never force a taxonomy choice (vision principle 5).
+- No Life Areas are pre-created at scaffold time; the owner creates areas as needed (vision principle 4).

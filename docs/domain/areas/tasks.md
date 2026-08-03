@@ -24,9 +24,12 @@ FR-001..005, FR-007, FR-009 + cross-cutting FR-040/041/042/044/045. Exit criteri
 - **Events** relate via N:N links (Phase 2).
 - **Life Areas** group Tasks.
 
+## Resolved 2026-08-03
+
+- Lifecycle is `open → done` only in the MVP; deletion covers abandonment.
+- A dated Task (deadline or scheduled) DOES appear on calendar views, visually distinct from Events.
+- Life Area is optional; area-less Tasks surface in an implicit "Unsorted" grouping (no stored default).
+
 ## Open Questions
 
-- Additional lifecycle states beyond `open → done` (e.g. cancelled)? TBD — pending owner input.
-- Does a Task with a deadline or scheduled date appear on the calendar alongside Events? TBD — pending owner input (domain-model invariant 2).
-- Can a Task exist without a Life Area, or is there a default area? TBD (domain-model invariant 3).
-- Recurrence model design (rules, exceptions, end conditions) — designed during Phase 1.
+- Recurrence model — under research (owner proposed single-record template + occurrence-log entity); resolution lands as ADR-0006.

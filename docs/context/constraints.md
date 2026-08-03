@@ -8,7 +8,7 @@
 |---|---|---|
 | CON-001 | Windows 11 is the dev environment | Everything must be first-class on Windows (keep MS VC++ Redistributable current for workerd) |
 | CON-002 | Exactly one developer (the owner) | No tech whose learning curve or ops load exceeds one person |
-| CON-003 | Time budget: TBD — pending owner input | — |
+| CON-003 | Time budget: ~1 hour/day (declared 2026-08-03) | Slice plans and phases to fit ~7 h/week of solo work |
 | CON-004 | Money: effectively ~zero | Owner declined hardware and VPS; free plan is the baseline; recurring cost needs an ADR |
 | CON-005 | Data under owner control | Provider-readable D1 accepted by explicit revocable consent (ADR-0003) ONLY with the local-snapshot safeguards |
 | CON-006 | No operational babysitting | Nothing that needs patching, renewal rituals, or a server to nurse |

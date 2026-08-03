@@ -27,7 +27,7 @@ review_trigger: "a constraint is challenged by a decision under analysis, or the
 
 | ID | Constraint | Current value |
 |---|---|---|
-| CON-003 | Time available for the project (hours per week, expected cadence). | TBD — pending owner input |
+| CON-003 | Time available for the project (hours per week, expected cadence). | About **1 hour/day** (declared by the owner 2026-08-03). Phases and plans must be sliced to fit ~7 h/week of solo work. |
 | CON-004 | Money budget (upfront and recurring). | Effectively ~zero: while resolving decision 1 (2026-08-03, [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md)) the owner declined both one-time hardware (~R$550–700) and a ~R$25/month VPS. A formal ceiling remains TBD — pending owner input. |
 
 ## Personal principles as constraints

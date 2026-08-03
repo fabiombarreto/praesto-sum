@@ -15,7 +15,10 @@
 
 Workers cron trigger scans due Reminders → `web-push` under `nodejs_compat` → installed PWA (`src/sw.ts` handles push + notificationclick). Push failure is SILENT — the dedicated VAPID integration test is mandatory, and a manual test-push route is recommended.
 
+## Resolved 2026-08-03
+
+- No snooze and no re-fire in the MVP: the notification opens the app on the item; re-scheduling is manual. Notification-action snooze is a declared revisit trigger if the pain shows up in real use.
+
 ## Open Questions
 
-- Snooze / re-fire behavior for missed Reminders: not yet defined.
 - Fallback channel (e-mail-to-self, ntfy) if iOS Web Push proves unreliable — allowed without a new ADR (ADR-0005); trigger not yet hit.

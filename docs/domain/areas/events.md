@@ -24,7 +24,10 @@ FR-020..026 + FR-010. Exit criterion: the owner replaces Google Calendar for day
 - **Life Areas** group Events.
 - **External calendar sync (Google Calendar)** is NOT decided — pending decision 4; do not build against it.
 
+## Resolved 2026-08-03
+
+- Dated Tasks DO surface on the calendar views alongside Events, visually distinct.
+
 ## Open Questions
 
-- Recurrence model design — shared with Tasks, designed during Phase 1.
-- Whether dated Tasks surface on the calendar views (see tasks.md open question).
+- Recurrence model — under research (owner suggested a recurring Event may be a single record with rule/start/end + occurrence records); resolution lands as ADR-0006.
