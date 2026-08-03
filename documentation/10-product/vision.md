@@ -32,7 +32,7 @@ There is exactly one user: the owner, who is also the developer. There are no ot
 > Draft pending owner validation.
 
 1. **Simplicity over completeness** — a small set of features that work every day beats a large set that mostly sits idle. Every addition must justify its ongoing cost.
-2. **Owner's data under owner's control** — the owner decides where the data lives, in what format, and who (if anyone) else can reach it. See the data-posture decision in the [pending decisions queue](../60-decisions/index.md).
+2. **Owner's data under owner's control** — the owner decides where the data lives, in what format, and who (if anyone) else can reach it. Resolved for storage in [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md): canonical data in Cloudflare D1 by explicit consent, with mandatory local export snapshots.
 3. **Sustainable for one person to maintain** — a solo developer must be able to understand, fix and evolve the whole system indefinitely. Complexity that one person cannot carry is out.
 4. **The assistant adapts to the owner, not the opposite** — the domain model and the workflows follow how the owner actually lives; the owner never reshapes habits to fit the tool.
 

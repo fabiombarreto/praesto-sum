@@ -46,15 +46,38 @@ The only confirmed actor is the owner. The external calendar provider is shown d
 
 ## Containers (C4 level 2)
 
-TBD — see the pending decisions queue in [60-decisions/index.md](../60-decisions/index.md). No stack has been chosen, so no containers exist yet. This section gains a diagram once decisions 1–3 (storage posture, interface type, tech stack) are resolved.
+> Shape fixed by [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md); the PWA's frontend stack is still open (decision 3 in the [pending decisions queue](../60-decisions/index.md)).
+
+```mermaid
+flowchart TB
+    owner(["Owner<br/>(single user, PC & phone)"])
+    pwa["PWA client<br/>(one responsive web app)"]
+    pc["Owner's PC<br/>(receives export snapshots)"]
+
+    subgraph cf ["Cloudflare (free plan)"]
+        api["Workers API<br/>(single-user CRUD, token auth)"]
+        cron["Workers cron trigger<br/>(Reminder scheduler + snapshot job)"]
+        d1[("D1 database<br/>(SQLite-class, canonical copy)")]
+    end
+
+    owner --> pwa
+    pwa -->|"HTTPS + token"| api
+    api --> d1
+    cron --> d1
+    cron -->|"Web Push"| pwa
+    cron -->|"export snapshots (JSON + iCalendar)"| pc
+```
+
+There is deliberately no merge, sync, or offline-write logic anywhere in the system (ADR-0003, safeguard 3).
 
 ## Data and persistence
 
-TBD — see the pending decisions queue in [60-decisions/index.md](../60-decisions/index.md) (decision 1: data storage and ownership posture — local-first vs cloud, data format).
+Canonical copy in Cloudflare D1 (SQLite-class managed database), per [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md). Binding safeguards: day-1 export of 100% of the data (JSON + iCalendar, FR-042); automated export snapshots shipped to the owner's PC so Cloudflare never holds the only copy (FR-043); no offline write queue without a superseding ADR.
 
 ## External integrations
 
-TBD — see the pending decisions queue in [60-decisions/index.md](../60-decisions/index.md) (decision 4: external calendar integration posture, e.g. Google Calendar sync now vs later).
+- Web Push (VAPID) delivers Reminder notifications to the installed PWA — part of [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md).
+- External calendar integration (e.g. Google Calendar sync): TBD — see the pending decisions queue in [60-decisions/index.md](../60-decisions/index.md) (decision 4).
 
 ## Security and privacy of personal data
 
@@ -63,7 +86,9 @@ TBD — see the pending decisions queue in [60-decisions/index.md](../60-decisio
 - The owner's personal data remains under the owner's control at all times.
 - No personal data is shared with third parties without an explicit, recorded decision (an ADR).
 - Any future sync or integration must be opt-in and reversible — the owner can always get all data out.
-- Threat model, encryption at rest/in transit, and backup posture: TBD — see the pending decisions queue in [60-decisions/index.md](../60-decisions/index.md).
+- Recorded consent ([ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md)): Cloudflare can technically read D1 contents (no E2EE). Accepted under CON-005's explicit-revocable-consent clause, mitigated by mandatory local snapshots and a guaranteed exit path; field-level encryption is a possible future ADR.
+- API access requires an authentication token on every route (single user); the only unauthenticated surface is the PWA shell.
+- Threat model details: TBD — refined with decisions 2–3 in the [pending decisions queue](../60-decisions/index.md).
 
 ## Risks and known technical debt
 
@@ -79,7 +104,7 @@ No technical debt exists yet — there is no code.
 | Topic | Decision |
 |---|---|
 | Documentation and artifact language | [ADR-0001](../60-decisions/ADR-0001-write-all-artifacts-in-english.md) — all artifacts in English |
-| Data storage and ownership posture | TBD — decision 1 in the [pending decisions queue](../60-decisions/index.md) |
-| Interface type | TBD — decision 2 in the [pending decisions queue](../60-decisions/index.md) |
-| Programming language and tech stack | TBD — decision 3 in the [pending decisions queue](../60-decisions/index.md) |
+| Data storage and ownership posture | [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md) — canonical data in Cloudflare D1 behind Workers, mandatory local snapshots |
+| Interface type | TBD — decision 2 in the [pending decisions queue](../60-decisions/index.md) (owner signaled PWA-first) |
+| PWA frontend stack & tooling | TBD — decision 3 in the [pending decisions queue](../60-decisions/index.md) (backend runtime fixed by ADR-0003) |
 | External calendar integration posture | TBD — decision 4 in the [pending decisions queue](../60-decisions/index.md) |

@@ -1,6 +1,6 @@
 ---
 status: draft
-last_updated: 2026-08-02
+last_updated: 2026-08-03
 review_trigger: "a constraint is challenged by a decision under analysis, or the owner states time or budget limits"
 ---
 
@@ -28,7 +28,7 @@ review_trigger: "a constraint is challenged by a decision under analysis, or the
 | ID | Constraint | Current value |
 |---|---|---|
 | CON-003 | Time available for the project (hours per week, expected cadence). | TBD — pending owner input |
-| CON-004 | Money budget (upfront and recurring). | TBD — pending owner input. Until stated, decisions assume the zero-recurring-cost baseline of QA-003 in [quality-attributes.md](quality-attributes.md). |
+| CON-004 | Money budget (upfront and recurring). | Effectively ~zero: while resolving decision 1 (2026-08-03, [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md)) the owner declined both one-time hardware (~R$550–700) and a ~R$25/month VPS. A formal ceiling remains TBD — pending owner input. |
 
 ## Personal principles as constraints
 
@@ -36,5 +36,7 @@ review_trigger: "a constraint is challenged by a decision under analysis, or the
 
 | ID | Constraint | Consequence for decisions |
 |---|---|---|
-| CON-005 | Personal data stays under the owner's control. | Any alternative in which a third party holds the only copy of the data, or can read it without explicit revocable consent, is eliminated. Measured by QA-001 in [quality-attributes.md](quality-attributes.md). Directly shapes pending decision 1 (data storage and ownership posture) in [60-decisions/index.md](../60-decisions/index.md). |
+| CON-005 | Personal data stays under the owner's control. | Any alternative in which a third party holds the only copy of the data, or can read it without explicit revocable consent, is eliminated. Measured by QA-001 in [quality-attributes.md](quality-attributes.md). Shaped decision 1, resolved by [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md). |
+
+> Interpretation recorded 2026-08-03 ([ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md)): a provider-readable managed database (Cloudflare D1) is accepted under CON-005's "explicit, revocable consent" clause — the owner consented explicitly, the provider never holds the only copy (automated local snapshots are a binding safeguard), and exit is guaranteed by the day-1 export.
 | CON-006 | Maintenance must be sustainable by one person indefinitely. | Any alternative requiring ongoing operational babysitting, paid renewal rituals, or expertise the owner does not intend to maintain is eliminated. Measured by QA-002 and QA-004 in [quality-attributes.md](quality-attributes.md). |

@@ -62,12 +62,12 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 00-meta/documentation-guidelines.md | active | 2026-08-02 |
 | 10-product/vision.md | draft | 2026-08-03 |
 | 10-product/glossary.md | draft | 2026-08-02 |
-| 20-requirements/functional-requirements.md | draft | 2026-08-02 |
+| 20-requirements/functional-requirements.md | draft | 2026-08-03 |
 | 20-requirements/quality-attributes.md | draft | 2026-08-02 |
-| 20-requirements/constraints.md | draft | 2026-08-02 |
+| 20-requirements/constraints.md | draft | 2026-08-03 |
 | 30-architecture/architecture-overview.md | draft | 2026-08-03 |
-| 30-architecture/domain-model.md | draft | 2026-08-02 |
-| 40-engineering/tech-stack.md | draft | 2026-08-02 |
+| 30-architecture/domain-model.md | draft | 2026-08-03 |
+| 40-engineering/tech-stack.md | draft | 2026-08-03 |
 | 40-engineering/engineering-conventions.md | draft | 2026-08-02 |
 | 40-engineering/dev-environment.md | draft | 2026-08-02 |
 | 40-engineering/testing-strategy.md | draft | 2026-08-02 |
@@ -75,6 +75,7 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 60-decisions/index.md | active | 2026-08-03 |
 | 60-decisions/ADR-0001-write-all-artifacts-in-english.md | accepted | 2026-08-02 |
 | 60-decisions/ADR-0002-name-the-project-praesto-sum.md | accepted | 2026-08-03 |
+| 60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md | accepted | 2026-08-03 |
 
 ## How AI assistants should use this folder
 

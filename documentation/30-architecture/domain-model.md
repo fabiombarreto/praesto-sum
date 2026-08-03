@@ -1,6 +1,6 @@
 ---
 status: draft
-last_updated: 2026-08-02
+last_updated: 2026-08-03
 review_trigger: "a new domain concept appears, an ambiguity is resolved, or the glossary changes"
 ---
 
@@ -56,7 +56,7 @@ A notification the system delivers to the owner about a Task or an Event.
 
 - Target — one Task or one Event (whether a Reminder can exist standalone, with no target: TBD — pending owner input)
 - Trigger time (absolute, or relative to the target's due date / start time)
-- Delivery channel: TBD — see the pending decisions queue in [60-decisions/index.md](../60-decisions/index.md) (depends on the interface decision).
+- Delivery channel: Web Push to the installed PWA, per [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md); may be refined by the interface decision (decision 2 in [60-decisions/index.md](../60-decisions/index.md)).
 
 ### Life Area
 
