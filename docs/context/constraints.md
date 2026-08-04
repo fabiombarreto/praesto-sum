@@ -12,6 +12,7 @@
 | CON-004 | Money: effectively ~zero | Owner declined hardware and VPS; free plan is the baseline; recurring cost needs an ADR |
 | CON-005 | Data under owner control | Provider-readable D1 accepted by explicit revocable consent (ADR-0003) ONLY with the local-snapshot safeguards |
 | CON-006 | No operational babysitting | Nothing that needs patching, renewal rituals, or a server to nurse |
+| CON-007 | Target phone is **Android** (PC is Windows) | Verify device behaviour against Android, never inherit iOS assumptions; `maskable` and monochrome-badge icons are required, and push does not depend on install |
 
 ## Quality attribute scenarios (every decision is tested against these)
 
