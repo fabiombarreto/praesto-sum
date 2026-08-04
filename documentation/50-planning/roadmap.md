@@ -33,7 +33,9 @@ Two internal milestones inside Phase 1, as reading aids (not gates):
 
 Phase 1's exit criterion becomes verifiable — not merely declarable — once unit 11 is `shipped` and the app holds two weeks of real data with at least one recurring series producing genuine `missed` rows.
 
-Phases are sequential; a phase opens only when the previous one meets its exit criteria. Pending decision 4 (external calendar posture) must be resolved as an ADR before unit 13 is planned.
+Phases are sequential; a phase opens only when the previous one meets its exit criteria.
+
+> **Pending decision 4 is being arbitrated (2026-08-04).** The owner asked for full bidirectional Google Calendar sync — read, create, edit and delete — as early as possible. Research found one gate that must be cleared before any of it can be promised: while the OAuth app sits in "Testing" publishing status, Google issues refresh tokens that **expire every 7 days**, which would violate QA-002 outright. Publishing the app removes the expiry, and Google documents a personal-use exception to verification — but two official pages contradict each other on whether a sensitive scope can go to production unverified, and no primary 2026 source settles it. Chores **C11** and **C12** exist to settle it empirically, and C11 starts now so its 8-day clock runs while units 1–3 are built. The delivery units for the integration, and ADR-0007 itself, are **pending owner input** on scope and phase order — deliberately not written here yet rather than written on a guess.
 
 ## Delivery units
 
@@ -106,7 +108,9 @@ Work that must happen but does not merit a PRD: no product decision space, no ac
 | C5 — Off-provider snapshot: local script + Windows Scheduled Task pulling `/api/export` to the owner's PC | Same week as unit 4, never later | |
 | C6 — Prove the restore: rebuild a throwaway D1 from a snapshot and compare row counts per table | Right after C5, and again before every migration over real data (units 12, 13, 15, 16, 17) | |
 | C7 — Re-validate the export completeness test | On every new migration | |
-| C8 — Resolve pending decision 4 (external calendar posture) as an ADR | Before planning unit 13, not during | |
+| C8 — Resolve pending decision 4 (external calendar posture) as ADR-0007, including the CON-005 consent record and the sync anti-pattern carve-out | Right after C11 returns a provisional result — **brought forward** from "before unit 13" on 2026-08-04, when the owner requested bidirectional Google Calendar sync | |
+| C11 — **Google access spike** (gates everything below it): create the Google Cloud project, enable the Calendar API, configure the consent screen with Calendar scopes only, **click "Publish app" to leave Testing**, create the OAuth client against the deployed `*.workers.dev` origin, authorize with the owner's account, store the refresh token as a Worker secret, and list the next 7 days with a throwaway script. Also measures the free-plan cron limits (10 ms CPU, 50 subrequests) against the owner's real calendar history | **Now** — right after C3, which is done. The clock below runs for free while units 1–3 are built | |
+| C12 — **Token durability confirmation**: 8+ calendar days after C11, run the same script with the SAME refresh token and confirm it still works. Also store a `.ics` snapshot of the Google calendar next to the local snapshots | 8+ days after C11. ~15 min of effort, but it is a **wall-clock gate**, not an effort gate | |
 | C9 — Check free-plan usage (requests/day, cron runs, D1 storage) and read push error logs | One week after unit 5 is in production, then monthly | |
 | C10 — Rotate the access token; decide whether to enable Cloudflare Access | Once the app holds real life data — in practice after units 4 and 6 | |
 
@@ -141,6 +145,7 @@ Newest first. One row per meaningful delivery, reordering or state change, added
 
 | Date | Delivered |
 |---|---|
+| 2026-08-04 | Owner requested bidirectional Google Calendar sync (read/create/edit/delete), arbitrating pending decision 4. Research surfaced the OAuth "Testing" 7-day refresh-token expiry as a hard gate; chores C11/C12 created to settle it empirically, C8 (ADR-0007) brought forward from "before unit 13". Integration units and the ADR await owner input on OAuth scope and phase order |
 | 2026-08-04 | **First production deploy** (chores C1–C3) — real D1 provisioned and migrated, production token stored as a secret, PWA icons generated from a versioned vector source, and the Worker published at `https://praesto.fabiobarreto.workers.dev`. Smoke test green: token gate closed and open, SPA served, and a Task written to and read back from the remote D1. Runbook in [dev-environment](../40-engineering/dev-environment.md#deploy-runbook). Unit 1 is unblocked |
 | 2026-08-03 | Roadmap restructured into 17 ordered delivery units + 10 chores, with explicit reordering rules; unit 1 set to `next`; delivery discipline (API-first per unit, unit 2 freezes the Task contract) confirmed by the owner |
 | 2026-08-03 | **Phase 1 scaffold shipped** — stack installed and verified end to end (PWA → Worker → D1): Phase 1 schema + first migration, token-gated API, Task create/list/complete/delete, 12 tests green, `npm run check` green, build and deploy dry-run clean |
