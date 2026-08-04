@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-03
+last_updated: 2026-08-04
 review_trigger: "the owner validates the draft principles, or a Life Area is added, removed or rescoped"
 ---
 
@@ -30,7 +30,7 @@ One assistant, built and owned by its single user, that organizes the whole of t
 
 There is exactly one user: the owner, who is also the developer. There are no other users, roles or permission levels, and none are planned.
 
-- Devices: the PC (Windows) and the phone, through the installed PWA ([ADR-0004](../60-decisions/ADR-0004-single-pwa-as-sole-interface.md)).
+- Devices: the PC (Windows) and an **Android** phone, through the PWA ([ADR-0004](../60-decisions/ADR-0004-single-pwa-as-sole-interface.md)). The device platforms are a hard constraint — CON-007 in [constraints.md](../20-requirements/constraints.md) — and they matter: ADR-0004's iOS consequences were written before the phone was known.
 - Places and moments of use: TBD — pending owner input
 - Frequency and rhythm of use: daily — the owner intends to use the assistant every day and expects it to proactively notify them throughout the day (2026-08-03).
 
@@ -64,8 +64,6 @@ A **Life Area** is a domain of personal life the assistant organizes (see the [g
 - **Scale** — no engineering effort is spent supporting more load, users or data volume than one person's life produces.
 
 ## Success criteria and failure signals
-
-TBD — pending owner input.
 
 Daily use is confirmed intent (2026-08-03). The two working criteria:
 

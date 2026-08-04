@@ -21,4 +21,4 @@ Workers cron trigger scans due Reminders → `web-push` under `nodejs_compat` �
 
 ## Open Questions
 
-- Fallback channel (e-mail-to-self, ntfy) if iOS Web Push proves unreliable — allowed without a new ADR (ADR-0005); trigger not yet hit.
+- Fallback channel (e-mail-to-self, ntfy) if Web Push proves unreliable in practice — allowed without a new ADR (ADR-0003). The owner's phone is **Android**, where Chrome delivers push without requiring the PWA to be installed, so the iOS-specific worry recorded in ADR-0004 does not apply here; the trigger is unlikely to fire for that reason.
