@@ -90,6 +90,8 @@ With `$TOKEN` = the production `API_BEARER_TOKEN` and `$BASE` = `https://praesto
 | D1 binding + migrations | `POST /api/tasks` then `GET /api/tasks` | `201` then the same Task back — this is the only check that proves the *remote* database and its migrations are up |
 | Schema really applied | `wrangler d1 execute praesto-db --remote --command "SELECT name FROM sqlite_master WHERE type='table'"` | `life_areas`, `push_subscriptions`, `recurrence_series`, `reminders`, `tasks`, `d1_migrations` |
 
+The last check is manual and has no `curl` equivalent: **install the PWA and actually use it.** There is no browser/e2e suite (see `docs/context/testing.md`), so this is the only thing that exercises the UI. First run, 2026-08-04, by the owner on **Android (Chrome) and Windows**: the icon landed on the home screen on both, then create a Task → complete it → create another → delete it → reload, all green against production.
+
 Two deploy warnings are expected and deliberate: `workers_dev` and `preview_urls` are absent from `wrangler.jsonc`, so both default to enabled. Preview URLs publish every version at its own hostname; that is acceptable only because every `/api/*` route is token-gated. Setting `preview_urls: false` is the move if that ever stops being true.
 
 ## Known issues and troubleshooting
