@@ -37,6 +37,50 @@ Atualizado pelo Docs Updater após cada aprovação de implementação.
 **What to do instead:** Single canonical store, thin clients. If offline capture proves painful, a superseding ADR (replicas + CalDAV hub is the declared candidate).
 **Areas affected:** all
 
+**Carve-out (ADR-0007, 2026-08-04).** This rule is about replicating Praesto's *own* store across the owner's devices. Integrating with Google Calendar — a system a third party already operates — is a different problem and is permitted, bounded by three limits: **L1** only Events cross (closed mirror inventory); **L2** only the provider's own mechanisms are used (Google's `syncToken`, `etag`, `status: cancelled`) — building our own change-log, tombstone table, cursor protocol, vector clock or divergent-version merge stays forbidden; **L3** no queue of our own — the push set is derived state (`content_hash <> synced_content_hash`), self-healing and logless. **Tripwire:** if a change needs to invent one of the mechanisms in L2, the anti-pattern is returning — stop and open a new decision.
+
+## Field-level merge of Events
+
+**What it is:** Reconciling a sync conflict field by field ("keep their title, my time").
+**Why it's forbidden:** It requires per-field timestamps — literally the CRDT vocabulary this project rejected (ADR-0007).
+**What to do instead:** Last-writer-wins per item, with the three hard exceptions: deletion beats edit; a technical tie (<60 s, both dirty) keeps local and asks; the loser is stored and surfaced with a restore action, never silently discarded.
+**Areas affected:** events
+
+## Treating absence in a full re-sync as a deletion
+
+**What it is:** Deleting local Events that did not appear in a full re-sync after a `410 GONE`.
+**Why it's forbidden:** A stale sync token would erase the owner's agenda. Only an explicit provider cancellation deletes (ADR-0007, domain invariant 7).
+**What to do instead:** Full re-sync is an upsert with zero deletions.
+**Areas affected:** events
+
+## Using `updated_at` as the sync dirty flag
+
+**What it is:** Deciding what to push to Google from the `$onUpdate` timestamp.
+**Why it's forbidden:** `updated_at` also fires when a *remote* change is applied, so every pull marks rows dirty and pushes them back — an infinite echo rewriting the owner's agenda every 5 minutes and spamming his phone with Google notifications.
+**What to do instead:** Dirty is `content_hash <> synced_content_hash`; the remote-apply path writes both hashes in the same statement, through repository functions no API route can reach.
+**Areas affected:** events
+
+## Mirroring Tasks, Reminders or Life Areas to Google
+
+**What it is:** Pushing anything beyond Events to the external calendar.
+**Why it's forbidden:** The ADR-0007 mirror inventory is closed and is the CON-005 consent boundary. Widening it needs its own ADR (the owner wants Tasks/Reminders eventually — it is in the roadmap backlog).
+**What to do instead:** Keep the mapper structurally incapable of serializing them.
+**Areas affected:** tasks, reminders, life-areas, events
+
+## Re-serializing a recurrence rule Praesto cannot express
+
+**What it is:** Reading a Google RRULE with `BYSETPOS`, `BYMONTH`, `WKST` or multiple `RDATE`/`EXDATE`, flattening it into Praesto's vocabulary, and writing it back.
+**Why it's forbidden:** It destroys the owner's real agenda silently and permanently.
+**What to do instead:** Store the rule verbatim, flag it unsupported, mark the series read-only in the UI with the reason shown.
+**Areas affected:** events
+
+## Mirroring Google's own reminders, or third-party attendees
+
+**What it is:** Letting pushed Events keep Google's default reminders, or copying attendee lists into D1.
+**Why it's forbidden:** Google reminders would double every notification — the exact "duplicated entries between tools" pain in the problem statement. Attendees are other people's PII and would land in the FR-042 export.
+**What to do instead:** Push with `reminders: { useDefault: false, overrides: [] }`; keep only a `has_guests` flag and a link to open in Google.
+**Areas affected:** events, reminders
+
 ## Editing accepted ADRs
 
 **What it is:** Modifying the content of an accepted decision record.

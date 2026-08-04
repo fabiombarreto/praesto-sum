@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-03
+last_updated: 2026-08-04
 review_trigger: "the owner validates the seeded requirements or confirms the MVP scope, or a scope change / accepted backlog idea touches any FR"
 ---
 
@@ -57,6 +57,10 @@ review_trigger: "the owner validates the seeded requirements or confirms the MVP
 | FR-024 | The owner can see all Events of a given week (week view). | Should | accepted |
 | FR-025 | The owner can attach a Reminder to an Event **or a Task**, set to fire at a chosen moment (absolute, or relative to the Event start / Task deadline). | Must | accepted |
 | FR-026 | An Event can recur on a schedule (e.g. "meeting every Monday"), sharing the recurrence model of FR-009. | Should | accepted |
+| FR-027 | The owner can see Events from his external (Google) calendar inside Praesto, alongside his own items, visually distinct; he chooses which calendars are included. Per [ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md). | Must | accepted |
+| FR-028 | Events created, edited or deleted in Praesto are reflected in Google, and vice versa, within one sync cycle. A real conflict surfaces both versions with a restore action — never a silent overwrite. | Must | accepted |
+| FR-029 | Recurring Events round-trip between Praesto and Google, including per-occurrence exceptions. A rule Praesto cannot express is preserved verbatim and marked read-only rather than flattened. | Should | accepted |
+| FR-030 | The owner can connect and disconnect the external calendar with explicit consent; disconnecting revokes access and preserves 100% of the local data. | Must | accepted |
 
 ## Cross-cutting requirements
 
@@ -117,6 +121,9 @@ Every accepted requirement now has a phase and a delivery unit. The unit column 
 | FR-024 | Phase 2 | 14 `week-view` |
 | FR-026 | Phase 2 | 15 `recurring-events` |
 | FR-025 (Event side) | Phase 2 | 16 `event-reminders` |
-| FR-010 | Phase 2 | 17 `task-event-links` |
+| FR-027, FR-030 | Phase 1 (declared exception) | 4 `google-calendar-read` |
+| FR-028 | Phase 2 | 15 `google-calendar-write` |
+| FR-029 | Phase 2 | 19 `google-recurring-events-sync` |
+| FR-010 | Phase 2 | 20 `task-event-links` |
 
 Corrected on 2026-08-03: FR-006, FR-008 and FR-043 were previously listed as "Unscheduled". FR-043 in particular contradicted [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md), which already treated automated snapshots as a binding safeguard rather than optional work.

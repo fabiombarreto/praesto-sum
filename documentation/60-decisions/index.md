@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-03
+last_updated: 2026-08-04
 review_trigger: "an ADR is created or changes state, or a pending decision is added, reordered or resolved"
 ---
 
@@ -17,9 +17,11 @@ One file per decision, named `ADR-nnnn-short-kebab-title.md` and copied from [ad
 
 The order was deliberate: the data posture constrained the interface, and both constrained the stack. Decisions 1–3 were resolved on 2026-08-03 by [ADR-0003](ADR-0003-store-canonical-data-in-cloudflare-d1.md) (canonical data on Cloudflare D1 + Workers), [ADR-0004](ADR-0004-single-pwa-as-sole-interface.md) (single installable PWA as the sole MVP interface) and [ADR-0005](ADR-0005-implementation-stack-react-vite-hono-drizzle.md) (React SPA + Vite + Hono + Drizzle stack). Numbers are stable and never reused.
 
+**The queue is empty.** Decision 4 was resolved on 2026-08-04 by [ADR-0007](ADR-0007-google-calendar-bidirectional-sync.md) — the owner arbitrated the privacy × convenience trade-off in favour of bidirectional Google Calendar sync for Events, under a closed mirror inventory. New decisions are added here as they arise.
+
 | # | Topic | Why it comes at this position | Blocks what |
 |---|---|---|---|
-| 4 | External calendar integration posture (e.g. Google Calendar sync now vs later) | Trade-off of privacy × convenience — the owner arbitrates; can be decided after the MVP scope is set | Calendar-sync requirements and integration design |
+| — | *(none pending)* | | |
 
 ## Decisions index
 
@@ -31,3 +33,4 @@ The order was deliberate: the data posture constrained the interface, and both c
 | [ADR-0004](ADR-0004-single-pwa-as-sole-interface.md) | Adopt a single installable PWA as the sole interface | accepted | 2026-08-03 |
 | [ADR-0005](ADR-0005-implementation-stack-react-vite-hono-drizzle.md) | Implementation stack — React 19 SPA + Vite + Hono + Drizzle ORM | accepted | 2026-08-03 |
 | [ADR-0006](ADR-0006-recurrence-model.md) | Recurrence: shared rule, per-entity instantiation, missed recording | accepted | 2026-08-03 |
+| [ADR-0007](ADR-0007-google-calendar-bidirectional-sync.md) | Bidirectional Google Calendar sync for Events, closed mirror inventory | accepted | 2026-08-04 |

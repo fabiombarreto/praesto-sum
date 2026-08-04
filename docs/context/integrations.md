@@ -20,6 +20,11 @@
 - **Purpose:** single-user access control for `/api/*`.
 - **Auth:** static bearer token (one user, no accounts — CON-002); stored as a Worker secret. Optionally hardened later with Cloudflare Access (ADR-0003 allows without superseding).
 
-## Google Calendar (NOT integrated)
+## Google Calendar (bidirectional, Events only)
 
-- Pending decision 4 in `documentation/60-decisions/index.md` — privacy × convenience trade-off the owner arbitrates near Phase 2. Do not build against it.
+- **Purpose:** mirror the owner's commitments both ways (FR-027..FR-030), decided by `documentation/60-decisions/ADR-0007-google-calendar-bidirectional-sync.md`.
+- **Auth:** OAuth 2.0 user consent; the long-lived **refresh token is a Worker secret** (`GOOGLE_REFRESH_TOKEN`), never committed. The OAuth app must be in *published* status — in "Testing" the refresh token expires every 7 days.
+- **Scope:** `calendar.events.readonly` for the read phase, upgraded to `calendar.events` at an explicit re-consent for write. **Never `calendar`** (it can delete whole calendars).
+- **Transport:** polling on the existing `*/5` cron — **not** `events.watch` webhooks, which would need a public unauthenticated route (breaching ADR-0003 safeguard 4) and are not reliable enough to replace polling anyway.
+- **Gotchas:** incremental pull uses `syncToken` with **frozen query parameters** and `showDeleted=true` (deletions arrive as `status: cancelled`); `410 GONE` is routine and recovers by full re-sync **as upsert with zero deletions**; writes carry `If-Match` (412 = conflict, never force) and a deterministic insert id so a retry yields 409 instead of a duplicate; the free-plan cron caps subrequests, so backfill is bounded and resumable with a persisted cursor.
+- **Boundaries:** only Events cross; see `docs/anti-patterns.md` for the six rules this integration must not break.

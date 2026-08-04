@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-03
+last_updated: 2026-08-04
 review_trigger: "a constraint is challenged by a decision under analysis, or the owner states time or budget limits"
 ---
 
@@ -28,7 +28,7 @@ review_trigger: "a constraint is challenged by a decision under analysis, or the
 | ID | Constraint | Current value |
 |---|---|---|
 | CON-003 | Time available for the project (hours per week, expected cadence). | About **1 hour/day** (declared by the owner 2026-08-03). Phases and plans must be sliced to fit ~7 h/week of solo work. |
-| CON-004 | Money budget (upfront and recurring). | Effectively ~zero: while resolving decision 1 (2026-08-03, [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md)) the owner declined both one-time hardware (~R$550–700) and a ~R$25/month VPS. A formal ceiling remains TBD — pending owner input. |
+| CON-004 | Money budget (upfront and recurring). | Effectively ~zero: while resolving decision 1 (2026-08-03, [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md)) the owner declined both one-time hardware (~R$550–700) and a ~R$25/month VPS. Refined on 2026-08-04 ([ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md)): a domain of the owner's own (~R$50/year) is **authorized** if Google verification requires it; **Cloudflare Workers Paid (US$5/month) is not authorized** — the Google backfill must fit the free plan by construction (bounded initial window, one page per cron tick, persisted cursor). Work that genuinely cannot fit stops and becomes a new decision; it never silently becomes a paid plan. |
 
 ## Personal principles as constraints
 
@@ -39,4 +39,6 @@ review_trigger: "a constraint is challenged by a decision under analysis, or the
 | CON-005 | Personal data stays under the owner's control. | Any alternative in which a third party holds the only copy of the data, or can read it without explicit revocable consent, is eliminated. Measured by QA-001 in [quality-attributes.md](quality-attributes.md). Shaped decision 1, resolved by [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md). |
 
 > Interpretation recorded 2026-08-03 ([ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md)): a provider-readable managed database (Cloudflare D1) is accepted under CON-005's "explicit, revocable consent" clause — the owner consented explicitly, the provider never holds the only copy (automated local snapshots are a binding safeguard), and exit is guaranteed by the day-1 export.
+
+> Second interpretation recorded 2026-08-04 ([ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md)): bidirectional Google Calendar sync is accepted under the same clause, with a **closed mirror inventory** — only **Events** cross to Google; Tasks, Reminders, Life Areas, Task↔Event links, priorities and the `missed` history never leave Praesto, and third-party attendees are never mirrored inward. The inventory is enforced by construction (the mapper has no code path to serialize them), not by policy. Widening it — including the owner's future wish to sync Tasks and Reminders — requires its own ADR. Consent is revocable: disconnecting revokes the token and keeps 100% of local data (FR-030).
 | CON-006 | Maintenance must be sustainable by one person indefinitely. | Any alternative requiring ongoing operational babysitting, paid renewal rituals, or expertise the owner does not intend to maintain is eliminated. Measured by QA-002 and QA-004 in [quality-attributes.md](quality-attributes.md). |

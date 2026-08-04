@@ -1,6 +1,6 @@
 ---
 status: draft
-last_updated: 2026-08-03
+last_updated: 2026-08-04
 review_trigger: "a new domain concept appears, an ambiguity is resolved, or the glossary changes"
 ---
 
@@ -55,6 +55,7 @@ Something that occupies a specific position in time on the calendar.
 - Location (optional)
 - Life Area it belongs to
 - Linked Tasks (zero or more — N:N, resolved 2026-08-03)
+- **Provenance** ([ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md), first-class from birth): `source` (`local` | `google` — a domain fact, it changes what the UI allows), `all_day` (Google's all-day events have an *exclusive* end date), and an IANA timezone per Event. External linkage (Google ids, etag, content hashes, sync state) lives in a **separate** `event_sync_links` table, never as columns on Event — abandoning the integration must be dropping a table, not altering the core entity
 - Recurrence via **Recurrence Series** + **Event Exceptions** ([ADR-0006](../60-decisions/ADR-0006-recurrence-model.md)): the recurring Event is one master record; occurrences are expanded virtually over the visible window, never materialized; "only this" edits become exception records
 
 ### Reminder
@@ -94,6 +95,9 @@ A named domain of the owner's personal life that groups Tasks and Events.
 3. A Task or Event MAY exist without a Life Area; area-less items surface in an implicit "Unsorted" grouping in the UI — no default area is stored — resolved 2026-08-03.
 4. Tasks and Events are always distinct and never convert into one another; they relate through an N:N link — resolved 2026-08-03.
 5. At most ONE open occurrence exists per active Recurrence Series; an occurrence superseded without completion becomes `missed` (terminal), and every skipped cycle leaves a permanent record — resolved 2026-08-03 ([ADR-0006](../60-decisions/ADR-0006-recurrence-model.md)).
+6. An external Event is identified by the pair (external calendar id, external event id) and never by title or time — resolved 2026-08-04 ([ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md)).
+7. Absence from a full re-sync is NEVER a deletion. Only an explicit cancellation from the provider deletes; a full re-sync is an upsert with zero deletions — the difference between a stale token and an erased agenda.
+8. Praesto-only attributes of an Event (its Life Area, its links to Tasks) are never overwritten by a remote change, because they do not exist on the remote side.
 
 ## Expected evolution
 

@@ -1,6 +1,6 @@
 ---
 status: draft
-last_updated: 2026-08-03
+last_updated: 2026-08-04
 review_trigger: "a pending technical decision is resolved (new ADR accepted), or stack/component/data/integration changes"
 ---
 
@@ -9,7 +9,7 @@ review_trigger: "a pending technical decision is resolved (new ADR accepted), or
 > **Purpose:** The technical shape of the system — drivers, C4 context and containers, data, integrations and risks — with every unresolved area marked as an explicit gap.
 > **Update when:** A pending decision from the queue is resolved (new ADR), or the stack, a component, the data model posture or an integration changes.
 
-This document is born mostly empty by design. Phase 0 is documentation-first: the structure below shows *where* each answer will live, and each gap points at the decision that will fill it. See the [pending decisions queue](../60-decisions/index.md).
+Written during Phase 0 as a mostly-empty shape with each gap pointing at the decision that would fill it. All of those decisions are now resolved (ADR-0003..0007) and the [pending decisions queue](../60-decisions/index.md) is empty; what remains marked TBD below is genuinely undecided, not merely unwritten.
 
 ## Architecture drivers
 
@@ -28,21 +28,20 @@ The order in which the resulting decisions are taken is owned by the [pending de
 
 ## System context (C4 level 1)
 
-> Draft — the calendar provider is a candidate integration, not a decided one.
+> Google Calendar is a decided, bidirectional integration since 2026-08-04 ([ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md)).
 
 ```mermaid
 flowchart LR
     owner(["Owner<br/>(single user)"])
     pa["Praesto Sum<br/>(system under design)"]
-    cal["External calendar provider<br/>candidate — pending decision"]
+    cal["Google Calendar<br/>(bidirectional, Events only)"]
 
     owner <--> pa
-    pa -.-> cal
-
-    style cal stroke-dasharray: 5 5
+    owner <--> cal
+    pa <--> cal
 ```
 
-The only confirmed actor is the owner. The external calendar provider is shown dashed because it is **candidate — pending decision** (decision 4 in the [pending decisions queue](../60-decisions/index.md)).
+Two actors now: the owner, and Google Calendar as a confirmed bidirectional integration ([ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md)). The owner keeps using Google directly (phone lock screen, car, watch, sharing with other people); Praesto mirrors **Events only**, in both directions.
 
 ## Containers (C4 level 2)
 
@@ -79,7 +78,7 @@ Canonical copy in Cloudflare D1 (SQLite-class managed database), per [ADR-0003](
 ## External integrations
 
 - Web Push (VAPID) delivers Reminder notifications to the installed PWA — part of [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md).
-- External calendar integration (e.g. Google Calendar sync): TBD — see the pending decisions queue in [60-decisions/index.md](../60-decisions/index.md) (decision 4).
+- **Google Calendar, bidirectional for Events** — decided by [ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md). OAuth with a long-lived refresh token stored as a Worker secret; scope `calendar.events` (never `calendar`); **polling** on the existing cron, never `events.watch` webhooks (they would need a public unauthenticated route, breaching ADR-0003 safeguard 4). Pull is incremental with Google's own `syncToken`; writes carry `If-Match` and a deterministic id so a retry cannot duplicate. Only Events cross — the mirror inventory is closed and enforced by construction.
 
 ## Security and privacy of personal data
 
@@ -90,16 +89,16 @@ Canonical copy in Cloudflare D1 (SQLite-class managed database), per [ADR-0003](
 - Any future sync or integration must be opt-in and reversible — the owner can always get all data out.
 - Recorded consent ([ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md)): Cloudflare can technically read D1 contents (no E2EE). Accepted under CON-005's explicit-revocable-consent clause, mitigated by mandatory local snapshots and a guaranteed exit path; field-level encryption is a possible future ADR.
 - API access requires an authentication token on every route (single user); the only unauthenticated surface is the PWA shell.
-- Threat model details: TBD — refined with decisions 2–3 in the [pending decisions queue](../60-decisions/index.md).
+- Recorded consent ([ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md)): Google gains continuous programmatic access to the owner's calendar, accepted under the same CON-005 clause and bounded by a **closed mirror inventory** — Events only. Revocation keeps 100% of local data (FR-030).
+- Threat model details: TBD — no decision blocks this; it is refined as real surfaces land.
 
 ## Risks and known technical debt
 
 | Risk | Why it is real now | Mitigation |
 |---|---|---|
 | Documentation rot | The project is documentation-only; docs that drift from reality poison every future session | Maintenance map and audit ritual in the [README](../README.md); `review_trigger` on every doc |
-| Decision paralysis in Phase 0 | Four interdependent decisions pending with no code to force a choice | Fixed decision order in the [pending decisions queue](../60-decisions/index.md); each decision closes with an ADR, never re-litigated |
-
-No technical debt exists yet — there is no code.
+| Google OAuth durability | An app in "Testing" publishing status gets refresh tokens expiring every 7 days, which would break QA-002; official docs contradict each other on whether publishing a sensitive scope needs verification first | Roadmap chores C11/C12 settle it empirically before any integration unit is planned; the fallback path (own domain + verification) is authorized and budgeted |
+| Silent damage to the owner's real Google calendar | Write-back acts on data that lives outside D1 and that Praesto cannot restore on its own | [ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md): scope never wider than `calendar.events`, deterministic insert ids, `If-Match` on writes, full re-sync as upsert with zero deletions, and a proven restore (chore C6) before every migration over real data |
 
 ## Key decisions
 
@@ -109,4 +108,6 @@ No technical debt exists yet — there is no code.
 | Data storage and ownership posture | [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md) — canonical data in Cloudflare D1 behind Workers, mandatory local snapshots |
 | Interface type | [ADR-0004](../60-decisions/ADR-0004-single-pwa-as-sole-interface.md) — single installable PWA as the sole MVP interface |
 | Implementation stack (PWA framework, D1 layer, tooling) | [ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md) — React 19 SPA + Vite + Hono + Drizzle ORM |
+| Recurrence model | [ADR-0006](../60-decisions/ADR-0006-recurrence-model.md) — shared rule; Tasks materialize the current occurrence with `missed` recording, Events expand virtually |
+| External calendar posture | [ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md) — bidirectional Google Calendar sync for Events only, closed mirror inventory |
 | External calendar integration posture | TBD — decision 4 in the [pending decisions queue](../60-decisions/index.md) |

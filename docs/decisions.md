@@ -73,6 +73,15 @@ Atualizado pelo Docs Updater após cada aprovação de implementação.
 
 ---
 
+## [2026-08-04] Bidirectional Google Calendar sync for Events
+
+**Context:** The owner arbitrated pending decision 4, asking to read, create, edit and delete in his Google calendar, as early as possible. Research found the OAuth "Testing" 7-day refresh-token expiry (violates QA-002) and that publishing removes it, with a documented personal-use exception to verification — unsettled between two official pages, hence the C11/C12 spike.
+**Decision:** Bidirectional sync for **Events only**, scope `calendar.events` (never `calendar`), polling on the existing cron (never `events.watch`), conservative phasing (read in Phase 1, write in Phase 2). Closed mirror inventory: Tasks, Reminders, Life Areas, links, priorities and `missed` history never leave Praesto. LWW per item with deletion-beats-edit, tie-asks, and no silent loser. Dirty flag is a content hash, never `updated_at`. Own domain authorized if verification demands it; Workers Paid not authorized — backfill must fit the free plan.
+**Reason:** Google already holds the owner's events; the privacy delta is the token and future scope creep, held by the closed inventory. Using the provider's own syncToken/ETag keeps the "no sync engine" rule intact under a bounded carve-out.
+**Areas affected:** events, reminders, tasks · Source: `documentation/60-decisions/ADR-0007-google-calendar-bidirectional-sync.md`
+
+---
+
 <!-- Template for future entries:
 
 ## [YYYY-MM-DD] Title of the decision
