@@ -1,6 +1,6 @@
 ---
-tdd: false
-tdd_evidence: null
+tdd: true
+tdd_evidence: "user-declared"
 test_frameworks: ["vitest"]
 docs_sync: true
 figma_track: false
@@ -11,27 +11,39 @@ visual_first_approval: auto
 
 ## TDD (Test-Driven Development)
 
-Current state: **not declared** (default).
+Current state: **declared active** by the owner on 2026-08-04
+(`documentation/60-decisions/ADR-0008-adopt-test-first-methodology.md`).
 
-The TDD track (agents B7 and B8) activates only when `tdd: true` in the
-frontmatter above. Heuristics MUST NOT flip this value — only a human edit
-or an explicit user declaration can.
+The pipeline order is therefore test-first: `/relay-plan` →
+`/relay-plan-review` → `/relay-write-test` → `/relay-test-write-review` →
+implement → code review → `/relay-test`. The test pair derives the suite
+from the PRD's Acceptance Criteria **before** the Implementer runs, and the
+suite must be RED for the right reason before any production code exists.
 
-### Observed signals
+### Scope of the practice (read this before writing tests)
 
-- None suggesting TDD. On the contrary: `documentation/40-engineering/testing-strategy.md`
-  explicitly declares a pragmatic test-after philosophy for a solo personal
-  project (automated tests where regressions hurt, manual verification where
-  they don't).
-- Test tooling landed with the Phase 1 scaffold (2026-08-03): Vitest 4 +
-  `@cloudflare/vitest-pool-workers`, running in real workerd against an
-  ephemeral D1 (`npm test`). Recorded in `test_frameworks` above — this is
-  informative only and does NOT activate the TDD track.
+TDD here applies to what `documentation/40-engineering/testing-strategy.md`
+already lists as automated: API routes and their validation, the auth gate,
+data-layer invariants (notably the ADR-0006 ones), pure domain logic in
+`src/shared` (recurrence expansion, dates, timezone/DST), the `scheduled()`
+jobs, export completeness, and the Google Calendar sync rules of ADR-0007.
 
-### How to activate
+It does **not** mean writing React component tests first: the same document
+deliberately keeps UI verification manual, and that split is unchanged. A
+PRD whose acceptance criteria are purely visual produces no test file — that
+is the `EXISTING_COVERAGE_SUFFICIENT` / no-test-required path, not a
+violation.
 
-1. Confirm with the owner that TDD is the declared methodology.
-2. Change `tdd: false` to `tdd: true` above.
-3. Set `tdd_evidence` to `"user-declared"` or the path that records the
-   decision.
-4. Ensure `test_frameworks` lists frameworks the plugin should drive.
+### Cost, recorded honestly
+
+Test-first adds two agent round-trips per delivery unit and lengthens each
+one. The roadmap's estimates were made before this decision and already
+exclude the PRD → plan → review cycle; treat them as a floor that TDD
+raises further, not as a promise.
+
+### How to deactivate
+
+Heuristics MUST NOT flip this value — only a human edit or an explicit owner
+declaration can. Reverting means setting `tdd: false`, clearing
+`tdd_evidence`, and recording a superseding ADR; the guardrail in
+`docs/context/testing.md` stays in force either way.

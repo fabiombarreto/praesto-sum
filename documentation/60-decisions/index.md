@@ -34,3 +34,4 @@ The order was deliberate: the data posture constrained the interface, and both c
 | [ADR-0005](ADR-0005-implementation-stack-react-vite-hono-drizzle.md) | Implementation stack — React 19 SPA + Vite + Hono + Drizzle ORM | accepted | 2026-08-03 |
 | [ADR-0006](ADR-0006-recurrence-model.md) | Recurrence: shared rule, per-entity instantiation, missed recording | accepted | 2026-08-03 |
 | [ADR-0007](ADR-0007-google-calendar-bidirectional-sync.md) | Bidirectional Google Calendar sync for Events, closed mirror inventory | accepted | 2026-08-04 |
+| [ADR-0008](ADR-0008-adopt-test-first-methodology.md) | Adopt test-first (TDD) as the declared methodology | accepted | 2026-08-04 |

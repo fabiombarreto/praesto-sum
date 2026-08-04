@@ -43,7 +43,7 @@ Phases are sequential; a phase opens only when the previous one meets its exit c
 
 > This table is a **living guide, not a schedule**. There are no promised dates — only order and dependencies. The order is a hypothesis about what serves the owner best *now*; it should change when real use says otherwise. A recorded reordering is not a planning failure — it is the document working.
 
-Each unit is one PRD (`PRPs/prds/<unit>.prd.md`), sized to the owner's ~1 h/day budget (CON-003). Estimates are in days of ~1 h and are a **floor**, excluding the PRD → plan → review cycle itself.
+Each unit is one PRD (`PRPs/prds/<unit>.prd.md`), sized to the owner's ~1 h/day budget (CON-003). Estimates are in days of ~1 h and are a **floor**, excluding the PRD → plan → review cycle itself — and, since [ADR-0008](../60-decisions/ADR-0008-adopt-test-first-methodology.md), excluding the test-first pass that now precedes every implementation. They were not rewritten: a floor that rises is still a floor, and the ~10-day ceiling rule (split, never inflate) still applies.
 
 | # | Unit | Outcome | FRs | Depends on | Est. | State | Exit signal |
 |---|---|---|---|---|---|---|---|
@@ -78,7 +78,7 @@ Each unit is one PRD (`PRPs/prds/<unit>.prd.md`), sized to the owner's ~1 h/day 
 
 ### How units are built
 
-Two rules, confirmed by the owner on 2026-08-03, recorded as delivery discipline in [engineering-conventions](../40-engineering/engineering-conventions.md#delivery-discipline): every unit is **API-first internally** (routes and tests green before any UI), and unit 2 freezes the Task wire contract.
+Three rules. Two confirmed by the owner on 2026-08-03 and recorded as delivery discipline in [engineering-conventions](../40-engineering/engineering-conventions.md#delivery-discipline): every unit is **API-first internally** (routes and tests green before any UI), and unit 2 freezes the Task wire contract. The third, added 2026-08-04 by [ADR-0008](../60-decisions/ADR-0008-adopt-test-first-methodology.md): every unit is **test-first** for everything on the automated side of the [testing strategy](../40-engineering/testing-strategy.md) — the suite comes from the PRD's acceptance criteria and is RED before implementation. UI stays manually verified; that split did not change.
 
 ### How this roadmap changes
 
@@ -154,6 +154,7 @@ Newest first. One row per meaningful delivery, reordering or state change, added
 
 | Date | Delivered |
 |---|---|
+| 2026-08-04 | **Methodology switched to test-first** ([ADR-0008](../60-decisions/ADR-0008-adopt-test-first-methodology.md)) at the owner's declaration: `tdd: true` in `docs/context/methodology.md` activates relay's test pair between plan review and implementation. Scope unchanged (UI stays manually verified); estimates unchanged and explicitly still a floor |
 | 2026-08-04 | **Decision 4 resolved** — bidirectional Google Calendar sync accepted for Events ([ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md)) with the CON-005 consent record and a bounded carve-out of the sync anti-pattern. Three new units (`google-calendar-read` #4, `google-calendar-write` #15, `google-recurring-events-sync` #19); old units 4–17 renumbered to 5–20; `events-and-day-view` and `recurring-events` rescoped to be born sync-aware (+1 day each); chores C11/C12/C13 added and C8 brought forward. Total 67 → 87 unit-days. Owner's choices: scope `calendar.events`, conservative phasing, own domain authorized if verification is required, Workers Paid **not** authorized |
 | 2026-08-04 | Owner requested bidirectional Google Calendar sync (read/create/edit/delete), arbitrating pending decision 4. Research surfaced the OAuth "Testing" 7-day refresh-token expiry as a hard gate; chores C11/C12 created to settle it empirically, C8 (ADR-0007) brought forward from "before unit 13" |
 | 2026-08-04 | **First production deploy** (chores C1–C3) — real D1 provisioned and migrated, production token stored as a secret, PWA icons generated from a versioned vector source, and the Worker published at `https://praesto.fabiobarreto.workers.dev`. Smoke test green: token gate closed and open, SPA served, and a Task written to and read back from the remote D1. Runbook in [dev-environment](../40-engineering/dev-environment.md#deploy-runbook). Unit 1 is unblocked |

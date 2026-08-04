@@ -1,15 +1,19 @@
 ---
 status: active
-last_updated: 2026-08-03
-review_trigger: "practice shows the split is too heavy or too light, or a new test tier is added"
+last_updated: 2026-08-04
+review_trigger: "practice shows the split is too heavy or too light, a new test tier is added, or the methodology flag changes"
 ---
 
 # Testing Strategy
 
 > **Purpose:** What gets tested, what deliberately does not, and what "done" means for any change.
-> **Update when:** The tech stack is chosen, the MVP scope is fixed, or practice shows the strategy is too heavy or too light.
+> **Update when:** Practice shows the split is too heavy or too light, a new test tier is added, or the methodology flag in [docs/context/methodology.md](../../docs/context/methodology.md) changes.
 
 ## Philosophy
+
+**Test-first since 2026-08-04** ([ADR-0008](../60-decisions/ADR-0008-adopt-test-first-methodology.md)): for everything on the automated side of the split below, the suite is derived from the PRD's Acceptance Criteria and is RED before the implementation exists. The relay pipeline enforces the ordering (`/relay-write-test` → `/relay-test-write-review` run between plan review and implementation), and `docs/context/methodology.md` carries the flag the agents read.
+
+That does not change *what* is automated — only *when* it is written. The philosophy below still governs the split, and the manual side stays manual.
 
 Pragmatic testing for a solo personal project: automated tests where regressions hurt, manual verification where they don't. The single user is also the developer, so the cost of a bug is low and the cost of over-testing is paid directly in evenings — but silent regressions in the areas the owner relies on daily (the data that represents their life) are exactly the kind that erode trust in the tool.
 
@@ -34,9 +38,10 @@ When a case is unclear, it gets a row here before any test is written or skipped
 
 ## Definition of Done
 
-A change is done only when all four hold:
+A change is done only when all five hold:
 
 1. **It works** — the change behaves as intended, verified by running it.
-2. **The gate is green** — `npm test` and `npm run check` (types + `tsc -b` + ESLint + Prettier) both pass. Tests touching changed behavior are updated to the new intent, never weakened or skipped.
-3. **Schema changes reviewed for remote safety** — if a migration was generated, its SQL was read, and any `PRAGMA foreign_keys=OFF/ON` was rewritten as `PRAGMA defer_foreign_keys` (it passes locally and fails on remote D1).
-4. **Affected docs are updated in the same session** — per the maintenance map in [../README.md](../README.md) and golden rule 2 of the [documentation guidelines](../00-meta/documentation-guidelines.md). "I'll document it later" fails the definition.
+2. **Tests came first where they apply** — for anything on the automated side of the split above, a failing test derived from the acceptance criteria existed before the implementation ([ADR-0008](../60-decisions/ADR-0008-adopt-test-first-methodology.md)). A purely visual change legitimately produces no test file; a behavioural one produces a test that was RED first.
+3. **The gate is green** — `npm test` and `npm run check` (types + `tsc -b` + ESLint + Prettier) both pass. Tests touching changed behavior are updated to the new intent, never weakened or skipped.
+4. **Schema changes reviewed for remote safety** — if a migration was generated, its SQL was read, and any `PRAGMA foreign_keys=OFF/ON` was rewritten as `PRAGMA defer_foreign_keys` (it passes locally and fails on remote D1).
+5. **Affected docs are updated in the same session** — per the maintenance map in [../README.md](../README.md) and golden rule 2 of the [documentation guidelines](../00-meta/documentation-guidelines.md). "I'll document it later" fails the definition.

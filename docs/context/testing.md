@@ -7,9 +7,11 @@ and whether or not a relay command was used. Skipping any step silently
 is a violation.
 
 `docs/context/methodology.md` governs whether the TDD track (writing
-tests first) is active. THIS file governs keeping the existing suites
-green afterward. They are independent: even with `tdd: false`, the
-guardrail below is always in force. This guardrail is also NOT subject to
+tests first) is active — since 2026-08-04 it is (`tdd: true`, ADR-0008),
+so behavioural work starts from a failing test. THIS file governs keeping
+the existing suites green afterward, and the two are independent: the
+guardrail below binds every change regardless of the methodology flag,
+including changes made without any relay command. This guardrail is also NOT subject to
 the `docs/decision-gate.md` scope exemptions — a change that is "exempt"
 from the gate still requires every step here.
 

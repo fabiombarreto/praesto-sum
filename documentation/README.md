@@ -70,7 +70,7 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 40-engineering/tech-stack.md | active | 2026-08-03 |
 | 40-engineering/engineering-conventions.md | active | 2026-08-03 |
 | 40-engineering/dev-environment.md | active | 2026-08-04 |
-| 40-engineering/testing-strategy.md | active | 2026-08-03 |
+| 40-engineering/testing-strategy.md | active | 2026-08-04 |
 | 50-planning/roadmap.md | active | 2026-08-04 |
 | 60-decisions/index.md | active | 2026-08-04 |
 | 60-decisions/ADR-0001-write-all-artifacts-in-english.md | accepted | 2026-08-02 |
@@ -80,6 +80,7 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md | accepted | 2026-08-03 |
 | 60-decisions/ADR-0006-recurrence-model.md | accepted | 2026-08-03 |
 | 60-decisions/ADR-0007-google-calendar-bidirectional-sync.md | accepted | 2026-08-04 |
+| 60-decisions/ADR-0008-adopt-test-first-methodology.md | accepted | 2026-08-04 |
 
 ## How AI assistants should use this folder
 
