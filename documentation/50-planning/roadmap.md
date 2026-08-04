@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-03
+last_updated: 2026-08-04
 review_trigger: "a unit changes state, a unit is reordered/deferred/dropped, a chore is executed, a phase opens or closes, or a backlog idea is triaged"
 ---
 
@@ -90,7 +90,7 @@ Two rules, confirmed by the owner on 2026-08-03, recorded as delivery discipline
 Derived from the table above — never a second, independently ageing list.
 
 - **Now:** nothing in `in-progress`. No PRD is open.
-- **Next:** unit 1 `install-and-quick-capture`, preceded by chores C1–C3 (their trigger is already due).
+- **Next:** unit 1 `install-and-quick-capture`. Chores C1–C3 closed on 2026-08-04, so nothing precedes it.
 - **Later:** positions 2 onward in the units table.
 
 ## Chores
@@ -99,9 +99,9 @@ Work that must happen but does not merit a PRD: no product decision space, no ac
 
 | Chore | Trigger | Done on |
 |---|---|---|
-| C1 — Create the real D1, replace the `database_id` placeholder, store the API token as a secret | Before unit 1 — unblocks everything | |
-| C2 — Produce the PWA icons (192, 512, maskable 512, apple-touch, badge-72) | Before unit 1; also required to verify unit 5 | |
-| C3 — First real deploy: build, deploy, remote migrations, smoke test, runbook in [dev-environment](../40-engineering/dev-environment.md) | After C1 and C2, before unit 1 | |
+| C1 — Create the real D1, replace the `database_id` placeholder, store the API token as a secret | Before unit 1 — unblocks everything | 2026-08-04 |
+| C2 — Produce the PWA icons (192, 512, maskable 512, apple-touch, badge-72) | Before unit 1; also required to verify unit 5 | 2026-08-04 |
+| C3 — First real deploy: build, deploy, remote migrations, smoke test, runbook in [dev-environment](../40-engineering/dev-environment.md) | After C1 and C2, before unit 1 | 2026-08-04 |
 | C4 — Generate the VAPID key pair; store the three keys as secrets | Immediately before unit 5 | |
 | C5 — Off-provider snapshot: local script + Windows Scheduled Task pulling `/api/export` to the owner's PC | Same week as unit 4, never later | |
 | C6 — Prove the restore: rebuild a throwaway D1 from a snapshot and compare row counts per table | Right after C5, and again before every migration over real data (units 12, 13, 15, 16, 17) | |
@@ -141,6 +141,7 @@ Newest first. One row per meaningful delivery, reordering or state change, added
 
 | Date | Delivered |
 |---|---|
+| 2026-08-04 | **First production deploy** (chores C1–C3) — real D1 provisioned and migrated, production token stored as a secret, PWA icons generated from a versioned vector source, and the Worker published at `https://praesto.fabiobarreto.workers.dev`. Smoke test green: token gate closed and open, SPA served, and a Task written to and read back from the remote D1. Runbook in [dev-environment](../40-engineering/dev-environment.md#deploy-runbook). Unit 1 is unblocked |
 | 2026-08-03 | Roadmap restructured into 17 ordered delivery units + 10 chores, with explicit reordering rules; unit 1 set to `next`; delivery discipline (API-first per unit, unit 2 freezes the Task contract) confirmed by the owner |
 | 2026-08-03 | **Phase 1 scaffold shipped** — stack installed and verified end to end (PWA → Worker → D1): Phase 1 schema + first migration, token-gated API, Task create/list/complete/delete, 12 tests green, `npm run check` green, build and deploy dry-run clean |
 | 2026-08-03 | Recurrence model decided after market research ([ADR-0006](../60-decisions/ADR-0006-recurrence-model.md)); vision gains principle 6 (honest mirror) and FR-011/FR-012 |

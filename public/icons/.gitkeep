@@ -1,4 +1,0 @@
-# Required PNGs (referenced by public/manifest.webmanifest and src/sw.ts):
-#   icon-192.png (192x192), icon-512.png (512x512),
-#   maskable-512.png (512x512, purpose maskable), badge-72.png (72x72, monochrome)
-# Without them the PWA builds and runs but is NOT installable.

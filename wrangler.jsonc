@@ -21,8 +21,8 @@
     {
       "binding": "DB",
       "database_name": "praesto-db",
-      // Replace with the id printed by: wrangler d1 create praesto-db
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      // Created 2026-08-04 by: wrangler d1 create praesto-db (region ENAM).
+      "database_id": "57c2e21c-dcf6-4152-a3d1-6746c5972ee6",
       "migrations_dir": "./migrations",
     },
   ],
