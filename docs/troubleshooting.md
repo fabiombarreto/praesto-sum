@@ -8,7 +8,9 @@ Documented cause on Windows 11: outdated Microsoft VC++ Redistributable. Update 
 
 ## Push notifications silently not arriving
 
-Push failure is silent by nature. Check, in order: VAPID keys present as secrets (`.dev.vars` / `wrangler secret`); the dedicated VAPID integration test passes; the PWA is installed (iOS REQUIRES home-screen install for Web Push); subscription not expired (cron should prune dead subscriptions). A manual test-push route saves hours.
+Push failure is silent by nature. Check, in order: VAPID keys present as secrets (`.dev.vars` / `wrangler secret`); the dedicated VAPID integration test passes; notification permission actually granted; subscription not expired (cron should prune dead subscriptions). A manual test-push route saves hours.
+
+The owner's phone is **Android**, where Chrome delivers Web Push whether or not the PWA is installed — installing only buys the home-screen icon and the standalone window. So "not installed" is NOT a push diagnosis here. (On iOS it would be: ADR-0004 records that requirement, written when the target device was assumed to be an iPhone.)
 
 ## The PWA shows a stale version ("it doesn't update")
 

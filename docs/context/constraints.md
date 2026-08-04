@@ -24,7 +24,7 @@
 
 - Cloudflare free plan: 100k requests/day, 5 cron triggers, D1 free storage — orders of magnitude above one person's scale.
 - Offline = read-only at best (PWA shell cache). Nothing can be captured without connectivity — accepted; revisit trigger declared in ADR-0003.
-- Web Push on iOS requires the PWA installed to the home screen and is less dependable — fallback channels allowed without a new ADR.
+- Web Push: the owner's phone is **Android**, where Chrome delivers push without the PWA being installed — installing only buys the home-screen icon and the standalone window. ADR-0004's "iOS requires home-screen install and is less dependable" consequence was written assuming an iPhone and does not apply to the owner's device; its iOS-unreliability revisit trigger is moot in practice. Fallback channels remain allowed without a new ADR.
 
 ## What NOT to do
 
