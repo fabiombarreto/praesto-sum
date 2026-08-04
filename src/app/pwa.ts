@@ -7,9 +7,10 @@ export interface PwaHandlers {
 }
 
 export function setupPwa({ onNeedRefresh, onOfflineReady }: PwaHandlers): void {
-  // `devOptions` is disabled in vite.config.ts, so no service worker exists
-  // during `vite dev` — registering there only produces a failed request and a
-  // console error. Exercise the real PWA (install prompt, precache, push) with
+  // This guard is what keeps the service worker out of `vite dev`: registering
+  // there only produces a failed request and a console error. `devOptions` in
+  // vite.config.ts is disabled to match, so nothing is generated to register
+  // either. Exercise the real PWA (install prompt, precache, push) with
   // `npm run preview`, which serves the production build.
   if (!import.meta.env.PROD) return;
 

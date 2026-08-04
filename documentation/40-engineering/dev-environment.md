@@ -95,7 +95,7 @@ Two deploy warnings are expected and deliberate: `workers_dev` and `preview_urls
 ## Known issues and troubleshooting
 
 - **workerd crash on Windows:** if `npm run dev` crashes workerd on startup, update the Microsoft VC++ Redistributable — documented cause on Windows 11.
-- **No service worker in `vite dev`.** `devOptions` is disabled, so `src/app/pwa.ts` skips registration outside production builds. Exercise the PWA (install, precache, push) with `npm run preview`.
+- **No service worker in `vite dev`.** `src/app/pwa.ts` skips registration outside production builds (the `import.meta.env.PROD` guard), and `devOptions` in `vite.config.ts` is disabled to match, so nothing is generated to register either. Exercise the PWA (install, precache, push) with `npm run preview`.
 - **Never write project files as UTF-8 with BOM.** Windows PowerShell's `Out-File -Encoding utf8` adds one, and the Vite/JSON parsers reject it (`Unexpected token '﻿'`). Use editors/tools that write plain UTF-8; `.gitattributes` handles line endings.
 - **Migration review before every remote deploy.** When a schema change forces SQLite table recreation, drizzle-kit emits `PRAGMA foreign_keys=OFF/ON`, which passes locally but FAILS on remote D1. Hand-edit those to `PRAGMA defer_foreign_keys = true/false`. Part of the Definition of Done for schema changes.
 - **`db:migrate:remote` targets production and auto-confirms** in non-interactive contexts. Never wire it into a watch script or CI.

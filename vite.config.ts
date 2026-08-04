@@ -30,8 +30,15 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2,webmanifest}"],
         maximumFileSizeToCacheInBytes: 3145728,
       },
-      // navigateFallback is required because src/sw.ts registers a NavigationRoute.
-      devOptions: { enabled: true, type: "module", navigateFallback: "index.html" },
+      // No service worker during `vite dev` — the plugin's default, kept explicit.
+      // A SW caching in development fights HMR and serves stale assets, and
+      // src/app/pwa.ts refuses to register outside production anyway, so leaving
+      // this on only compiled a file nobody ever requested.
+      // To re-enable for SW debugging you need all three keys back:
+      // `type: 'module'` (src/sw.ts uses ES imports; Chromium only, and production
+      // always registers classic) and `navigateFallback: 'index.html'` (the dev
+      // precache manifest is empty, so the NavigationRoute has nothing to resolve).
+      devOptions: { enabled: false },
     }),
   ],
 });
