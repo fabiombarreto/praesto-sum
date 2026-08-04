@@ -98,9 +98,25 @@ External calendar integration (e.g. Google Calendar sync) is deliberately **not*
 
 Mapping of requirements to the phases confirmed by the owner on 2026-08-03 (see the [roadmap](../50-planning/roadmap.md)).
 
-| Requirement(s) | Roadmap phase |
-|---|---|
-| FR-001 … FR-005, FR-007, FR-009, FR-011, FR-012 (Tasks) | Phase 1 — MVP Tasks |
-| FR-040, FR-041, FR-042, FR-044, FR-045 (cross-cutting) | Phase 1 — MVP Tasks |
-| FR-020 … FR-026 (Calendar), FR-010 (Task ↔ Event links) | Phase 2 — Calendar |
-| FR-006, FR-008, FR-043 | Unscheduled — assigned at a later triage |
+Every accepted requirement now has a phase and a delivery unit. The unit column points at the [roadmap's delivery units](../50-planning/roadmap.md#delivery-units), which carry the order, dependencies and exit signals.
+
+| Requirement(s) | Roadmap phase | Delivery unit(s) |
+|---|---|---|
+| FR-001, FR-045 | Phase 1 | 1 `install-and-quick-capture` |
+| FR-002, FR-003, FR-004, FR-005, FR-006 | Phase 1 | 2 `task-detail-and-dates` |
+| FR-007 | Phase 1 | 3 `today-view-and-filters` |
+| FR-042, FR-043 | Phase 1 | 4 `data-export` (+ chore C5 for the automated pull) |
+| FR-041 | Phase 1 | 5 `push-channel-proven`, 6 `reminders` |
+| FR-044, FR-025 (Task side) | Phase 1 | 6 `reminders` |
+| FR-040 | Phase 1 | 7 `text-search` (extended to Events in unit 13) |
+| FR-009 | Phase 1 | 8 `recurring-tasks`, 9 `missed-sweep` |
+| FR-011 | Phase 1 | 9 `missed-sweep` (data), 10 `adherence-mirror` (surface) |
+| FR-012 | Phase 1 | 11 `repeated-miss-nudge` |
+| FR-008 | Phase 1 | 12 `life-areas` |
+| FR-020 … FR-023 | Phase 2 | 13 `events-and-day-view` |
+| FR-024 | Phase 2 | 14 `week-view` |
+| FR-026 | Phase 2 | 15 `recurring-events` |
+| FR-025 (Event side) | Phase 2 | 16 `event-reminders` |
+| FR-010 | Phase 2 | 17 `task-event-links` |
+
+Corrected on 2026-08-03: FR-006, FR-008 and FR-043 were previously listed as "Unscheduled". FR-043 in particular contradicted [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md), which already treated automated snapshots as a binding safeguard rather than optional work.
