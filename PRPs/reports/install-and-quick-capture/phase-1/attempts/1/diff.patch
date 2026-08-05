@@ -1,0 +1,230 @@
+diff --git a/public/manifest.webmanifest b/public/manifest.webmanifest
+index ba26e69..51d50fb 100644
+--- a/public/manifest.webmanifest
++++ b/public/manifest.webmanifest
+@@ -17,5 +17,10 @@
+       "type": "image/png",
+       "purpose": "maskable"
+     }
+-  ]
++  ],
++  "share_target": {
++    "action": "/share-target",
++    "method": "GET",
++    "params": { "title": "title", "text": "text", "url": "url" }
++  }
+ }
+diff --git a/src/app/App.tsx b/src/app/App.tsx
+index c21d86c..47af0dd 100644
+--- a/src/app/App.tsx
++++ b/src/app/App.tsx
+@@ -1,5 +1,6 @@
+ import { useCallback, useEffect, useState, type CSSProperties } from "react";
+ import type { TaskDto } from "../shared/api";
++import type { ShareTarget } from "../shared/share-target";
+ import {
+   ApiError,
+   completeTask,
+@@ -19,13 +20,13 @@ import {
+  * (FR-009), misses (FR-011/FR-012), reminders (FR-041/FR-044), search (FR-040).
+  * Styling is deliberately minimal; the design pass is its own slice.
+  */
+-export function App() {
++export function App({ initialShare }: { initialShare: ShareTarget | null }) {
+   const [authorized, setAuthorized] = useState<boolean>(getToken() !== null);
+ 
+   if (!authorized) {
+     return <TokenGate onAuthorized={() => setAuthorized(true)} />;
+   }
+-  return <TaskBoard onUnauthorized={() => setAuthorized(false)} />;
++  return <TaskBoard onUnauthorized={() => setAuthorized(false)} initialShare={initialShare} />;
+ }
+ 
+ function TokenGate({ onAuthorized }: { onAuthorized: () => void }) {
+@@ -61,11 +62,18 @@ function TokenGate({ onAuthorized }: { onAuthorized: () => void }) {
+   );
+ }
+ 
+-function TaskBoard({ onUnauthorized }: { onUnauthorized: () => void }) {
++function TaskBoard({
++  onUnauthorized,
++  initialShare,
++}: {
++  onUnauthorized: () => void;
++  initialShare: ShareTarget | null;
++}) {
+   const [tasks, setTasks] = useState<TaskDto[] | null>(null);
+   const [error, setError] = useState<string | null>(null);
+-  const [title, setTitle] = useState("");
++  const [title, setTitle] = useState(initialShare?.title ?? "");
+   const [busy, setBusy] = useState(false);
++  const [justSaved, setJustSaved] = useState(false);
+ 
+   const handleFailure = useCallback(
+     (cause: unknown) => {
+@@ -119,13 +127,18 @@ function TaskBoard({ onUnauthorized }: { onUnauthorized: () => void }) {
+           void run(async () => {
+             await createTask({ title: trimmed });
+             setTitle("");
++            setJustSaved(true);
++            setTimeout(() => setJustSaved(false), 2000);
+           });
+         }}
+       >
+         <input
+           style={styles.input}
+           value={title}
+-          onChange={(event) => setTitle(event.target.value)}
++          onChange={(event) => {
++            setTitle(event.target.value);
++            setJustSaved(false);
++          }}
+           placeholder="What needs doing?"
+           aria-label="Task title"
+           autoFocus
+@@ -135,6 +148,7 @@ function TaskBoard({ onUnauthorized }: { onUnauthorized: () => void }) {
+         </button>
+       </form>
+ 
++      {justSaved && <p style={styles.muted}>Saved</p>}
+       {error !== null && <p style={styles.error}>{error}</p>}
+       {tasks === null && error === null && <p style={styles.muted}>Loading…</p>}
+ 
+diff --git a/src/app/main.tsx b/src/app/main.tsx
+index d333cd9..f1bb12d 100644
+--- a/src/app/main.tsx
++++ b/src/app/main.tsx
+@@ -1,14 +1,25 @@
+ import { StrictMode } from "react";
+ import { createRoot } from "react-dom/client";
++import { parseShareTarget, type ShareTarget } from "../shared/share-target";
+ import { App } from "./App";
+ import { setupPwa } from "./pwa";
+ 
+ const container = document.getElementById("root");
+ if (!container) throw new Error("#root not found");
+ 
++// Detect a share-target invocation (public/manifest.webmanifest's
++// `share_target` GET action) before the first render. The path/query is
++// stripped immediately via `replaceState` so a page reload does not
++// re-trigger the pre-fill or resubmit stale params.
++let initialShare: ShareTarget | null = null;
++if (window.location.pathname === "/share-target") {
++  initialShare = parseShareTarget(window.location.search);
++  window.history.replaceState(null, "", "/");
++}
++
+ createRoot(container).render(
+   <StrictMode>
+-    <App />
++    <App initialShare={initialShare} />
+   </StrictMode>,
+ );
+ 
+--- new file: src/shared/share-target.ts
+/**
+ * Parser for a `share_target` GET invocation's query string.
+ *
+ * Like `src/shared/api.ts`, this module is compiled into BOTH the browser
+ * and the Worker projects, so it must stay environment-agnostic and free of
+ * runtime dependencies and DOM globals (no `window`, no `document`) — the
+ * detection/dispatch of the actual share-target invocation lives in
+ * `src/app/main.tsx`, not here.
+ */
+
+/** Result of a successful share-target parse: a single usable title. */
+export interface ShareTarget {
+  title: string;
+}
+
+/**
+ * Parses a `?title=...&text=...&url=...`-shaped query string (as delivered
+ * by the manifest's `share_target` GET action) into a single usable title.
+ *
+ * Preference order is `text`, then `title`, then `url` — Android frequently
+ * leaves `url` empty and puts the shared link in `text` instead (Chrome for
+ * Developers). Returns `null` when all three are empty or whitespace-only
+ * after trimming, so an all-empty share cannot produce a titled Task
+ * (PRD AC-5).
+ */
+export function parseShareTarget(search: string): ShareTarget | null {
+  const params = new URLSearchParams(search);
+  const text = (params.get("text") ?? "").trim();
+  if (text !== "") return { title: text };
+
+  const title = (params.get("title") ?? "").trim();
+  if (title !== "") return { title };
+
+  const url = (params.get("url") ?? "").trim();
+  if (url !== "") return { title: url };
+
+  return null;
+}
+--- new file: test/share-target.test.ts
+// PRPs/prds/install-and-quick-capture.prd.md AC-1 share-creates-task
+// PRPs/prds/install-and-quick-capture.prd.md AC-5 empty-share-creates-nothing
+//
+// Source plan: PRPs/plans/install-and-quick-capture-phase-1-share-target.plan.md
+// (Task 1 — parseShareTarget(search: string): { title: string } | null).
+//
+// This is a pure, DOM-free unit under test (src/shared/share-target.ts carries
+// no Worker or browser globals), so it needs neither the D1 fixture nor the
+// bearer-token auth helpers that test/tasks.test.ts uses — see
+// docs/context/testing.md and the plan's P2 Mandatory Reading row on
+// test/tasks.test.ts ("adapted to drop the cloudflare:workers/D1 fixture,
+// since the parser under test has no Worker dependency").
+//
+// Scope note (see PRPs/reports/install-and-quick-capture/test-suite.diff for
+// the full per-AC outcome record): this file covers only the observable,
+// pure-logic slice of AC-1 and AC-5 — which title `parseShareTarget` extracts
+// (or that it returns `null`). The DOM-rendered slice of both ACs (the
+// capture field opening pre-filled/focused, the save confirmation appearing,
+// a Task actually being POSTed) is unreachable from the workerd-only Vitest
+// tier (no browser/DOM tier exists — docs/context/testing.md) and is verified
+// manually per the plan's Level 3 MANUAL steps 1 and 2.
+
+import { describe, expect, it } from "vitest";
+import { parseShareTarget } from "../src/shared/share-target";
+
+describe("parseShareTarget (PRD AC-1 share-creates-task)", () => {
+  it("extracts the shared text as the title when text is present", () => {
+    expect(parseShareTarget("?title=&text=Buy%20milk&url=")).toEqual({ title: "Buy milk" });
+  });
+
+  it("prefers text over title and url when text is non-empty (Android url-often-empty quirk)", () => {
+    expect(
+      parseShareTarget("?title=Grocery+List&text=Buy+milk&url=https%3A%2F%2Fexample.com"),
+    ).toEqual({ title: "Buy milk" });
+  });
+
+  it("falls back to title when text is empty or whitespace-only", () => {
+    expect(parseShareTarget("?title=Read+later&text=&url=")).toEqual({ title: "Read later" });
+    expect(parseShareTarget("?title=Read+later&text=%20&url=")).toEqual({ title: "Read later" });
+  });
+
+  it("falls back to url when both text and title are empty or whitespace-only", () => {
+    expect(parseShareTarget("?title=&text=&url=https%3A%2F%2Fexample.com%2Farticle")).toEqual({
+      title: "https://example.com/article",
+    });
+  });
+
+  it("trims surrounding whitespace from the extracted value", () => {
+    expect(parseShareTarget("?title=&text=%20%20Buy%20milk%20%20&url=")).toEqual({
+      title: "Buy milk",
+    });
+  });
+});
+
+describe("parseShareTarget (PRD AC-5 empty-share-creates-nothing)", () => {
+  it("returns null when title, text and url are all empty", () => {
+    expect(parseShareTarget("?title=&text=&url=")).toBeNull();
+  });
+
+  it("returns null when title, text and url are all whitespace-only", () => {
+    expect(parseShareTarget("?title=%20&text=%20&url=%20")).toBeNull();
+  });
+
+  it("returns null when the query string carries none of the three params", () => {
+    expect(parseShareTarget("")).toBeNull();
+  });
+});

@@ -1,0 +1,11 @@
+{
+  "verdict": "ABORT_INFRA",
+  "feature": "install-and-quick-capture",
+  "attempt": 1,
+  "outcome": "ABORT_INFRA",
+  "record_path": null,
+  "elapsed_ms": 0,
+  "reason": "missing_settings_json",
+  "detail": "C:/repos/assistente-pessoal/.claude/settings.json does not exist (only .claude/launch.json is present, which is not a permissions file). Per test-runner protocol Step 1, the suite must not be invoked without .claude/settings.json in place, since the autonomous run would otherwise hit permission prompts mid-suite. No tests were executed; no test artifacts were produced.",
+  "next_action": "Caller should re-run context-builder (or otherwise materialize .claude/settings.json with the appropriate allow patterns for this project: npm test / vitest / wrangler, etc.) and then re-invoke the test runner for attempt 1."
+}

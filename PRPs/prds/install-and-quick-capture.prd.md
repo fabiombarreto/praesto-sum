@@ -247,20 +247,23 @@ ordinary units and are testable first.
 
 | # | Phase | Description | Status | Parallel | Depends | PRP Plan |
 |---|---|---|---|---|---|---|
-| 1 | Durable token | The token survives storage pressure and a restart; the token screen does not reappear | pending | no | — | |
-| 2 | Share target | Sharing text from another app creates the Task | pending | no | 1 | |
-| 3 | Shortcut and focused capture | Long-pressing the icon opens directly on a focused, empty field | pending | yes | 2 | |
-| 4 | Network honesty | An unreachable server produces an explicit state and loses no typed text | pending | yes | 2 | |
+| 1 | Share target | Sharing text from another app creates the Task | complete | no | - | PRPs/plans/completed/install-and-quick-capture-phase-1-share-target.plan.md |
+| 2 | Durable token | The token survives storage pressure and a restart; the token screen does not reappear | pending | yes | - | |
+| 3 | Shortcut and focused capture | Long-pressing the icon opens directly on a focused, empty field | pending | yes | 1 | |
+| 4 | Network honesty | An unreachable server produces an explicit state and loses no typed text | pending | yes | 1 | |
 
 ### Phase Details
 
-**Phase 1 — Durable token.** Replace the `localStorage` accessors in
-`src/app/api.ts` with an IndexedDB-backed store and request persistent storage at
-startup. Covers AC-2. The 401-clears-token path is preserved.
-
-**Phase 2 — Share target.** Add `share_target` to
+**Phase 1 — Share target.** Add `share_target` to
 `public/manifest.webmanifest` and a client route that reads the shared `title`
-and `text` and pre-fills capture. Covers AC-1 and AC-5.
+and `text` and pre-fills capture. Covers AC-1 and AC-5. Ordered first because
+its payload parsing is pure logic in `src/shared`, which is exactly what
+`docs/context/methodology.md` scopes the test-first practice to.
+
+**Phase 2 — Durable token.** Replace the `localStorage` accessors in
+`src/app/api.ts` with an IndexedDB-backed store and request persistent storage at
+startup. Covers AC-2. The 401-clears-token path is preserved. It carries no
+dependency on Phase 1: the share target needs a valid token, not a durable one.
 
 **Phase 3 — Shortcut and focused capture.** Add `shortcuts` to the manifest and
 the deep-linked capture route with autofocus. Covers AC-3.
@@ -277,6 +280,7 @@ easiest to verify once the other entry points exist.
 | Capture mechanisms | Ship both `share_target` and `shortcuts` | Only one of them | They serve different gestures: sharing covers "in the middle of something else", the shortcut covers "I want to add something now". Both are manifest-only. If budget forces a cut, `share_target` is the one to keep |
 | Scope boundary | Capture only; no delivery capability | Pull part of the today view or reminders forward | The owner confirmed on 2026-08-04 that scope stays. Delivery is two units away and inflating this one would delay both |
 | Voice capture | Excluded, with the reason recorded | Wrap the PWA in a native shell to reach App Actions | A native wrapper is excluded by ADR-0004. Recorded here so the north star is not silently dropped — keyboard dictation remains the partial substitute |
+| Phase order (revised 2026-08-04, post-approval) | Share target runs first; durable token second. Both declare no dependency | Keep durable token first, as originally approved | The original `Depends: 1` on the share target was sequencing, not a technical constraint — sharing needs a valid token, not a durable one. Durable token is pure browser-storage work (IndexedDB, `navigator.storage`) that the only existing suite — Vitest inside workerd — structurally cannot reach, so leading with it would have produced a test-first phase with no authorable test. The share target's payload parsing is pure `src/shared` logic, which `docs/context/methodology.md` names as in-scope for test-first. Owner directed the reorder |
 | Template conformance | Assembled from the Writer protocol's Step 7.4 section enumeration | Conform to `docs/context/prd-template.md` | The template file does not ship in the installed relay plugin (0.25.1 has no `docs/` directory). The section list in Step 7.4 specifies the same structure and was followed literally |
 
 ## Research Summary
@@ -316,7 +320,7 @@ cited; no finding below is inferred.
   non-empty `title`; `deadline` and `scheduledDate` are optional and mutually
   exclusive. Capture needs no API change.
 - `src/app/api.ts:11-23` — the token lives in `localStorage` under
-  `praesto.token`. This is the artifact Phase 1 replaces.
+  `praesto.token`. This is the artifact Phase 2 replaces.
 - `src/app/api.ts:45-48` — a 401 clears the token and surfaces `ApiError`,
   which is what routes the app back to the token screen.
 - `src/app/App.tsx:81-104` — `refresh()` runs on mount and after each local

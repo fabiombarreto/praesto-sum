@@ -1,14 +1,25 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { parseShareTarget, type ShareTarget } from "../shared/share-target";
 import { App } from "./App";
 import { setupPwa } from "./pwa";
 
 const container = document.getElementById("root");
 if (!container) throw new Error("#root not found");
 
+// Detect a share-target invocation (public/manifest.webmanifest's
+// `share_target` GET action) before the first render. The path/query is
+// stripped immediately via `replaceState` so a page reload does not
+// re-trigger the pre-fill or resubmit stale params.
+let initialShare: ShareTarget | null = null;
+if (window.location.pathname === "/share-target") {
+  initialShare = parseShareTarget(window.location.search);
+  window.history.replaceState(null, "", "/");
+}
+
 createRoot(container).render(
   <StrictMode>
-    <App />
+    <App initialShare={initialShare} />
   </StrictMode>,
 );
 

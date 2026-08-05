@@ -1,0 +1,107 @@
+# TDD initial suite — phase 1
+# Source PRD: PRPs/prds/install-and-quick-capture.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/install-and-quick-capture-phase-1-share-target.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-08-05
+
+## Mode
+
+test-first (`docs/context/methodology.md`: `tdd: true`, `test_frameworks: ["vitest"]`).
+This suite runs BEFORE the Implementer; `src/shared/share-target.ts` does not
+exist yet, so `test/share-target.test.ts` is expected to be RED for the right
+reason (module-not-found / type error on `parseShareTarget`) until Task 1 of
+the plan is implemented.
+
+## Environment constraint honored
+
+The only test tier in this project is Vitest inside workerd
+(`@cloudflare/vitest-pool-workers`; see `docs/context/testing.md`). There is
+no DOM/browser/e2e tier. `docs/context/methodology.md`'s "Scope of the
+practice" section states explicitly that test-first here does not mean React
+component tests, and that a purely visual acceptance criterion produces no
+test file. Both in-scope PRD ACs (AC-1, AC-5) mix a pure-logic, testable slice
+(what `parseShareTarget` returns) with a DOM-rendered, gesture-based slice
+(pre-fill, autofocus, save confirmation, actual POST from the UI) that is
+structurally unreachable from workerd. This suite writes real, discriminative
+tests for the testable slice and documents the untestable slice's manual
+verification path below rather than inventing a component test or asserting
+nothing.
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-1 share-creates-task | NEW_TEST_REQUIRED | `test/share-target.test.ts` — describe block "parseShareTarget (PRD AC-1 share-creates-task)", 5 cases (text preferred; Android url-often-empty quirk — text still wins over url; fallback to title when text empty; fallback to url when text+title empty; trims whitespace) |
+| AC-5 empty-share-creates-nothing | NEW_TEST_REQUIRED | `test/share-target.test.ts` — describe block "parseShareTarget (PRD AC-5 empty-share-creates-nothing)", 3 cases (all empty → null; all whitespace-only → null; no params at all → null) |
+| AC-2 token-never-reprompted | OUT_OF_PHASE_SCOPE | deferred to Phase 2 (Durable token) — not referenced by this plan's `## Acceptance Criteria` (AC-A1..AC-A5 all trace to PRD AC-1 or AC-5) |
+| AC-3 shortcut-opens-focused | OUT_OF_PHASE_SCOPE | deferred to Phase 3 (Shortcut and focused capture) |
+| AC-4 unreachable-server-is-explicit | OUT_OF_PHASE_SCOPE | deferred to Phase 4 (Network honesty) |
+
+### Per-AC note: what is and is not covered by the new test file
+
+**AC-1 share-creates-task.** The plan splits this PRD AC across AC-A1, AC-A2,
+AC-A4, AC-A5 (see plan `## Acceptance Criteria`). Of these:
+- AC-A1's `parseShareTarget` extraction, and AC-A5's Android url-often-empty
+  quirk (text still wins), are covered by real, discriminative Vitest cases
+  above.
+- AC-A1's remaining slice — the capture field opening pre-filled, the Save
+  action, and the confirmation message appearing — is DOM/React-rendered
+  (`src/app/App.tsx`) and unreachable from the workerd-only Vitest tier. It is
+  verified manually per the plan's Level 3 MANUAL step 1 ("Share non-empty
+  text from another installed app... confirm the capture field opens
+  pre-filled... a Task is created... and a confirmation message appears").
+  This is the `EXISTING_COVERAGE_SUFFICIENT`-adjacent, no-test-required path
+  `docs/context/methodology.md`'s "Scope of the practice" section names for
+  purely visual/gesture behavior — not a coverage gap this session left
+  silently unaddressed.
+- AC-A2 (the `share_target` manifest member's shape) is a static JSON
+  invariant on a non-code asset, not application logic; the plan's own Level 2
+  Validation Commands verify it with a `node -e` script, not Vitest. No test
+  file is authored for it here — writing one would duplicate that existing,
+  plan-specified validation path.
+- AC-A4 (the created payload must be a `CreateTaskInput` sent through the
+  existing `createTask()` wrapper, never a hand-written `TaskDto`-shaped
+  literal) is a structural/authorship invariant indistinguishable from the
+  wire format at the HTTP boundary — a conforming payload and a hand-written
+  literal that happens to match the same shape produce an identical, not
+  discriminable, POST body. This is `code-reviewer`'s R-X hand-duplicated-type
+  check, not a runtime-observable contract a unit test can discriminate.
+
+**AC-5 empty-share-creates-nothing.** The plan's AC-A3 is the sole PRD AC-5
+reference. Covered:
+- `parseShareTarget` returning `null` for the all-empty and
+  all-whitespace-only cases (3 discriminative cases above).
+- Not covered by a new test: the capture field opening focused-and-empty, and
+  no Task being created, when `initialShare` is `null`. This is DOM/React
+  rendering plus the pre-existing, unmodified
+  `if (!trimmed || busy) return` guard in `src/app/App.tsx` (plan line 118) —
+  neither is reachable from workerd. Verified manually per the plan's Level 3
+  MANUAL step 2. The guard itself is pre-existing and already exercised
+  indirectly by `test/tasks.test.ts`'s "rejects invalid input" case
+  (`title: "   "` → 400) at the API boundary; this phase adds no new guard
+  logic to re-test.
+
+## Test files written this session
+
+- `test/share-target.test.ts` (new file; 8 cases across AC-1 and AC-5)
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no update/delete this session) | — | — | — |
+
+## Pre-emission self-check
+
+- Ledger completeness: no UPDATE/DELETE performed this session; ledger's sole
+  row is the default "(none)" row. Confirmed.
+- Coverage completeness: both in-scope ACs (AC-1, AC-5) have an explicit
+  recorded outcome (NEW_TEST_REQUIRED, with the DOM-unreachable slice of each
+  named and pointed at the plan's existing MANUAL verification steps rather
+  than left silent). The three out-of-phase ACs (AC-2, AC-3, AC-4) are
+  recorded as OUT_OF_PHASE_SCOPE per the plan's own AC-A1..AC-A5 mapping.
+  Confirmed.
+
+## Status
+
+*Status: APPROVED*

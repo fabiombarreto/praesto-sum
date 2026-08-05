@@ -1,0 +1,42 @@
+{
+  "outcome": "FAILED_TEST_ABORT_INFRA",
+  "phase_N": 1,
+  "halting_stage": "test",
+  "underlying_halt_ref": "PRPs/reports/install-and-quick-capture/run.json",
+  "halt_reason_summary": "The test-runner agent aborted before invoking the suite. Its protocol requires a project-level .claude/settings.json to guarantee an autonomous run free of mid-suite permission prompts; that file does not exist in this repository. This is a harness-precondition failure, NOT a test failure: the suite itself is green. `npm test` was run directly by the orchestrator immediately after the abort and returned 3 files / 20 tests passing, and `npm run check` returned clean. The same green result was independently observed earlier by the implementer and again by the code-reviewer, each running the real command.",
+  "not_a_code_defect": true,
+  "suite_state_verified_directly": {
+    "command": "npm test",
+    "result": "3 test files passed, 20 tests passed",
+    "check_command": "npm run check",
+    "check_result": "clean"
+  },
+  "why_not_auto_resolved": "Creating .claude/settings.json was explicitly forbidden by the operator for this session, and hard rule 1 of /relay-execute independently prohibits writing anything under .claude/. The test-runner's own recommendation to create that file therefore could not be followed. No file under .claude/ was created or modified.",
+  "phases_completed": [1],
+  "stages_completed_for_phase_1": [
+    "plan (2 attempts: CHANGES_REQUESTED then APPROVED)",
+    "worktree (skipped — --no-worktree)",
+    "tdd test-first pair (APPROVED, RED verified dynamically)",
+    "implement (APPROVED on attempt 1)",
+    "docs-sync (APPROVED, zero edits, reviewer-validated)",
+    "D8 mutations (all three applied)"
+  ],
+  "manual_recovery_paths": [
+    "Accept the phase as done on the strength of the direct verification above: the suite is green, code review APPROVED, and the D8 mutations already applied. The only unexecuted stage is the formal /relay-test + /relay-test-review wrapper.",
+    "If the formal stage is wanted, the operator — not an agent — must create .claude/settings.json with allow patterns for npm/vitest/wrangler, then re-run /relay-execute. It will pick up at phase 2, since phase 1's row is already complete.",
+    "The two acceptance criteria this phase serves (AC-1 share-creates-task, AC-5 empty-share-creates-nothing) each retain a browser-gesture half that no automated tier in this project can reach; those remain manual regardless of this halt."
+  ],
+  "orchestrator_run_log": [
+    { "phase": 1, "stage": "plan", "outcome": "CHANGES_REQUESTED", "failing": ["R-COH-TASK-AC-MISSING"], "attempt": 1 },
+    { "phase": 1, "stage": "plan", "outcome": "APPROVED", "attempt": 2, "plan_path": "PRPs/plans/completed/install-and-quick-capture-phase-1-share-target.plan.md" },
+    { "phase": 1, "stage": "worktree", "outcome": "skipped_no_worktree_flag", "worktree_attempted": false },
+    { "phase": 1, "stage": "tdd", "outcome": "APPROVED", "suite_path": "PRPs/reports/install-and-quick-capture/test-suite.diff" },
+    { "phase": 1, "stage": "implement", "outcome": "APPROVED" },
+    { "phase": 1, "stage": "docs_sync", "outcome": "APPROVED", "files_edited": 0 },
+    { "phase": 1, "stage": "test_after", "outcome": "not_applicable" },
+    { "phase": 1, "stage": "test", "outcome": "HALT:ABORT_INFRA", "reason": "missing_settings_json" }
+  ],
+  "worktree_attempted": false,
+  "worktree_succeeded": null,
+  "fallback_reason": "--no-worktree chosen by the operator: the repo's scripts/worktree-bootstrap.sh is the unedited relay template (npm ci and .dev.vars copy both commented out), so a worktree would have had no node_modules and no secrets, and HEAD did not yet carry the PRD/plan artifacts."
+}

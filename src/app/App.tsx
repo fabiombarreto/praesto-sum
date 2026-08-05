@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import type { TaskDto } from "../shared/api";
+import type { ShareTarget } from "../shared/share-target";
 import {
   ApiError,
   completeTask,
@@ -19,13 +20,13 @@ import {
  * (FR-009), misses (FR-011/FR-012), reminders (FR-041/FR-044), search (FR-040).
  * Styling is deliberately minimal; the design pass is its own slice.
  */
-export function App() {
+export function App({ initialShare }: { initialShare: ShareTarget | null }) {
   const [authorized, setAuthorized] = useState<boolean>(getToken() !== null);
 
   if (!authorized) {
     return <TokenGate onAuthorized={() => setAuthorized(true)} />;
   }
-  return <TaskBoard onUnauthorized={() => setAuthorized(false)} />;
+  return <TaskBoard onUnauthorized={() => setAuthorized(false)} initialShare={initialShare} />;
 }
 
 function TokenGate({ onAuthorized }: { onAuthorized: () => void }) {
@@ -61,11 +62,18 @@ function TokenGate({ onAuthorized }: { onAuthorized: () => void }) {
   );
 }
 
-function TaskBoard({ onUnauthorized }: { onUnauthorized: () => void }) {
+function TaskBoard({
+  onUnauthorized,
+  initialShare,
+}: {
+  onUnauthorized: () => void;
+  initialShare: ShareTarget | null;
+}) {
   const [tasks, setTasks] = useState<TaskDto[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(initialShare?.title ?? "");
   const [busy, setBusy] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
 
   const handleFailure = useCallback(
     (cause: unknown) => {
@@ -119,13 +127,18 @@ function TaskBoard({ onUnauthorized }: { onUnauthorized: () => void }) {
           void run(async () => {
             await createTask({ title: trimmed });
             setTitle("");
+            setJustSaved(true);
+            setTimeout(() => setJustSaved(false), 2000);
           });
         }}
       >
         <input
           style={styles.input}
           value={title}
-          onChange={(event) => setTitle(event.target.value)}
+          onChange={(event) => {
+            setTitle(event.target.value);
+            setJustSaved(false);
+          }}
           placeholder="What needs doing?"
           aria-label="Task title"
           autoFocus
@@ -135,6 +148,7 @@ function TaskBoard({ onUnauthorized }: { onUnauthorized: () => void }) {
         </button>
       </form>
 
+      {justSaved && <p style={styles.muted}>Saved</p>}
       {error !== null && <p style={styles.error}>{error}</p>}
       {tasks === null && error === null && <p style={styles.muted}>Loading…</p>}
 
