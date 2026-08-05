@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-04
+last_updated: 2026-08-05
 review_trigger: "a unit changes state, a unit is reordered/deferred/dropped, a chore is executed, a phase opens or closes, or a backlog idea is triaged"
 ---
 
@@ -47,7 +47,7 @@ Each unit is one PRD (`PRPs/prds/<unit>.prd.md`), sized to the owner's ~1 h/day 
 
 | # | Unit | Outcome | FRs | Depends on | Est. | State | Exit signal |
 |---|---|---|---|---|---|---|---|
-| 1 | `install-and-quick-capture` | Praesto sits on the phone's home screen; capture takes seconds and needs no hand-typed token; a dead network says so instead of breaking | FR-045, FR-001 | — | 4 | **next** | The icon is on the owner's home screen and a *real* Task was added without opening a browser or typing a token |
+| 1 | `install-and-quick-capture` | Praesto sits on the phone's home screen; capture takes seconds and needs no hand-typed token; a dead network says so instead of breaking | FR-045, FR-001 | — | 4 | **in-progress** | The icon is on the owner's home screen and a *real* Task was added without opening a browser or typing a token |
 | 2 | `task-detail-and-dates` | Anything captured in a hurry can be fixed: title, description, deadline or scheduled date, priority, complete, reopen, delete | FR-002, FR-005, FR-006, FR-003, FR-004 | 1 | 5 | planned | A Task created in a hurry was later corrected (title and date) instead of deleted and recreated |
 | 3 | `today-view-and-filters` | Opening the app answers "what is today?" — today, overdue, upcoming, undated — with filters by status, date and priority | FR-007 | 2 | 4 | planned | The owner answers "what's today?" without scrolling the whole list and without touching a filter |
 | 4 | `google-calendar-read` | After a one-time authorization (with disconnect shipped the same day), the owner's real Google commitments appear **inside** the today screen next to his dated Tasks, visually distinct and read-only; he picks which calendars come in; Google being down shows an explicit state, never an empty screen pretending the day is free | FR-027, FR-030 | 3, C8, C11 | 5 | planned | For a week the owner opened Praesto in the morning and saw his real Google commitments beside his Tasks, without opening Google Calendar to check the day — and the range query is ONE function taking a list of sources, proved by a test calling it with zero, one and two sources |
@@ -98,8 +98,8 @@ Three rules. Two confirmed by the owner on 2026-08-03 and recorded as delivery d
 
 Derived from the table above — never a second, independently ageing list.
 
-- **Now:** nothing in `in-progress`. No PRD is open.
-- **Next:** unit 1 `install-and-quick-capture`. Chores C1–C3 closed on 2026-08-04, so nothing precedes it.
+- **Now:** unit 1 `install-and-quick-capture` — PRD APPROVED, phase 1 of 4 (share target) shipped to production 2026-08-05.
+- **Next:** unit 2 `task-detail-and-dates`, once unit 1's remaining phases close.
 - **Later:** positions 2 onward in the units table.
 
 ## Chores
@@ -155,6 +155,7 @@ Newest first. One row per meaningful delivery, reordering or state change, added
 
 | Date | Delivered |
 |---|---|
+| 2026-08-05 | **Unit 1 phase 1 shipped — Praesto is an Android share target** (FR-045, FR-001). Sharing text from any app now creates a Task with it as the title; an all-empty share creates nothing. Built test-first through the relay pipeline: the 8-case suite was authored and approved while RED, the implementer never touched `test/`, and code review plus docs-sync both passed. Unit 1 moves `next` → `in-progress`; three phases remain (durable token, launcher shortcut, network honesty). Two caveats recorded rather than glossed: the formal `/relay-test` stage aborted on a missing project-level `.claude/settings.json` (suite verified directly instead — 20/20 green), and AC-5's empty-share gesture is still unverified on the device |
 | 2026-08-04 | **Methodology switched to test-first** ([ADR-0008](../60-decisions/ADR-0008-adopt-test-first-methodology.md)) at the owner's declaration: `tdd: true` in `docs/context/methodology.md` activates relay's test pair between plan review and implementation. Scope unchanged (UI stays manually verified); estimates unchanged and explicitly still a floor |
 | 2026-08-04 | **Decision 4 resolved** — bidirectional Google Calendar sync accepted for Events ([ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md)) with the CON-005 consent record and a bounded carve-out of the sync anti-pattern. Three new units (`google-calendar-read` #4, `google-calendar-write` #15, `google-recurring-events-sync` #19); old units 4–17 renumbered to 5–20; `events-and-day-view` and `recurring-events` rescoped to be born sync-aware (+1 day each); chores C11/C12/C13 added and C8 brought forward. Total 67 → 87 unit-days. Owner's choices: scope `calendar.events`, conservative phasing, own domain authorized if verification is required, Workers Paid **not** authorized |
 | 2026-08-04 | Owner requested bidirectional Google Calendar sync (read/create/edit/delete), arbitrating pending decision 4. Research surfaced the OAuth "Testing" 7-day refresh-token expiry as a hard gate; chores C11/C12 created to settle it empirically, C8 (ADR-0007) brought forward from "before unit 13" |
