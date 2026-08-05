@@ -1,0 +1,57 @@
+diff --git a/public/manifest.webmanifest b/public/manifest.webmanifest
+index 51d50fb..a2833d0 100644
+--- a/public/manifest.webmanifest
++++ b/public/manifest.webmanifest
+@@ -22,5 +22,14 @@
+     "action": "/share-target",
+     "method": "GET",
+     "params": { "title": "title", "text": "text", "url": "url" }
+-  }
++  },
++  "shortcuts": [
++    {
++      "name": "New Task",
++      "short_name": "New Task",
++      "description": "Open Praesto with an empty capture field",
++      "url": "/new-task",
++      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
++    }
++  ]
+ }
+diff --git a/src/app/App.tsx b/src/app/App.tsx
+index 47af0dd..4afe706 100644
+--- a/src/app/App.tsx
++++ b/src/app/App.tsx
+@@ -141,6 +141,15 @@ function TaskBoard({
+           }}
+           placeholder="What needs doing?"
+           aria-label="Task title"
++          // Phase 3 (install-and-quick-capture) decision: `autoFocus` stays
++          // unconditional across devices, not gated by device/pointer type.
++          // The PRD's Open Question 1 raises this ("may be unwelcome on
++          // desktop, where it raises the on-screen keyboard on touch
++          // laptops") but explicitly defers it — "to be validated in real
++          // use rather than decided now" — and no device/pointer-type
++          // detection exists anywhere in this codebase today. Revisit with
++          // a `matchMedia("(any-pointer: coarse)")` check if real use on
++          // the owner's Windows PC surfaces friction.
+           autoFocus
+         />
+         <button style={styles.button} type="submit" disabled={busy}>
+diff --git a/src/app/main.tsx b/src/app/main.tsx
+index f1bb12d..f7a7fcf 100644
+--- a/src/app/main.tsx
++++ b/src/app/main.tsx
+@@ -15,6 +15,12 @@ let initialShare: ShareTarget | null = null;
+ if (window.location.pathname === "/share-target") {
+   initialShare = parseShareTarget(window.location.search);
+   window.history.replaceState(null, "", "/");
++} else if (window.location.pathname === "/new-task") {
++  // Launcher shortcut (public/manifest.webmanifest's `shortcuts` entry)
++  // carries no payload, only intent, so there is nothing to parse —
++  // `initialShare` stays `null`, which is what seeds TaskBoard's `title`
++  // to "". Strip the path the same way `/share-target` does above.
++  window.history.replaceState(null, "", "/");
+ }
+ 
+ createRoot(container).render(

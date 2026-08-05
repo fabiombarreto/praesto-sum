@@ -15,6 +15,12 @@ let initialShare: ShareTarget | null = null;
 if (window.location.pathname === "/share-target") {
   initialShare = parseShareTarget(window.location.search);
   window.history.replaceState(null, "", "/");
+} else if (window.location.pathname === "/new-task") {
+  // Launcher shortcut (public/manifest.webmanifest's `shortcuts` entry)
+  // carries no payload, only intent, so there is nothing to parse —
+  // `initialShare` stays `null`, which is what seeds TaskBoard's `title`
+  // to "". Strip the path the same way `/share-target` does above.
+  window.history.replaceState(null, "", "/");
 }
 
 createRoot(container).render(

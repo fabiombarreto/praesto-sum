@@ -141,6 +141,15 @@ function TaskBoard({
           }}
           placeholder="What needs doing?"
           aria-label="Task title"
+          // Phase 3 (install-and-quick-capture) decision: `autoFocus` stays
+          // unconditional across devices, not gated by device/pointer type.
+          // The PRD's Open Question 1 raises this ("may be unwelcome on
+          // desktop, where it raises the on-screen keyboard on touch
+          // laptops") but explicitly defers it — "to be validated in real
+          // use rather than decided now" — and no device/pointer-type
+          // detection exists anywhere in this codebase today. Revisit with
+          // a `matchMedia("(any-pointer: coarse)")` check if real use on
+          // the owner's Windows PC surfaces friction.
           autoFocus
         />
         <button style={styles.button} type="submit" disabled={busy}>

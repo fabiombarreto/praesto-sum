@@ -40,7 +40,7 @@ Atualizado pelo Docs Updater após cada aprovação de implementação.
 ## [2026-08-03] Single installable PWA as the sole interface
 
 **Context:** One codebase must serve phone and PC; owner confirmed PWA-first.
-**Decision:** One responsive PWA (manifest + service worker + Web Push) served by the same Worker; no native apps or wrappers in the MVP. Revisit triggers: iOS push unreliability, or a needed native capability. *(Note 2026-08-04: the owner's phone is Android, so the iOS trigger is moot in practice — see `documentation/10-product/vision.md`.)*
+**Decision:** One responsive PWA (manifest + service worker + Web Push) served by the same Worker; no native apps or wrappers in the MVP. Revisit triggers: iOS push unreliability, or a needed native capability. *(Note 2026-08-04: the owner's phone is Android, so the iOS trigger is moot in practice — see `documentation/10-product/vision.md`.)* *(Note 2026-08-05: ADR-0004's trade-off list says "no **native** share targets, widgets, or OS calendar hooks in the MVP". Unit 1 phases 1 and 3 shipped the manifest's `share_target` and `shortcuts` members — the **web platform's** equivalents, reached with no native app, wrapper or store. The decision is intact and in fact strengthened: the integration arrived without going native. What aged is the prediction, not the choice. The ADR is append-only and was not edited.)*
 **Reason:** One codebase for every device (QA-004/CON-002); no store friction; same origin as API.
 **Areas affected:** all · Source: `documentation/60-decisions/ADR-0004-single-pwa-as-sole-interface.md`
 

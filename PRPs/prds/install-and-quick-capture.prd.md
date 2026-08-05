@@ -156,6 +156,16 @@ whether the tool works, not whether behaviour changed.
 3. `TBD - needs validation`: whether a share target that receives a URL (rather
    than plain text) should store the URL in `title` or in `description`. The
    wire contract supports both; the owner has not been asked.
+4. **What unblocks Phase 2?** It needs browser storage APIs that no existing
+   test tier can reach, which collides with `tdd: true`. Three candidate
+   resolutions, none obviously right: (a) declare browser-storage phases an
+   explicit exception in `docs/context/methodology.md`, verified manually —
+   cheap and honest, but admits a real gap; (b) add a browser test tier
+   (Vitest browser mode or Playwright) — solves it properly, but is its own
+   delivery unit, absent from the roadmap and well over the ~1 h/day budget
+   for several days; (c) ship Phase 2 with manual verification only and
+   revisit. Raised 2026-08-05 when the same gap aborted the `/relay-test`
+   stage of Phase 1.
 
 ---
 
@@ -248,8 +258,8 @@ ordinary units and are testable first.
 | # | Phase | Description | Status | Parallel | Depends | PRP Plan |
 |---|---|---|---|---|---|---|
 | 1 | Share target | Sharing text from another app creates the Task | complete | no | - | PRPs/plans/completed/install-and-quick-capture-phase-1-share-target.plan.md |
-| 2 | Durable token | The token survives storage pressure and a restart; the token screen does not reappear | pending | yes | - | |
-| 3 | Shortcut and focused capture | Long-pressing the icon opens directly on a focused, empty field | pending | yes | 1 | |
+| 2 | Durable token | The token survives storage pressure and a restart; the token screen does not reappear | blocked | yes | - | |
+| 3 | Shortcut and focused capture | Long-pressing the icon opens directly on a focused, empty field | complete | yes | 1 | PRPs/plans/completed/install-and-quick-capture-phase-3-shortcut-and-focused-capture.plan.md |
 | 4 | Network honesty | An unreachable server produces an explicit state and loses no typed text | pending | yes | 1 | |
 
 ### Phase Details
@@ -264,6 +274,15 @@ its payload parsing is pure logic in `src/shared`, which is exactly what
 `src/app/api.ts` with an IndexedDB-backed store and request persistent storage at
 startup. Covers AC-2. The 401-clears-token path is preserved. It carries no
 dependency on Phase 1: the share target needs a valid token, not a durable one.
+
+**Status `blocked` since 2026-08-05, by the owner's decision — not deferred for
+convenience.** This phase is entirely browser-storage work (IndexedDB,
+`navigator.storage.persist()`), and the project's only test tier is Vitest
+running inside workerd, which has neither. Under `tdd: true` ([ADR-0008](../../documentation/60-decisions/ADR-0008-adopt-test-first-methodology.md))
+there is no honest test-first path here: the test pair would either author
+nothing or abort as AMBIGUOUS. Unblocking requires one of three owner
+decisions, recorded as Open Question 4 below. Phases 3 and 4 proceed
+meanwhile — neither depends on this one.
 
 **Phase 3 — Shortcut and focused capture.** Add `shortcuts` to the manifest and
 the deep-linked capture route with autofocus. Covers AC-3.

@@ -1,0 +1,154 @@
+# TDD initial suite — phase 3
+# Source PRD: PRPs/prds/install-and-quick-capture.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/install-and-quick-capture-phase-3-shortcut-and-focused-capture.plan.md
+# Aggregate verdict: EXISTING_COVERAGE_SUFFICIENT
+# Generated: 2026-08-05
+
+## Mode
+
+test-first (`docs/context/methodology.md`: `tdd: true`, `test_frameworks: ["vitest"]`).
+This suite runs BEFORE the Implementer. Unlike phase 1, this phase produces
+**zero** new test files — the reasoning is below, reached independently rather
+than inherited from the plan/plan-reviewer's own conclusion (which this
+session was explicitly told not to take on faith).
+
+## Environment constraint honored (independently verified this session)
+
+- `docs/context/methodology.md` line 4: `test_frameworks: ["vitest"]` — the
+  only framework.
+- `docs/context/testing.md` lines 51-61: the only detected test suite is
+  Vitest 4 + `@cloudflare/vitest-pool-workers`, running the real Worker
+  **inside workerd**. Workerd has no `window`, `document`, or `history`
+  globals and no DOM/jsdom/browser tier is configured — confirmed by reading
+  `test/health.test.ts` and `test/tasks.test.ts` (both exercise
+  `exports.default.fetch(...)` against the Worker, never `window`/DOM).
+- `docs/context/methodology.md` lines 31-35 ("Scope of the practice"):
+  test-first here does not mean React component tests; a PRD whose
+  acceptance criteria are purely visual produces no test file — the
+  `EXISTING_COVERAGE_SUFFICIENT` / no-test-required path, not a violation.
+- The PRD's own `### TDD Routing` section (`install-and-quick-capture.prd.md`
+  lines 226-231) names **AC-3's focus behaviour by name** as one of the two
+  worked examples of a criterion verified manually, not test-first.
+
+## Existing-coverage scan (Step 2.1, run once)
+
+`Glob`bed `test/*.test.ts` → `test/health.test.ts`, `test/tasks.test.ts`,
+`test/share-target.test.ts`. Read all three. None references the manifest's
+`shortcuts` member, `/new-task`, `main.tsx`'s path-detection branches, or
+`App.tsx`'s `autoFocus` attribute — no existing test covers any AC-A of this
+phase, so `EXISTING_TEST_COVERS` does not apply to any of them either. The
+scan is negative, not skipped.
+
+## Per-AC-A reasoning (independent verdict, not inherited from the plan)
+
+The plan's four AC-A items all trace to the single in-scope PRD criterion,
+AC-3. Each is walked on its own merits below.
+
+**AC-A1 (shortcuts manifest member is well-formed).** `public/manifest.webmanifest`
+is a static JSON asset with zero logic — Task 1 adds a literal object, not a
+function. A Vitest test here could only assert that a JSON literal equals
+itself once written (`shortcuts[0].url === "/new-task"`), which is exactly
+the same content-invariant the plan's own Level 1/2 Validation Commands
+already assert via a `node -e` script (plan lines 252-269, 336-353). This is
+not a coverage gap: it is the identical treatment phase 1 gave the sibling
+`share_target` member (`test-suite.diff` line 57: "a static JSON invariant on
+a non-code asset, not application logic ... writing one would duplicate that
+existing, plan-specified validation path"). Verdict: **NO_TEST_REQUIRED** —
+covered by the plan's own non-Vitest content-invariant check, not a gap.
+
+**AC-A2 (`main.tsx` detects `/new-task`, strips it via `history.replaceState`,
+passes `null` `initialShare`).** This is DOM/browser code —
+`window.location.pathname` and `window.history.replaceState` are browser
+globals absent from workerd. `main.tsx` itself also calls
+`document.getElementById("root")` and `createRoot(...)` at module scope, so
+even importing the file under test would fail outside a real DOM. Unlike
+Phase 1's `parseShareTarget`, this branch involves **no parsing, no
+preference ordering, no transformation** — the plan is explicit that "no
+parsing call is needed... `initialShare` stays at its default `null`" (plan
+lines 277-280). There is no pure, extractable decision function hiding here:
+the entire branch is `if (pathname === "/new-task") { replaceState(...) }`,
+a one-line string comparison plus a side-effecting browser API call. The
+plan's `## Files to Change` lists only `src/app/main.tsx` — no new
+`src/shared` module — so inventing a pure `isNewTaskShortcut(pathname)`
+helper to make this "testable" would mean authoring a test against an
+implementation shape the plan never specified, which is exactly the
+imagined-implementation anti-pattern (hard constraint 3) and would silently
+force the Implementer into an unplanned refactor. The plan's own Level 2
+grep check (`grep -q '"/new-task"' src/app/main.tsx`) and Level 3 dev-server
+curl dry-run already exercise the observable route-resolution behavior with
+a real exit code. Verdict: **NO_TEST_REQUIRED** — DOM-unreachable from the
+only test tier, no pure unit exists in the plan's actual scope, and the
+plan's own non-Vitest checks already cover what is left.
+
+**AC-A3 (capture field opens focused and empty on `/new-task`).** This is
+the PRD's own named example of a purely visual/gesture-based criterion
+(`## TDD Routing`, "AC-3's focus behaviour"). The plan states explicitly
+that "no functional change to `App.tsx` is required for AC-3 itself" (plan
+lines 93-96) — the unconditional `autoFocus` and the
+`initialShare?.title ?? ""` seeding are pre-existing, unmodified behavior
+from Phase 1. There is nothing this phase changes to test, and the rendered
+outcome (an input actually receiving DOM focus) is unreachable from workerd
+regardless. Verdict: **NO_TEST_REQUIRED** — manual verification only (plan's
+Level 3 MANUAL step 1), consistent with the PRD's explicit routing note.
+
+**AC-A4 (the autofocus non-gating decision is recorded in code).** Task 3 is
+a doc-comment-only edit — "the `autoFocus` attribute and every surrounding
+line stay byte-identical" (plan lines 305-307). What AC-A4 actually requires
+is that a comment string exists above a specific line; that is an
+authorship/documentation invariant, not application behavior a running test
+observes. The plan's own Level 2 Validation Commands already assert this
+with a real exit code (`grep -q "Open Question 1" src/app/App.tsx`, plan
+lines 313-319, 357-364). A Vitest test that reads `App.tsx`'s source text
+and asserts a comment substring would not be testing the SUT's observable
+behavior at all — it would be re-implementing the plan's own grep check in a
+different runner, adding no discriminative power. Verdict:
+**NO_TEST_REQUIRED** — covered by the plan's own non-Vitest content-invariant
+check.
+
+### Why this differs from phase 1
+
+Phase 1's `parseShareTarget` was genuinely nontrivial: a preference order
+across three fields, a documented Android quirk (`url` often empty, `text`
+carries the link), and whitespace trimming — real decision logic with
+multiple discriminable branches, living in `src/shared` (DOM-free, dual
+environment-compiled) by the plan's own design, and 8 real cases were
+written for it. Phase 3 has no analogous unit: every artifact this phase
+touches is either static data (Task 1), a one-line already-covered DOM
+branch with no `src/shared` counterpart (Task 2), or a comment with no
+behavioral change (Task 3). This is not a weaker effort at finding a testable
+seam; it is what an honest walk of this specific plan's three tasks turns up.
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-3 shortcut-opens-focused | NO_TEST_REQUIRED (visual/gesture/DOM-unreachable; plan's own non-Vitest content-invariant + curl dry-run + manual steps cover all four AC-A sub-items) | see "Per-AC-A reasoning" above; plan `## Validation Commands` Level 1/2/3 |
+| AC-1 share-creates-task | OUT_OF_PHASE_SCOPE | covered by Phase 1 (complete) |
+| AC-2 token-never-reprompted | OUT_OF_PHASE_SCOPE | deferred to Phase 2 (blocked) |
+| AC-4 unreachable-server-is-explicit | OUT_OF_PHASE_SCOPE | deferred to Phase 4 (pending) |
+| AC-5 empty-share-creates-nothing | OUT_OF_PHASE_SCOPE | covered by Phase 1 (complete) |
+
+## Test files written this session
+
+(none — every in-scope AC-A resolves to NO_TEST_REQUIRED; see reasoning
+above. No test file was created, updated, or deleted.)
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no update/delete this session) | — | — | — |
+
+## Pre-emission self-check
+
+- Ledger completeness: no UPDATE/DELETE performed this session; ledger's
+  sole row is the default "(none)" row. Confirmed.
+- Coverage completeness: the sole in-scope PRD AC (AC-3) has an explicit
+  recorded outcome, with each of the plan's four AC-A sub-items individually
+  walked and justified rather than collapsed into a single unexamined
+  conclusion. The four out-of-phase PRD ACs are recorded as
+  OUT_OF_PHASE_SCOPE. Confirmed.
+
+## Status
+
+*Status: APPROVED*
