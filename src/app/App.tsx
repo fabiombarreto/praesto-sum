@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import type { TaskDto } from "../shared/api";
+import { classifyRequestFailure } from "../shared/request-failure";
 import type { ShareTarget } from "../shared/share-target";
 import {
   ApiError,
@@ -81,7 +82,7 @@ function TaskBoard({
         onUnauthorized();
         return;
       }
-      setError(cause instanceof Error ? cause.message : "Unexpected error");
+      setError(classifyRequestFailure(cause).message);
     },
     [onUnauthorized],
   );
@@ -126,6 +127,15 @@ function TaskBoard({
           if (!trimmed || busy) return;
           void run(async () => {
             await createTask({ title: trimmed });
+            // Phase 4 (install-and-quick-capture) invariant, locked in
+            // explicitly: `setTitle("")` is deliberately sequenced AFTER the
+            // awaited `createTask(...)` call above, never before or
+            // unconditionally. A thrown failure — network-unreachable or
+            // HTTP-level, both now surfaced via `classifyRequestFailure` in
+            // `handleFailure` — exits this callback before this line runs,
+            // so on any failed save the owner's typed text is not lost; it
+            // remains exactly as typed in the input's `value={title}`
+            // binding (PRD AC-4).
             setTitle("");
             setJustSaved(true);
             setTimeout(() => setJustSaved(false), 2000);

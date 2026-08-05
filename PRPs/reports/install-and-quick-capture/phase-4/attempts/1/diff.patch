@@ -1,0 +1,221 @@
+diff --git a/src/app/App.tsx b/src/app/App.tsx
+index 4afe706..df5ce93 100644
+--- a/src/app/App.tsx
++++ b/src/app/App.tsx
+@@ -1,5 +1,6 @@
+ import { useCallback, useEffect, useState, type CSSProperties } from "react";
+ import type { TaskDto } from "../shared/api";
++import { classifyRequestFailure } from "../shared/request-failure";
+ import type { ShareTarget } from "../shared/share-target";
+ import {
+   ApiError,
+@@ -81,7 +82,7 @@ function TaskBoard({
+         onUnauthorized();
+         return;
+       }
+-      setError(cause instanceof Error ? cause.message : "Unexpected error");
++      setError(classifyRequestFailure(cause).message);
+     },
+     [onUnauthorized],
+   );
+@@ -126,6 +127,15 @@ function TaskBoard({
+           if (!trimmed || busy) return;
+           void run(async () => {
+             await createTask({ title: trimmed });
++            // Phase 4 (install-and-quick-capture) invariant, locked in
++            // explicitly: `setTitle("")` is deliberately sequenced AFTER the
++            // awaited `createTask(...)` call above, never before or
++            // unconditionally. A thrown failure — network-unreachable or
++            // HTTP-level, both now surfaced via `classifyRequestFailure` in
++            // `handleFailure` — exits this callback before this line runs,
++            // so on any failed save the owner's typed text is not lost; it
++            // remains exactly as typed in the input's `value={title}`
++            // binding (PRD AC-4).
+             setTitle("");
+             setJustSaved(true);
+             setTimeout(() => setJustSaved(false), 2000);
+diff --git a/src/app/api.ts b/src/app/api.ts
+index ebb4345..be31bb7 100644
+--- a/src/app/api.ts
++++ b/src/app/api.ts
+@@ -22,6 +22,15 @@ export function clearToken(): void {
+   window.localStorage.removeItem(TOKEN_KEY);
+ }
+ 
++/**
++ * `src/shared/request-failure.ts`'s `classifyRequestFailure` distinguishes
++ * an HTTP-level failure from a network-unreachable one purely by the
++ * presence of a numeric `status` field on the caught cause — duck-typed
++ * rather than an `instanceof ApiError` check, since `src/shared/` cannot
++ * import this class (see that module's doc comment for why). Any future
++ * change to this class's shape MUST preserve `status: number`, or the
++ * classifier must be updated in lockstep.
++ */
+ export class ApiError extends Error {
+   readonly status: number;
+ 
+--- new file: src/shared/request-failure.ts
+/**
+ * Classifier for a caught request failure, turning it into one of two
+ * discriminated, stable, honest messages instead of a raw, browser-specific
+ * error string.
+ *
+ * Like `src/shared/api.ts` and `src/shared/share-target.ts`, this module is
+ * compiled into BOTH the browser and the Worker projects, so it must stay
+ * environment-agnostic and free of runtime dependencies and DOM globals (no
+ * `window`, no `document`). It duck-types `ApiError`'s shape
+ * (`src/app/api.ts:25-33`) rather than importing the class, because
+ * `src/shared/` cannot import from `src/app/` (`tsconfig.test.json`'s test
+ * project `include`s `test`, `src/worker` and `src/shared`, but not
+ * `src/app`) and `src/shared` also compiles into the Worker target, where no
+ * `ApiError` class exists at all.
+ *
+ * Per MDN, `fetch()` only rejects on a genuine network failure (no
+ * `Response` was ever received), never on an HTTP error status — so the
+ * presence of a numeric `status` field is exactly the structural signal that
+ * separates a received HTTP-level error from an unreachable server. Only
+ * `typeof cause.status === "number"` counts; a `status` field of any other
+ * type (e.g. a string) does not classify as an http-error.
+ */
+
+/** Result of classifying a caught request failure. */
+export interface RequestFailure {
+  kind: "server-unreachable" | "http-error";
+  message: string;
+}
+
+/**
+ * Classifies any caught request-failure `cause` into a stable, honest
+ * message for the owner. Never throws, regardless of what `cause` is —
+ * `null`, `undefined` and primitive causes are all handled safely.
+ */
+export function classifyRequestFailure(cause: unknown): RequestFailure {
+  if (
+    typeof cause === "object" &&
+    cause !== null &&
+    "status" in cause &&
+    typeof (cause as { status: unknown }).status === "number"
+  ) {
+    const status = (cause as { status: number }).status;
+    return {
+      kind: "http-error",
+      message: `The server rejected the request (status ${status}).`,
+    };
+  }
+
+  return {
+    kind: "server-unreachable",
+    message:
+      "Praesto could not reach the server. Nothing was lost — try saving again once you're back online.",
+  };
+}
+--- new file: test/request-failure.test.ts
+// PRPs/prds/install-and-quick-capture.prd.md AC-4 unreachable-server-is-explicit
+//
+// Source plan: PRPs/plans/install-and-quick-capture-phase-4-network-honesty.plan.md
+// (Task 1 — classifyRequestFailure(cause: unknown): { kind: "server-unreachable" | "http-error"; message: string }).
+//
+// This is a pure, DOM-free unit under test (src/shared/request-failure.ts must stay
+// environment-agnostic and dual-compiled into both the browser and Worker targets — see
+// docs/context/architecture.md's per-target tsconfig boundary and tsconfig.test.json's
+// `include` list, which lists `test`, `src/worker`, `src/shared` but NOT `src/app`). It
+// needs neither the D1 fixture nor the bearer-token auth helpers that test/tasks.test.ts
+// uses, mirroring test/share-target.test.ts's shape.
+//
+// Cross-boundary note: src/shared/ cannot import `ApiError` from src/app/api.ts (a compile
+// error under tsconfig.test.json's project boundary), so every "http-error" case below
+// constructs a PLAIN OBJECT carrying a numeric `status` field — exactly the shape
+// `classifyRequestFailure` duck-types against, never an `ApiError` instance.
+//
+// Scope note (see PRPs/reports/install-and-quick-capture/test-suite-phase-4.diff for the
+// full per-AC outcome record): this file covers only the classification decision itself
+// (plan AC-A1, AC-A2). The DOM-rendered slice of AC-4 — the message actually rendering in
+// `<p style={styles.error}>`, the 401 short-circuit staying untouched, and the typed text
+// visibly surviving a failed save — is unreachable from the workerd-only Vitest tier (no
+// browser/DOM tier exists — docs/context/testing.md) and is verified manually per the
+// plan's Level 3 MANUAL steps, plus its own Level 2 content-invariant grep checks.
+
+import { describe, expect, it } from "vitest";
+import { classifyRequestFailure } from "../src/shared/request-failure";
+
+describe("classifyRequestFailure — HTTP-level failures (PRD AC-4, plan AC-A2)", () => {
+  it("classifies a cause carrying numeric status 401 as http-error naming that status", () => {
+    const result = classifyRequestFailure({ status: 401 });
+    expect(result.kind).toBe("http-error");
+    expect(result.message).toContain("401");
+  });
+
+  it("classifies a cause carrying numeric status 500 as http-error naming that status", () => {
+    const result = classifyRequestFailure({ status: 500 });
+    expect(result.kind).toBe("http-error");
+    expect(result.message).toContain("500");
+  });
+
+  it("produces a distinct message per status, not one message hard-coded regardless of status", () => {
+    const at401 = classifyRequestFailure({ status: 401 });
+    const at500 = classifyRequestFailure({ status: 500 });
+    expect(at401.message).not.toBe(at500.message);
+  });
+
+  it("classifies an ApiError-shaped plain object (status + message + name) by structure, not by instanceof", () => {
+    // Duck-typed on purpose: src/shared/ cannot import the ApiError class at all (tsconfig
+    // boundary above), so the classifier must key off the numeric `status` field, not
+    // `cause instanceof ApiError` — this is impossible to satisfy any other way given the
+    // compile boundary, but the case still discriminates an implementation that requires an
+    // extra field (e.g. `name === "ApiError"`) before classifying as http-error.
+    const apiErrorShaped = { status: 404, message: "Task not found", name: "ApiError" };
+    expect(classifyRequestFailure(apiErrorShaped).kind).toBe("http-error");
+  });
+});
+
+describe("classifyRequestFailure — network-unreachable failures (PRD AC-4, plan AC-A1)", () => {
+  it("classifies a raw fetch()-style TypeError (no status) as server-unreachable", () => {
+    // Per MDN (the plan's own research-web citation): fetch() rejects with a TypeError and
+    // no Response — hence no `status` — when the network itself fails, never on an HTTP
+    // error status.
+    const result = classifyRequestFailure(new TypeError("Failed to fetch"));
+    expect(result.kind).toBe("server-unreachable");
+  });
+
+  it("classifies a generic Error with no status field as server-unreachable, not only a TypeError", () => {
+    // Guards against an implementation that special-cases `instanceof TypeError` instead of
+    // the documented structural check (presence of a numeric `status`) — a real fetch
+    // failure could surface as a plain Error in some environments too.
+    const result = classifyRequestFailure(new Error("network request failed"));
+    expect(result.kind).toBe("server-unreachable");
+  });
+
+  it("classifies a plain object with no status field at all as server-unreachable", () => {
+    expect(classifyRequestFailure({}).kind).toBe("server-unreachable");
+  });
+
+  it("the server-unreachable message is distinct from any http-error message", () => {
+    const unreachable = classifyRequestFailure(new TypeError("Failed to fetch"));
+    const httpError = classifyRequestFailure({ status: 500 });
+    expect(unreachable.message).not.toBe(httpError.message);
+  });
+});
+
+describe("classifyRequestFailure — boundary and malformed causes (PRD AC-4)", () => {
+  it("does not classify a non-numeric status field as http-error (typeof check, not just key presence)", () => {
+    // A cause carrying `status` as a STRING (not a number) must not be duck-typed as
+    // ApiError-shaped — this catches an implementation that only checks `"status" in cause`
+    // without also checking `typeof cause.status === "number"`.
+    const result = classifyRequestFailure({ status: "500" });
+    expect(result.kind).toBe("server-unreachable");
+  });
+
+  it("classifies a non-object primitive cause (string) as server-unreachable without throwing", () => {
+    expect(() => classifyRequestFailure("boom")).not.toThrow();
+    expect(classifyRequestFailure("boom").kind).toBe("server-unreachable");
+  });
+
+  it("classifies null and undefined causes as server-unreachable without throwing", () => {
+    // A naive `cause.status` property access on null/undefined would crash instead of
+    // classifying — this is the case that catches that bug.
+    expect(() => classifyRequestFailure(null)).not.toThrow();
+    expect(() => classifyRequestFailure(undefined)).not.toThrow();
+    expect(classifyRequestFailure(null).kind).toBe("server-unreachable");
+    expect(classifyRequestFailure(undefined).kind).toBe("server-unreachable");
+  });
+});

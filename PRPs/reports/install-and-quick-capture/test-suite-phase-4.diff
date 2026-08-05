@@ -1,0 +1,172 @@
+# TDD initial suite — phase 4
+# Source PRD: PRPs/prds/install-and-quick-capture.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/install-and-quick-capture-phase-4-network-honesty.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-08-05
+
+## Mode
+
+test-first (`docs/context/methodology.md`: `tdd: true`, `test_frameworks: ["vitest"]`).
+This suite runs BEFORE the Implementer; `src/shared/request-failure.ts` does not
+exist yet, so `test/request-failure.test.ts` is expected to be RED for the
+right reason (module-not-found / type error on `classifyRequestFailure`) until
+Task 1 of the plan is implemented.
+
+## Environment constraint honored (independently re-verified this session)
+
+- `docs/context/methodology.md`: `test_frameworks: ["vitest"]` — the only
+  framework.
+- `docs/context/testing.md`: the only detected test suite is Vitest 4 +
+  `@cloudflare/vitest-pool-workers`, running the real Worker inside workerd.
+  No DOM/browser/jsdom tier exists.
+- `tsconfig.test.json` `include`: `["test", "src/worker", "src/shared",
+  "worker-configuration.d.ts"]` — `src/app` is excluded. Read directly this
+  session to confirm the boundary the plan cites: any test importing from
+  `src/app` (including `ApiError`) would be a compile-time project-boundary
+  violation, not just a style preference. Every "http-error" case in the new
+  suite therefore constructs a plain object carrying a numeric `status`
+  field, never an `ApiError` instance.
+
+## Independent verdict on this phase (not inherited from the plan/plan-reviewer)
+
+Unlike Phase 3 (walked in this session's prior dispatch, where every task
+collapsed to static JSON or DOM-only wiring with no pure unit), this phase's
+Task 1 creates a genuine pure function: `classifyRequestFailure(cause: unknown)
+=> { kind: "server-unreachable" | "http-error"; message: string }`. Read
+`src/app/api.ts` (the `ApiError` class and `request()`'s two failure shapes)
+and the plan's Task 1 `**ACTION**` prose directly this session before
+accepting that conclusion. The function is genuine input→output branching
+logic (structural `status`-field duck-typing) with real, checkable outputs —
+the same shape as Phase 1's `parseShareTarget`, which the existing
+`test/share-target.test.ts` precedent already established as in-scope for
+this project's test-first practice. This is not decorative: a classifier
+with an inverted branch, a missing `typeof` check, or a hard-coded message
+would fail several of the cases below.
+
+The remaining three plan AC-A items (AC-A3, AC-A4, AC-A5) are DOM/React
+wiring and documentation-only edits in `src/app/App.tsx`, unreachable from
+the workerd-only Vitest tier — that part of the verdict is walked in detail
+below, on its own merits, not assumed from Task 1's testability.
+
+## Existing-coverage scan (Step 2.1, run once)
+
+`Glob`bed `test/*.test.ts` → `test/health.test.ts`, `test/tasks.test.ts`,
+`test/share-target.test.ts`. Read all three (already read once this session
+for the phase-3 dispatch; re-confirmed still current). None references
+`classifyRequestFailure`, `request-failure`, or any failure-classification
+logic — no existing test covers any AC-A of this phase, so
+`EXISTING_TEST_COVERS` does not apply to any of them. `src/shared/*.ts`
+currently contains only `api.ts` and `share-target.ts` — `request-failure.ts`
+does not exist yet, consistent with test-first ordering.
+
+## Per-AC-A reasoning
+
+**AC-A1 (PRD AC-4) — network-unreachable classification.** Genuinely
+testable pure logic. Covered by `test/request-failure.test.ts`'s
+"network-unreachable failures" describe block: a raw `fetch()`-style
+`TypeError` with no `status` field, a generic `Error` with no `status`
+field (guards against an implementation that keys off `instanceof
+TypeError` instead of the documented structural `status` check), and a
+bare `{}` object with no `status` field at all. Verdict: **NEW_TEST_REQUIRED**.
+
+**AC-A2 (PRD AC-4) — HTTP-level classification, distinct from
+network-unreachable.** Also genuinely testable pure logic. Covered by the
+"HTTP-level failures" describe block: status 401, status 500 (both
+individually asserted to produce a message naming that status — not just a
+`kind` check, since a message that doesn't actually name the status would
+leave the owner unable to tell one HTTP error from another), a
+cross-status distinctness assertion (catches a hard-coded message bug), an
+ApiError-shaped plain object with extra fields (404 + message + name, still
+duck-typed correctly), and a cross-kind distinctness assertion (the
+"server-unreachable" message must differ from any "http-error" message —
+directly serves AC-A2's "visibly distinct" requirement). Verdict:
+**NEW_TEST_REQUIRED**.
+
+**Boundary cases (both AC-A1 and AC-A2 — malformed/edge causes).** Added
+beyond the plan's two named cases because the plan's own Task 1 prose
+specifies the check as "an object carrying a **numeric** `status` field" —
+that adjective is a discriminative contract, not decoration, and a very
+plausible bug is checking `"status" in cause` without `typeof cause.status
+=== "number"`. Covered: a cause with `status` as a *string* ("500") must
+NOT classify as http-error; a non-object primitive cause (a bare string)
+must classify as server-unreachable without throwing; `null` and
+`undefined` causes must classify as server-unreachable without throwing (a
+naive `cause.status` property access on either would crash instead of
+classifying — this is exactly the case that catches that class of bug,
+raised explicitly in this session's dispatch instructions). These are
+folded into the AC-A1/AC-A2 outcome rows below rather than a separate PRD
+AC, since they exercise the same classifier contract from the malformed-input
+side.
+
+**AC-A3 (PRD AC-4) — 401 short-circuit in `handleFailure` stays untouched.**
+This is a React/DOM code-path assertion (`cause instanceof ApiError &&
+cause.status === 401` inside `src/app/App.tsx`'s `handleFailure`), not a
+call into the pure classifier — Task 2 keeps this branch running *before*
+`classifyRequestFailure` is ever reached, and it depends on real `ApiError`
+`instanceof` behavior, `onUnauthorized()` being called, and React state
+transitions, none of which workerd/Vitest can observe without a DOM/React
+renderer that this project does not have (`docs/context/testing.md`; no
+jsdom, ADR-0005 exact pins forbid adding one). Verdict: **NO_TEST_REQUIRED**
+— covered by the plan's own Level 2 content-invariant grep check (asserts
+`classifyRequestFailure` is wired into `App.tsx`) and Level 3 MANUAL step 3
+(confirms the 401 case still returns to the token screen).
+
+**AC-A4 (PRD AC-4) — typed text preserved, locked in via comment.** Task 3
+is a doc-comment-only edit above the pre-existing `setTitle("")` sequencing
+in `App.tsx`'s submit handler — "no functional change" per the plan's own
+`**ACTION**` prose. What is asserted is a comment substring's presence in
+source text, and the actual observable behavior (the input's DOM value
+surviving a failed save) is React-rendered and unreachable from workerd.
+Verdict: **NO_TEST_REQUIRED** — covered by the plan's own Level 2 grep
+check (`"typed text is not lost"`) and Level 3 MANUAL step 1.
+
+**AC-A5 (PRD AC-4) — uniform application to `refresh()` failures, not only
+saves.** `classifyRequestFailure`'s signature (`(cause: unknown) => {...}`)
+takes no caller-context parameter at all, so uniformity across every
+`handleFailure` call site is structurally guaranteed by the classifier's own
+shape and is implicitly exercised by every case in
+`test/request-failure.test.ts` — there is no separate "called from
+`refresh()`" branch inside the classifier to test differently. What AC-A5
+actually asserts beyond that — that `handleFailure` really is the single
+sink both `run()` and `refresh()` route through, and that the `{tasks ===
+null && error === null && ...}` Loading guard does not fire once `error` is
+set — is `App.tsx` control flow and JSX conditional rendering, DOM/React and
+unreachable from workerd. Verdict: **NO_TEST_REQUIRED** for the wiring
+half; the classification half is already covered by AC-A1/AC-A2's tests.
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-4 unreachable-server-is-explicit | NEW_TEST_REQUIRED | `test/request-failure.test.ts` — 3 describe blocks, 11 cases (HTTP-level: 401, 500, cross-status distinctness, ApiError-shaped duck-typing; network-unreachable: TypeError, generic Error, bare object, cross-kind distinctness; boundary: string-status non-match, string primitive, null/undefined) |
+| AC-1 share-creates-task | OUT_OF_PHASE_SCOPE | covered by Phase 1 (complete) |
+| AC-2 token-never-reprompted | OUT_OF_PHASE_SCOPE | deferred to Phase 2 (blocked) |
+| AC-3 shortcut-opens-focused | OUT_OF_PHASE_SCOPE | covered by Phase 3 (see `test-suite-phase-3.diff`, EXISTING_COVERAGE_SUFFICIENT / no-test-required) |
+| AC-5 empty-share-creates-nothing | OUT_OF_PHASE_SCOPE | covered by Phase 1 (complete) |
+
+## Test files written this session
+
+- `test/request-failure.test.ts` (new file; 11 cases across 3 describe
+  blocks, all mapping to PRD AC-4 / plan AC-A1 and AC-A2)
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no update/delete this session) | — | — | — |
+
+## Pre-emission self-check
+
+- Ledger completeness: no UPDATE/DELETE performed this session; ledger's
+  sole row is the default "(none)" row. Confirmed.
+- Coverage completeness: the sole in-scope PRD AC (AC-4) has an explicit
+  recorded outcome, with each of the plan's five AC-A sub-items (AC-A1
+  through AC-A5) individually walked and justified — two produced real
+  test cases, three produced an independently-reasoned NO_TEST_REQUIRED
+  verdict grounded in the DOM/workerd boundary, not a blanket assumption
+  carried over from Phase 3. The four out-of-phase PRD ACs are recorded as
+  OUT_OF_PHASE_SCOPE. Confirmed.
+
+## Status
+
+*Status: APPROVED*

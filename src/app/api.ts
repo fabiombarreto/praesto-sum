@@ -22,6 +22,15 @@ export function clearToken(): void {
   window.localStorage.removeItem(TOKEN_KEY);
 }
 
+/**
+ * `src/shared/request-failure.ts`'s `classifyRequestFailure` distinguishes
+ * an HTTP-level failure from a network-unreachable one purely by the
+ * presence of a numeric `status` field on the caught cause — duck-typed
+ * rather than an `instanceof ApiError` check, since `src/shared/` cannot
+ * import this class (see that module's doc comment for why). Any future
+ * change to this class's shape MUST preserve `status: number`, or the
+ * classifier must be updated in lockstep.
+ */
 export class ApiError extends Error {
   readonly status: number;
 
