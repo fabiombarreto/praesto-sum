@@ -98,8 +98,8 @@ Three rules. Two confirmed by the owner on 2026-08-03 and recorded as delivery d
 
 Derived from the table above — never a second, independently ageing list.
 
-- **Now:** unit 1 `install-and-quick-capture` — PRD APPROVED, phase 1 of 4 (share target) shipped to production 2026-08-05.
-- **Next:** unit 2 `task-detail-and-dates`, once unit 1's remaining phases close.
+- **Now:** unit 1 `install-and-quick-capture` — PRD APPROVED, **3 of 4 phases** shipped and verified on device (share target, launcher shortcut, honest network failure); one phase remains.
+- **Next:** chore **C11** (Google access spike) — its trigger fired when C3 shipped on 2026-08-04 and it has not started; its 8-day wall clock gates unit 4 and, through C12, unit 15. Then unit 2 `task-detail-and-dates` once unit 1's last phase closes.
 - **Later:** positions 2 onward in the units table.
 
 ## Chores
