@@ -20,7 +20,7 @@ Tier 2 index: one entry per doc, 1-2 lines each. Details live in the target file
 
 **Conventions** — English everywhere, canonical names, casing, TS strict, exact pins, git conventions. → docs/context/conventions.md
 
-**Integrations** — Cloudflare platform, Web Push (VAPID as secrets), API bearer token; Google Calendar NOT integrated (pending decision 4). → docs/context/integrations.md
+**Integrations** — Cloudflare platform, Web Push (VAPID as secrets), API bearer token; Google Calendar decided (ADR-0007: bidirectional, Events only) and access **proven** by chore C11 on 2026-08-11 — a real refresh token is already a Worker secret — but **no integration code exists yet**; unit 4 `google-calendar-read` writes it. → docs/context/integrations.md
 
 **Constraints** — CON-001..006, QA-001..004 scenarios, platform limits, offline is read-only. → docs/context/constraints.md
 

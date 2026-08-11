@@ -22,7 +22,7 @@ FR-020..026 + FR-010. Exit criterion: the owner replaces Google Calendar for day
 - **Tasks** relate via N:N links.
 - **Reminders** may point to an Event.
 - **Life Areas** group Events.
-- **External calendar sync (Google Calendar)** is NOT decided — pending decision 4; do not build against it.
+- **External calendar sync (Google Calendar)** is **decided** — `documentation/60-decisions/ADR-0007-google-calendar-bidirectional-sync.md` (2026-08-04): bidirectional, **Events only**, scope `calendar.events` (never `calendar`), polling on the existing cron, read in Phase 1 (unit 4) and write in Phase 2 (unit 15). Access was proven by chore C11 on 2026-08-11, but no integration code exists yet. Consequences that bind Event work from now on: unit 14 `events-and-day-view` must be **born sync-aware** (its migration ships the `event_sync_links` table, `all_day` and IANA timezone become mandatory, `source` (`local` | `google`) is a domain fact, and `computeEventContentHash()` is born pure in `src/shared`); the mirror inventory is closed, so nothing but Events ever crosses; and `docs/anti-patterns.md` carries the six rules this integration must not break — notably no field-level merge, and never `updated_at` as the dirty flag.
 
 ## Resolved 2026-08-03
 
