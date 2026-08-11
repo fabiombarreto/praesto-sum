@@ -29,9 +29,20 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
 
   useEffect(() => {
     let cancelled = false;
-    void readToken().then((token) => {
-      if (!cancelled) setAuthorized(token !== null);
-    });
+    void readToken()
+      .then((token) => {
+        if (!cancelled) setAuthorized(token !== null);
+      })
+      .catch(() => {
+        // Unreachable by contract: `read()` guards every storage call and is
+        // tested never to reject. Kept anyway because this is the app's one
+        // unrecoverable state — an unhandled rejection here leaves `authorized`
+        // at `null` forever, and the owner stares at "Loading…" with no way
+        // forward. Degrading to the token screen is always recoverable; a hang
+        // never is. If a future change makes `read()` able to reject, this line
+        // is what keeps that a bad afternoon instead of a dead app.
+        if (!cancelled) setAuthorized(false);
+      });
     return () => {
       cancelled = true;
     };
@@ -56,6 +67,7 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
 
 function TokenGate({ onAuthorized }: { onAuthorized: () => void }) {
   const [value, setValue] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <main style={styles.page}>
@@ -67,7 +79,19 @@ function TokenGate({ onAuthorized }: { onAuthorized: () => void }) {
           event.preventDefault();
           const token = value.trim();
           if (!token) return;
-          await saveToken(token);
+          try {
+            await saveToken(token);
+          } catch (cause) {
+            // `saveToken` rejects in exactly one case: the token reached
+            // NEITHER store (`src/shared/token-store.ts`). That message is
+            // written for the owner and pinned by a test, so surface it as-is
+            // instead of restating it here. `value` is deliberately not
+            // cleared — the same "never lose what was typed" invariant the
+            // capture form keeps (FR-045).
+            setError(cause instanceof Error ? cause.message : "Could not store the API token.");
+            return;
+          }
+          setError(null);
           onAuthorized();
         }}
       >
@@ -83,6 +107,7 @@ function TokenGate({ onAuthorized }: { onAuthorized: () => void }) {
           Save
         </button>
       </form>
+      {error !== null && <p style={styles.error}>{error}</p>}
     </main>
   );
 }

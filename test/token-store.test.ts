@@ -105,10 +105,16 @@ class FakeDurableStorage implements DurableTokenStorage {
 /**
  * In-memory fake of LegacyTokenStorage — synchronous, matching the real
  * `window.localStorage` surface the port models. Same one-shot failure-injection
- * shape as FakeDurableStorage, used only by the clear()-never-rejects cases.
+ * shape as FakeDurableStorage.
+ *
+ * All three operations can be made to throw, because all three genuinely can:
+ * a browser configured to block site data raises a SecurityError on any
+ * `window.localStorage` access, not merely on writes.
  */
 class FakeLegacyStorage implements LegacyTokenStorage {
   private value: string | null = null;
+  private failRead = false;
+  private failWrite = false;
   private failClear = false;
 
   seed(token: string | null): void {
@@ -117,15 +123,29 @@ class FakeLegacyStorage implements LegacyTokenStorage {
   peek(): string | null {
     return this.value;
   }
+  failNextReadWith(): void {
+    this.failRead = true;
+  }
+  failNextWriteWith(): void {
+    this.failWrite = true;
+  }
   failNextClearWith(): void {
     this.failClear = true;
   }
 
   read(): string | null {
+    if (this.failRead) {
+      this.failRead = false;
+      throw new Error("fake legacy read failure");
+    }
     return this.value;
   }
 
   write(token: string): void {
+    if (this.failWrite) {
+      this.failWrite = false;
+      throw new Error("fake legacy write failure");
+    }
     this.value = token;
   }
 
@@ -350,6 +370,84 @@ describe("createTokenStore().read() — a blank stored value is not a token (PRD
     const result = await store.read();
 
     expect(result).toBeNull();
+    expect(durable.peek()).toBeNull();
+    expect(legacy.peek()).toBeNull();
+  });
+});
+
+// The cases below were added after the phase-2 code review flagged that every
+// `durable.*` call was guarded while two `legacy.*` calls were not. A browser
+// configured to block site data raises a SecurityError on any
+// `window.localStorage` access, so the legacy port can throw on read and write
+// exactly as it can on clear. They pin two distinct honesty properties:
+// `read()` must never reject (its caller, src/app/App.tsx's mount effect, has
+// nowhere to route a rejection but the permanent "Loading…" placeholder), and
+// `save()` must reject when — and ONLY when — the token reached no store at all.
+
+describe("createTokenStore().read() — never rejects, whichever store fails", () => {
+  it("returns null instead of rejecting when the legacy read throws and durable is empty", async () => {
+    const { legacy, store } = makeStore();
+    legacy.failNextReadWith();
+
+    // Null is the honest answer: no token could be found, so the app reaches
+    // the token screen — the recovery path — rather than hanging on "Loading…".
+    await expect(store.read()).resolves.toBeNull();
+  });
+
+  it("returns null instead of rejecting when BOTH the durable and legacy reads throw", async () => {
+    const { durable, legacy, store } = makeStore();
+    durable.seed("unreachable-token");
+    legacy.seed("unreachable-token");
+    durable.failNextReadWith();
+    legacy.failNextReadWith();
+
+    await expect(store.read()).resolves.toBeNull();
+  });
+
+  it("completes the migration when the durable write succeeds but the legacy cleanup throws", async () => {
+    const { durable, legacy, store } = makeStore();
+    legacy.seed("legacy-token");
+    legacy.failNextClearWith();
+
+    const first = await store.read();
+
+    // The durable copy is what matters: dropping the stale legacy copy is
+    // hygiene, and failing at it must not be mistaken for a failed migration.
+    expect(first).toBe("legacy-token");
+    expect(durable.peek()).toBe("legacy-token");
+
+    // Prove the migration really took: reseed legacy with a different value
+    // and confirm the next read is served by the durable store alone.
+    legacy.seed("stale-token");
+    await expect(store.read()).resolves.toBe("legacy-token");
+  });
+});
+
+describe("createTokenStore().save() — reports failure only when nothing was stored", () => {
+  it("resolves when the durable write succeeded and the legacy store is entirely unusable", async () => {
+    const { durable, legacy, store } = makeStore();
+    legacy.seed("old-token");
+    // A blocked-site-data browser fails EVERY localStorage operation, not just
+    // one, so failing the cleanup alone would not reproduce the real condition:
+    // the fallback write that follows it must fail too.
+    legacy.failNextClearWith();
+    legacy.failNextWriteWith();
+
+    // The token IS durably stored, so reporting failure here would be a lie
+    // that sends the owner back to re-paste a token that already saved.
+    await expect(store.save("new-token")).resolves.toBeUndefined();
+    expect(durable.peek()).toBe("new-token");
+    await expect(store.read()).resolves.toBe("new-token");
+  });
+
+  it("rejects with an actionable message when neither store could take the token", async () => {
+    const { durable, legacy, store } = makeStore();
+    durable.failNextWriteWith();
+    legacy.failNextWriteWith();
+
+    // Nothing was persisted anywhere. Swallowing this would leave the owner
+    // looking at a Save button that silently did nothing.
+    await expect(store.save("new-token")).rejects.toThrow(/could not store the API token/i);
     expect(durable.peek()).toBeNull();
     expect(legacy.peek()).toBeNull();
   });

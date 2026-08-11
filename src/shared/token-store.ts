@@ -49,6 +49,18 @@ function hasToken(value: string | null): value is string {
 }
 
 /**
+ * Thrown by `save()` when the token reached NEITHER store. This is the one
+ * failure the owner has to be told about: a Save that persisted nothing and
+ * said nothing is the silent absorption FR-045 and vision principle 6 (honest
+ * mirror) exist to rule out. The message lives here, in the tested module,
+ * rather than in the untested UI, so its wording is pinned by a test.
+ */
+const TOKEN_NOT_STORED =
+  "Praesto could not store the API token on this device. Both IndexedDB and " +
+  "local storage refused — check whether this browser is blocking site data " +
+  "for this site.";
+
+/**
  * Builds a `TokenStore` over the given ports. Implements the seven
  * numbered behaviour rules from this plan's Task 1
  * (`PRPs/plans/install-and-quick-capture-phase-2-durable-token.plan.md`):
@@ -79,7 +91,18 @@ export function createTokenStore(ports: {
       }
 
       // Rule 2: durable holds nothing (or rejected) — fall back to legacy.
-      const legacyValue = legacy.read();
+      // Guarded for the same reason the durable read is: a browser set to
+      // block site data raises on ANY `window.localStorage` access, and
+      // `read()` must never reject. Its caller — src/app/App.tsx's mount
+      // effect — has nowhere to route a rejection except the permanent
+      // "Loading…" placeholder, so a throw there would strand the app short
+      // of the token screen, which is the recovery path.
+      let legacyValue: string | null;
+      try {
+        legacyValue = legacy.read();
+      } catch {
+        legacyValue = null;
+      }
       if (!hasToken(legacyValue)) {
         return null;
       }
@@ -88,25 +111,52 @@ export function createTokenStore(ports: {
       // read is served by the durable store alone.
       try {
         await durable.write(legacyValue);
-        legacy.clear();
       } catch {
         // Rule 3: migration never destroys the only copy. Leave the
         // legacy value in place; the migration retries on the next read.
+        return legacyValue;
+      }
+
+      // The durable copy now exists, so the migration has succeeded. Dropping
+      // the stale legacy copy is hygiene on top of that — deliberately in its
+      // OWN try, because failing at it is not a failed migration and must not
+      // be reported as one. A copy left behind cannot shadow anything: rule 1
+      // prefers the durable store, and `clear()` wipes both.
+      try {
+        legacy.clear();
+      } catch {
+        // ignored — the token is durably stored either way
       }
       return legacyValue;
     },
 
     async save(token: string): Promise<void> {
       try {
-        // Rule 4: write durably and drop any stale legacy copy on success,
-        // so it can never later shadow the token the owner just pasted.
         await durable.write(token);
-        legacy.clear();
       } catch {
         // Rule 5: durable unavailable (IndexedDB blocked or missing) —
         // degrade to the legacy store rather than losing the token.
         // Today's behaviour is the declared floor.
-        legacy.write(token);
+        try {
+          legacy.write(token);
+        } catch {
+          // Neither store took it. The token is nowhere, and the owner is
+          // looking at a Save button that would otherwise appear to have
+          // done nothing.
+          throw new Error(TOKEN_NOT_STORED);
+        }
+        return;
+      }
+
+      // Rule 4: the durable write succeeded, so the token IS stored. Dropping
+      // any stale legacy copy is hygiene on top of that, in its OWN try: when
+      // this throws, reporting a failed save would be a lie that sends the
+      // owner back to re-paste a token that already saved. A copy left behind
+      // cannot shadow the new one — rule 1 prefers the durable store.
+      try {
+        legacy.clear();
+      } catch {
+        // ignored — the token is durably stored either way
       }
     },
 
