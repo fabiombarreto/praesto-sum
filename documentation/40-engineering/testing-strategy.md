@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-04
+last_updated: 2026-08-11
 review_trigger: "practice shows the split is too heavy or too light, a new test tier is added, or the methodology flag changes"
 ---
 
@@ -32,7 +32,8 @@ Tooling landed with the 2026-08-03 scaffold: **Vitest + `@cloudflare/vitest-pool
 | Export completeness (FR-042) | **Yes** | Ownership is theoretical if the export silently drops a table |
 | React components and layout | **No** — manual | One user, one browser pair; visual checks are faster than maintaining component tests |
 | Third-party behavior (Cloudflare, browser push delivery) | **No** | Not ours to test; verified by using the app |
-| End-to-end browser flows | **Not yet** | No e2e tier exists. If manual verification starts missing regressions, add one and record it in [docs/context/testing.md](../../docs/context/testing.md) |
+| Browser-storage / browser-API logic (IndexedDB, `navigator.storage`, Notification, service worker) | **Yes, via extraction** | The runtime has none of these APIs, so the decidable part moves to `src/shared` behind a port and is tested against an in-memory fake; only the thin adapter that calls the API is verified manually. Rule and rationale in [docs/context/methodology.md](../../docs/context/methodology.md) (recorded 2026-08-11) |
+| End-to-end browser flows | **Not yet — trigger set** | No e2e tier exists. Decided 2026-08-11 not to buy one for token storage, and to buy it when unit 6 `push-channel-proven` needs it: push failure is silent by nature, which is where manual verification genuinely stops being enough. Tracked as a backlog idea in the [roadmap](../50-planning/roadmap.md#backlog) |
 
 When a case is unclear, it gets a row here before any test is written or skipped.
 

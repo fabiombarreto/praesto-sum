@@ -156,16 +156,19 @@ whether the tool works, not whether behaviour changed.
 3. `TBD - needs validation`: whether a share target that receives a URL (rather
    than plain text) should store the URL in `title` or in `description`. The
    wire contract supports both; the owner has not been asked.
-4. **What unblocks Phase 2?** It needs browser storage APIs that no existing
-   test tier can reach, which collides with `tdd: true`. Three candidate
-   resolutions, none obviously right: (a) declare browser-storage phases an
-   explicit exception in `docs/context/methodology.md`, verified manually —
-   cheap and honest, but admits a real gap; (b) add a browser test tier
-   (Vitest browser mode or Playwright) — solves it properly, but is its own
-   delivery unit, absent from the roadmap and well over the ~1 h/day budget
-   for several days; (c) ship Phase 2 with manual verification only and
-   revisit. Raised 2026-08-05 when the same gap aborted the `/relay-test`
-   stage of Phase 1.
+4. ~~**What unblocks Phase 2?**~~ **RESOLVED 2026-08-11.** Raised 2026-08-05
+   when the gap aborted the `/relay-test` stage of Phase 1. The three
+   candidates offered were (a) a blanket methodology exception verified
+   manually, (b) buying a browser test tier, (c) shipping with manual
+   verification and revisiting. The owner took a fourth path that none of them
+   described: **extract the logic to `src/shared` behind a port and test it
+   first against an in-memory fake, exempting only the adapter**. It keeps
+   ADR-0008 intact rather than carving a hole in it, costs no extra delivery
+   unit, and — unlike (c) — writes the rule down so the next browser-API phase
+   does not stall identically. A real browser tier was not rejected, only
+   deferred with a trigger: unit 6 `push-channel-proven`, where silent failure
+   makes manual verification genuinely insufficient. See the Phase 2 details
+   above and `docs/context/methodology.md`.
 
 ---
 
@@ -258,7 +261,7 @@ ordinary units and are testable first.
 | # | Phase | Description | Status | Parallel | Depends | PRP Plan |
 |---|---|---|---|---|---|---|
 | 1 | Share target | Sharing text from another app creates the Task | complete | no | - | PRPs/plans/completed/install-and-quick-capture-phase-1-share-target.plan.md |
-| 2 | Durable token | The token survives storage pressure and a restart; the token screen does not reappear | blocked | yes | - | |
+| 2 | Durable token | The token survives storage pressure and a restart; the token screen does not reappear | pending | yes | - | |
 | 3 | Shortcut and focused capture | Long-pressing the icon opens directly on a focused, empty field | complete | yes | 1 | PRPs/plans/completed/install-and-quick-capture-phase-3-shortcut-and-focused-capture.plan.md |
 | 4 | Network honesty | An unreachable server produces an explicit state and loses no typed text | complete | yes | 1 | PRPs/plans/completed/install-and-quick-capture-phase-4-network-honesty.plan.md |
 
@@ -275,14 +278,31 @@ its payload parsing is pure logic in `src/shared`, which is exactly what
 startup. Covers AC-2. The 401-clears-token path is preserved. It carries no
 dependency on Phase 1: the share target needs a valid token, not a durable one.
 
-**Status `blocked` since 2026-08-05, by the owner's decision — not deferred for
-convenience.** This phase is entirely browser-storage work (IndexedDB,
-`navigator.storage.persist()`), and the project's only test tier is Vitest
-running inside workerd, which has neither. Under `tdd: true` ([ADR-0008](../../documentation/60-decisions/ADR-0008-adopt-test-first-methodology.md))
-there is no honest test-first path here: the test pair would either author
-nothing or abort as AMBIGUOUS. Unblocking requires one of three owner
-decisions, recorded as Open Question 4 below. Phases 3 and 4 proceed
-meanwhile — neither depends on this one.
+**Blocked 2026-08-05, unblocked 2026-08-11 by the owner's decision** (Open
+Question 4 below). The block was real and is worth keeping on record: this
+phase is browser-storage work (IndexedDB, `navigator.storage.persist()`), the
+project's only test tier is Vitest inside workerd, which has neither, and under
+`tdd: true` ([ADR-0008](../../documentation/60-decisions/ADR-0008-adopt-test-first-methodology.md))
+the test pair would have authored nothing or aborted as AMBIGUOUS. Phases 3 and
+4 proceeded meanwhile — neither depended on this one.
+
+**How it is now built (binding for this phase's plan):**
+
+1. The token store's *logic* lives in `src/shared` behind a storage port —
+   read, write, clear, the 401-clears-token path, and the one-time migration of
+   an existing `localStorage` token. Test-first against an in-memory fake, in
+   the existing tier. This is the pattern phase 4 established with
+   `src/shared/request-failure.ts`.
+2. The IndexedDB adapter and the `navigator.storage.persist()` call are the
+   only exempt code: thin, no branching worth asserting, verified on the device
+   and recorded in the delivery-history entry. Asserting that `persist()` *was
+   called* is a trivial assertion and the test reviewer would rightly flag it.
+3. The port keeps a synchronous-friendly surface or the callers move to async
+   deliberately — IndexedDB is async while `localStorage` is not, and that
+   ripple is part of this phase, not a surprise for the next one.
+
+The general rule this established is recorded in
+`docs/context/methodology.md`; it exempts glue, never logic.
 
 **Phase 3 — Shortcut and focused capture.** Add `shortcuts` to the manifest and
 the deep-linked capture route with autofocus. Covers AC-3.

@@ -34,6 +34,32 @@ PRD whose acceptance criteria are purely visual produces no test file — that
 is the `EXISTING_COVERAGE_SUFFICIENT` / no-test-required path, not a
 violation.
 
+### Browser-API work: split the logic out, then the glue is exempt
+
+Recorded 2026-08-11, when Phase 2 of `install-and-quick-capture` stalled: the
+only test tier is Vitest inside workerd, which has no IndexedDB, no
+`navigator.storage.*`, no Notification API and no service-worker registration.
+Work that touches those APIs has no honest test-first path as written — the
+test pair would author nothing or abort as AMBIGUOUS.
+
+The resolution is **not** a blanket exception. It is a design obligation:
+
+1. **Extract the decidable part into `src/shared`** behind a port — the state
+   machine, the fallbacks, the migration, the error mapping — and write those
+   tests first against an in-memory fake. This is the pattern the project
+   already used for `src/shared/request-failure.ts`.
+2. **Only the thin adapter is exempt**: the lines that actually call the
+   browser API. It is verified on the device and the verification is recorded
+   in the phase's delivery-history entry.
+3. If a phase cannot be split that way, it does not silently proceed — it
+   raises the question to the owner, as Phase 2 did.
+
+The exemption is for glue, never for logic. "It touches the browser" is not by
+itself a reason to skip a test; it is a reason to move the logic somewhere
+testable first. A real browser tier (Vitest browser mode or Playwright) is
+recorded in the roadmap backlog with its trigger: the push work of unit 6,
+where failure is silent and manual verification genuinely stops being enough.
+
 ### Cost, recorded honestly
 
 Test-first adds two agent round-trips per delivery unit and lengthens each
