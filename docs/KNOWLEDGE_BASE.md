@@ -24,9 +24,9 @@ Tier 2 index: one entry per doc, 1-2 lines each. Details live in the target file
 
 **Constraints** — CON-001..006, QA-001..004 scenarios, platform limits, offline is read-only. → docs/context/constraints.md
 
-**Methodology** — `tdd: false` (declared test-after philosophy); `docs_sync: true`; `figma_track: false`. → docs/context/methodology.md
+**Methodology** — `tdd: true` (test-first, declared 2026-08-04 by ADR-0008); `docs_sync: true`; `figma_track: false`; browser-API work splits the logic into `src/shared` behind a port and exempts only the adapter. → docs/context/methodology.md
 
-**Testing guardrail** — binding contract: keep suites green on EVERY change; fallback warning protocol; no suites detected yet (pre-scaffold). → docs/context/testing.md
+**Testing guardrail** — binding contract: keep suites green on EVERY change; fallback warning protocol; one detected tier (Vitest + `@cloudflare/vitest-pool-workers`, `npm test`), no browser/e2e tier yet. → docs/context/testing.md
 
 ## Domain
 

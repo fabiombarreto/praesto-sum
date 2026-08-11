@@ -1,0 +1,1737 @@
+diff --git a/PRPs/plans/install-and-quick-capture-phase-2-durable-token.plan.md b/PRPs/plans/install-and-quick-capture-phase-2-durable-token.plan.md
+new file mode 100644
+index 0000000..964b722
+--- /dev/null
++++ b/PRPs/plans/install-and-quick-capture-phase-2-durable-token.plan.md
+@@ -0,0 +1,729 @@
++# Feature: Durable token (Phase 2 of install-and-quick-capture)
++
++```
++**Decision Gate**
++- Active context: none (no `.context.md` file in the repository)
++- Activated criteria: cross-cutting pattern (a storage port consumed by the
++  SPA's only API client); new module under `src/shared/`; changes the
++  signature of exports consumed by other files (`getToken`/`setToken` become
++  async); impact on a reusable service (the typed API client); touches the
++  auth surface (the 401-clears-token path)
++- Decisions found:
++  - ADR-0003 — the bearer token gates every `/api/*` route; single canonical
++    copy in D1; thin clients; NO merge, sync or offline-write logic. A token
++    that survives eviction is a client-local credential concern, not a data
++    replica
++  - ADR-0004 — one installable PWA is the sole interface; the storage fix
++    must be reachable from the web platform, with no native wrapper
++  - ADR-0005 — React 19 SPA + Vite; `src/shared/` is dual-compiled into the
++    browser AND Worker targets, so it carries no DOM globals; exact pins
++  - ADR-0008 — test-first (`tdd: true`); the suite is RED before any
++    production code exists
++  - PRD Open Question 4, RESOLVED 2026-08-11 by the owner — extract the
++    logic to `src/shared` behind a port, test it first against an in-memory
++    fake, exempt only the adapter. BINDING for this plan
++  - `docs/context/methodology.md` §"Browser-API work: split the logic out,
++    then the glue is exempt" (recorded 2026-08-11) — the exemption is for
++    glue, never for logic; a phase that cannot be split raises it to the
++    owner rather than proceeding silently
++  - CON-007 — the owner's phone is Android; device behaviour is verified
++    against Android, never inherited from iOS
++- Applicable anti-patterns:
++  - Weakening tests to force green — FORBIDDEN. No existing test may be
++    deleted, skipped or loosened by this phase
++  - Offline write queue — FORBIDDEN. Persisting a *credential* is not
++    persisting a *write*; this plan introduces no queue, no retry, no
++    pending-mutation store, and nothing that could grow into one
++  - Hand-duplicated entity types — not implicated; the store handles an
++    opaque `string`, never a Task/Event shape
++  - Meta-framework / SSR / RSC — not implicated
++  - Glossary synonym drift — not implicated; no new domain term
++  - Portuguese in artifacts
++- Applicable architectural rules:
++  - `src/shared/` compiles into every target and carries no DOM/Worker
++    globals — enforced structurally: `tsconfig.test.json:4` and
++    `tsconfig.worker.json:4` both declare `lib: ["ES2022"]` with no `DOM`,
++    so any real browser-global use in `src/shared/` is a compile error
++  - `tsconfig.test.json:8` includes `test`, `src/worker`, `src/shared` — and
++    deliberately NOT `src/app`. Logic that must be tested has to live in
++    `src/shared/`
++  - Every `/api/*` route requires the bearer token; only the PWA shell is
++    unauthenticated. The 401-clears-token path (`src/app/api.ts:54-57`) is
++    the one remaining route back to the token screen and must survive this
++    phase intact
++  - One Worker serves the SPA assets, `/api/*` and the cron — this phase is
++    entirely client-side; no Worker route, DTO or schema change
++- Result: PROCEED
++```
++
++## Source PRD
++
++- `PRPs/prds/install-and-quick-capture.prd.md` — Implementation Phases row 2:
++  "Durable token" — Goal: the token survives storage pressure and a restart;
++  the token screen does not reappear — Success signal: covers AC-2, with the
++  401-clears-token path preserved
++  (`PRPs/prds/install-and-quick-capture.prd.md:264, 276-305`).
++
++## Summary
++
++Today the bearer token lives in `window.localStorage`
++(`src/app/api.ts:11-23`), which `navigator.storage.persist()` does not
++protect — so under storage pressure the browser may evict it and the token
++screen reappears in the middle of the owner's life. This phase moves the
++token to IndexedDB (which `persist()` does protect) and requests persistent
++storage at startup. Per the owner's binding resolution of PRD Open Question
++4, the *decidable* part — read, save, clear, the 401-clears path, the
++one-time migration of the token already sitting in `localStorage` on both
++the owner's devices, and the degradation path when IndexedDB is unavailable
++— moves into a new pure module `src/shared/token-store.ts` behind an
++injected storage port and is tested first against an in-memory fake in the
++existing workerd tier, exactly as Phase 4 did with
++`src/shared/request-failure.ts`. Only a thin adapter
++(`src/app/token-storage.ts`) actually touches `indexedDB` and
++`navigator.storage.persist()`; it carries no branching worth asserting and
++is verified on the owner's Android phone and Windows PC. Because IndexedDB
++is asynchronous and `localStorage` is not, this phase also carries the
++resulting ripple deliberately: the three token accessors become async, and
++`App.tsx`'s token gate gains an explicit "still checking" state so the token
++screen can never flash before the stored token has been read.
++
++## User Story
++
++As the owner, I want the token I pasted once to still be there after a
++restart and after the browser reclaims storage, so that Praesto never
++interrupts me by demanding a secret I have to go and look up — and I want
++the token I already pasted on my phone and my PC to carry over on its own,
++so that "making it durable" does not cost me two more paste operations.
++
++## Problem Statement
++
++The owner pastes the API token once per device and expects never to see the
++token screen again. The token is kept in `window.localStorage`, and
++`navigator.storage.persist()` — the only mechanism that protects an origin's
++storage from eviction — does not cover Web Storage. Under storage pressure
++the token can therefore be discarded without warning, and the app falls back
++to the token screen at an arbitrary moment. There is a second, quieter half
++to the problem: the owner *already has* a token stored in `localStorage` on
++both devices, so a naive move to IndexedDB would silently strand it and
++force exactly the two re-pastes the durability work exists to prevent.
++
++## Solution Statement
++
++Introduce a pure `src/shared/token-store.ts` that owns every decision about
++the token — where it is read from, where it is written, what happens on a
++401, and how an existing `localStorage` token is migrated exactly once — and
++that reaches storage only through two injected ports it defines in plain
++TypeScript (no DOM types, so the module still compiles into the Worker and
++test projects). Test that module first against an in-memory fake covering
++the durable path, the migration path, the clear path, and each degradation
++path. Then add `src/app/token-storage.ts`: the exempt adapter that
++implements the durable port over IndexedDB, the legacy port over
++`window.localStorage`, and exposes a best-effort
++`requestPersistentStorage()`. Rewire `src/app/api.ts` to the store, renaming
++`getToken`/`setToken` to `readToken`/`saveToken` so that every call site
++that fails to await the new async signature is a compile error rather than a
++silent `Promise`-truthiness bug. Finally, make `App.tsx`'s token gate
++three-valued — `checking` → `authorized` | `unauthorized` — so the token
++screen renders only when the store has actually reported no token.
++
++## Metadata
++
++| Field | Value |
++|---|---|
++| Type | Feature |
++| Complexity | Medium |
++| Systems Affected | New pure module (`src/shared/token-store.ts`), new browser adapter (`src/app/token-storage.ts`), API client token accessors (`src/app/api.ts`), token gate (`src/app/App.tsx`), startup (`src/app/main.tsx`) |
++| Dependencies | None — PRD row 2 declares `Depends: -` (the share target needs a valid token, not a durable one) |
++| Estimated Tasks | 5 |
++| Source PRD line ref | `PRPs/prds/install-and-quick-capture.prd.md:264, 276-305` (Phase 2 — Durable token) |
++| phase_type | feature |
++
++(`docs/context/methodology.md` declares `figma_track: false`, so no
++`design_source` row is added. The source PRD has no `## Visual-First Mode`
++section, so no `phase_scope` row is added either. `phase_type` is
++deliberately `feature`, not `foundation`: this phase's acceptance criteria
++are behavioural and fully reachable test-first against the in-memory fake,
++so the TDD suite must NOT be skipped.)
++
++## Mandatory Reading
++
++| Priority | Path | Lines | Why |
++|---|---|---|---|
++| P0 | `src/app/api.ts` | 11-23 | The three `window.localStorage` accessors this phase replaces — the exact artifact PRD row 2 names |
++| P0 | `src/app/api.ts` | 44-57 | `request()` and the 401 branch that clears the token and throws `ApiError(401)` — the behaviour that must survive, now awaited |
++| P0 | `src/app/App.tsx` | 24-31 | `App`'s synchronous `useState(getToken() !== null)` — the exact line the async ripple breaks, and where the "still checking" state goes |
++| P0 | `src/app/App.tsx` | 40-49 | `TokenGate`'s submit handler — `setToken(token)` becomes an awaited call before `onAuthorized()` |
++| P0 | `src/shared/request-failure.ts` | 1-28 | The DOM-free, dual-compiled module-doc + interface convention this phase's new shared module must follow — the pattern the owner's resolution names by file |
++| P0 | `tsconfig.test.json` | 1-9 | `lib: ["ES2022"]` (no `DOM`) and `include` without `src/app` — the two structural facts that force the port design and make DOM-freedom a compile error rather than a convention |
++| P0 | `docs/context/methodology.md` | 37-61 | "Browser-API work: split the logic out, then the glue is exempt" — the binding rule for what may and may not skip a test here |
++| P1 | `tsconfig.worker.json` | 1-9 | Confirms `src/shared` also compiles into the Worker target under `lib: ["ES2022"]`, so the ports must be plain TypeScript interfaces |
++| P1 | `test/share-target.test.ts` | 1-26 | The header convention for a pure-`src/shared` suite in the workerd tier: PRD AC references, source-plan reference, and an explicit scope note naming what stays manual |
++| P1 | `src/app/main.tsx` | 26-41 | Where startup side effects are registered after render — the call site for `requestPersistentStorage()` |
++| P1 | `documentation/40-engineering/testing-strategy.md` | 26-38 | The row "Browser-storage / browser-API logic … **Yes, via extraction**" — the authoritative split this plan implements |
++| P2 | `PRPs/plans/completed/install-and-quick-capture-phase-4-network-honesty.plan.md` | 273-350 | Precedent for the task shape of an extract-pure-logic-then-wire phase, including how the manual slice is stated rather than glossed |
++
++## Patterns to Mirror
++
++```
++# SOURCE: src/shared/request-failure.ts:1-28
++/**
++ * Classifier for a caught request failure, turning it into one of two
++ * discriminated, stable, honest messages instead of a raw, browser-specific
++ * error string.
++ *
++ * Like `src/shared/api.ts` and `src/shared/share-target.ts`, this module is
++ * compiled into BOTH the browser and the Worker projects, so it must stay
++ * environment-agnostic and free of runtime dependencies and DOM globals (no
++ * `window`, no `document`). It duck-types `ApiError`'s shape
++ * (`src/app/api.ts:25-33`) rather than importing the class, because
++ * `src/shared/` cannot import from `src/app/` (`tsconfig.test.json`'s test
++ * project `include`s `test`, `src/worker` and `src/shared`, but not
++ * `src/app`) ...
++ */
++
++/** Result of classifying a caught request failure. */
++export interface RequestFailure {
++  kind: "server-unreachable" | "http-error";
++  message: string;
++}
++```
++Copied by: Task 1 (`src/shared/token-store.ts` opens with the same
++dual-compile/DOM-free module doc, and declares its ports as plain exported
++interfaces in the same shape — this is the file the owner's resolution and
++`docs/context/methodology.md` both name as the pattern to repeat).
++
++```
++# SOURCE: src/app/api.ts:11-23
++const TOKEN_KEY = "praesto.token";
++
++export function getToken(): string | null {
++  return window.localStorage.getItem(TOKEN_KEY);
++}
++
++export function setToken(token: string): void {
++  window.localStorage.setItem(TOKEN_KEY, token);
++}
++
++export function clearToken(): void {
++  window.localStorage.removeItem(TOKEN_KEY);
++}
++```
++Copied by: Task 2 (the adapter's legacy port implements exactly these three
++`window.localStorage` operations against the same `"praesto.token"` key, so
++the migration reads the key the owner's devices actually hold) and Task 3
++(these three exports are replaced by async delegations to the store).
++
++```
++# SOURCE: src/app/api.ts:44-57
++async function request<T>(path: string, init?: RequestInit): Promise<T> {
++  const headers = new Headers(init?.headers);
++  headers.set("Accept", "application/json");
++  if (init?.body != null) headers.set("Content-Type", "application/json");
++
++  const token = getToken();
++  if (token !== null) headers.set("Authorization", `Bearer ${token}`);
++
++  const response = await fetch(path, { ...init, headers });
++
++  if (response.status === 401) {
++    clearToken();
++    throw new ApiError(401, "Invalid or missing token");
++  }
++```
++Copied by: Task 3 (`request()` already being `async` is what makes the
++ripple containable: `const token = await readToken()` and `await
++clearToken()` replace the two synchronous calls, and the 401 branch keeps
++its exact shape and its `ApiError(401, "Invalid or missing token")` throw).
++
++```
++# SOURCE: src/app/App.tsx:24-31
++export function App({ initialShare }: { initialShare: ShareTarget | null }) {
++  const [authorized, setAuthorized] = useState<boolean>(getToken() !== null);
++
++  if (!authorized) {
++    return <TokenGate onAuthorized={() => setAuthorized(true)} />;
++  }
++  return <TaskBoard onUnauthorized={() => setAuthorized(false)} initialShare={initialShare} />;
++}
++```
++Copied by: Task 4 (this exact component becomes three-valued: the initial
++state is `null` = still checking, an effect resolves `readToken()`, and
++`TokenGate` renders only on an explicit `false` — never while the answer is
++still pending).
++
++```
++# SOURCE: src/app/App.tsx:40-49
++      <form
++        style={styles.row}
++        onSubmit={(event) => {
++          event.preventDefault();
++          const token = value.trim();
++          if (!token) return;
++          setToken(token);
++          onAuthorized();
++        }}
++      >
++```
++Copied by: Task 4 (the handler becomes async: the trim-and-reject guard is
++unchanged, `setToken(token)` becomes `await saveToken(token)`, and
++`onAuthorized()` runs only after the save resolves).
++
++```
++# SOURCE: test/share-target.test.ts:1-26
++// PRPs/prds/install-and-quick-capture.prd.md AC-1 share-creates-task
++// PRPs/prds/install-and-quick-capture.prd.md AC-5 empty-share-creates-nothing
++//
++// Source plan: PRPs/plans/install-and-quick-capture-phase-1-share-target.plan.md
++//
++// This is a pure, DOM-free unit under test (src/shared/share-target.ts carries
++// no Worker or browser globals), so it needs neither the D1 fixture nor the
++// bearer-token auth helpers that test/tasks.test.ts uses ...
++//
++// Scope note ...: this file covers only the observable, pure-logic slice ...
++// The DOM-rendered slice of both ACs ... is unreachable from the workerd-only
++// Vitest tier ... and is verified manually per the plan's Level 3 MANUAL steps.
++
++import { describe, expect, it } from "vitest";
++import { parseShareTarget } from "../src/shared/share-target";
++```
++Copied by: the test pair (`/relay-write-test`) when authoring
++`test/token-store.test.ts` — same header convention, same fixture-free
++import shape, and the same explicit scope note naming what remains manual
++(the real IndexedDB adapter and `persist()`).
++
++```
++# SOURCE: src/app/main.tsx:26-41
++createRoot(container).render(
++  <StrictMode>
++    <App initialShare={initialShare} />
++  </StrictMode>,
++);
++
++// Registered after render so it does not compete with first paint.
++setupPwa({
++```
++Copied by: Task 5 (`requestPersistentStorage()` is invoked in this same
++after-render startup block, alongside `setupPwa`, for the same reason — it
++must not compete with first paint, and it must never block the token read).
++
++## Files to Change
++
++| File | Action | Justification |
++|---|---|---|
++| `src/shared/token-store.ts` | CREATE | The phase's decidable logic behind a storage port: read, save, clear, the 401-clears path, the one-time `localStorage` migration and every degradation path. Must live under `src/shared/` because `tsconfig.test.json:8` excludes `src/app` — logic placed in `src/app/` would be structurally untestable (AC-A1..AC-A6) |
++| `src/app/token-storage.ts` | CREATE | The exempt adapter: the durable port over `indexedDB`, the legacy port over `window.localStorage`, and a best-effort `requestPersistentStorage()`. Thin by construction — no branching worth asserting; verified on device (AC-A7) |
++| `src/app/api.ts` | UPDATE | Replace the three `window.localStorage` accessors with async delegations to the store (`readToken`/`saveToken`/`clearToken`), and await both of them inside `request()` so the 401 clear completes before the caller reacts (AC-A5, AC-A6) |
++| `src/app/App.tsx` | UPDATE | Carry the async ripple deliberately: a three-valued token gate that never shows the token screen while the read is still pending, and an awaited save in `TokenGate` (AC-A6, AC-A8) |
++| `src/app/main.tsx` | UPDATE | Call `requestPersistentStorage()` once at startup, after render, so IndexedDB is protected from eviction (AC-A7) |
++
++The test suite (`test/token-store.test.ts`) is authored by the test pair via
++`/relay-write-test` before implementation, per `tdd: true`; it is
++deliberately not an Implementer task and is therefore not listed above.
++
++## NOT Building (Scope Limits)
++
++- **A browser test tier (Vitest browser mode or Playwright).** Decided
++  against on 2026-08-11 for exactly this phase; recorded in the roadmap
++  backlog with its trigger set at unit 6 `push-channel-proven`, where
++  failure is silent by nature. Buying it here is out of scope.
++- **A blanket methodology exception for browser APIs.** The owner rejected
++  that path. Only the thin adapter is exempt, and only because the logic was
++  moved out first.
++- **A test asserting that `navigator.storage.persist()` was called.** A
++  trivial assertion over a mock with no discriminative content; the test
++  reviewer would rightly flag it as `R-TRIVIAL-ASSERT`. The `persist()` call
++  is verified on the device.
++- **Offline write queue.** Forbidden PRD-wide (`docs/anti-patterns.md`,
++  ADR-0003). Storing a credential is not storing a pending write; this phase
++  adds no queue, no retry and no replay.
++- **A magic link carrying the token in the URL.** Rejected PRD-wide — query
++  strings leak into history, referrers and logs.
++- **Token rotation, expiry or refresh.** Chore C10 owns rotation; ADR-0003's
++  model is one user, one long-lived shared secret.
++- **Encrypting the token at rest.** Same-origin storage on the owner's own
++  devices; encryption would need a key stored in the same place. Not a
++  decision this phase is authorized to take.
++- **Changing anything server-side.** No Worker route, DTO, schema or
++  migration is touched; the auth gate is unchanged.
++- **Units 2 and beyond.** Task detail, dates, today view and everything
++  downstream are other units.
++
++## Step-by-Step Tasks
++
++### Task 1: CREATE src/shared/token-store.ts
++
++**ACTION** (serves AC-A1, AC-A2, AC-A3, AC-A4, AC-A5): Create the pure,
++DOM-free module that owns every token decision, reaching storage only
++through injected ports. It must export:
++
++- `interface DurableTokenStorage { read(): Promise<string | null>; write(token: string): Promise<void>; clear(): Promise<void>; }`
++- `interface LegacyTokenStorage { read(): string | null; write(token: string): void; clear(): void; }`
++- `interface TokenStore { read(): Promise<string | null>; save(token: string): Promise<void>; clear(): Promise<void>; }`
++- `function createTokenStore(ports: { durable: DurableTokenStorage; legacy: LegacyTokenStorage }): TokenStore`
++
++Behaviour the store implements:
++
++1. **`read()` prefers the durable store.** If `durable.read()` resolves to a
++   non-blank value, return it and do not touch the legacy store.
++2. **`read()` migrates exactly once.** If the durable store holds nothing —
++   or if `durable.read()` rejects — fall back to `legacy.read()`. When the
++   legacy store holds a non-blank value, copy it into the durable store and
++   then clear the legacy copy, so a later read goes straight to the durable
++   store. Return the value either way.
++3. **Migration never destroys the only copy.** If `durable.write()` rejects
++   during the migration, the legacy copy is left in place and the value is
++   still returned; the migration retries on the next read.
++4. **`save()` writes durably and drops any stale legacy copy**, so a value
++   left behind in the legacy store can never later shadow the token the
++   owner just pasted.
++5. **`save()` degrades instead of losing the token.** If `durable.write()`
++   rejects (IndexedDB unavailable or blocked), fall back to
++   `legacy.write()` — today's behaviour is the declared floor, per the PRD's
++   `persist()`-denied risk row, and a save that silently persists nothing
++   would reproduce the exact "token screen returns" failure this phase
++   exists to remove.
++6. **`clear()` clears BOTH stores and never rejects.** Both are attempted
++   even if the first throws. Clearing both is load-bearing, not defensive
++   tidiness: if a 401 cleared only the durable copy, rule 2's migration
++   would resurrect the stale legacy token on the next read and the app would
++   loop back into the same 401. Never rejecting is equally load-bearing: the
++   401 path is the app's recovery route, and turning it into an unhandled
++   rejection would break the only way back to the token screen.
++7. **A blank stored value is not a token.** A value that is empty or
++   whitespace-only in either store is treated as absent, so a corrupted or
++   empty entry produces the token screen rather than an
++   `Authorization: Bearer ` header. Save-side validation is deliberately not
++   added — the caller already rejects a blank paste, and inventing an error
++   path here would be speculative.
++
++The module must not reference `window`, `document`, `navigator`,
++`indexedDB` or `localStorage` as values. This is enforced structurally, not
++by convention: `tsconfig.test.json:4` and `tsconfig.worker.json:4` both
++declare `lib: ["ES2022"]` with no `DOM`, so any such reference fails
++`tsc -b`.
++
++**MIRROR**: `# SOURCE: src/shared/request-failure.ts:1-28`
++
++**VALIDATE**: `npm test` (runs the test-first suite the test pair authored
++for this module against its in-memory fake; `vitest run` exits non-zero on
++any failing assertion)
++
++### Task 2: CREATE src/app/token-storage.ts
++
++**ACTION** (serves AC-A7 — the exempt adapter; no branching worth
++asserting): Implement the two ports Task 1 declared, plus the persistence
++request:
++
++- `durableTokenStorage: DurableTokenStorage` — an IndexedDB-backed
++  implementation: open (or create) database `praesto` with a single object
++  store, and promise-wrap the `get` / `put` / `delete` requests for the key
++  `"praesto.token"`. Reject on the request's `error`, resolve on its
++  `success`; no retry, no fallback logic (that belongs to the store).
++- `legacyTokenStorage: LegacyTokenStorage` — `window.localStorage`
++  `getItem` / `setItem` / `removeItem` against the **same** existing key
++  `"praesto.token"` that `src/app/api.ts:11` uses today. This exact key is
++  what makes Task 1's migration find the token already stored on the owner's
++  Android phone and Windows PC; changing it would silently strand both.
++- `requestPersistentStorage(): Promise<void>` — call
++  `navigator.storage.persist()` when available, ignore the outcome, and
++  never throw. `persist()` protects IndexedDB and Cache Storage from
++  eviction; it does not protect Web Storage, which is the whole reason the
++  token moves. A denial degrades to unprotected IndexedDB, which is still no
++  worse than today.
++
++The module doc must state, in one sentence, that this file is the exempt
++adapter under `docs/context/methodology.md`'s browser-API rule and is
++verified on the device.
++
++**MIRROR**: `# SOURCE: src/app/api.ts:11-23`
++
++**VALIDATE**:
++```bash
++set -euo pipefail
++grep -q "indexedDB" src/app/token-storage.ts
++grep -q "navigator.storage" src/app/token-storage.ts
++grep -q '"praesto.token"' src/app/token-storage.ts
++npm run check
++```
++(Positive-presence checks on the three literals this ACTION names verbatim;
++`set -euo pipefail` makes any single miss fail the block, and `npm run check`
++type-checks the adapter against the DOM lib of `tsconfig.app.json:4`.)
++
++### Task 3: UPDATE src/app/api.ts (delegate to the store, await the 401 clear)
++
++**ACTION** (serves AC-A5, AC-A6): Delete the three `window.localStorage`
++accessors. Import `createTokenStore` from `../shared/token-store` and both
++ports plus `requestPersistentStorage` from `./token-storage`, instantiate
++the store once at module scope, and export three async delegations:
++`readToken()`, `saveToken(token)`, `clearToken()`. `getToken` and `setToken`
++are **renamed**, not merely made async, on purpose: `getToken() !== null`
++would keep compiling against a `Promise` and be silently always-true, so
++renaming turns every un-migrated call site into a compile error. Inside
++`request()`, replace `const token = getToken()` with
++`const token = await readToken()`, and — in the 401 branch, whose shape is
++otherwise unchanged — replace `clearToken()` with `await clearToken()` so
++the clear completes before `ApiError(401, "Invalid or missing token")` is
++thrown and the app reacts to it. Update the file's header doc comment: the
++token now lives in IndexedDB behind `src/shared/token-store.ts`, and a 401
++still clears it so the app falls back to the token prompt instead of failing
++silently. Leave the `ApiError` class, its `classifyRequestFailure`
++cross-reference comment, and every task/health function untouched.
++
++**MIRROR**: `# SOURCE: src/app/api.ts:44-57` and
++`# SOURCE: src/app/api.ts:11-23`
++
++**VALIDATE**:
++```bash
++set -euo pipefail
++grep -q "await clearToken()" src/app/api.ts
++grep -q "await readToken()" src/app/api.ts
++if grep -nE "localStorage\.(getItem|setItem|removeItem)" src/app/api.ts; then
++  echo "FAIL: src/app/api.ts still reaches Web Storage directly"; exit 1
++else
++  echo "PASS: no direct Web Storage access remains in src/app/api.ts"
++fi
++npm run check
++```
++(The two positive greps are the literals this ACTION prescribes
++byte-for-byte. The negative grep targets the three unambiguous *code* forms
++of Web Storage access — never the bare word `localStorage`, which the file's
++own doc comment legitimately mentions in prose.)
++
++### Task 4: UPDATE src/app/App.tsx (three-valued token gate, awaited save)
++
++**ACTION** (serves AC-A6, AC-A8): Carry the sync→async ripple in the one
++component that consumed the synchronous accessor. Change `App`'s state to
++`useState<boolean | null>(null)`, where `null` means "still checking", and
++resolve it in a mount effect that calls `readToken()` and sets
++`token !== null`. While the state is `null`, render a neutral placeholder —
++**not** `TokenGate`; showing the token screen before the store has answered
++would make the token screen flash on every cold start, which is the exact
++failure AC-2 forbids. Render `TokenGate` only on an explicit `false`, and
++`TaskBoard` on `true`. In `TokenGate`, make the submit handler async: keep
++the `value.trim()` / `if (!token) return` guard byte-identical, then `await
++saveToken(token)` before calling `onAuthorized()`. `TaskBoard` and its
++`handleFailure` 401 short-circuit (`cause instanceof ApiError &&
++cause.status === 401` → `onUnauthorized()`) are unchanged — that path is
++what returns the app to the gate and this phase must not weaken it.
++
++**MIRROR**: `# SOURCE: src/app/App.tsx:24-31` and
++`# SOURCE: src/app/App.tsx:40-49`
++
++**VALIDATE**:
++```bash
++set -euo pipefail
++grep -q "readToken" src/app/App.tsx
++grep -q "saveToken" src/app/App.tsx
++grep -q "onUnauthorized()" src/app/App.tsx
++npm run check
++```
++(`npm run check` is the real gate here: `tsc -b` fails on any remaining
++synchronous use of the renamed accessors, and ESLint's rules catch a
++floating promise in the effect. The greps confirm the three identifiers this
++ACTION names are present, including the preserved 401 exit.)
++
++### Task 5: UPDATE src/app/main.tsx (request persistent storage at startup)
++
++**ACTION** (serves AC-A7): Import `requestPersistentStorage` from
++`./token-storage` and call it in the existing after-render startup block,
++next to `setupPwa`, with a comment stating that it is best-effort and that
++its denial degrades to unprotected IndexedDB rather than breaking anything.
++It must not be awaited before render and must not gate the token read — a
++slow or denied `persist()` must never delay the first paint. The
++share-target and `/new-task` pathname handling above it is untouched.
++
++**MIRROR**: `# SOURCE: src/app/main.tsx:26-41`
++
++**VALIDATE**:
++```bash
++set -euo pipefail
++grep -q "requestPersistentStorage" src/app/main.tsx
++npm run check
++npm run build
++```
++(`npm run build` is the end-to-end compile gate for the browser target: it
++runs `tsc -b` across every project and then bundles the real app, so an
++adapter that does not type-check against the DOM lib, or a shared module
++that accidentally references a browser global, fails here with a non-zero
++exit.)
++
++## Validation Commands
++
++**Level 1 — STATIC_ANALYSIS**
++```bash
++npm run check
++```
++(`wrangler types --check && tsc -b && eslint . && prettier --check .` — real
++exit code. This is also the structural DOM-freedom gate for
++`src/shared/token-store.ts`: `tsconfig.test.json:4` and
++`tsconfig.worker.json:4` compile `src/shared` under `lib: ["ES2022"]` with
++no `DOM`, so a browser global in the shared module is a type error, not a
++style opinion.)
++
++**Level 2 — UNIT_TESTS / CONTENT_INVARIANTS**
++```bash
++npm test
++```
++(Vitest inside workerd. Must report strictly more than the 31 tests across 4
++files that were green before this phase, and no pre-existing test file may
++have been weakened. `vitest run` exits non-zero on any failing test.)
++
++```bash
++set -euo pipefail
++grep -q "await clearToken()" src/app/api.ts
++grep -q "await readToken()" src/app/api.ts
++grep -q "requestPersistentStorage" src/app/main.tsx
++grep -q "createTokenStore" src/shared/token-store.ts
++if grep -rnE "localStorage\.(getItem|setItem|removeItem)" src/app/api.ts src/app/App.tsx src/shared/; then
++  echo "FAIL: Web Storage is still reached outside the adapter"; exit 1
++else
++  echo "PASS: Web Storage is reached only from src/app/token-storage.ts"
++fi
++```
++(Every literal above is prescribed byte-for-byte by Tasks 1, 3 and 5's own
++`**ACTION**` prose — none is a guessed pattern. The negative check pins the
++architectural claim this phase makes: after it, exactly one file touches Web
++Storage, and it is the adapter.)
++
++**Level 3 — INTEGRATION**
++```bash
++npm run build
++```
++(Full browser-target compile + bundle: `tsc -b` across all project
++references, then Vite. Non-zero on any type error in the adapter or any
++cross-boundary import.)
++
++MANUAL (the exempt slice — no browser/e2e tier exists per
++`docs/context/testing.md`, and per `docs/context/methodology.md` the adapter
++is verified on the device and the verification is recorded in the roadmap's
++delivery-history entry). On the owner's **Android phone** and **Windows PC**,
++after deploying:
++
++1. **Migration, on a device that already holds a token** (the real starting
++   state on both): open the updated app. Confirm the token screen does NOT
++   appear and the Task list loads — the `localStorage` token was migrated,
++   not stranded (AC-A2, AC-A8). In DevTools, confirm the IndexedDB entry now
++   exists and the `localStorage` `praesto.token` key is gone.
++2. **Restart survival:** fully close the installed PWA and reopen it.
++   Confirm the token screen does not appear (PRD AC-2).
++3. **Persistence granted:** in DevTools, evaluate
++   `navigator.storage.persisted()` and record whether it returns `true`.
++   A `false` is not a failure of this phase — it is the PRD's documented
++   `persist()`-denied degradation, and it is recorded rather than hidden
++   (Open Question 2).
++4. **Storage pressure, if reachable:** use the browser's "Clear site data"
++   / storage-eviction controls to force eviction, and record what actually
++   happened. If the browser offers no way to simulate eviction without
++   wiping everything, record that the check could not be performed rather
++   than claiming it passed.
++5. **401 still returns to the gate:** invalidate the token (rotate the
++   Worker secret, or edit the stored value) and trigger any request.
++   Confirm the app returns to the token screen, and that pasting the correct
++   token once restores normal use without a second prompt (AC-A5, AC-A6).
++6. **Fresh install:** confirm a device with no stored token still shows the
++   token screen and accepts a paste — the recovery path is unchanged.
++
++## Acceptance Criteria
++
++- **AC-A1 (PRD AC-2):** Given the durable store holds a token, when the
++  store's `read()` is called, then that token is returned and the legacy
++  store is not consulted.
++- **AC-A2 (PRD AC-2):** Given a token exists only in the legacy store (the
++  real state of the owner's phone and PC today), when `read()` is called,
++  then the token is returned, copied into the durable store, and removed
++  from the legacy store — and a second `read()` is served by the durable
++  store alone.
++- **AC-A3 (PRD AC-2):** Given the durable write fails during that migration,
++  when `read()` is called, then the token is still returned and the legacy
++  copy is left intact, so the only stored copy is never destroyed by a
++  failed migration.
++- **AC-A4 (PRD AC-2):** Given the durable store is unavailable (its
++  operations reject), when `save()` is called, then the token is written to
++  the legacy store instead, so the owner is not re-prompted on the next
++  launch — today's behaviour is the floor this phase must not fall below.
++- **AC-A5 (PRD AC-2):** Given a 401 clears the token, when `clear()` runs,
++  then BOTH stores are cleared and the call never rejects — so the next
++  `read()` cannot resurrect a stale legacy token via the migration path, and
++  the app's route back to the token screen cannot be broken by a storage
++  error.
++- **AC-A6 (PRD AC-2):** Given the token accessors are now asynchronous, when
++  `request()` builds a call, then it awaits the stored token before sending
++  and awaits the clear before throwing `ApiError(401)`; the existing
++  401-clears-token-and-return-to-the-gate behaviour is preserved exactly, not
++  weakened.
++- **AC-A7 (PRD AC-2):** Given the app starts, when startup completes, then
++  persistent storage has been requested once via
++  `navigator.storage.persist()` and the token is stored in IndexedDB — the
++  storage class `persist()` actually protects, unlike Web Storage. Verified
++  on the device (manual steps 2-4), not by asserting that a mock was called.
++- **AC-A8 (PRD AC-2):** Given the stored-token check is now asynchronous,
++  when the app is opened, then the token screen is never rendered while that
++  check is still pending — it appears only after the store has explicitly
++  reported no token.
++
++## Risks and Mitigations
++
++| Risk | Likelihood | Impact | Mitigation |
++|---|---|---|---|
++| The one-time migration silently strands the token already on the owner's two devices, costing the exact re-pastes this phase exists to prevent | Medium | High | The legacy port reads the same `"praesto.token"` key `src/app/api.ts:11` uses today (Task 2), the migration is AC-A2 and AC-A3 in the test-first suite, and manual step 1 verifies it on a device that really holds the old token before anything is declared done |
++| `navigator.storage.persist()` is denied by the browser (PRD Technical Risks) | Low | Low | Degrades to unprotected IndexedDB — still strictly better than `localStorage`, which `persist()` never protected. Manual step 3 records the actual answer instead of assuming it; PRD Open Question 2 stays open with real data |
++| IndexedDB is unavailable or blocked, so the token cannot be stored durably at all | Low | Medium | The store falls back to the legacy write (AC-A4) rather than silently persisting nothing; today's behaviour is the floor |
++| The sync→async ripple leaves a call site un-awaited, producing an always-truthy `Promise` check that silently authorizes | Low | High | `getToken`/`setToken` are renamed to `readToken`/`saveToken` (Task 3), so every un-migrated call site is a compile error rather than a silent bug; `npm run check` and `npm run build` are the gates |
++| The token screen flashes on every cold start while the async read resolves | Medium | Medium | AC-A8 and Task 4's three-valued gate: the token screen renders only on an explicit `false`, never while the read is pending. Manual steps 1-2 confirm it on device |
++| Reinstalling the PWA clears storage and the token must be pasted again (PRD Technical Risks) | Low | Low | Accepted as recovery, not regression — the token screen remains the fallback path (manual step 6) |
++| The adapter is exempt from automated tests, so a defect in it reaches the device | Medium | Medium | The adapter is deliberately branch-free — every decision lives in the tested store — and the manual device protocol above is specific, per-step and reported honestly (including steps that could not be performed), per `docs/context/testing.md` |
++
++## Notes
++
++**TDD routing (this plan, against the relay repo):** Current value of `tdd`
++in `docs/context/methodology.md`: **true**. Test-first ordering — the test
++pair (test-writer/test-reviewer) produces the initial test suite from the
++Acceptance Criteria above, before the Implementer runs.
++
++- **This phase's split is the whole point of it.** It was `blocked` from
++  2026-08-05 to 2026-08-11 precisely because browser-storage work has no
++  honest test-first path in a workerd-only tier. The owner's resolution —
++  extract the logic behind a port, test it against an in-memory fake, exempt
++  only the adapter — is binding, and this plan implements it literally:
++  AC-A1 through AC-A5 are all reachable from `test/token-store.test.ts` with
++  no browser present, and AC-A7 is the only criterion routed to manual
++  device verification.
++- **Where the line falls, stated explicitly so it can be checked:**
++  everything that decides *what happens* (preference order, migration,
++  clear-both, degradation, blank handling) is in `src/shared/token-store.ts`
++  and is tested. Everything that decides *how bytes reach storage* (the
++  IndexedDB request plumbing, `window.localStorage` calls,
++  `navigator.storage.persist()`) is in `src/app/token-storage.ts` and is
++  not. If the test pair reports `AMBIGUOUS` because a criterion needs a
++  browser API, the correct response is to move more logic into the store —
++  not to widen the exemption.
++- **No test asserts that `persist()` was called.** That is a trivial
++  assertion over a mock with no discriminative content, and the PRD names it
++  as something the test reviewer would rightly flag (`R-TRIVIAL-ASSERT`).
++  The `persist()` call is a device-verified fact.
++- **The clear-both rule is not tidiness.** It is the one place where the
++  migration feature and the 401 feature can actively fight: clearing only
++  the durable copy would let the next read migrate the stale legacy token
++  straight back in, producing a 401 loop the owner would experience as "the
++  token screen keeps coming back" — the very symptom AC-2 is written
++  against. It is called out here so a future simplification does not remove
++  it as redundant.
++- **No in-memory token cache was added.** `request()` reads from IndexedDB
++  on every call rather than caching the token in a module variable. A cache
++  would need invalidation on the 401 path and would add state the tests
++  would have to cover; an IndexedDB point read is sub-millisecond and the
++  app makes few requests. Recorded so the omission reads as a decision, not
++  an oversight.
++- **Research grounding was done inline by the main session** rather than
++  through the `research-codebase` / `research-web` subagents, following the
++  same explicit instruction and the same precedent recorded in the source
++  PRD's own Research Summary. Every `# SOURCE:` anchor above is a real
++  file:line read in this session, and the two external facts this plan
++  leans on (`persist()` covers IndexedDB and Cache Storage but not Web
++  Storage; `share_target`/storage behaviour on Android) are already cited
++  with their MDN and web.dev sources in the source PRD's Market Context
++  section rather than re-derived here.
++
++*Generated: 2026-08-11*
++*Approved: 2026-08-11*
++*Status: APPROVED*
+diff --git a/PRPs/plans/install-and-quick-capture-phase-2-durable-token.review.jsonl b/PRPs/plans/install-and-quick-capture-phase-2-durable-token.review.jsonl
+new file mode 100644
+index 0000000..a32478f
+--- /dev/null
++++ b/PRPs/plans/install-and-quick-capture-phase-2-durable-token.review.jsonl
+@@ -0,0 +1 @@
++{"timestamp": "2026-08-11T14:07:34Z", "verdict": "APPROVED", "rubric": [{"id": "R1", "passed": true, "class": "blocking"}, {"id": "R2", "passed": true, "class": "blocking"}, {"id": "R3", "passed": true, "class": "blocking"}, {"id": "R4", "passed": true, "class": "blocking"}, {"id": "R5", "passed": true, "class": "blocking"}, {"id": "R6", "passed": true, "class": "blocking"}, {"id": "R7", "passed": true, "class": "blocking"}, {"id": "R8", "passed": true, "class": "blocking"}, {"id": "R-COH-TASK-AC-MISSING", "passed": true, "class": "blocking"}, {"id": "R-COH-FILES-UNTOUCHED", "passed": true, "class": "blocking"}, {"id": "R-COH-VALIDATE-FRAMEWORK-MISMATCH", "passed": true, "class": "blocking"}, {"id": "R-COH-PATTERN-SOURCE-MISSING", "passed": true, "class": "advisory"}, {"id": "R-COH-MANDATORY-READING-MISSING", "passed": true, "class": "advisory"}, {"id": "R-COH-VALIDATE-ALWAYS-PASS", "passed": true, "class": "blocking"}, {"id": "R-COH-ACTION-VALIDATE-CONTRADICTION", "passed": true, "class": "blocking"}, {"id": "R-COH-VALIDATE-SEARCH-AMBIGUOUS", "passed": true, "class": "blocking"}, {"id": "R-COH-VALIDATE-FORBIDDEN-GREP-SCOPE", "passed": true, "class": "blocking"}, {"id": "R-COH-VALIDATE-PATTERN-UNGROUNDED", "passed": true, "class": "blocking"}], "action": "final_flip", "user_message": ""}
+diff --git a/PRPs/plans/install-and-quick-capture.test-write-review.jsonl b/PRPs/plans/install-and-quick-capture.test-write-review.jsonl
+index 3324a09..e3d4346 100644
+--- a/PRPs/plans/install-and-quick-capture.test-write-review.jsonl
++++ b/PRPs/plans/install-and-quick-capture.test-write-review.jsonl
+@@ -1,3 +1,4 @@
+ {"timestamp": "2026-08-05T03:20:16Z", "verdict": "APPROVED", "rubric": [{"id": "R-IMPL-LEAK", "passed": true}, {"id": "R-TRIVIAL-ASSERT", "passed": true}, {"id": "R-MOCK-ABUSE", "passed": true}, {"id": "R-AC-COVERAGE", "passed": true}, {"id": "R-DUPLICATE", "passed": true}, {"id": "R-RED-LEGITIMATE", "passed": true, "reason": "npm test run: test/share-target.test.ts fails with 'Cannot find module ../src/shared/share-target imported from test/share-target.test.ts' (exit code 1); test/tasks.test.ts and test/health.test.ts pass unaffected (12 tests passed, 2 files passed). Unresolved symbol src/shared/share-target.ts is exactly the plan's ## Files to Change CREATE row (Task 1) -- legitimate red-by-design, not broken setup."}, {"id": "R-LIFECYCLE-LEGITIMATE", "passed": true, "reason": "create-only session: git status shows only test/share-target.test.ts as new/untracked under test/, no existing test file modified or deleted; manifest's Lifecycle ledger sole row is the sentinel '(none -- no update/delete this session)', consistent with the diff."}], "action": "rubric_evaluation", "user_message": ""}
+ {"timestamp": "2026-08-05T04:30:33Z", "verdict": "APPROVED", "rubric": [{"id": "R-IMPL-LEAK", "passed": true, "reason": "vacuous -- zero test files written this session, nothing to leak"}, {"id": "R-TRIVIAL-ASSERT", "passed": true, "reason": "vacuous -- zero test files written this session, no assertions authored"}, {"id": "R-MOCK-ABUSE", "passed": true, "reason": "vacuous -- zero test files written this session, no mocks authored"}, {"id": "R-AC-COVERAGE", "passed": true, "reason": "sole in-scope PRD AC (AC-3) has an explicit, individually-justified NO_TEST_REQUIRED outcome for each of the plan's 4 AC-A sub-items, independently re-derived rather than trusted at face value. Verified: (1) AC-A1 shortcuts manifest member is a static JSON literal with zero logic, identical treatment to phase 1's share_target member (also never Vitest-tested, validated only via node -e); (2) AC-A2 main.tsx's `else if (window.location.pathname === \"/new-task\") { window.history.replaceState(null, \"\", \"/\"); }` requires window/history globals absent from workerd, contains no parsing/preference-order/transformation logic (unlike phase 1's parseShareTarget), and is structurally identical in kind to phase 1's own `/share-target` pathname check in the same file, which git log confirms (commit c6ec954) was itself never extracted to src/shared or unit-tested -- read git diff -- test/ (empty) and ls src/shared/ (api.ts, share-target.ts only, no new module) confirm this phase proposes no new src/shared candidate, and the plan's own Files to Change table lists only main.tsx (UPDATE), not a new shared module, so authoring a test against an imagined extracted isNewTaskShortcut() helper would be testing an implementation shape the plan never specified (imagined-implementation anti-pattern); (3) AC-A3 has zero functional change to App.tsx -- the unconditional autoFocus and initialShare seeding are pre-existing Phase 1 behavior, nothing new to test, and DOM focus is unreachable from workerd regardless; (4) AC-A4 is a doc-comment-only edit with no observable runtime behavior, correctly left to the plan's own grep-based content-invariant check rather than a Vitest test reading source text. All four sub-items' NO_TEST_REQUIRED verdicts hold under independent scrutiny; this is the docs/context/methodology.md-sanctioned no-test-required path applied consistently with phase 1's own established boundary (parseShareTarget's genuine multi-branch preference-order/quirk/trim logic was extracted and tested; the one-line pathname-equality routing glue was not, in either phase), not a dodge or an unwarranted appeal to precedent."}, {"id": "R-DUPLICATE", "passed": true, "reason": "vacuous -- zero test files written this session, no duplicates possible"}, {"id": "R-RED-LEGITIMATE", "passed": true, "reason": "no test file was authored this session (EXISTING_COVERAGE_SUFFICIENT, zero NEW_TEST_REQUIRED outcomes), so there is no newly-authored suite to classify as red-for-right-reason vs red-for-wrong-reason -- the dynamic legitimacy check is inapplicable rather than degraded (passed: null is reserved for framework-unavailable environments per hard constraint #6, a different condition from nothing-to-check), so it is recorded here as vacuously satisfied. git status --porcelain -- test/ is empty and git diff --stat -- test/ is empty, confirming no test/*.test.ts file was created, modified, or touched this session -- this record is consistent with the manifest's own claim of zero test files written."}, {"id": "R-LIFECYCLE-LEGITIMATE", "passed": true, "reason": "zero-touch session (a strict subset of create-only): git status --porcelain -- test/ and git diff --stat -- test/ are both empty -- no test file created, updated, or deleted. Ledger's sole row is the sentinel '(none -- no update/delete this session)', consistent with the diff. Passes trivially per protocol's create-only-session carve-out."}], "action": "rubric_evaluation", "user_message": ""}
+ {"timestamp": "2026-08-05T14:43:29Z", "verdict": "APPROVED", "rubric": [{"id": "R-IMPL-LEAK", "passed": true, "reason": "the classifier's public return shape { kind, message } is the only thing asserted across all 11 cases; no private symbol, no call-count assertion, no test name references anything outside classifyRequestFailure's documented public contract"}, {"id": "R-TRIVIAL-ASSERT", "passed": true, "reason": "scrutinized all 11 cases individually for filler/tautology: none is `expect(true).toBe(true)` or existence-only. Status-401/500 cases assert both kind AND a message-substring computed from the actual input, not a constant. The string-status ('500') case is grounded in the plan's own Task 1 ACTION prose, which literally says 'an object carrying a numeric status field' (grepped and confirmed at plan lines 279, 56, 93, 172, 362, 461, 516) -- this is a real, plan-specified contract (typeof status === 'number'), not an invented requirement test-writer added unilaterally; ApiError's own class field is typed `status: number`, so the classifier duck-typing on a string status would silently misclassify a non-ApiError third-party error shape carrying a string status, which the plan's structural-typing design explicitly guards against. The null/undefined/string-primitive cases are not filler: classifyRequestFailure(cause: unknown) is invoked from a catch block that can catch any thrown value including non-Error primitives (valid in JS), and the `not.toThrow()` assertions are meaningful because a naive unguarded `cause.status` property access on null/undefined throws a TypeError -- this is exactly the defensive-programming class of bug these cases catch, not decoration. The generic-Error-with-no-status case genuinely guards against an instanceof-TypeError-keyed implementation: the plan's own MDN citation names TypeError specifically as fetch()'s rejection type, which is precisely what could tempt an instanceof-based (rather than structural status-field) implementation the plan explicitly rejects."}, {"id": "R-MOCK-ABUSE", "passed": true, "reason": "no mocking of any kind appears in the file; none of the four categorical detections apply"}, {"id": "R-AC-COVERAGE", "passed": true, "reason": "sole in-scope PRD AC (AC-4) has explicit `// ... AC-4` header comments and matching describe-block references for both real-test sub-items (AC-A1, AC-A2). AC-A3/A4/A5's NO_TEST_REQUIRED outcomes were checked individually, not accepted as a blanket carry-over from phase 3's reasoning shape: AC-A3 (401 short-circuit) requires the real ApiError class + React state, both structurally excluded from the test project (tsconfig.test.json's include list -- read directly, confirmed: [\"test\", \"src/worker\", \"src/shared\", \"worker-configuration.d.ts\"], no src/app); AC-A4 (typed-text-preserved comment) is a documented zero-functional-change edit verified via the plan's own grep check, with reasoning tied to this phase's specific setTitle('') sequencing, not phase 3's autofocus case; AC-A5 (uniform application to refresh() failures) has a phase-4-specific structural argument -- classifyRequestFailure's signature takes no caller-context parameter, so there is no separate branch to test differently for refresh() vs run(), meaning the classification half is already fully exercised by the same 11 cases, while the wiring half (that handleFailure is the single sink, and the Loading guard yields to the error state) is DOM/React control flow unreachable from workerd. Each justification is grounded in this phase's own code structure (handleFailure's location, ApiError's exclusion from the test project's compile boundary, the classifier's parameterless-context signature), not reused boilerplate."}, {"id": "R-DUPLICATE", "passed": true, "reason": "scrutinized pairwise, specifically the two cases the dispatch flagged: (1) the 401/500 individual cases (each asserts kind + message-contains-status-number for ONE input) and the cross-status distinctness case (asserts message(401) !== message(500), a genuinely different observable property -- output-to-output inequality, not input-to-property containment) are not a literal duplicate; constructed the counter-example that shows non-redundancy -- a constant message string that happens to embed both possible status substrings (e.g. 'Error 401 or 500 occurred') would pass the two individual containment checks yet fail the distinctness check, so the distinctness case has real, independent catching power the individual cases lack. (2) the cross-kind distinctness case (server-unreachable message !== http-error message) is not redundant with the per-case `.kind` checks either: `.kind` is an internal tag never rendered to the UI (`handleFailure` only surfaces `.message` into `error` state), so message-level distinctness across kinds is the only test that actually verifies AC-A2's real 'visibly distinct' requirement, which is a message-level, not kind-level, contract. (3) the three no-status boundary/network-unreachable inputs (bare {} object, non-object string primitive 'boom', null/undefined) are distinct equivalence classes for a property-access implementation: {} is a property-less object baseline, 'boom' is a non-object primitive that still permits harmless `.status` access (returns undefined, no throw), and null/undefined are the only inputs where naive `.status` access actually throws -- these are not interchangeable inputs. No duplicate pair found across all 11 cases."}, {"id": "R-RED-LEGITIMATE", "passed": true, "reason": "npm test run: 3 test files / 20 tests pass (health, tasks, share-target unaffected); test/request-failure.test.ts fails with 'Cannot find module ../src/shared/request-failure imported from test/request-failure.test.ts' (exit code 1). Unresolved symbol src/shared/request-failure.ts is exactly the plan's ## Files to Change CREATE row (Task 1) -- legitimate red-by-design. Ruled out red-for-wrong-reason: no syntax error in the test file (the failure is an import-resolution error, not a parse error); the only import besides vitest is `classifyRequestFailure` from the not-yet-existing module (confirmed via grep of the file's import lines -- no unrelated/misspelled import path); confirmed via grep that no test imports from src/app (only a comment mentions src/app/api.ts, never an actual import statement), consistent with tsconfig.test.json's exclusion of src/app; git diff --stat -- package.json package-lock.json is empty (no new dependency, ADR-0005 honored) and no jsdom reference exists anywhere in package.json/vitest.config.ts/tsconfig.test.json; ls src/shared/ confirms request-failure.ts genuinely does not exist yet (only api.ts, share-target.ts), so the RED is not stale/accidental."}, {"id": "R-LIFECYCLE-LEGITIMATE", "passed": true, "reason": "create-only session: git status --porcelain -- test/ shows only test/request-failure.test.ts as new/untracked; git diff --stat -- test/ is empty, confirming test/tasks.test.ts, test/health.test.ts and test/share-target.test.ts were not modified or deleted. Ledger's sole row is the sentinel '(none -- no update/delete this session)', consistent with the diff. Passes trivially per protocol's create-only-session carve-out."}], "action": "rubric_evaluation", "user_message": ""}
++{"timestamp": "2026-08-11T14:26:02Z", "verdict": "APPROVED", "rubric": [{"id": "R-IMPL-LEAK", "passed": true, "reason": "All 16 cases in test/token-store.test.ts assert only through TokenStore's public contract (store.read()/save()/clear()) or through the test's own FakeDurableStorage/FakeLegacyStorage peek() introspection methods (test/token-store.test.ts:63-65, 113-115) -- never a private TokenStore symbol. No toHaveBeenCalledTimes or any call-count assertion appears anywhere in the file. No test name or assertion references a method/field outside TokenStore's declared interface (plan Task 1 ACTION: read()/save()/clear() only)."}, {"id": "R-TRIVIAL-ASSERT", "passed": true, "reason": "No tautology, no toBeDefined()-only assertion, and no constant-return-over-a-discriminative-AC pattern found across 16 cases. The two closest-looking pair, empty-string-durable (test/token-store.test.ts:313-321) and whitespace-only-durable (:323-331), are deliberately discriminative equivalence classes per plan Task 1 rule 7 -- a naive `value === ''` check would pass the first input and fail the second, so the pair has real catching power, not redundant filler."}, {"id": "R-MOCK-ABUSE", "passed": true, "reason": "File uses zero mocking-library constructs -- no vi.mock/jest.mock/mocker.patch, no chained .return_value/.mockReturnValue, no toHaveBeenCalled anywhere. Both fakes (FakeDurableStorage test/token-store.test.ts:54-99, FakeLegacyStorage :106-135) implement the declared DurableTokenStorage/LegacyTokenStorage port interfaces directly and every assertion reads their state via peek(), never a call-interaction check. None of the four categorical detections fire."}, {"id": "R-AC-COVERAGE", "passed": true, "reason": "Sole in-scope PRD AC (AC-2) is explicitly referenced in the file header and every describe-block title (test/token-store.test.ts:1, 148, 161, 203, 233, 245, 262, 312). Independently re-walked all 8 plan AC-A sub-items against the confirmed tsconfig.test.json include list (test, src/worker, src/shared -- no src/app) and confirmed via Glob that src/app/token-storage.ts does not yet exist: AC-A1 through AC-A5 have real discriminative tests; AC-A6 and AC-A8 target src/app/api.ts and src/app/App.tsx, structurally excluded from the test project and not yet updated to their Task 3/4 shape under test-first ordering (git status src/ shows zero production changes this session); AC-A7 targets the not-yet-created, structurally-excluded src/app/token-storage.ts and is the plan's own named R-TRIVIAL-ASSERT trap (asserting persist() was called). All three NO_TEST_REQUIRED verdicts hold under independent scrutiny."}, {"id": "R-DUPLICATE", "passed": true, "reason": "Pairwise-compared all 16 cases; no pair shares both the same assertion target and a non-discriminative input. Closest candidates independently confirmed non-duplicate: AC-A2's empty-durable trigger (test/token-store.test.ts:162-171) vs its durable.read()-rejects trigger (:190-200) prove the plan's explicit OR condition (Task 1 rule 2: durable holds nothing -- or durable.read() rejects); AC-A5's durable-clear-throws (:274-283) vs legacy-clear-throws (:285-294) mirror cases catch an implementation that guards only one ordering."}, {"id": "R-RED-LEGITIMATE", "passed": true, "reason": "npm test (vitest run 4.1.10) independently executed this session: test/token-store.test.ts fails to load -- Error: Cannot find module '../src/shared/token-store' imported from test/token-store.test.ts (Failed Suites 1); the other 4 pre-existing files pass unaffected at exactly 31/31 (Test Files 1 failed | 4 passed (5); Tests 31 passed (31)), matching the phase's stated baseline exactly and confirming no existing test was weakened. Unresolved module src/shared/token-store is exactly the plan's Files to Change CREATE row (Task 1: src/shared/token-store.ts, CREATE) -- legitimate red-by-design. Ruled out red-for-wrong-reason: the file's only imports (value createTokenStore, plus type-only DurableTokenStorage/LegacyTokenStorage/TokenStore) resolve to that same seam-set path, no unrelated or misspelled import exists, and the failure is a pure module-resolution error, not a test-source syntax error. Confirmed via Glob that src/shared/ contains only api.ts, share-target.ts, request-failure.ts."}, {"id": "R-LIFECYCLE-LEGITIMATE", "passed": true, "reason": "Create-only session, verified independently: git status --porcelain test/ shows only test/token-store.test.ts as untracked (??); test/health.test.ts, test/tasks.test.ts, test/share-target.test.ts and test/request-failure.test.ts show no modification. Ledger's sole row is the sentinel (none -- no update/delete this session), consistent with the diff; passes trivially per the create-only-session carve-out."}], "action": "rubric_evaluation", "user_message": ""}
+diff --git a/PRPs/prds/install-and-quick-capture.prd.md b/PRPs/prds/install-and-quick-capture.prd.md
+index 2b7365f..486790b 100644
+--- a/PRPs/prds/install-and-quick-capture.prd.md
++++ b/PRPs/prds/install-and-quick-capture.prd.md
+@@ -261,7 +261,7 @@ ordinary units and are testable first.
+ | # | Phase | Description | Status | Parallel | Depends | PRP Plan |
+ |---|---|---|---|---|---|---|
+ | 1 | Share target | Sharing text from another app creates the Task | complete | no | - | PRPs/plans/completed/install-and-quick-capture-phase-1-share-target.plan.md |
+-| 2 | Durable token | The token survives storage pressure and a restart; the token screen does not reappear | pending | yes | - | |
++| 2 | Durable token | The token survives storage pressure and a restart; the token screen does not reappear | in-progress | yes | - | PRPs/plans/install-and-quick-capture-phase-2-durable-token.plan.md |
+ | 3 | Shortcut and focused capture | Long-pressing the icon opens directly on a focused, empty field | complete | yes | 1 | PRPs/plans/completed/install-and-quick-capture-phase-3-shortcut-and-focused-capture.plan.md |
+ | 4 | Network honesty | An unreachable server produces an explicit state and loses no typed text | complete | yes | 1 | PRPs/plans/completed/install-and-quick-capture-phase-4-network-honesty.plan.md |
+ 
+diff --git a/PRPs/reports/install-and-quick-capture/test-suite-phase-2.diff b/PRPs/reports/install-and-quick-capture/test-suite-phase-2.diff
+new file mode 100644
+index 0000000..abc43fd
+--- /dev/null
++++ b/PRPs/reports/install-and-quick-capture/test-suite-phase-2.diff
+@@ -0,0 +1,200 @@
++# TDD initial suite — phase 2
++# Source PRD: PRPs/prds/install-and-quick-capture.prd.md (Acceptance Criteria)
++# Source plan: PRPs/plans/install-and-quick-capture-phase-2-durable-token.plan.md
++# Aggregate verdict: SUITE_DRAFT_WRITTEN
++# Generated: 2026-08-11
++
++## Filename note
++
++This repo's established convention for this feature disambiguates per-phase
++suite artifacts once more than one phase exists: phase 1's artifact is the
++unsuffixed `test-suite.diff` (written first), and phase 4's is
++`test-suite-phase-4.diff`. Writing this phase's artifact to the literal
++`test-suite.diff` named in the generic protocol template would silently
++overwrite phase 1's already-APPROVED file. This artifact therefore follows
++the established sibling convention: `test-suite-phase-2.diff`.
++
++## Mode
++
++test-first (`docs/context/methodology.md`: `tdd: true`,
++`test_frameworks: ["vitest"]`). This suite runs BEFORE the Implementer;
++`src/shared/token-store.ts` does not exist yet, so `test/token-store.test.ts`
++is expected to be RED for the right reason (module-not-found / type error on
++`createTokenStore`, `DurableTokenStorage` and `LegacyTokenStorage`) until
++Task 1 of the plan is implemented.
++
++## Environment constraint honored (independently re-verified this session)
++
++- `docs/context/methodology.md`: `test_frameworks: ["vitest"]` — the only
++  framework.
++- `docs/context/testing.md` / `vitest.config.ts`: the only test tier is
++  Vitest 4 + `@cloudflare/vitest-pool-workers`, running the real Worker
++  inside workerd. No DOM/browser/jsdom tier exists.
++- `tsconfig.test.json` `include`: `["test", "src/worker", "src/shared",
++  "worker-configuration.d.ts"]` — `src/app` is excluded, and `lib` is
++  `["ES2022"]` with no `DOM`. Read directly this session. This is why the
++  suite is scoped to `src/shared/token-store.ts` alone: `src/app/api.ts`
++  (AC-A6), `src/app/token-storage.ts` (AC-A7) and `src/app/App.tsx` (AC-A8)
++  are structurally outside this test project, and — under test-first
++  ordering — the first two do not even hold their planned content yet
++  (plan Tasks 2, 3, 4, 5 have not run).
++
++## Existing-coverage scan (Step 2.1, run once)
++
++`Glob`bed `test/**/*.test.ts` → `test/health.test.ts`, `test/tasks.test.ts`,
++`test/share-target.test.ts`, `test/request-failure.test.ts` (31 tests total,
++matching the phase's stated baseline exactly: 6+3 in tasks.test.ts, 8 in
++share-target.test.ts, 11 in request-failure.test.ts, 3 in health.test.ts).
++Read all four. `tasks.test.ts` and `health.test.ts` use a static
++`env.API_BEARER_TOKEN` fixture to authorize Worker-route requests — that is
++server-side route-auth testing (pre-existing, unmodified by this phase), not
++client-side token *storage* behaviour. None of the four references
++`token-store`, `createTokenStore`, `DurableTokenStorage`,
++`LegacyTokenStorage`, migration, or durability. `src/shared/` currently
++contains only `api.ts`, `share-target.ts` and `request-failure.ts` —
++`token-store.ts` does not exist yet, consistent with test-first ordering.
++No existing test covers any AC-A of this phase — `EXISTING_TEST_COVERS`
++does not apply to any of them.
++
++## Per-AC-A reasoning
++
++Task 1's own `**ACTION**` line scopes itself explicitly: "serves AC-A1,
++AC-A2, AC-A3, AC-A4, AC-A5." That is the exact boundary this suite honors.
++
++**AC-A1 (PRD AC-2) — read() prefers the durable store.** Genuinely testable
++pure logic. Covered: durable holds a token, legacy holds a *different* token
++(deliberately, so the case is discriminative) — read() returns the durable
++value and leaves legacy untouched. Verdict: **NEW_TEST_REQUIRED**.
++
++**AC-A2 (PRD AC-2) — read() migrates a legacy-only token exactly once.**
++Covered by three cases: (1) the base migration — legacy-only token is
++copied into durable, legacy is cleared, and the token is returned; (2) a
++*second* read is served from durable alone even after legacy is reseeded
++with a different, stale value — proving legacy is genuinely no longer
++consulted, not merely "usually" not consulted; (3) the same migration also
++fires when `durable.read()` *rejects*, not only when it resolves empty —
++the plan's rule 2 names both triggers explicitly ("If the durable store
++holds nothing — or if `durable.read()` rejects"). Verdict:
++**NEW_TEST_REQUIRED**.
++
++**AC-A3 (PRD AC-2) — migration never destroys the only copy.** Covered by
++two cases: (1) a failed durable write during migration leaves the legacy
++copy intact and still returns the token; (2) a subsequent read — no longer
++injected with a failure — completes the migration, serving the plan's own
++"the migration retries on the next read" clause. Verdict:
++**NEW_TEST_REQUIRED**.
++
++**AC-A4 (PRD AC-2) — save() degrades to the legacy store when durable is
++unavailable.** Covered: `durable.write()` rejects, `save()` still resolves
++(does not propagate the failure to the caller) and the token lands in the
++legacy store instead. Verdict: **NEW_TEST_REQUIRED**.
++
++**Task 1 rule 4 (no dedicated AC-A number) — save() writes durably and
++drops a stale legacy copy on success.** Named explicitly in Task 1's
++behaviour list ("so a value left behind in the legacy store can never later
++shadow the token the owner just pasted") but not assigned its own AC-A —
++it is the positive-path complement of AC-A4 and is required to fully
++implement the contract AC-A1 depends on (durable being authoritative).
++Covered: legacy pre-seeded with a stale token, `save()` writes durably and
++clears legacy, and a follow-up `read()` proves the new token — not the
++stale one — is what comes back. Verdict: **NEW_TEST_REQUIRED**.
++
++**AC-A5 (PRD AC-2) — clear() clears BOTH stores and never rejects.**
++Covered by four cases: (1) the base both-cleared case; (2) `clear()`
++resolves without rejecting AND still clears legacy when durable's clear
++throws; (3) the mirror case for legacy throwing; (4) the interaction case
++the plan's own Notes call "load-bearing, not defensive tidiness" — a
++pre-clear state where durable holds the current token and legacy still
++holds a stale one; after `clear()`, a `read()` must return `null`, not
++resurrect the stale legacy token through AC-A2's migration path (which is
++exactly the "token screen keeps coming back" failure AC-2 exists to
++remove). Verdict: **NEW_TEST_REQUIRED**.
++
++**Task 1 rule 7 (no dedicated AC-A number) — a blank stored value is not a
++token.** Cross-cutting: threads through both `read()` branches. Covered by
++four cases: an empty-string durable value falls back to legacy; a
++whitespace-only durable value falls back to legacy (a distinct case from
++empty-string — a naive `value === ""` check would pass the first and fail
++the second); a whitespace-only *legacy* value is not migrated when durable
++is also empty (`read()` returns `null`, nothing is copied); and the fully-
++empty baseline (`null` in both stores) returns `null` without migrating
++anything. Verdict: **NEW_TEST_REQUIRED**.
++
++**AC-A6 (PRD AC-2) — src/app/api.ts awaits the store.** Not in this
++suite's scope. `src/app/api.ts` is excluded from `tsconfig.test.json` and,
++under test-first ordering, has not yet been updated to Task 3's shape (that
++Implementer task has not run). The observable properties AC-A6 names —
++awaiting `readToken()` before sending, awaiting `clearToken()` before
++throwing `ApiError(401)` — decompose into: the clear()-clears-both-and-
++never-rejects guarantee, already proven above under AC-A5; and `api.ts`'s
++own `await` usage, which is a compile-time property (`getToken`/`setToken`
++are renamed to `readToken`/`saveToken` specifically so a missed `await`
++site is a type error, not a silent bug) enforced by the plan's own Task 3
++grep + `npm run check` VALIDATE block, plus manual step 5. Verdict:
++**NO_TEST_REQUIRED** in this suite — no new test authored for it here.
++
++**AC-A7 (PRD AC-2) — persistent storage requested; token in IndexedDB.**
++The deliberately exempt, device-verified slice. The plan states explicitly,
++twice (Task 2's ACTION and the Notes section), that no test may assert
++merely that `navigator.storage.persist()` was called — a trivial assertion
++over a mock with no discriminative content that `test-reviewer` would
++rightly flag as `R-TRIVIAL-ASSERT`. `src/app/token-storage.ts` is also
++excluded from `tsconfig.test.json` and does not exist yet under test-first
++ordering. Verified on the owner's Android phone and Windows PC per the
++plan's Level 3 MANUAL steps 2-4. Verdict: **NO_TEST_REQUIRED** in this
++suite, classified per `docs/context/methodology.md`'s browser-API carve-out
++rather than authored as a trivial mock assertion.
++
++**AC-A8 (PRD AC-2) — App.tsx's three-valued token gate.** DOM/React
++rendering in `src/app/App.tsx`, excluded from `tsconfig.test.json` and not
++yet updated to Task 4's shape under test-first ordering. This is exactly
++the "purely visual" carve-out `docs/context/methodology.md`'s "Scope of the
++practice" section names ("It does not mean writing React component tests
++first"). Verified manually per the plan's Level 3 MANUAL steps 1-2
++(migration and restart survival, both asserting the token screen does NOT
++appear). Verdict: **NO_TEST_REQUIRED** in this suite.
++
++## AC outcomes
++
++| AC | Outcome | Path / mapping |
++|---|---|---|
++| AC-2 token-never-reprompted | NEW_TEST_REQUIRED | `test/token-store.test.ts` — 16 cases across 7 describe blocks (AC-A1: 1; AC-A2: 3; AC-A3: 2; AC-A4: 1; Task 1 rule 4: 1; AC-A5: 4; Task 1 rule 7: 4). AC-A6, AC-A7, AC-A8 explicitly out of this suite's automated scope — see "Per-AC-A reasoning" above |
++| AC-1 share-creates-task | OUT_OF_PHASE_SCOPE | covered by Phase 1 (complete) |
++| AC-3 shortcut-opens-focused | OUT_OF_PHASE_SCOPE | covered by Phase 3 (complete; see `test-suite-phase-3.diff`) |
++| AC-4 unreachable-server-is-explicit | OUT_OF_PHASE_SCOPE | covered by Phase 4 (complete; see `test-suite-phase-4.diff`) |
++| AC-5 empty-share-creates-nothing | OUT_OF_PHASE_SCOPE | covered by Phase 1 (complete) |
++
++## Test files written this session
++
++- `test/token-store.test.ts` (new file; 16 cases across 7 describe blocks,
++  all mapping to PRD AC-2 / plan AC-A1 through AC-A5 plus Task 1 rules 4
++  and 7)
++
++## Lifecycle ledger
++
++| Op | Classification | Test (file:function) | Justification |
++|----|-----------------|-----------------------|----------------|
++| (none — no update/delete this session) | — | — | — |
++
++No existing test file was modified, weakened, or removed. All 31
++pre-existing tests across the 4 existing files are untouched.
++
++## Pre-emission self-check
++
++- Ledger completeness: no UPDATE/DELETE performed this session; ledger's
++  sole row is the default "(none)" row. Confirmed.
++- Coverage completeness: the sole in-scope PRD AC (AC-2) has an explicit
++  recorded outcome, with each of the plan's eight AC-A sub-items (AC-A1
++  through AC-A8) individually walked and justified in "Per-AC-A reasoning"
++  above — five produced real, discriminative test cases (plus the two
++  unnumbered Task 1 rules the plan's own prose requires), three produced an
++  independently-reasoned NO_TEST_REQUIRED verdict grounded in the
++  `tsconfig.test.json` project boundary, test-first ordering, and the
++  owner's binding browser-API exemption — none silently unaddressed. The
++  four out-of-phase PRD ACs are recorded as OUT_OF_PHASE_SCOPE, cross-
++  referencing the completed phases that own them. Confirmed.
++
++## Status
++
++*Approved: 2026-08-11*
++*Status: APPROVED*
+diff --git a/src/app/App.tsx b/src/app/App.tsx
+index df5ce93..da3dc28 100644
+--- a/src/app/App.tsx
++++ b/src/app/App.tsx
+@@ -7,10 +7,10 @@ import {
+   completeTask,
+   createTask,
+   deleteTask,
+-  getToken,
+   listTasks,
++  readToken,
+   reopenTask,
+-  setToken,
++  saveToken,
+ } from "./api";
+ 
+ /**
+@@ -22,7 +22,31 @@ import {
+  * Styling is deliberately minimal; the design pass is its own slice.
+  */
+ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
+-  const [authorized, setAuthorized] = useState<boolean>(getToken() !== null);
++  // `null` = still checking IndexedDB for a stored token. `readToken()` is
++  // async (the token now lives behind src/shared/token-store.ts), so this
++  // starts as "unknown" rather than assuming unauthorized.
++  const [authorized, setAuthorized] = useState<boolean | null>(null);
++
++  useEffect(() => {
++    let cancelled = false;
++    void readToken().then((token) => {
++      if (!cancelled) setAuthorized(token !== null);
++    });
++    return () => {
++      cancelled = true;
++    };
++  }, []);
++
++  if (authorized === null) {
++    // Never render TokenGate while the read is still pending — doing so
++    // would flash the token screen on every cold start, which is exactly
++    // what AC-2 forbids.
++    return (
++      <main style={styles.page}>
++        <p style={styles.muted}>Loading…</p>
++      </main>
++    );
++  }
+ 
+   if (!authorized) {
+     return <TokenGate onAuthorized={() => setAuthorized(true)} />;
+@@ -39,11 +63,11 @@ function TokenGate({ onAuthorized }: { onAuthorized: () => void }) {
+       <p style={styles.muted}>Paste the API token for this device.</p>
+       <form
+         style={styles.row}
+-        onSubmit={(event) => {
++        onSubmit={async (event) => {
+           event.preventDefault();
+           const token = value.trim();
+           if (!token) return;
+-          setToken(token);
++          await saveToken(token);
+           onAuthorized();
+         }}
+       >
+diff --git a/src/app/api.ts b/src/app/api.ts
+index be31bb7..a3d19ed 100644
+--- a/src/app/api.ts
++++ b/src/app/api.ts
+@@ -1,25 +1,31 @@
+ import type { CreateTaskInput, TaskDto, TaskStatus } from "../shared/api";
++import { createTokenStore } from "../shared/token-store";
++import { durableTokenStorage, legacyTokenStorage } from "./token-storage";
+ 
+ /**
+  * Typed client for the Worker API.
+  *
+- * The bearer token (ADR-0003) lives in localStorage: with exactly one user and
+- * no accounts, the owner pastes it once per device. A 401 clears it so the app
+- * falls back to the token prompt instead of failing silently.
++ * The bearer token (ADR-0003) lives in IndexedDB behind
++ * `src/shared/token-store.ts`, which `navigator.storage.persist()`
++ * (requested once at startup, `src/app/main.tsx`) can protect from
++ * storage-pressure eviction — unlike the `localStorage` this file used
++ * before. With exactly one user and no accounts, the owner pastes it once
++ * per device. A 401 still clears it so the app falls back to the token
++ * prompt instead of failing silently.
+  */
+ 
+-const TOKEN_KEY = "praesto.token";
++const tokenStore = createTokenStore({ durable: durableTokenStorage, legacy: legacyTokenStorage });
+ 
+-export function getToken(): string | null {
+-  return window.localStorage.getItem(TOKEN_KEY);
++export async function readToken(): Promise<string | null> {
++  return tokenStore.read();
+ }
+ 
+-export function setToken(token: string): void {
+-  window.localStorage.setItem(TOKEN_KEY, token);
++export async function saveToken(token: string): Promise<void> {
++  await tokenStore.save(token);
+ }
+ 
+-export function clearToken(): void {
+-  window.localStorage.removeItem(TOKEN_KEY);
++export async function clearToken(): Promise<void> {
++  await tokenStore.clear();
+ }
+ 
+ /**
+@@ -46,13 +52,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
+   headers.set("Accept", "application/json");
+   if (init?.body != null) headers.set("Content-Type", "application/json");
+ 
+-  const token = getToken();
++  const token = await readToken();
+   if (token !== null) headers.set("Authorization", `Bearer ${token}`);
+ 
+   const response = await fetch(path, { ...init, headers });
+ 
+   if (response.status === 401) {
+-    clearToken();
++    await clearToken();
+     throw new ApiError(401, "Invalid or missing token");
+   }
+   if (response.status === 204) return undefined as T;
+diff --git a/src/app/main.tsx b/src/app/main.tsx
+index f7a7fcf..b58ffa3 100644
+--- a/src/app/main.tsx
++++ b/src/app/main.tsx
+@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
+ import { parseShareTarget, type ShareTarget } from "../shared/share-target";
+ import { App } from "./App";
+ import { setupPwa } from "./pwa";
++import { requestPersistentStorage } from "./token-storage";
+ 
+ const container = document.getElementById("root");
+ if (!container) throw new Error("#root not found");
+@@ -39,3 +40,9 @@ setupPwa({
+     console.info("[pwa] ready for offline use");
+   },
+ });
++
++// Best-effort and never awaited: a slow or denied persist() must not
++// compete with first paint or gate the token read above. A denial
++// degrades to unprotected IndexedDB, which is still no worse than the
++// localStorage this phase moves away from.
++void requestPersistentStorage();
+diff --git a/src/app/token-storage.ts b/src/app/token-storage.ts
+new file mode 100644
+index 0000000..f91ca99
+--- /dev/null
++++ b/src/app/token-storage.ts
+@@ -0,0 +1,114 @@
++import type { DurableTokenStorage, LegacyTokenStorage } from "../shared/token-store";
++
++/**
++ * The exempt adapter under `docs/context/methodology.md`'s "Browser-API
++ * work: split the logic out, then the glue is exempt" rule: every decision
++ * lives in the tested `src/shared/token-store.ts`; this file only calls
++ * the browser APIs the store's two ports abstract over, carries no
++ * branching worth asserting, and is verified on the owner's Android phone
++ * and Windows PC rather than by an automated test.
++ */
++
++const DB_NAME = "praesto";
++const STORE_NAME = "token";
++const TOKEN_KEY = "praesto.token";
++
++function openDatabase(): Promise<IDBDatabase> {
++  return new Promise((resolve, reject) => {
++    const request = indexedDB.open(DB_NAME, 1);
++    request.onupgradeneeded = () => {
++      request.result.createObjectStore(STORE_NAME);
++    };
++    request.onsuccess = () => resolve(request.result);
++    request.onerror = () => reject(request.error);
++  });
++}
++
++async function readFromDurableStore(): Promise<string | null> {
++  const db = await openDatabase();
++  try {
++    const value = await new Promise<unknown>((resolve, reject) => {
++      const request = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).get(TOKEN_KEY);
++      request.onsuccess = () => resolve(request.result);
++      request.onerror = () => reject(request.error);
++    });
++    return typeof value === "string" ? value : null;
++  } finally {
++    db.close();
++  }
++}
++
++async function writeToDurableStore(token: string): Promise<void> {
++  const db = await openDatabase();
++  try {
++    await new Promise<void>((resolve, reject) => {
++      const request = db
++        .transaction(STORE_NAME, "readwrite")
++        .objectStore(STORE_NAME)
++        .put(token, TOKEN_KEY);
++      request.onsuccess = () => resolve();
++      request.onerror = () => reject(request.error);
++    });
++  } finally {
++    db.close();
++  }
++}
++
++async function clearDurableStore(): Promise<void> {
++  const db = await openDatabase();
++  try {
++    await new Promise<void>((resolve, reject) => {
++      const request = db
++        .transaction(STORE_NAME, "readwrite")
++        .objectStore(STORE_NAME)
++        .delete(TOKEN_KEY);
++      request.onsuccess = () => resolve();
++      request.onerror = () => reject(request.error);
++    });
++  } finally {
++    db.close();
++  }
++}
++
++/** IndexedDB-backed durable store — the one `navigator.storage.persist()` protects. */
++export const durableTokenStorage: DurableTokenStorage = {
++  read: readFromDurableStore,
++  write: writeToDurableStore,
++  clear: clearDurableStore,
++};
++
++/**
++ * `window.localStorage`-backed legacy store — today's mechanism
++ * (`src/app/api.ts:11-23` before this phase), kept as the migration
++ * source and the `save()` fallback. Reads and writes the same
++ * `"praesto.token"` key so the migration finds the token already stored
++ * on the owner's devices.
++ */
++export const legacyTokenStorage: LegacyTokenStorage = {
++  read(): string | null {
++    return window.localStorage.getItem(TOKEN_KEY);
++  },
++  write(token: string): void {
++    window.localStorage.setItem(TOKEN_KEY, token);
++  },
++  clear(): void {
++    window.localStorage.removeItem(TOKEN_KEY);
++  },
++};
++
++/**
++ * Best-effort request for persistent storage. `persist()` protects
++ * IndexedDB and Cache Storage from eviction; it does not protect Web
++ * Storage, which is the whole reason the token moved. A denial degrades
++ * to unprotected IndexedDB — still no worse than today — so the outcome
++ * is ignored and this never throws.
++ */
++export async function requestPersistentStorage(): Promise<void> {
++  try {
++    if (navigator.storage && typeof navigator.storage.persist === "function") {
++      await navigator.storage.persist();
++    }
++  } catch {
++    // Best-effort — a denial or a missing API must never break startup.
++  }
++}
+diff --git a/src/shared/token-store.ts b/src/shared/token-store.ts
+new file mode 100644
+index 0000000..3ec4371
+--- /dev/null
++++ b/src/shared/token-store.ts
+@@ -0,0 +1,131 @@
++/**
++ * Owns every decision about the bearer token's storage: where it is read
++ * from, where it is written, what a 401 clears, and how a token already
++ * sitting in the legacy store (`window.localStorage`) is migrated into the
++ * durable store (IndexedDB) exactly once. It never touches storage
++ * directly — it reaches storage only through the two ports below, which
++ * `src/app/token-storage.ts` implements.
++ *
++ * Like `src/shared/request-failure.ts` and `src/shared/share-target.ts`,
++ * this module is compiled into BOTH the browser and the Worker projects
++ * (`tsconfig.test.json` and `tsconfig.worker.json` both include
++ * `src/shared` under `lib: ["ES2022"]`, with no `DOM`), so it must stay
++ * environment-agnostic and free of runtime dependencies and DOM globals —
++ * no `window`, `document`, `navigator`, `indexedDB` or `localStorage` as
++ * values anywhere in this file. `tsconfig.test.json`'s test project also
++ * does not include `src/app`, so this module cannot import from there
++ * either; it only ever sees storage through the ports declared below.
++ */
++
++/** Durable storage port: the IndexedDB-backed store `persist()` protects. */
++export interface DurableTokenStorage {
++  read(): Promise<string | null>;
++  write(token: string): Promise<void>;
++  clear(): Promise<void>;
++}
++
++/** Legacy storage port: today's `window.localStorage`, which `persist()` does not protect. */
++export interface LegacyTokenStorage {
++  read(): string | null;
++  write(token: string): void;
++  clear(): void;
++}
++
++/** The store the rest of the app talks to — always async, storage-agnostic. */
++export interface TokenStore {
++  read(): Promise<string | null>;
++  save(token: string): Promise<void>;
++  clear(): Promise<void>;
++}
++
++/**
++ * True when `value` is a real, non-blank token. A value that is empty or
++ * whitespace-only is not a token (Task 1 rule 7). A type predicate, not a
++ * plain boolean, so the migration branch below narrows `legacyValue` from
++ * `string | null` to `string` without a redundant runtime check.
++ */
++function hasToken(value: string | null): value is string {
++  return value !== null && value.trim().length > 0;
++}
++
++/**
++ * Builds a `TokenStore` over the given ports. Implements the seven
++ * numbered behaviour rules from this plan's Task 1
++ * (`PRPs/plans/install-and-quick-capture-phase-2-durable-token.plan.md`):
++ * durable-first reads, exactly-once migration that never destroys the
++ * only copy, durable-first saves that degrade to legacy on failure, a
++ * clear that always touches both stores and never rejects, and blank
++ * values treated as absent in either store.
++ */
++export function createTokenStore(ports: {
++  durable: DurableTokenStorage;
++  legacy: LegacyTokenStorage;
++}): TokenStore {
++  const { durable, legacy } = ports;
++
++  return {
++    async read(): Promise<string | null> {
++      // Rule 1: prefer the durable store; do not touch legacy if it answers.
++      let durableValue: string | null;
++      try {
++        durableValue = await durable.read();
++      } catch {
++        // Rule 2: a rejecting durable read falls through to legacy exactly
++        // like an empty durable store does.
++        durableValue = null;
++      }
++      if (hasToken(durableValue)) {
++        return durableValue;
++      }
++
++      // Rule 2: durable holds nothing (or rejected) — fall back to legacy.
++      const legacyValue = legacy.read();
++      if (!hasToken(legacyValue)) {
++        return null;
++      }
++
++      // Migrate: copy into durable, then clear the legacy copy so a later
++      // read is served by the durable store alone.
++      try {
++        await durable.write(legacyValue);
++        legacy.clear();
++      } catch {
++        // Rule 3: migration never destroys the only copy. Leave the
++        // legacy value in place; the migration retries on the next read.
++      }
++      return legacyValue;
++    },
++
++    async save(token: string): Promise<void> {
++      try {
++        // Rule 4: write durably and drop any stale legacy copy on success,
++        // so it can never later shadow the token the owner just pasted.
++        await durable.write(token);
++        legacy.clear();
++      } catch {
++        // Rule 5: durable unavailable (IndexedDB blocked or missing) —
++        // degrade to the legacy store rather than losing the token.
++        // Today's behaviour is the declared floor.
++        legacy.write(token);
++      }
++    },
++
++    async clear(): Promise<void> {
++      // Rule 6: clear BOTH stores and never reject, even if one throws.
++      // Clearing only the durable copy would let rule 2's migration
++      // resurrect a stale legacy token on the next read, looping the app
++      // back into the same 401 — and rejecting here would break the
++      // 401 path's only route back to the token screen.
++      try {
++        await durable.clear();
++      } catch {
++        // ignored — legacy must still be cleared below
++      }
++      try {
++        legacy.clear();
++      } catch {
++        // ignored — clear() must never reject
++      }
++    },
++  };
++}
+diff --git a/test/token-store.test.ts b/test/token-store.test.ts
+new file mode 100644
+index 0000000..4de23ce
+--- /dev/null
++++ b/test/token-store.test.ts
+@@ -0,0 +1,356 @@
++// PRPs/prds/install-and-quick-capture.prd.md AC-2 token-never-reprompted
++//
++// Source plan: PRPs/plans/install-and-quick-capture-phase-2-durable-token.plan.md
++// (Task 1 — createTokenStore(ports: { durable: DurableTokenStorage; legacy: LegacyTokenStorage })
++// => TokenStore, and its seven numbered behaviour rules).
++//
++// This is a pure, DOM-free unit under test (src/shared/token-store.ts must stay
++// environment-agnostic and dual-compiled into both the browser and Worker targets —
++// tsconfig.test.json's `include` lists `test`, `src/worker`, `src/shared` but NOT
++// `src/app`, and neither tsconfig declares the DOM lib). It needs neither the D1
++// fixture nor the bearer-token auth helpers that test/tasks.test.ts uses, mirroring
++// test/share-target.test.ts's and test/request-failure.test.ts's shape.
++//
++// Both storage ports are faked in-memory below (FakeDurableStorage, FakeLegacyStorage).
++// Real `indexedDB` and `window.localStorage` access lives only in the exempt adapter
++// (src/app/token-storage.ts, plan Task 2), which this suite does not import and does
++// not test, per the owner's binding resolution of PRD Open Question 4 and
++// docs/context/methodology.md's "Browser-API work: split the logic out, then the glue
++// is exempt" section.
++//
++// This suite runs BEFORE the Implementer (test-first, per `tdd: true`): src/shared/
++// token-store.ts does not exist yet, so this file is expected to be RED for the right
++// reason (module-not-found / type error on createTokenStore and its two port
++// interfaces) until plan Task 1 is implemented.
++//
++// Scope note (full per-AC-A outcome record in
++// PRPs/reports/install-and-quick-capture/test-suite-phase-2.diff): this file covers
++// the store's decidable logic — plan AC-A1 through AC-A5, plus the two Task-1
++// behaviour rules (4 and 7) that have no dedicated AC-A number of their own but are
++// explicitly part of Task 1's prescribed contract. It deliberately does NOT cover:
++//   - AC-A6 (src/app/api.ts awaiting the store) and AC-A8 (src/app/App.tsx's
++//     three-valued gate): both live in src/app, which tsconfig.test.json excludes
++//     from this project, and both are Implementer work (plan Tasks 3-4) that has not
++//     run yet under test-first ordering. The plan's own grep + `npm run check`
++//     VALIDATE blocks and its Level 3 MANUAL steps 1, 2 and 5 are the verification
++//     path for these.
++//   - AC-A7 (navigator.storage.persist() + the IndexedDB adapter): the plan states
++//     explicitly that no test may assert merely that persist() was called
++//     (R-TRIVIAL-ASSERT); it is verified on the owner's Android phone and Windows PC
++//     per the plan's Level 3 MANUAL steps 2-4.
++
++import { describe, expect, it } from "vitest";
++import { createTokenStore } from "../src/shared/token-store";
++import type {
++  DurableTokenStorage,
++  LegacyTokenStorage,
++  TokenStore,
++} from "../src/shared/token-store";
++
++/**
++ * In-memory fake of DurableTokenStorage. `failNextReadWith` / `failNextWriteWith` /
++ * `failNextClearWith` are one-shot: they make exactly the NEXT call to that method
++ * reject, then reset — this is what lets a single test exercise both "the operation
++ * fails" and "the operation later succeeds" (e.g. a migration retry) without a second
++ * fake instance. `peek()` reads the fake's raw internal state directly, so tests
++ * assert on the actual stored value rather than on whether a method was called.
++ */
++class FakeDurableStorage implements DurableTokenStorage {
++  private value: string | null = null;
++  private failRead = false;
++  private failWrite = false;
++  private failClear = false;
++
++  seed(token: string | null): void {
++    this.value = token;
++  }
++  peek(): string | null {
++    return this.value;
++  }
++  failNextReadWith(): void {
++    this.failRead = true;
++  }
++  failNextWriteWith(): void {
++    this.failWrite = true;
++  }
++  failNextClearWith(): void {
++    this.failClear = true;
++  }
++
++  async read(): Promise<string | null> {
++    if (this.failRead) {
++      this.failRead = false;
++      throw new Error("fake durable read failure");
++    }
++    return this.value;
++  }
++
++  async write(token: string): Promise<void> {
++    if (this.failWrite) {
++      this.failWrite = false;
++      throw new Error("fake durable write failure");
++    }
++    this.value = token;
++  }
++
++  async clear(): Promise<void> {
++    if (this.failClear) {
++      this.failClear = false;
++      throw new Error("fake durable clear failure");
++    }
++    this.value = null;
++  }
++}
++
++/**
++ * In-memory fake of LegacyTokenStorage — synchronous, matching the real
++ * `window.localStorage` surface the port models. Same one-shot failure-injection
++ * shape as FakeDurableStorage, used only by the clear()-never-rejects cases.
++ */
++class FakeLegacyStorage implements LegacyTokenStorage {
++  private value: string | null = null;
++  private failClear = false;
++
++  seed(token: string | null): void {
++    this.value = token;
++  }
++  peek(): string | null {
++    return this.value;
++  }
++  failNextClearWith(): void {
++    this.failClear = true;
++  }
++
++  read(): string | null {
++    return this.value;
++  }
++
++  write(token: string): void {
++    this.value = token;
++  }
++
++  clear(): void {
++    if (this.failClear) {
++      this.failClear = false;
++      throw new Error("fake legacy clear failure");
++    }
++    this.value = null;
++  }
++}
++
++function makeStore(): {
++  durable: FakeDurableStorage;
++  legacy: FakeLegacyStorage;
++  store: TokenStore;
++} {
++  const durable = new FakeDurableStorage();
++  const legacy = new FakeLegacyStorage();
++  const store = createTokenStore({ durable, legacy });
++  return { durable, legacy, store };
++}
++
++describe("createTokenStore().read() — prefers the durable store (PRD AC-2, plan AC-A1)", () => {
++  it("returns the durable token and does not touch the legacy store when durable holds a non-blank value", async () => {
++    const { durable, legacy, store } = makeStore();
++    durable.seed("durable-token");
++    legacy.seed("legacy-token"); // deliberately different — proves legacy is not consulted
++
++    const result = await store.read();
++
++    expect(result).toBe("durable-token");
++    expect(legacy.peek()).toBe("legacy-token"); // untouched
++  });
++});
++
++describe("createTokenStore().read() — migrates a legacy-only token exactly once (PRD AC-2, plan AC-A2)", () => {
++  it("copies the legacy token into durable storage, clears the legacy copy, and returns it", async () => {
++    const { durable, legacy, store } = makeStore();
++    legacy.seed("legacy-token");
++
++    const result = await store.read();
++
++    expect(result).toBe("legacy-token");
++    expect(durable.peek()).toBe("legacy-token");
++    expect(legacy.peek()).toBeNull();
++  });
++
++  it("serves a second read from durable storage alone, even if legacy is reseeded afterwards", async () => {
++    const { durable, legacy, store } = makeStore();
++    legacy.seed("legacy-token");
++
++    const first = await store.read();
++    expect(first).toBe("legacy-token");
++
++    // Reseed legacy with a DIFFERENT, stale value. If the store still consulted
++    // legacy on the second read, this stale value would resurface instead of the
++    // already-migrated token.
++    legacy.seed("stale-resurrected-token");
++    const second = await store.read();
++
++    expect(second).toBe("legacy-token");
++    expect(durable.peek()).toBe("legacy-token");
++  });
++
++  it("also falls back to legacy and migrates when durable.read() rejects, not only when it resolves empty", async () => {
++    const { durable, legacy, store } = makeStore();
++    durable.failNextReadWith();
++    legacy.seed("legacy-token");
++
++    const result = await store.read();
++
++    expect(result).toBe("legacy-token");
++    expect(durable.peek()).toBe("legacy-token");
++    expect(legacy.peek()).toBeNull();
++  });
++});
++
++describe("createTokenStore().read() — migration never destroys the only copy (PRD AC-2, plan AC-A3)", () => {
++  it("returns the legacy token and leaves it in place when the durable write during migration fails", async () => {
++    const { durable, legacy, store } = makeStore();
++    legacy.seed("legacy-token");
++    durable.failNextWriteWith();
++
++    const result = await store.read();
++
++    expect(result).toBe("legacy-token");
++    expect(legacy.peek()).toBe("legacy-token"); // left intact, not cleared
++    expect(durable.peek()).toBeNull(); // failed write persisted nothing
++  });
++
++  it("retries the migration on the next read once the durable write no longer fails", async () => {
++    const { durable, legacy, store } = makeStore();
++    legacy.seed("legacy-token");
++    durable.failNextWriteWith();
++
++    const first = await store.read();
++    expect(first).toBe("legacy-token");
++    expect(durable.peek()).toBeNull();
++
++    const second = await store.read();
++
++    expect(second).toBe("legacy-token");
++    expect(durable.peek()).toBe("legacy-token");
++    expect(legacy.peek()).toBeNull();
++  });
++});
++
++describe("createTokenStore().save() — degrades to the legacy store when durable is unavailable (PRD AC-2, plan AC-A4)", () => {
++  it("writes the token to the legacy store, without rejecting, when durable.write() rejects", async () => {
++    const { durable, legacy, store } = makeStore();
++    durable.failNextWriteWith();
++
++    await expect(store.save("new-token")).resolves.toBeUndefined();
++
++    expect(legacy.peek()).toBe("new-token");
++    expect(durable.peek()).toBeNull();
++  });
++});
++
++describe("createTokenStore().save() — writes durably and drops a stale legacy copy on success (PRD AC-2, plan Task 1 rule 4)", () => {
++  it("writes the token to the durable store and clears any stale legacy copy so it cannot shadow the new token later", async () => {
++    const { durable, legacy, store } = makeStore();
++    legacy.seed("old-token");
++
++    await store.save("new-token");
++
++    expect(durable.peek()).toBe("new-token");
++    expect(legacy.peek()).toBeNull();
++
++    // Confirm the drop is real, not merely internal bookkeeping: a subsequent
++    // read must return the new token, never the stale legacy one.
++    const readBack = await store.read();
++    expect(readBack).toBe("new-token");
++  });
++});
++
++describe("createTokenStore().clear() — clears BOTH stores and never rejects (PRD AC-2, plan AC-A5)", () => {
++  it("clears both the durable and legacy stores", async () => {
++    const { durable, legacy, store } = makeStore();
++    durable.seed("durable-token");
++    legacy.seed("legacy-token");
++
++    await store.clear();
++
++    expect(durable.peek()).toBeNull();
++    expect(legacy.peek()).toBeNull();
++  });
++
++  it("does not reject, and still clears the legacy store, when the durable store's clear throws", async () => {
++    const { durable, legacy, store } = makeStore();
++    durable.seed("durable-token");
++    legacy.seed("legacy-token");
++    durable.failNextClearWith();
++
++    await expect(store.clear()).resolves.toBeUndefined();
++
++    expect(legacy.peek()).toBeNull();
++  });
++
++  it("does not reject, and still clears the durable store, when the legacy store's clear throws", async () => {
++    const { durable, legacy, store } = makeStore();
++    durable.seed("durable-token");
++    legacy.seed("legacy-token");
++    legacy.failNextClearWith();
++
++    await expect(store.clear()).resolves.toBeUndefined();
++
++    expect(durable.peek()).toBeNull();
++  });
++
++  it("prevents a stale legacy token from resurrecting via migration after a clear (clear-both is load-bearing, not tidiness)", async () => {
++    const { durable, legacy, store } = makeStore();
++    durable.seed("current-token");
++    legacy.seed("stale-token");
++
++    await store.clear();
++    const afterClear = await store.read();
++
++    // If clear() had cleared only the durable copy, this read would trigger
++    // AC-A2's migration path and resurrect "stale-token" instead of finding
++    // nothing — exactly the "token screen keeps coming back" symptom AC-2
++    // exists to remove.
++    expect(afterClear).toBeNull();
++  });
++});
++
++describe("createTokenStore().read() — a blank stored value is not a token (PRD AC-2, plan Task 1 rule 7)", () => {
++  it("treats an empty-string durable value as absent and falls back to legacy", async () => {
++    const { durable, legacy, store } = makeStore();
++    durable.seed("");
++    legacy.seed("real-token");
++
++    const result = await store.read();
++
++    expect(result).toBe("real-token");
++  });
++
++  it("treats a whitespace-only durable value as absent and falls back to legacy", async () => {
++    const { durable, legacy, store } = makeStore();
++    durable.seed("   ");
++    legacy.seed("real-token");
++
++    const result = await store.read();
++
++    expect(result).toBe("real-token");
++  });
++
++  it("treats a blank legacy value as absent and does not migrate it when durable is also empty", async () => {
++    const { durable, legacy, store } = makeStore();
++    legacy.seed("   ");
++
++    const result = await store.read();
++
++    expect(result).toBeNull();
++    expect(durable.peek()).toBeNull(); // nothing migrated — blank is not a token
++  });
++
++  it("returns null, without migrating anything, when neither store holds a token", async () => {
++    const { durable, legacy, store } = makeStore();
++
++    const result = await store.read();
++
++    expect(result).toBeNull();
++    expect(durable.peek()).toBeNull();
++    expect(legacy.peek()).toBeNull();
++  });
++});

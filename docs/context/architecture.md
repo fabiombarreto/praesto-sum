@@ -18,7 +18,7 @@ Thin client over a canonical server store: the PWA holds no authoritative state 
 
 | Path | Contents |
 |---|---|
-| `src/app/` | React SPA: `App.tsx`, `api.ts` (typed client + token storage), `pwa.ts`, `main.tsx` |
+| `src/app/` | React SPA: `App.tsx`, `api.ts` (typed client; token accessors `readToken`/`saveToken`/`clearToken` delegate to `src/shared/token-store.ts`), `token-storage.ts` (IndexedDB + `localStorage` adapter and `requestPersistentStorage()` — the exempt glue under `docs/context/methodology.md`'s "Browser-API work" rule), `pwa.ts`, `main.tsx` |
 | `src/sw.ts` | Service worker: precache, push, notificationclick |
 | `src/shared/` | Environment-agnostic: `api.ts` wire contract + pure domain logic |
 | `src/worker/` | `index.ts` (fetch + scheduled), `auth.ts`, `dto.ts`, `routes/`, `push/`, `db/` |

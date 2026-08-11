@@ -1,0 +1,200 @@
+# TDD initial suite — phase 2
+# Source PRD: PRPs/prds/install-and-quick-capture.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/install-and-quick-capture-phase-2-durable-token.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-08-11
+
+## Filename note
+
+This repo's established convention for this feature disambiguates per-phase
+suite artifacts once more than one phase exists: phase 1's artifact is the
+unsuffixed `test-suite.diff` (written first), and phase 4's is
+`test-suite-phase-4.diff`. Writing this phase's artifact to the literal
+`test-suite.diff` named in the generic protocol template would silently
+overwrite phase 1's already-APPROVED file. This artifact therefore follows
+the established sibling convention: `test-suite-phase-2.diff`.
+
+## Mode
+
+test-first (`docs/context/methodology.md`: `tdd: true`,
+`test_frameworks: ["vitest"]`). This suite runs BEFORE the Implementer;
+`src/shared/token-store.ts` does not exist yet, so `test/token-store.test.ts`
+is expected to be RED for the right reason (module-not-found / type error on
+`createTokenStore`, `DurableTokenStorage` and `LegacyTokenStorage`) until
+Task 1 of the plan is implemented.
+
+## Environment constraint honored (independently re-verified this session)
+
+- `docs/context/methodology.md`: `test_frameworks: ["vitest"]` — the only
+  framework.
+- `docs/context/testing.md` / `vitest.config.ts`: the only test tier is
+  Vitest 4 + `@cloudflare/vitest-pool-workers`, running the real Worker
+  inside workerd. No DOM/browser/jsdom tier exists.
+- `tsconfig.test.json` `include`: `["test", "src/worker", "src/shared",
+  "worker-configuration.d.ts"]` — `src/app` is excluded, and `lib` is
+  `["ES2022"]` with no `DOM`. Read directly this session. This is why the
+  suite is scoped to `src/shared/token-store.ts` alone: `src/app/api.ts`
+  (AC-A6), `src/app/token-storage.ts` (AC-A7) and `src/app/App.tsx` (AC-A8)
+  are structurally outside this test project, and — under test-first
+  ordering — the first two do not even hold their planned content yet
+  (plan Tasks 2, 3, 4, 5 have not run).
+
+## Existing-coverage scan (Step 2.1, run once)
+
+`Glob`bed `test/**/*.test.ts` → `test/health.test.ts`, `test/tasks.test.ts`,
+`test/share-target.test.ts`, `test/request-failure.test.ts` (31 tests total,
+matching the phase's stated baseline exactly: 6+3 in tasks.test.ts, 8 in
+share-target.test.ts, 11 in request-failure.test.ts, 3 in health.test.ts).
+Read all four. `tasks.test.ts` and `health.test.ts` use a static
+`env.API_BEARER_TOKEN` fixture to authorize Worker-route requests — that is
+server-side route-auth testing (pre-existing, unmodified by this phase), not
+client-side token *storage* behaviour. None of the four references
+`token-store`, `createTokenStore`, `DurableTokenStorage`,
+`LegacyTokenStorage`, migration, or durability. `src/shared/` currently
+contains only `api.ts`, `share-target.ts` and `request-failure.ts` —
+`token-store.ts` does not exist yet, consistent with test-first ordering.
+No existing test covers any AC-A of this phase — `EXISTING_TEST_COVERS`
+does not apply to any of them.
+
+## Per-AC-A reasoning
+
+Task 1's own `**ACTION**` line scopes itself explicitly: "serves AC-A1,
+AC-A2, AC-A3, AC-A4, AC-A5." That is the exact boundary this suite honors.
+
+**AC-A1 (PRD AC-2) — read() prefers the durable store.** Genuinely testable
+pure logic. Covered: durable holds a token, legacy holds a *different* token
+(deliberately, so the case is discriminative) — read() returns the durable
+value and leaves legacy untouched. Verdict: **NEW_TEST_REQUIRED**.
+
+**AC-A2 (PRD AC-2) — read() migrates a legacy-only token exactly once.**
+Covered by three cases: (1) the base migration — legacy-only token is
+copied into durable, legacy is cleared, and the token is returned; (2) a
+*second* read is served from durable alone even after legacy is reseeded
+with a different, stale value — proving legacy is genuinely no longer
+consulted, not merely "usually" not consulted; (3) the same migration also
+fires when `durable.read()` *rejects*, not only when it resolves empty —
+the plan's rule 2 names both triggers explicitly ("If the durable store
+holds nothing — or if `durable.read()` rejects"). Verdict:
+**NEW_TEST_REQUIRED**.
+
+**AC-A3 (PRD AC-2) — migration never destroys the only copy.** Covered by
+two cases: (1) a failed durable write during migration leaves the legacy
+copy intact and still returns the token; (2) a subsequent read — no longer
+injected with a failure — completes the migration, serving the plan's own
+"the migration retries on the next read" clause. Verdict:
+**NEW_TEST_REQUIRED**.
+
+**AC-A4 (PRD AC-2) — save() degrades to the legacy store when durable is
+unavailable.** Covered: `durable.write()` rejects, `save()` still resolves
+(does not propagate the failure to the caller) and the token lands in the
+legacy store instead. Verdict: **NEW_TEST_REQUIRED**.
+
+**Task 1 rule 4 (no dedicated AC-A number) — save() writes durably and
+drops a stale legacy copy on success.** Named explicitly in Task 1's
+behaviour list ("so a value left behind in the legacy store can never later
+shadow the token the owner just pasted") but not assigned its own AC-A —
+it is the positive-path complement of AC-A4 and is required to fully
+implement the contract AC-A1 depends on (durable being authoritative).
+Covered: legacy pre-seeded with a stale token, `save()` writes durably and
+clears legacy, and a follow-up `read()` proves the new token — not the
+stale one — is what comes back. Verdict: **NEW_TEST_REQUIRED**.
+
+**AC-A5 (PRD AC-2) — clear() clears BOTH stores and never rejects.**
+Covered by four cases: (1) the base both-cleared case; (2) `clear()`
+resolves without rejecting AND still clears legacy when durable's clear
+throws; (3) the mirror case for legacy throwing; (4) the interaction case
+the plan's own Notes call "load-bearing, not defensive tidiness" — a
+pre-clear state where durable holds the current token and legacy still
+holds a stale one; after `clear()`, a `read()` must return `null`, not
+resurrect the stale legacy token through AC-A2's migration path (which is
+exactly the "token screen keeps coming back" failure AC-2 exists to
+remove). Verdict: **NEW_TEST_REQUIRED**.
+
+**Task 1 rule 7 (no dedicated AC-A number) — a blank stored value is not a
+token.** Cross-cutting: threads through both `read()` branches. Covered by
+four cases: an empty-string durable value falls back to legacy; a
+whitespace-only durable value falls back to legacy (a distinct case from
+empty-string — a naive `value === ""` check would pass the first and fail
+the second); a whitespace-only *legacy* value is not migrated when durable
+is also empty (`read()` returns `null`, nothing is copied); and the fully-
+empty baseline (`null` in both stores) returns `null` without migrating
+anything. Verdict: **NEW_TEST_REQUIRED**.
+
+**AC-A6 (PRD AC-2) — src/app/api.ts awaits the store.** Not in this
+suite's scope. `src/app/api.ts` is excluded from `tsconfig.test.json` and,
+under test-first ordering, has not yet been updated to Task 3's shape (that
+Implementer task has not run). The observable properties AC-A6 names —
+awaiting `readToken()` before sending, awaiting `clearToken()` before
+throwing `ApiError(401)` — decompose into: the clear()-clears-both-and-
+never-rejects guarantee, already proven above under AC-A5; and `api.ts`'s
+own `await` usage, which is a compile-time property (`getToken`/`setToken`
+are renamed to `readToken`/`saveToken` specifically so a missed `await`
+site is a type error, not a silent bug) enforced by the plan's own Task 3
+grep + `npm run check` VALIDATE block, plus manual step 5. Verdict:
+**NO_TEST_REQUIRED** in this suite — no new test authored for it here.
+
+**AC-A7 (PRD AC-2) — persistent storage requested; token in IndexedDB.**
+The deliberately exempt, device-verified slice. The plan states explicitly,
+twice (Task 2's ACTION and the Notes section), that no test may assert
+merely that `navigator.storage.persist()` was called — a trivial assertion
+over a mock with no discriminative content that `test-reviewer` would
+rightly flag as `R-TRIVIAL-ASSERT`. `src/app/token-storage.ts` is also
+excluded from `tsconfig.test.json` and does not exist yet under test-first
+ordering. Verified on the owner's Android phone and Windows PC per the
+plan's Level 3 MANUAL steps 2-4. Verdict: **NO_TEST_REQUIRED** in this
+suite, classified per `docs/context/methodology.md`'s browser-API carve-out
+rather than authored as a trivial mock assertion.
+
+**AC-A8 (PRD AC-2) — App.tsx's three-valued token gate.** DOM/React
+rendering in `src/app/App.tsx`, excluded from `tsconfig.test.json` and not
+yet updated to Task 4's shape under test-first ordering. This is exactly
+the "purely visual" carve-out `docs/context/methodology.md`'s "Scope of the
+practice" section names ("It does not mean writing React component tests
+first"). Verified manually per the plan's Level 3 MANUAL steps 1-2
+(migration and restart survival, both asserting the token screen does NOT
+appear). Verdict: **NO_TEST_REQUIRED** in this suite.
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-2 token-never-reprompted | NEW_TEST_REQUIRED | `test/token-store.test.ts` — 16 cases across 7 describe blocks (AC-A1: 1; AC-A2: 3; AC-A3: 2; AC-A4: 1; Task 1 rule 4: 1; AC-A5: 4; Task 1 rule 7: 4). AC-A6, AC-A7, AC-A8 explicitly out of this suite's automated scope — see "Per-AC-A reasoning" above |
+| AC-1 share-creates-task | OUT_OF_PHASE_SCOPE | covered by Phase 1 (complete) |
+| AC-3 shortcut-opens-focused | OUT_OF_PHASE_SCOPE | covered by Phase 3 (complete; see `test-suite-phase-3.diff`) |
+| AC-4 unreachable-server-is-explicit | OUT_OF_PHASE_SCOPE | covered by Phase 4 (complete; see `test-suite-phase-4.diff`) |
+| AC-5 empty-share-creates-nothing | OUT_OF_PHASE_SCOPE | covered by Phase 1 (complete) |
+
+## Test files written this session
+
+- `test/token-store.test.ts` (new file; 16 cases across 7 describe blocks,
+  all mapping to PRD AC-2 / plan AC-A1 through AC-A5 plus Task 1 rules 4
+  and 7)
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no update/delete this session) | — | — | — |
+
+No existing test file was modified, weakened, or removed. All 31
+pre-existing tests across the 4 existing files are untouched.
+
+## Pre-emission self-check
+
+- Ledger completeness: no UPDATE/DELETE performed this session; ledger's
+  sole row is the default "(none)" row. Confirmed.
+- Coverage completeness: the sole in-scope PRD AC (AC-2) has an explicit
+  recorded outcome, with each of the plan's eight AC-A sub-items (AC-A1
+  through AC-A8) individually walked and justified in "Per-AC-A reasoning"
+  above — five produced real, discriminative test cases (plus the two
+  unnumbered Task 1 rules the plan's own prose requires), three produced an
+  independently-reasoned NO_TEST_REQUIRED verdict grounded in the
+  `tsconfig.test.json` project boundary, test-first ordering, and the
+  owner's binding browser-API exemption — none silently unaddressed. The
+  four out-of-phase PRD ACs are recorded as OUT_OF_PHASE_SCOPE, cross-
+  referencing the completed phases that own them. Confirmed.
+
+## Status
+
+*Approved: 2026-08-11*
+*Status: APPROVED*

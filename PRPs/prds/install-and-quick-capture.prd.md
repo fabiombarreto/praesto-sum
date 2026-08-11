@@ -261,7 +261,7 @@ ordinary units and are testable first.
 | # | Phase | Description | Status | Parallel | Depends | PRP Plan |
 |---|---|---|---|---|---|---|
 | 1 | Share target | Sharing text from another app creates the Task | complete | no | - | PRPs/plans/completed/install-and-quick-capture-phase-1-share-target.plan.md |
-| 2 | Durable token | The token survives storage pressure and a restart; the token screen does not reappear | pending | yes | - | |
+| 2 | Durable token | The token survives storage pressure and a restart; the token screen does not reappear | complete | yes | - | PRPs/plans/completed/install-and-quick-capture-phase-2-durable-token.plan.md |
 | 3 | Shortcut and focused capture | Long-pressing the icon opens directly on a focused, empty field | complete | yes | 1 | PRPs/plans/completed/install-and-quick-capture-phase-3-shortcut-and-focused-capture.plan.md |
 | 4 | Network honesty | An unreachable server produces an explicit state and loses no typed text | complete | yes | 1 | PRPs/plans/completed/install-and-quick-capture-phase-4-network-honesty.plan.md |
 

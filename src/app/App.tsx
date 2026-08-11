@@ -7,10 +7,10 @@ import {
   completeTask,
   createTask,
   deleteTask,
-  getToken,
   listTasks,
+  readToken,
   reopenTask,
-  setToken,
+  saveToken,
 } from "./api";
 
 /**
@@ -22,7 +22,31 @@ import {
  * Styling is deliberately minimal; the design pass is its own slice.
  */
 export function App({ initialShare }: { initialShare: ShareTarget | null }) {
-  const [authorized, setAuthorized] = useState<boolean>(getToken() !== null);
+  // `null` = still checking IndexedDB for a stored token. `readToken()` is
+  // async (the token now lives behind src/shared/token-store.ts), so this
+  // starts as "unknown" rather than assuming unauthorized.
+  const [authorized, setAuthorized] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void readToken().then((token) => {
+      if (!cancelled) setAuthorized(token !== null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (authorized === null) {
+    // Never render TokenGate while the read is still pending — doing so
+    // would flash the token screen on every cold start, which is exactly
+    // what AC-2 forbids.
+    return (
+      <main style={styles.page}>
+        <p style={styles.muted}>Loading…</p>
+      </main>
+    );
+  }
 
   if (!authorized) {
     return <TokenGate onAuthorized={() => setAuthorized(true)} />;
@@ -39,11 +63,11 @@ function TokenGate({ onAuthorized }: { onAuthorized: () => void }) {
       <p style={styles.muted}>Paste the API token for this device.</p>
       <form
         style={styles.row}
-        onSubmit={(event) => {
+        onSubmit={async (event) => {
           event.preventDefault();
           const token = value.trim();
           if (!token) return;
-          setToken(token);
+          await saveToken(token);
           onAuthorized();
         }}
       >

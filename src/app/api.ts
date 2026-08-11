@@ -1,25 +1,31 @@
 import type { CreateTaskInput, TaskDto, TaskStatus } from "../shared/api";
+import { createTokenStore } from "../shared/token-store";
+import { durableTokenStorage, legacyTokenStorage } from "./token-storage";
 
 /**
  * Typed client for the Worker API.
  *
- * The bearer token (ADR-0003) lives in localStorage: with exactly one user and
- * no accounts, the owner pastes it once per device. A 401 clears it so the app
- * falls back to the token prompt instead of failing silently.
+ * The bearer token (ADR-0003) lives in IndexedDB behind
+ * `src/shared/token-store.ts`, which `navigator.storage.persist()`
+ * (requested once at startup, `src/app/main.tsx`) can protect from
+ * storage-pressure eviction — unlike the `localStorage` this file used
+ * before. With exactly one user and no accounts, the owner pastes it once
+ * per device. A 401 still clears it so the app falls back to the token
+ * prompt instead of failing silently.
  */
 
-const TOKEN_KEY = "praesto.token";
+const tokenStore = createTokenStore({ durable: durableTokenStorage, legacy: legacyTokenStorage });
 
-export function getToken(): string | null {
-  return window.localStorage.getItem(TOKEN_KEY);
+export async function readToken(): Promise<string | null> {
+  return tokenStore.read();
 }
 
-export function setToken(token: string): void {
-  window.localStorage.setItem(TOKEN_KEY, token);
+export async function saveToken(token: string): Promise<void> {
+  await tokenStore.save(token);
 }
 
-export function clearToken(): void {
-  window.localStorage.removeItem(TOKEN_KEY);
+export async function clearToken(): Promise<void> {
+  await tokenStore.clear();
 }
 
 /**
@@ -46,13 +52,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   headers.set("Accept", "application/json");
   if (init?.body != null) headers.set("Content-Type", "application/json");
 
-  const token = getToken();
+  const token = await readToken();
   if (token !== null) headers.set("Authorization", `Bearer ${token}`);
 
   const response = await fetch(path, { ...init, headers });
 
   if (response.status === 401) {
-    clearToken();
+    await clearToken();
     throw new ApiError(401, "Invalid or missing token");
   }
   if (response.status === 204) return undefined as T;

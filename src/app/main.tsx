@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { parseShareTarget, type ShareTarget } from "../shared/share-target";
 import { App } from "./App";
 import { setupPwa } from "./pwa";
+import { requestPersistentStorage } from "./token-storage";
 
 const container = document.getElementById("root");
 if (!container) throw new Error("#root not found");
@@ -39,3 +40,9 @@ setupPwa({
     console.info("[pwa] ready for offline use");
   },
 });
+
+// Best-effort and never awaited: a slow or denied persist() must not
+// compete with first paint or gate the token read above. A denial
+// degrades to unprotected IndexedDB, which is still no worse than the
+// localStorage this phase moves away from.
+void requestPersistentStorage();
