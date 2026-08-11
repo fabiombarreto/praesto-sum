@@ -49,4 +49,4 @@ Not built yet: recurrence machinery (the `scheduled()` handler is an empty stub)
 
 - **Cloudflare** (Workers, D1, cron) — platform; can technically read D1 (consent recorded in ADR-0003).
 - **Web Push service endpoints** (browser vendors) — deliver notifications.
-- **Google Calendar** — NOT integrated; pending decision 4 in `documentation/60-decisions/index.md`.
+- **Google Calendar** — decided by ADR-0007 (bidirectional, Events only) and **access proven** by chore C11 on 2026-08-11, but **no integration code exists yet** — unit 4 `google-calendar-read` writes it. The OAuth app `praesto-sum` is published *In production* with both sensitive Calendar scopes and **no** verification submission; a working refresh token is stored as the Worker secret `GOOGLE_REFRESH_TOKEN`. Two measured facts unit 4 must design around: `calendarList.list` answers **403 insufficient scopes** under `calendar.events.readonly` (so FR-027's calendar picker needs a scope decision), and the owner's entire calendar history is 401 events in **one** page at 4.45 ms CPU, well inside the free-plan ceiling. Details in `documentation/30-architecture/architecture-overview.md`.

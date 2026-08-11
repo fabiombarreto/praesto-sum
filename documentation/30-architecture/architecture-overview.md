@@ -1,6 +1,6 @@
 ---
 status: draft
-last_updated: 2026-08-04
+last_updated: 2026-08-11
 review_trigger: "a pending technical decision is resolved (new ADR accepted), or stack/component/data/integration changes"
 ---
 
@@ -80,6 +80,45 @@ Canonical copy in Cloudflare D1 (SQLite-class managed database), per [ADR-0003](
 - Web Push (VAPID) delivers Reminder notifications to the installed PWA — part of [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md).
 - **Google Calendar, bidirectional for Events** — decided by [ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md). OAuth with a long-lived refresh token stored as a Worker secret; scope `calendar.events` (never `calendar`); **polling** on the existing cron, never `events.watch` webhooks (they would need a public unauthenticated route, breaching ADR-0003 safeguard 4). Pull is incremental with Google's own `syncToken`; writes carry `If-Match` and a deterministic id so a retry cannot duplicate. Only Events cross — the mirror inventory is closed and enforced by construction.
 
+> **Spike findings (2026-08-11, chore C11).** The access spike ran against the owner's real
+> Google account and corrected three things ADR-0007 had assumed. Accepted ADRs are
+> append-only, so the corrections live here.
+>
+> 1. **Publishing a sensitive Calendar scope needs no verification submission.** The
+>    `praesto-sum` project sits at publishing status *In production*, audience *External*,
+>    with `calendar.events` and `calendar.events.readonly` both registered as sensitive.
+>    Adding the sensitive scope raised a dialog titled "Verification required" whose body
+>    says verification is needed only to avoid the unverified-app screen, and whose sole
+>    action is *Continue* — a warning, not a gate. Both consequences ADR-0007 accepted in
+>    advance materialized: the unverified-app screen appeared once at consent, and the
+>    console shows the 100-user cap (1/100). Chore **C13 is therefore not triggered**. The
+>    OAuth client is a *Web application* one and Google accepted
+>    `https://praesto.fabiobarreto.workers.dev/oauth/callback` as a redirect URI with no
+>    authorized or verified domain — a `workers.dev` origin is enough for OAuth.
+> 2. **`calendarList.list` is unreachable with `calendar.events.readonly`** — it answers
+>    `403 insufficient authentication scopes`. FR-027 ("he chooses which calendars are
+>    included") therefore needs either an additional scope
+>    (`calendar.calendarlist.readonly` — sensitive, not restricted, so it does not change
+>    the verification category settled above) or a narrower unit 4 that reads `primary`
+>    only. **Unit 4's PRD must decide this**: it is the one place where ADR-0007's read-only
+>    scope set is demonstrably insufficient for the requirement it serves.
+> 3. **The free-plan ceiling does not bite at the owner's real scale.** Measured against the
+>    primary calendar (the only one reachable, per finding 2): **401 events** across all
+>    history arrive in **one** page — one subrequest — costing **4.45 ms** of CPU to parse
+>    and content-hash, against free-plan limits of **50 subrequests and 10 ms CPU** per
+>    invocation. A ±12-month window is 47 events and 0.66 ms. ADR-0007's bounded,
+>    resumable, one-page-per-tick backfill remains the right design as a safety property,
+>    but it is not load-bearing at this scale. `nextSyncToken` came back on the final page
+>    in **both** modes, including the bounded window; sending a syncToken back with frozen
+>    query parameters was **not** tested and remains unit 4's to verify.
+>
+> A fourth observation, recorded because it is the cheapest way to lose a day later: **the
+> console contradicts itself.** With both sensitive scopes registered and "Approval
+> required" shown on *Data access*, the *Verification centre* still reads "Verification is
+> not necessary because your app is not requesting sensitive or restricted scopes", and it
+> survives a hard reload. That is the same contradiction as the two official documentation
+> pages ADR-0007 cites — now reproducible inside a single project.
+
 ## Security and privacy of personal data
 
 > Draft principles only — pending owner validation; implementation details follow the storage decision.
@@ -97,7 +136,7 @@ Canonical copy in Cloudflare D1 (SQLite-class managed database), per [ADR-0003](
 | Risk | Why it is real now | Mitigation |
 |---|---|---|
 | Documentation rot | The project is documentation-only; docs that drift from reality poison every future session | Maintenance map and audit ritual in the [README](../README.md); `review_trigger` on every doc |
-| Google OAuth durability | An app in "Testing" publishing status gets refresh tokens expiring every 7 days, which would break QA-002; official docs contradict each other on whether publishing a sensitive scope needs verification first | Roadmap chores C11/C12 settle it empirically before any integration unit is planned; the fallback path (own domain + verification) is authorized and budgeted |
+| Google OAuth durability | An app in "Testing" publishing status gets refresh tokens expiring every 7 days, which would break QA-002; official docs contradict each other on whether publishing a sensitive scope needs verification first | **Half settled by chore C11 (2026-08-11):** the app is published *In production* with both sensitive Calendar scopes and no verification submission, so the fallback path (own domain, chore C13) is not needed. The token's actual survival past day 7 is still unproven — chore **C12 on or after 2026-08-19** re-runs the spike with the same refresh token and closes this row either way |
 | Silent damage to the owner's real Google calendar | Write-back acts on data that lives outside D1 and that Praesto cannot restore on its own | [ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md): scope never wider than `calendar.events`, deterministic insert ids, `If-Match` on writes, full re-sync as upsert with zero deletions, and a proven restore (chore C6) before every migration over real data |
 
 ## Key decisions
@@ -110,4 +149,3 @@ Canonical copy in Cloudflare D1 (SQLite-class managed database), per [ADR-0003](
 | Implementation stack (PWA framework, D1 layer, tooling) | [ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md) — React 19 SPA + Vite + Hono + Drizzle ORM |
 | Recurrence model | [ADR-0006](../60-decisions/ADR-0006-recurrence-model.md) — shared rule; Tasks materialize the current occurrence with `missed` recording, Events expand virtually |
 | External calendar posture | [ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md) — bidirectional Google Calendar sync for Events only, closed mirror inventory |
-| External calendar integration posture | TBD — decision 4 in the [pending decisions queue](../60-decisions/index.md) |

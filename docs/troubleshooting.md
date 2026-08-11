@@ -20,6 +20,26 @@ Classic service-worker cache failure. The SW update flow (skipWaiting, versioned
 
 Migrations are ALWAYS applied via `wrangler d1 migrations apply` (local and `--remote`). Never apply schema changes ad hoc; never let drizzle-kit push directly. If states diverge, compare `d1_migrations` table on both sides.
 
+## Google OAuth console: three traps found during chore C11 (2026-08-11)
+
+**Scopes silently not saved.** On *Google Auth Platform → Data access*, the side panel's
+**Update** button does not persist anything on its own — the page-level **Save** does. Miss
+it and the scope tables stay empty while the app looks configured. This is worth catching
+because publishing an app that declares *no* sensitive scopes succeeds trivially and looks
+like a positive result.
+
+**The console contradicts itself about verification.** With both Calendar scopes registered
+and "Approval required" shown on *Data access*, the *Verification centre* still reads
+"Verification is not necessary because your app is not requesting sensitive or restricted
+scopes", and survives a hard reload. Trust *Data access*. The dialog titled "Verification
+required" is likewise a warning, not a gate: its body says verification only avoids the
+unverified-app screen and its sole action is **Continue**.
+
+**`calendarList.list` answers 403 under `calendar.events.readonly`** —
+`insufficient authentication scopes`. Listing events works; enumerating calendars does not.
+If a calendar picker (FR-027) shows nothing, this is why, and the fix is a scope decision,
+not a bug hunt.
+
 ## "Server unreachable" in the PWA
 
 By design the client is network-dependent (no offline writes). Check the Worker deploy status and the token; the UX must always show this state explicitly rather than spinning.

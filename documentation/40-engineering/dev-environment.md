@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-04
+last_updated: 2026-08-11
 review_trigger: "a setup step changes, fails on a fresh machine, or the scaffold validates the planned commands"
 ---
 
@@ -62,6 +62,8 @@ Not yet implemented: the export snapshot of FR-042 (`db:snapshot`) — it lands 
 | 2 | `wrangler d1 create praesto-db` | `database_id` `57c2e21c-dcf6-4152-a3d1-6746c5972ee6`, region ENAM. Pasted over the placeholder in `wrangler.jsonc`. In a non-interactive shell wrangler answers "no" to editing the file for you — which is what we want: its snippet would rename the binding from `DB` to `praesto_db`. |
 | 3 | `npm run cf-typegen` | **Produced no diff.** The generated types derive from binding *names*, not from the `database_id`, so `worker-configuration.d.ts` is byte-identical before and after a real database exists. `npm run check` still passes. Do not expect a commit here. |
 | 4 | `wrangler secret put API_BEARER_TOKEN` | 32 random bytes, base64url. **The Worker did not exist yet, so wrangler created an empty one to hold the secret.** Harmless: the auth gate is fail-closed (`src/worker/auth.ts` answers 500 when the secret is missing), so no unauthenticated API ever existed. |
+
+**Added 2026-08-11 (chore C11):** a second Worker secret, `GOOGLE_REFRESH_TOKEN`, holding the Google Calendar refresh token. Worker secrets are **write-only** — `wrangler secret list` returns names, never values — so the same token is also kept at `~/.praesto/google-oauth.json` (outside the repository, next to the OAuth client id and secret), because chore C12 must re-use the *same* token eight days later. Neither the token nor the client secret may enter the repository, `.dev.vars` included. Re-run the spike with `node scripts/google-calendar-spike.js list`; the script is a throwaway C11/C12 tool and no production code imports it.
 
 ### The recurring deploy
 
