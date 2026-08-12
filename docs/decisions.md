@@ -82,6 +82,15 @@ Atualizado pelo Docs Updater após cada aprovação de implementação.
 
 ---
 
+## [2026-08-04] Test-first (TDD) as the declared methodology
+
+**Context:** Phase 0 recorded a pragmatic test-after philosophy and `docs/context/methodology.md` carried `tdd: false`, keeping relay's test pair out of the pipeline. On 2026-08-04 the owner declared the opposite intent, with only the scaffold's worth of code written and the riskiest units (recurrence with DST edges, the autonomous `missed` sweep, calendar write-back) still ahead.
+**Decision:** Practise **test-first**, declared as `tdd: true` + `tdd_evidence: "user-declared"`. Pipeline order becomes `/relay-plan` → `/relay-plan-review` → `/relay-write-test` → `/relay-test-write-review` → implement → code review → `/relay-test`; the suite must be RED for the right reason before implementation starts. **Scope is unchanged** from the existing automated/manual split — it does NOT extend to React components, and a purely visual PRD legitimately produces no test file. The guardrail in `docs/context/testing.md` is independent and remains in force either way.
+**Reason:** Acceptance criteria become executable before code exists — the strongest available defence for units where a wrong write reaches data Praesto cannot restore. Accepted cost, recorded honestly: two extra agent round-trips per unit, so the roadmap's estimates are a floor that this raises further.
+**Areas affected:** all · Source: `documentation/60-decisions/ADR-0008-adopt-test-first-methodology.md`
+
+---
+
 <!-- Template for future entries:
 
 ## [YYYY-MM-DD] Title of the decision

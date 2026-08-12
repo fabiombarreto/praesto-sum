@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-11
+last_updated: 2026-08-12
 review_trigger: "any document is created, renamed, merged or changes status"
 ---
 
@@ -70,8 +70,8 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 40-engineering/tech-stack.md | active | 2026-08-03 |
 | 40-engineering/engineering-conventions.md | active | 2026-08-03 |
 | 40-engineering/dev-environment.md | active | 2026-08-11 |
-| 40-engineering/testing-strategy.md | active | 2026-08-11 |
-| 50-planning/roadmap.md | active | 2026-08-11 |
+| 40-engineering/testing-strategy.md | active | 2026-08-12 |
+| 50-planning/roadmap.md | active | 2026-08-12 |
 | 60-decisions/index.md | active | 2026-08-04 |
 | 60-decisions/ADR-0001-write-all-artifacts-in-english.md | accepted | 2026-08-02 |
 | 60-decisions/ADR-0002-name-the-project-praesto-sum.md | accepted | 2026-08-03 |

@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-11
+last_updated: 2026-08-12
 review_trigger: "practice shows the split is too heavy or too light, a new test tier is added, or the methodology flag changes"
 ---
 
@@ -33,6 +33,7 @@ Tooling landed with the 2026-08-03 scaffold: **Vitest + `@cloudflare/vitest-pool
 | React components and layout | **No** — manual | One user, one browser pair; visual checks are faster than maintaining component tests |
 | Third-party behavior (Cloudflare, browser push delivery) | **No** | Not ours to test; verified by using the app |
 | Browser-storage / browser-API logic (IndexedDB, `navigator.storage`, Notification, service worker) | **Yes, via extraction** | The runtime has none of these APIs, so the decidable part moves to `src/shared` behind a port and is tested against an in-memory fake; only the thin adapter that calls the API is verified manually. Rule and rationale in [docs/context/methodology.md](../../docs/context/methodology.md) (recorded 2026-08-11) |
+| Consistency between `docs/` and `documentation/` | **Yes, narrowly** | `docs/` is derived from `documentation/` by convention, and convention lost three times before 2026-08-11 and a fourth time on 2026-08-12 — each drift entering the same way, a change landing on the authoritative side while nothing forced the derived side to follow. `test/docs-consistency.test.ts` pins the mechanically decidable subset (every accepted ADR reaches `docs/decisions.md`; no derived doc calls a resolved decision open; the knowledge-base index does not contradict the frontmatter it summarizes; every cited path resolves). It deliberately does **not** claim the two trees agree in meaning — prose cannot be compared mechanically, and a test implying otherwise would put a green tick under the drift it missed. Hand review of the derived docs is still required |
 | End-to-end browser flows | **Not yet — trigger set** | No e2e tier exists. Decided 2026-08-11 not to buy one for token storage, and to buy it when unit 6 `push-channel-proven` needs it: push failure is silent by nature, which is where manual verification genuinely stops being enough. Tracked as a backlog idea in the [roadmap](../50-planning/roadmap.md#backlog) |
 
 When a case is unclear, it gets a row here before any test is written or skipped.

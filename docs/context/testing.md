@@ -52,11 +52,13 @@ nor this explicit warning is incomplete.
 
 | Tier | Framework | Config / location | Run command | Prerequisites |
 |------|-----------|-------------------|-------------|---------------|
-| integration | Vitest 4 + `@cloudflare/vitest-pool-workers` | `vitest.config.ts`, tests in `test/*.test.ts` | `npm test` (watch: `npm run test:watch`) | `npm ci`; migrations are applied automatically into the ephemeral D1 by `test/apply-migrations.ts`. No dev server, no browser, no network. |
+| integration | Vitest 4 + `@cloudflare/vitest-pool-workers` | `vitest.config.ts` project `worker`, tests in `test/*.test.ts` | `npm test` (watch: `npm run test:watch`); alone: `npx vitest run --project worker` | `npm ci`; migrations are applied automatically into the ephemeral D1 by `test/apply-migrations.ts`. No dev server, no browser, no network. |
+| docs consistency | Vitest 4, plain Node | `vitest.config.ts` project `docs`, single file `test/docs-consistency.test.ts` | `npm test`; alone: `npx vitest run --project docs` | `npm ci`. Reads `docs/` and `documentation/` off disk — which is why it is a separate project: workerd has no `node:fs`. |
 
-These run the real Worker inside workerd with real bindings: Hono routes, the
-auth gate and the Drizzle data layer are exercised against an ephemeral D1
-built from `migrations/`. There is **no browser/e2e tier yet** — the UI is
+The `worker` project runs the real Worker inside workerd with real bindings:
+Hono routes, the auth gate and the Drizzle data layer are exercised against an
+ephemeral D1 built from `migrations/`. The `docs` project touches no runtime at
+all — it only reads Markdown. There is **no browser/e2e tier yet** — the UI is
 verified manually via `npm run dev`. When the first e2e suite lands, add its
 row here with the exact command and prerequisites.
 
