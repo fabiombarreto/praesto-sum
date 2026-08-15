@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-04
+last_updated: 2026-08-12
 review_trigger: "the owner validates the seeded requirements or confirms the MVP scope, or a scope change / accepted backlog idea touches any FR"
 ---
 
@@ -109,21 +109,23 @@ Every accepted requirement now has a phase and a delivery unit. The unit column 
 | FR-001, FR-045 | Phase 1 | 1 `install-and-quick-capture` |
 | FR-002, FR-003, FR-004, FR-005, FR-006 | Phase 1 | 2 `task-detail-and-dates` |
 | FR-007 | Phase 1 | 3 `today-view-and-filters` |
-| FR-042, FR-043 | Phase 1 | 4 `data-export` (+ chore C5 for the automated pull) |
-| FR-041 | Phase 1 | 5 `push-channel-proven`, 6 `reminders` |
-| FR-044, FR-025 (Task side) | Phase 1 | 6 `reminders` |
-| FR-040 | Phase 1 | 7 `text-search` (extended to Events in unit 13) |
-| FR-009 | Phase 1 | 8 `recurring-tasks`, 9 `missed-sweep` |
-| FR-011 | Phase 1 | 9 `missed-sweep` (data), 10 `adherence-mirror` (surface) |
-| FR-012 | Phase 1 | 11 `repeated-miss-nudge` |
-| FR-008 | Phase 1 | 12 `life-areas` |
-| FR-020 … FR-023 | Phase 2 | 13 `events-and-day-view` |
-| FR-024 | Phase 2 | 14 `week-view` |
-| FR-026 | Phase 2 | 15 `recurring-events` |
-| FR-025 (Event side) | Phase 2 | 16 `event-reminders` |
+| FR-042, FR-043 | Phase 1 | 5 `data-export` (+ chore C5 for the automated pull) |
+| FR-041 | Phase 1 | 6 `push-channel-proven`, 7 `reminders` |
+| FR-044, FR-025 (Task side) | Phase 1 | 7 `reminders` |
+| FR-040 | Phase 1 | 8 `text-search` (extended to Events in unit 14) |
+| FR-009 | Phase 1 | 9 `recurring-tasks`, 10 `missed-sweep` |
+| FR-011 | Phase 1 | 10 `missed-sweep` (data), 11 `adherence-mirror` (surface) |
+| FR-012 | Phase 1 | 12 `repeated-miss-nudge` |
+| FR-008 | Phase 1 | 13 `life-areas` |
+| FR-020 … FR-023 | Phase 2 | 14 `events-and-day-view` |
+| FR-024 | Phase 2 | 16 `week-view` |
+| FR-026 | Phase 2 | 17 `recurring-events` |
+| FR-025 (Event side) | Phase 2 | 18 `event-reminders` |
 | FR-027, FR-030 | Phase 1 (declared exception) | 4 `google-calendar-read` |
 | FR-028 | Phase 2 | 15 `google-calendar-write` |
 | FR-029 | Phase 2 | 19 `google-recurring-events-sync` |
 | FR-010 | Phase 2 | 20 `task-event-links` |
 
 Corrected on 2026-08-03: FR-006, FR-008 and FR-043 were previously listed as "Unscheduled". FR-043 in particular contradicted [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md), which already treated automated snapshots as a binding safeguard rather than optional work.
+
+**Renumbered on 2026-08-12, found while opening unit 2's PRD.** When [ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md) inserted three units on 2026-08-04, the [roadmap](../50-planning/roadmap.md#delivery-units) renumbered old units 4–17 to 5–20 but this table kept the old numbers, leaving it self-contradictory: **two rows numbered 4** (`data-export` and `google-calendar-read`) and **two numbered 15** (`recurring-events` and `google-calendar-write`). Anyone following FR-041 to "unit 5" landed on export instead of push. Only the `#` column changed — the slugs, which the roadmap declares permanent while the number is free, were already correct and are what the fix keyed on. FR-040's "extended to Events" pointer moved from unit 13 to unit 14 `events-and-day-view` for the same reason.

@@ -58,7 +58,7 @@ Atualizado pelo Docs Updater após cada aprovação de implementação.
 ## [2026-08-03] MVP scope frozen: Phase 1 = Tasks
 
 **Context:** All 23 FRs validated by the owner; phases and exit criteria confirmed.
-**Decision:** Phase 1 = FR-001..005, 007, 009, 040, 041, 042, 044, 045 (exit: owner manages daily Tasks in the assistant). Phase 2 = Calendar (FR-020..026, FR-010; exit: replaces Google Calendar). FR-006/008/043 unscheduled.
+**Decision:** Phase 1 = FR-001..005, 007, 009, 040, 041, 042, 044, 045 (exit: owner manages daily Tasks in the assistant). Phase 2 = Calendar (FR-020..026, FR-010; exit: replaces Google Calendar). *(Correction 2026-08-12: this entry said "FR-006/008/043 unscheduled", which the authoritative [traceability table](../documentation/20-requirements/functional-requirements.md#traceability) had already superseded on 2026-08-03 — all three are scheduled: FR-006 in unit 2 `task-detail-and-dates`, FR-008 in unit 13 `life-areas`, FR-043 in unit 5 `data-export`. FR-043 unscheduled would have contradicted ADR-0003, which treats automated snapshots as binding.)*
 **Reason:** Tasks answer the owner's sharpest pains first (capture friction, forgetting).
 **Areas affected:** tasks, events, reminders, life-areas · Source: `documentation/20-requirements/functional-requirements.md` + `documentation/50-planning/roadmap.md`
 

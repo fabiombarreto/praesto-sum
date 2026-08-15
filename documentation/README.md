@@ -62,7 +62,7 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 00-meta/documentation-guidelines.md | active | 2026-08-02 |
 | 10-product/vision.md | active | 2026-08-04 |
 | 10-product/glossary.md | active | 2026-08-03 |
-| 20-requirements/functional-requirements.md | active | 2026-08-04 |
+| 20-requirements/functional-requirements.md | active | 2026-08-12 |
 | 20-requirements/quality-attributes.md | active | 2026-08-03 |
 | 20-requirements/constraints.md | active | 2026-08-04 |
 | 30-architecture/architecture-overview.md | draft | 2026-08-11 |
