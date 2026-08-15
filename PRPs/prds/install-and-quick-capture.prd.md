@@ -151,8 +151,21 @@ whether the tool works, not whether behaviour changed.
 1. Auto-focusing the capture field may be unwelcome on desktop, where it raises
    the on-screen keyboard on touch laptops. To be validated in real use rather
    than decided now.
-2. If `navigator.storage.persist()` is denied on the owner's device, do we accept
-   today's behaviour as the floor, or escalate to another storage strategy?
+2. ~~If `navigator.storage.persist()` is denied on the owner's device, do we accept
+   today's behaviour as the floor, or escalate to another storage strategy?~~
+   **RESOLVED 2026-08-12 by measurement, not by choosing.** The question
+   presupposed a denial that did not happen: on the owner's Windows PC,
+   `navigator.storage.persisted()` returns **`true`**. The token is therefore
+   not merely in IndexedDB but in a *persistent* bucket — the storage class
+   eviction protection actually covers — which is the whole of what AC-2 asked
+   for. The degradation path (accept today's behaviour as the floor) stays
+   implemented and tested, but it is now dead code on this device rather than
+   a live risk, and no escalation to another storage strategy is needed.
+   **Measured on the PC only**; not measured on the Android phone, where
+   checking costs a remote-debugging session. Chrome on Android is documented
+   to grant persistence without prompting for a PWA installed to the home
+   screen, which this is — but that is inference, and it is recorded here as
+   inference rather than counted as a second measurement.
 3. `TBD - needs validation`: whether a share target that receives a URL (rather
    than plain text) should store the URL in `title` or in `description`. The
    wire contract supports both; the owner has not been asked.
