@@ -69,7 +69,7 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 30-architecture/domain-model.md | draft | 2026-08-04 |
 | 40-engineering/tech-stack.md | active | 2026-08-03 |
 | 40-engineering/engineering-conventions.md | active | 2026-08-03 |
-| 40-engineering/dev-environment.md | active | 2026-08-11 |
+| 40-engineering/dev-environment.md | active | 2026-08-12 |
 | 40-engineering/testing-strategy.md | active | 2026-08-12 |
 | 50-planning/roadmap.md | active | 2026-08-12 |
 | 60-decisions/index.md | active | 2026-08-04 |

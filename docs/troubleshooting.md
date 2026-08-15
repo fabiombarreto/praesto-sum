@@ -18,7 +18,7 @@ Classic service-worker cache failure. The SW update flow (skipWaiting, versioned
 
 ## Migrations differ between local and remote
 
-Migrations are ALWAYS applied via `wrangler d1 migrations apply` (local and `--remote`). Never apply schema changes ad hoc; never let drizzle-kit push directly. If states diverge, compare `d1_migrations` table on both sides.
+Migrations are ALWAYS applied via `npx wrangler d1 migrations apply` (local and `--remote`). Never apply schema changes ad hoc; never let drizzle-kit push directly. If states diverge, compare `d1_migrations` table on both sides.
 
 ## Google OAuth console: three traps found during chore C11 (2026-08-11)
 

@@ -11,7 +11,7 @@
 5. `npm run db:migrate` (local D1).
 6. `npm run dev` — one process: Vite HMR + real workerd + local D1.
 
-Cloudflare account (free) + `wrangler login` are needed only for deploys and remote migrations. Keep the MS VC++ Redistributable current (workerd on Windows — see `docs/troubleshooting.md`).
+Cloudflare account (free) + `npx wrangler login` are needed only for deploys and remote migrations. Keep the MS VC++ Redistributable current (workerd on Windows — see `docs/troubleshooting.md`).
 
 ## Day-to-day commands
 

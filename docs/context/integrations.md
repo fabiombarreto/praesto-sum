@@ -5,7 +5,7 @@
 ## Cloudflare (platform)
 
 - **Purpose:** hosts everything — Workers (API + cron + static assets) and D1 (canonical data). Free plan.
-- **Auth:** `wrangler login` (OAuth) for deploys and remote D1 migrations; local dev needs no account.
+- **Auth:** `npx wrangler login` (OAuth) for deploys and remote D1 migrations; local dev needs no account.
 - **Surface used:** Workers runtime, D1 bindings, cron triggers, static assets with `single_page_application`.
 
 ## Web Push

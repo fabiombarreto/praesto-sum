@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-11
+last_updated: 2026-08-12
 review_trigger: "a setup step changes, fails on a fresh machine, or the scaffold validates the planned commands"
 ---
 
@@ -16,8 +16,10 @@ review_trigger: "a setup step changes, fails on a fresh machine, or the scaffold
 - **Operating system:** Windows 11 (the owner's development machine).
 - **git** — repository initialized 2026-08-03, branch `main`.
 - **Node.js LTS** (bundles npm — the only package manager used).
-- **Cloudflare account** (free plan) with `wrangler login` completed once, for deploys and remote D1 migrations. Local dev needs no account.
+- **Cloudflare account** (free plan) with `npx wrangler login` completed once, for deploys and remote D1 migrations. Local dev needs no account.
 - **Microsoft VC++ Redistributable kept current** — a known workerd crash on Windows is mitigated by this (CON-001; see Known issues).
+
+> **Every `wrangler` command in this document is written `npx wrangler`, and must stay that way.** Wrangler is a pinned devDependency (`4.118.0`), never installed globally — ADR-0005's exact-pin discipline exists so that "nothing changed by itself", and a global wrangler would drift from the pinned one silently. `npm run *` scripts work bare because npm puts `node_modules/.bin` on PATH; a command typed straight into the shell does not, and answers `wrangler : O termo 'wrangler' não é reconhecido`. Corrected 2026-08-12, after the owner hit exactly that while rotating the API token.
 
 ## Setup step by step
 
@@ -28,7 +30,7 @@ review_trigger: "a setup step changes, fails on a fresh machine, or the scaffold
 5. `npm run db:migrate` (applies `migrations/` to the local D1 under `.wrangler/`).
 6. `npm run dev` — one process: Vite HMR + real workerd + local D1, at `http://127.0.0.1:5173`.
 
-**To deploy from a fresh clone** (not needed for local work): only `wrangler login`. The D1 database, its `database_id` in `wrangler.jsonc` and the `API_BEARER_TOKEN` secret were provisioned once on 2026-08-04 (chore C1) and are not per-machine. The full sequence, including what it costs to rebuild the account from zero, is the [Deploy runbook](#deploy-runbook) below.
+**To deploy from a fresh clone** (not needed for local work): only `npx wrangler login`. The D1 database, its `database_id` in `wrangler.jsonc` and the `API_BEARER_TOKEN` secret were provisioned once on 2026-08-04 (chore C1) and are not per-machine. The full sequence, including what it costs to rebuild the account from zero, is the [Deploy runbook](#deploy-runbook) below.
 
 ## Day-to-day commands
 
@@ -58,12 +60,12 @@ Not yet implemented: the export snapshot of FR-042 (`db:snapshot`) — it lands 
 
 | # | Command | What it produced / what bit us |
 |---|---|---|
-| 1 | `wrangler login` | Browser OAuth. **It times out in about two minutes** waiting for the authorization; three attempts expired before one landed. If the browser does not open by itself, copy the printed URL. |
-| 2 | `wrangler d1 create praesto-db` | `database_id` `57c2e21c-dcf6-4152-a3d1-6746c5972ee6`, region ENAM. Pasted over the placeholder in `wrangler.jsonc`. In a non-interactive shell wrangler answers "no" to editing the file for you — which is what we want: its snippet would rename the binding from `DB` to `praesto_db`. |
+| 1 | `npx wrangler login` | Browser OAuth. **It times out in about two minutes** waiting for the authorization; three attempts expired before one landed. If the browser does not open by itself, copy the printed URL. |
+| 2 | `npx wrangler d1 create praesto-db` | `database_id` `57c2e21c-dcf6-4152-a3d1-6746c5972ee6`, region ENAM. Pasted over the placeholder in `wrangler.jsonc`. In a non-interactive shell wrangler answers "no" to editing the file for you — which is what we want: its snippet would rename the binding from `DB` to `praesto_db`. |
 | 3 | `npm run cf-typegen` | **Produced no diff.** The generated types derive from binding *names*, not from the `database_id`, so `worker-configuration.d.ts` is byte-identical before and after a real database exists. `npm run check` still passes. Do not expect a commit here. |
-| 4 | `wrangler secret put API_BEARER_TOKEN` | 32 random bytes, base64url. **The Worker did not exist yet, so wrangler created an empty one to hold the secret.** Harmless: the auth gate is fail-closed (`src/worker/auth.ts` answers 500 when the secret is missing), so no unauthenticated API ever existed. |
+| 4 | `npx wrangler secret put API_BEARER_TOKEN` | 32 random bytes, base64url. **The Worker did not exist yet, so wrangler created an empty one to hold the secret.** Harmless: the auth gate is fail-closed (`src/worker/auth.ts` answers 500 when the secret is missing), so no unauthenticated API ever existed. |
 
-**Added 2026-08-11 (chore C11):** a second Worker secret, `GOOGLE_REFRESH_TOKEN`, holding the Google Calendar refresh token. Worker secrets are **write-only** — `wrangler secret list` returns names, never values — so the same token is also kept at `~/.praesto/google-oauth.json` (outside the repository, next to the OAuth client id and secret), because chore C12 must re-use the *same* token eight days later. Neither the token nor the client secret may enter the repository, `.dev.vars` included. Re-run the spike with `node scripts/google-calendar-spike.js list`; the script is a throwaway C11/C12 tool and no production code imports it.
+**Added 2026-08-11 (chore C11):** a second Worker secret, `GOOGLE_REFRESH_TOKEN`, holding the Google Calendar refresh token. Worker secrets are **write-only** — `npx wrangler secret list` returns names, never values — so the same token is also kept at `~/.praesto/google-oauth.json` (outside the repository, next to the OAuth client id and secret), because chore C12 must re-use the *same* token eight days later. Neither the token nor the client secret may enter the repository, `.dev.vars` included. Re-run the spike with `node scripts/google-calendar-spike.js list`; the script is a throwaway C11/C12 tool and no production code imports it.
 
 ### The recurring deploy
 
@@ -90,7 +92,7 @@ With `$TOKEN` = the production `API_BEARER_TOKEN` and `$BASE` = `https://praesto
 | SPA served | `curl $BASE/` | `200 text/html`, the `Praesto Sum` shell |
 | PWA installable | `curl -o /dev/null $BASE/manifest.webmanifest` and each `/icons/*.png` | `200`, correct byte sizes |
 | D1 binding + migrations | `POST /api/tasks` then `GET /api/tasks` | `201` then the same Task back — this is the only check that proves the *remote* database and its migrations are up |
-| Schema really applied | `wrangler d1 execute praesto-db --remote --command "SELECT name FROM sqlite_master WHERE type='table'"` | `life_areas`, `push_subscriptions`, `recurrence_series`, `reminders`, `tasks`, `d1_migrations` |
+| Schema really applied | `npx wrangler d1 execute praesto-db --remote --command "SELECT name FROM sqlite_master WHERE type='table'"` | `life_areas`, `push_subscriptions`, `recurrence_series`, `reminders`, `tasks`, `d1_migrations` |
 
 The last check is manual and has no `curl` equivalent: **install the PWA and actually use it.** There is no browser/e2e suite (see `docs/context/testing.md`), so this is the only thing that exercises the UI. First run, 2026-08-04, by the owner on **Android (Chrome) and Windows**: the icon landed on the home screen on both, then create a Task → complete it → create another → delete it → reload, all green against production.
 
