@@ -85,7 +85,7 @@ first one is the two-minute stand-in for C5.
 
 | # | Command | Why |
 |---|---|---|
-| 1 | `npx wrangler d1 execute praesto-db --remote --command "SELECT * FROM tasks"` | Dump the table before touching it. Keep the output **off-repo** (it is personal data). This is the only copy that exists if the migration goes wrong. |
+| 1 | `npx wrangler d1 execute praesto-db --remote --json --command "SELECT * FROM tasks"` | Dump the table before touching it. **This step is load-bearing, not ceremony:** on 2026-08-15 it caught a row whose legacy integer `priority` would have aborted migration `0001` on its CHECK, contradicting the PRD's claim that the column was 100% NULL. Use `--json` so the output is machine-readable and restorable. Keep the output **off-repo** (it is personal data). This is the only copy that exists if the migration goes wrong. |
 | 2 | `npx wrangler d1 migrations list praesto-db --remote` | Confirm exactly which migrations are pending — never assume. |
 | 3 | `npm run db:migrate:remote` | Apply. |
 | 4 | `npx wrangler d1 migrations list praesto-db --remote` | Confirm nothing is pending and the count matches step 2. |
