@@ -1,0 +1,30 @@
+{
+  "feature": "task-detail-and-dates",
+  "phase": 4,
+  "plan": "PRPs/plans/task-detail-and-dates-phase-4-detail-screen-and-inline-title-edit.plan.md",
+  "worktree": ".worktrees/task-detail-and-dates/",
+  "outcome": "GREEN",
+  "attempts": 1,
+  "framework": "vitest",
+  "command": "npm test && npm run build",
+  "totals": { "files": 10, "passed": 210, "failed": 0, "skipped": 0 },
+  "build": "succeeded (tsc -b + vite build; PWA precache 17 entries, 225.77 KiB)",
+  "manual_verification": {
+    "criterion": "PRD AC-8 (DOM-bound)",
+    "environment": "vite dev against the worktree, real Worker + local D1, Windows PC",
+    "passed": [
+      "inline title correction persisted (confirmed by an independent GET /api/tasks)",
+      "Escape abandons the inline edit, leaving the original title",
+      "detail panel seeds title, description, priority and date mode from the Task",
+      "switching Complete by to Do on cleared the deadline and set only scheduledDate",
+      "No date cleared the date while leaving description and priority untouched",
+      "a no-change save issued zero PATCH requests and returned to the list",
+      "list rendered in urgency order: overdue, future, undated last"
+    ],
+    "not_verified": [
+      "the Android phone - verification ran on the Windows PC only",
+      "no screenshot captured: the browser pane was not displayed, so the page never composited frames"
+    ]
+  },
+  "notes": "First attempt green. 210 passed, up from 185 at the close of phase 3; the delta is the 25 cases of test/task-edit.test.ts covering the extracted pure edit module."
+}

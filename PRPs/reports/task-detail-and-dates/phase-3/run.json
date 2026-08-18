@@ -1,0 +1,14 @@
+{
+  "feature": "task-detail-and-dates",
+  "phase": 3,
+  "plan": "PRPs/plans/task-detail-and-dates-phase-3-frozen-read-contract.plan.md",
+  "worktree": ".worktrees/task-detail-and-dates/",
+  "outcome": "GREEN",
+  "attempts": 1,
+  "framework": "vitest",
+  "command": "npm test",
+  "started_at": "2026-08-15T22:23:53Z",
+  "ended_at": "2026-08-15T22:24:00Z",
+  "totals": { "files": 9, "passed": 185, "failed": 0, "skipped": 0 },
+  "notes": "First attempt green. 185 passed, up from 163 at the close of phase 2; the delta is the 22 cases of test/task-list-contract.test.ts, which were 13-failed/9-passed against the pre-route state."
+}

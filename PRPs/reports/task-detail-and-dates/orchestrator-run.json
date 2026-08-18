@@ -1,0 +1,287 @@
+{
+  "feature": "task-detail-and-dates",
+  "prd_path": "PRPs/prds/task-detail-and-dates.prd.md",
+  "started_at": "2026-08-15T21:40:00Z",
+  "ended_at": "2026-08-15T22:53:00Z",
+  "max_plan_review_retries": 2,
+  "max_tdd_review_retries": 2,
+  "max_orchestrator_minutes": 240,
+  "phases": [
+    {
+      "phase": 1,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/task-detail-and-dates-phase-1-priority-as-a-domain-enum.plan.md",
+      "plan_review_attempts": 1
+    },
+    {
+      "phase": 1,
+      "stage": "worktree",
+      "outcome": "CREATED",
+      "worktree_path": ".worktrees/task-detail-and-dates/",
+      "worktree_attempted": true,
+      "worktree_succeeded": true,
+      "fallback_reason": null
+    },
+    {
+      "phase": 1,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "mode": "test-first",
+      "suite_path": "PRPs/reports/task-detail-and-dates/test-suite.diff",
+      "tdd_review_attempts": 1
+    },
+    {
+      "phase": 1,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "implement_attempts": 1
+    },
+    {
+      "phase": 1,
+      "stage": "test_after",
+      "outcome": "not_applicable"
+    },
+    {
+      "phase": 1,
+      "stage": "test",
+      "outcome": "GREEN"
+    },
+    {
+      "phase": 1,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 1,
+      "stage": "row_status_flip",
+      "outcome": "OK",
+      "to": "tested"
+    },
+    {
+      "phase": 1,
+      "stage": "row_status_flip",
+      "outcome": "OK",
+      "to": "complete"
+    },
+    {
+      "phase": 1,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/task-detail-and-dates-phase-1-priority-as-a-domain-enum.plan.md",
+      "timestamp": "2026-08-15T21:57:00Z"
+    },
+    {
+      "phase": 2,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/task-detail-and-dates-phase-2-task-update-route.plan.md",
+      "plan_review_attempts": 1
+    },
+    {
+      "phase": 2,
+      "stage": "worktree",
+      "outcome": "IDEMPOTENT_REUSE",
+      "worktree_path": ".worktrees/task-detail-and-dates/",
+      "worktree_attempted": true,
+      "worktree_succeeded": true,
+      "fallback_reason": null
+    },
+    {
+      "phase": 2,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "mode": "test-first",
+      "suite_path": "PRPs/reports/task-detail-and-dates/phase-2/test-suite.diff",
+      "tdd_review_attempts": 1
+    },
+    {
+      "phase": 2,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "implement_attempts": 1
+    },
+    {
+      "phase": 2,
+      "stage": "test_after",
+      "outcome": "not_applicable"
+    },
+    {
+      "phase": 2,
+      "stage": "test",
+      "outcome": "GREEN"
+    },
+    {
+      "phase": 2,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 2,
+      "stage": "row_status_flip",
+      "outcome": "OK",
+      "to": "tested"
+    },
+    {
+      "phase": 2,
+      "stage": "row_status_flip",
+      "outcome": "OK",
+      "to": "complete"
+    },
+    {
+      "phase": 2,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/task-detail-and-dates-phase-2-task-update-route.plan.md",
+      "timestamp": "2026-08-15T22:10:00Z"
+    },
+    {
+      "phase": 3,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/task-detail-and-dates-phase-3-frozen-read-contract.plan.md",
+      "plan_review_attempts": 1
+    },
+    {
+      "phase": 3,
+      "stage": "worktree",
+      "outcome": "IDEMPOTENT_REUSE",
+      "worktree_path": ".worktrees/task-detail-and-dates/",
+      "worktree_attempted": true,
+      "worktree_succeeded": true,
+      "fallback_reason": null
+    },
+    {
+      "phase": 3,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "mode": "test-first",
+      "suite_path": "PRPs/reports/task-detail-and-dates/phase-3/test-suite.diff",
+      "tdd_review_attempts": 1
+    },
+    {
+      "phase": 3,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "implement_attempts": 1
+    },
+    {
+      "phase": 3,
+      "stage": "test_after",
+      "outcome": "not_applicable"
+    },
+    {
+      "phase": 3,
+      "stage": "test",
+      "outcome": "GREEN"
+    },
+    {
+      "phase": 3,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 3,
+      "stage": "row_status_flip",
+      "outcome": "OK",
+      "to": "tested"
+    },
+    {
+      "phase": 3,
+      "stage": "row_status_flip",
+      "outcome": "OK",
+      "to": "complete"
+    },
+    {
+      "phase": 3,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/task-detail-and-dates-phase-3-frozen-read-contract.plan.md",
+      "timestamp": "2026-08-15T22:26:00Z"
+    },
+    {
+      "phase": 4,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/task-detail-and-dates-phase-4-detail-screen-and-inline-title-edit.plan.md",
+      "plan_review_attempts": 1
+    },
+    {
+      "phase": 4,
+      "stage": "worktree",
+      "outcome": "IDEMPOTENT_REUSE",
+      "worktree_path": ".worktrees/task-detail-and-dates/",
+      "worktree_attempted": true,
+      "worktree_succeeded": true,
+      "fallback_reason": null
+    },
+    {
+      "phase": 4,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "mode": "test-first",
+      "suite_path": "PRPs/reports/task-detail-and-dates/phase-4/test-suite.diff",
+      "tdd_review_attempts": 1
+    },
+    {
+      "phase": 4,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "implement_attempts": 1
+    },
+    {
+      "phase": 4,
+      "stage": "test_after",
+      "outcome": "not_applicable"
+    },
+    {
+      "phase": 4,
+      "stage": "test",
+      "outcome": "GREEN"
+    },
+    {
+      "phase": 4,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 4,
+      "stage": "row_status_flip",
+      "outcome": "OK",
+      "to": "tested"
+    },
+    {
+      "phase": 4,
+      "stage": "row_status_flip",
+      "outcome": "OK",
+      "to": "complete"
+    },
+    {
+      "phase": 4,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/task-detail-and-dates-phase-4-detail-screen-and-inline-title-edit.plan.md",
+      "timestamp": "2026-08-15T22:53:00Z"
+    }
+  ],
+  "outcome": "ALL_PHASES_COMPLETE",
+  "phases_completed": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "worktree_attempted": true,
+  "worktree_succeeded": true,
+  "fallback_reason": null,
+  "deviations": [
+    "The remote D1 migration (`npm run db:migrate:remote`) was deliberately NOT executed by the pipeline. It is specified as a four-step owner-run runbook in documentation/40-engineering/dev-environment.md#remote-migration-over-existing-data, gated on a manual dump of the tasks table (the PRD's own stand-in for the missing chore C5). Recorded in the phase-1 plan's ## Notes.",
+    "Agent dispatch via Task was not used at any stage: this session carries an explicit instruction not to dispatch agents without the user asking, so every writer/reviewer protocol was adopted inline per /relay-execute's own D7 dispatch model. The same constraint is recorded in this PRD's own Research Summary.",
+    "The worktree's bootstrap script (scripts/worktree-bootstrap.sh) has every step commented out, so .worktrees/task-detail-and-dates/ was created without node_modules or .dev.vars. Both were supplied manually (npm ci; cp .dev.vars) \u2014 without .dev.vars, `wrangler types --check` in the worktree drops the secret bindings and npm run check fails for an infrastructure reason unrelated to the diff.",
+    "Phase 2: the plan listed documentation/20-requirements/functional-requirements.md in its Files to Change to 'move FR-002 to implemented', but that document carries no implementation-status field \u2014 its status column is the requirement's own lifecycle (accepted) and its traceability table maps requirements to delivery units, not to shipped phases. The file was deliberately left untouched rather than inventing a column in an owner-validated authoritative document; the shipped surface is recorded in docs/api-reference.md instead, and delivery history belongs to the roadmap at phase close-out. Recorded as an advisory R-S2 row on the phase-2 code review.",
+    "Phase 2: the plan's Task 1 VALIDATE grepped for the single-line EDITABLE_TASK_FIELDS declaration, which Prettier reformats onto six lines (over the 100-column print width), so the gate could never have passed under npm run check. The gate was corrected to match the declaration head plus the five member literals; the code was not bent to satisfy a wrong gate.",
+    "Phase 2: the suite manifest was written to PRPs/reports/task-detail-and-dates/phase-2/test-suite.diff rather than the flat path, because phase 1's APPROVED manifest already occupies it and overwriting an approved audit record to satisfy a path convention would be the wrong trade.",
+    "Phase 3: the list route's `or(isNull(tasks.seriesId), eq(tasks.detached, false))` clause was removed \u2014 unplanned scope the source PRD never asked for. The clause was inert until phase 2 began writing `detached`, at which point correcting any recurrence occurrence silently removed it from the list. ADR-0006 defines `detached` as a propagation flag, never a visibility one. Declared in the plan's Summary/Notes/Risks, pinned by its own AC-A6, and flagged on both the plan-review and code-review verdicts.",
+    "Phase 3: the test-first suite's first red was a module-resolution failure (src/shared/dates.ts is the seam the phase creates), which proves absence but not discrimination. A second, behavioural red was therefore captured after Tasks 1-2 and before Task 3 \u2014 13 failed / 9 passed \u2014 and every one of the 9 passes was accounted for as non-evidence in the manifest, including two that passed only because created_at has whole-second resolution and the old ORDER BY degenerated to storage order.",
+    "Phase 4: PRD AC-8 is DOM-bound and the project has no browser tier, so the phase applied docs/context/methodology.md's standing obligation rather than claiming the purely-visual exemption it could legitimately have taken: the decidable edit semantics were extracted into a pure src/shared/task-edit.ts and authored test-first (25 cases), leaving only click/Enter/Escape/panel-toggle as manually verified glue.",
+    "Phase 4: the DOM half was verified by driving the real app in a browser against the real Worker and a live local D1, not only by writing a manual script. Recorded gaps: the Android phone was NOT exercised (Windows PC only), and no screenshot exists because the browser pane was not displayed.",
+    "Phase 4 process note: the first dev server started from the main repo rather than the worktree (the repo root's pre-existing .claude/launch.json won over the one written into the worktree), so its initial 500 reflected unmigrated main-repo state and proved nothing about the diff. Corrected by adding an additive npm --prefix launch configuration, which was reverted after the verification.",
+    "RESOLVED 2026-08-15, after the orchestrator run, on explicit owner instruction: the remote D1 migration was applied. The mandatory pre-apply dump falsified the PRD's '100% NULL' premise \u2014 one row carried the legacy integer priority 2, which tasks_priority_chk would have rejected during the table-rebuild copy, aborting the migration. The owner chose to NULL that single meaningless value; the migration then applied cleanly and was verified on production (8 rows preserved, priority now text with its CHECK, all six indexes intact, no stray __new_tasks, CHECK rejects 'urgent' and accepts 'high'). Production still runs the previous Worker build against the new schema until the next deploy; harmless because no shipped code writes priority."
+  ]
+}

@@ -1,0 +1,92 @@
+# TDD initial suite — phase 4
+# Source PRD: PRPs/prds/task-detail-and-dates.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/task-detail-and-dates-phase-4-detail-screen-and-inline-title-edit.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Mode: test-first (tdd: true, test_frameworks: ["vitest"])
+# Generated: 2026-08-15
+
+> **Path note.** Scoped under `phase-4/` for the same reason phases 2 and 3
+> were: phase 1's APPROVED manifest holds the flat path, and overwriting an
+> approved audit record to satisfy a path convention would be the wrong trade.
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-8 | NEW_TEST_REQUIRED (partial — decidable half only) | `.worktrees/task-detail-and-dates/test/task-edit.test.ts` |
+| AC-8 | MANUAL (DOM half) | Verified by hand against the six-step script in the plan's `## Notes`; recorded in the roadmap delivery entry |
+| AC-7 | EXISTING_TEST_COVERS | `test/tasks.test.ts`, `test/task-priority.test.ts`, `test/task-update.test.ts`, `test/task-list-contract.test.ts` — all in full |
+| AC-1..AC-6, AC-9, AC-10 | OUT_OF_PHASE_SCOPE | (delivered in phases 1–3) |
+
+## The split, stated before the test list
+
+PRD AC-8 is the unit's only DOM-bound criterion, and
+`documentation/40-engineering/testing-strategy.md` keeps UI verification manual
+by deliberate choice — this project's only test tier is Vitest inside workerd,
+which has no DOM. `docs/context/methodology.md` does not accept that as a
+blanket exemption; it imposes an obligation: **extract the decidable part into
+`src/shared` and test it first, and only the thin adapter is exempt.**
+
+Applied here, the decidable part is the whole of the edit semantics — which keys
+a patch carries, clearing versus omitting, and date exclusivity. That is what
+this suite covers. What remains manual is genuinely thin: click to enter edit
+mode, Enter/blur/Escape, panel open and close.
+
+## Test files written this session
+
+- `.worktrees/task-detail-and-dates/test/task-edit.test.ts` — 25 cases in five
+  `describe` blocks against the new pure `src/shared/task-edit.ts`:
+  - **`dateModeOf`** — deadline, scheduled, and neither.
+  - **only what changed** — an unchanged draft yields `{}`; a single edit yields
+    exactly one key; a changed title is trimmed; a whitespace-only retitle
+    yields `{}` (an empty title and an empty body are both 400s, and the owner
+    should meet neither); a title differing only by surrounding whitespace is
+    omitted.
+  - **clearing versus omitting** — description and priority each cleared with an
+    explicit `null` when they had a value, and omitted entirely when they did
+    not. This is the client half of PRD AC-2 and the pair of cases that a naive
+    `?? null` implementation fails.
+  - **date exclusivity** — switching modes emits only the new mode's key and
+    explicitly asserts the other is absent; `No date` clears whichever date the
+    Task carried; an undated Task staying undated emits nothing; setting a first
+    date works; an unchanged date is omitted; three invalid values (empty,
+    `2026-02-31`, `01/09/2026`) emit no date key at all; and a loop over all
+    three modes asserts both dates are never set together.
+  - **editable-set ceiling** — a maximal edit emits exactly
+    `description`, `priority`, `scheduledDate`, `title` and nothing else.
+
+## Why this suite is legitimately RED before implementation
+
+Executed against the phase-3 worktree state, the suite fails to load:
+
+```
+Error: Cannot find module '../src/shared/task-edit'
+```
+
+For a brand-new pure module this is the only red available, and unlike phase 3
+there is no older implementation to demonstrate a behavioural red against — the
+module *is* the unit under test. Recorded plainly rather than dressed up.
+
+What carries the discrimination instead is the content of the assertions: the
+clearing-versus-omitting pairs (a `null` when the field had a value, absence
+when it did not) and the mode-switch pairs (asserting the *other* date key is
+absent, not merely that the new one is present) each fail against the obvious
+naive implementations — a blanket `?? null`, or a patch builder that emits every
+field it knows about. A suite that only asserted "the changed field is present"
+would pass against both and prove nothing.
+
+No test asserts on an invented internal, a private field, or a call count. No
+mocks are used: the module is pure, so the tests call it directly.
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no update/delete this session) | — | — | — |
+
+No existing test was updated or removed.
+
+## Status
+
+*Approved: 2026-08-15*
+*Status: APPROVED*

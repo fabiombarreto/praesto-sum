@@ -1,0 +1,16 @@
+{
+  "feature": "task-detail-and-dates",
+  "phase": 4,
+  "reviewed_run": "PRPs/reports/task-detail-and-dates/phase-4/run.json",
+  "verdict": "APPROVED",
+  "timestamp": "2026-08-15T22:52:30Z",
+  "concerns": [],
+  "checks": [
+    { "id": "removed-test-functions", "passed": true, "detail": "git diff shows zero removed it/test/describe/expect lines." },
+    { "id": "newly-added-skip-markers", "passed": true, "detail": "no .skip, .todo, .only, xit or xdescribe was introduced." },
+    { "id": "coverage-direction", "passed": true, "detail": "coverage increased: 185 tests before this phase, 210 after (+25 cases, 10 files). The four pre-existing Task suites pass byte-identical." },
+    { "id": "lifecycle-ledger", "passed": true, "detail": "the APPROVED suite manifest's lifecycle ledger is empty; no removal or skip requires authorization." },
+    { "id": "green-not-obtained-by-weakening", "passed": true, "detail": "the green was obtained by writing the module the suite specified. The suite's discrimination was argued in the manifest rather than by a failure count (a new pure module can only fail at import), naming which assertions defeat which naive implementation. The DOM half, which no test covers, was separately exercised in a real browser." }
+  ],
+  "notes": "Post-green reviewer protocol adopted inline by /relay-execute, per this session's standing constraint."
+}

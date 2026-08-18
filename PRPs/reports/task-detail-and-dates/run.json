@@ -1,0 +1,18 @@
+{
+  "feature": "task-detail-and-dates",
+  "phase": 1,
+  "plan": "PRPs/plans/task-detail-and-dates-phase-1-priority-as-a-domain-enum.plan.md",
+  "worktree": ".worktrees/task-detail-and-dates/",
+  "outcome": "GREEN",
+  "attempts": 1,
+  "framework": "vitest",
+  "command": "npm test",
+  "started_at": "2026-08-15T21:55:47Z",
+  "ended_at": "2026-08-15T21:55:52Z",
+  "totals": { "files": 7, "passed": 124, "failed": 0, "skipped": 0 },
+  "projects": [
+    { "name": "worker", "files": 6, "passed": 67, "failed": 0 },
+    { "name": "docs", "files": 1, "passed": 57, "failed": 0 }
+  ],
+  "notes": "First attempt green — no auto-correction round was needed. The suite includes the 15 test-first cases of test/task-priority.test.ts, which were 6-failed/9-passed against HEAD 09931ba before the implementation landed."
+}

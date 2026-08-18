@@ -1,0 +1,91 @@
+# TDD initial suite — phase 2
+# Source PRD: PRPs/prds/task-detail-and-dates.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/task-detail-and-dates-phase-2-task-update-route.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Mode: test-first (tdd: true, test_frameworks: ["vitest"])
+# Generated: 2026-08-15
+
+> **Path note.** Phase 1's manifest already occupies the flat
+> `PRPs/reports/<feature>/test-suite.diff` path this stage normally writes to.
+> Overwriting it would destroy an APPROVED audit record, so this phase's
+> manifest is scoped under `phase-2/`. Recorded as a deliberate divergence.
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-1 | NEW_TEST_REQUIRED | `.worktrees/task-detail-and-dates/test/task-update.test.ts` ("the edit persists") |
+| AC-2 | NEW_TEST_REQUIRED | `.worktrees/task-detail-and-dates/test/task-update.test.ts` ("omission and clearing are distinguishable") |
+| AC-3 | NEW_TEST_REQUIRED | `.worktrees/task-detail-and-dates/test/task-update.test.ts` ("the two dates stay exclusive") |
+| AC-5 | NEW_TEST_REQUIRED | `.worktrees/task-detail-and-dates/test/task-update.test.ts` ("editing an occurrence detaches it") |
+| AC-9 | NEW_TEST_REQUIRED | `.worktrees/task-detail-and-dates/test/task-update.test.ts` ("non-editable fields are rejected, not ignored") |
+| AC-7 | EXISTING_TEST_COVERS | `test/tasks.test.ts:40` (create + list), `:52` (complete + reopen), `:72` (delete), `:81` (date exclusivity on create), `:95` (input rejection), `:103` (token gate); plus `test/task-priority.test.ts` in full |
+| AC-4 | OUT_OF_PHASE_SCOPE | (delivered in phase 1 — `tasks_priority_chk` + route guard) |
+| AC-6 | OUT_OF_PHASE_SCOPE | (deferred to phase 3 — urgency ordering) |
+| AC-8 | OUT_OF_PHASE_SCOPE | (deferred to phase 4 — DOM-bound, verified manually) |
+| AC-10 | OUT_OF_PHASE_SCOPE | (deferred to phase 3 — `?limit=N`) |
+
+## Test files written this session
+
+- `.worktrees/task-detail-and-dates/test/task-update.test.ts` — 39 cases in five
+  `describe` blocks, one per covered AC:
+  - **AC-1** — a single-field patch leaves title, description, both dates,
+    priority, status, id and createdAt each individually asserted; the change is
+    then re-read through `GET /api/tasks` so the assertion is on persistence,
+    not on the response echo; 404 for an unknown id; 401 without the token.
+  - **AC-2** — for `description`, `deadline` and `priority`, an omitted key
+    leaves the value and the same key sent as `null` clears it (the two halves
+    the PRD names as separate assertions); `scheduledDate` cleared separately;
+    one body that clears one field while leaving another untouched; an empty
+    body rejected; a non-object body rejected; and six malformed values
+    (null/whitespace/non-string title, impossible `2026-02-31`, malformed
+    `01/09/2026`, out-of-enum priority) each rejected with the stored row
+    re-read to prove nothing was written.
+  - **AC-3** — deadline→scheduled and scheduled→deadline both clear the other;
+    a flip-flop sequence re-read from the stored row to prove both are never
+    set at once; a body carrying both rejected with 400.
+  - **AC-5** — `detached` is read from the stored row, not the DTO (the PRD
+    keeps it off the wire): false before, true after a title edit, true after a
+    priority edit, and the occurrence stays bound to its series
+    (`seriesId`/`occurrenceDate` unchanged — detaching is not unlinking); a
+    one-off Task stays undetached.
+  - **AC-9** — each of the seven named non-editable fields plus `lifeAreaId`
+    and an unknown key rejected with 400, with seven columns of the stored row
+    re-asserted; a mixed body carrying one valid and one non-editable key
+    rejected whole; and a `done` Task edited stays `done` (PRD Open Question 2).
+
+## Why this suite is legitimately RED before implementation
+
+Executed against the phase-1 worktree state: **37 failed | 2 passed (39)**. No
+`PATCH` handler exists in `src/worker/routes/tasks.ts`, so Hono has no route to
+match and every case asserting a 200/400 outcome fails.
+
+The two passing cases are recorded honestly rather than counted as coverage:
+
+- *"requires the token"* passes because the auth middleware runs before routing
+  and answers 401 regardless of whether the route exists.
+- *"answers 404 for a Task that does not exist"* passes for the **wrong reason**
+  today — Hono returns 404 for the unmatched path, not because the handler
+  looked the Task up. It will pass for the right reason once the route exists,
+  and it is retained because the 404-on-missing-Task behaviour still needs
+  asserting; it is simply not evidence of anything before implementation.
+
+No test asserts on an invented method name, a private field, or a call count;
+every assertion is on an observable HTTP status, a response field, or a stored
+row. No mocks are used — the suite runs the real Worker inside workerd against
+an ephemeral D1 built from `migrations/`, matching `test/tasks.test.ts`.
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no update/delete this session) | — | — | — |
+
+No existing test was updated or removed. AC-7 is a standing "nothing changes"
+obligation, so the existing `test/tasks.test.ts` and `test/task-priority.test.ts`
+assertions are the criterion — touching them would defeat the check they perform.
+
+## Status
+
+*Approved: 2026-08-15*
+*Status: APPROVED*

@@ -1,0 +1,126 @@
+# TDD initial suite — phase 3
+# Source PRD: PRPs/prds/task-detail-and-dates.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/task-detail-and-dates-phase-3-frozen-read-contract.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Mode: test-first (tdd: true, test_frameworks: ["vitest"])
+# Generated: 2026-08-15
+
+> **Path note.** Phase 1's manifest occupies the flat
+> `PRPs/reports/<feature>/test-suite.diff` path; this phase's is scoped under
+> `phase-3/` for the same reason phase 2's was — overwriting an APPROVED audit
+> record to satisfy a path convention would be the wrong trade.
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-6 | NEW_TEST_REQUIRED | `.worktrees/task-detail-and-dates/test/task-list-contract.test.ts` ("urgency ordering", "detaching does not hide") |
+| AC-10 | NEW_TEST_REQUIRED | `.worktrees/task-detail-and-dates/test/task-list-contract.test.ts` ("limit is honoured") |
+| AC-7 | EXISTING_TEST_COVERS | `test/tasks.test.ts` in full, `test/task-priority.test.ts` in full, `test/task-update.test.ts` in full |
+| AC-4 | OUT_OF_PHASE_SCOPE | (delivered in phase 1) |
+| AC-1, AC-2, AC-3, AC-5, AC-9 | OUT_OF_PHASE_SCOPE | (delivered in phase 2) |
+| AC-8 | OUT_OF_PHASE_SCOPE | (deferred to phase 4 — DOM-bound, verified manually) |
+
+## Test files written this session
+
+- `.worktrees/task-detail-and-dates/test/task-list-contract.test.ts` — 22 cases
+  in four `describe` blocks:
+  - **`todayIn`** — four direct unit assertions on the new pure function: it
+    renders `YYYY-MM-DD`; it resolves the day in the requested zone rather than
+    UTC (02:30Z on the 16th is still the 15th in São Paulo); it defaults to
+    `PRAESTO_TIMEZONE`; and that constant names the same zone
+    `recurrence_series.timezone` already defaults to, so the two cannot drift.
+  - **AC-6 ordering** — the full five-bucket ordering asserted as an exact id
+    sequence, with the Tasks created in a deliberately unhelpful order so a
+    `createdAt` sort cannot pass; a deadline and a scheduled date interleaved to
+    prove neither field is preferred over the other; several overdue Tasks
+    oldest-first; every undated Task after every dated one; ordering preserved
+    under `?status=`; and the pre-existing unknown-status 400 still answered.
+  - **AC-10 limit** — `?limit=2` returns the first two *in urgency order*; a
+    `?limit=1` case whose most urgent Task is created LAST, so a limit applied
+    before ordering would drop it; `limit` combined with `status`; no limit
+    returns everything; `MAX_TASK_LIMIT` itself accepted; and six invalid
+    values (`0`, `-1`, `many`, empty, `2.5`, ceiling+1) each rejected with 400
+    rather than clamped.
+  - **AC-6 visibility** — a recurrence occurrence is listed, corrected via
+    `PATCH` (which sets `detached`), the flag is confirmed true by a direct row
+    read, and the Task is asserted still present in the list.
+
+  Every date is derived from the server's own `todayIn` rather than hardcoded,
+  so the suite asserts the overdue/today/future BOUNDARY rather than a calendar
+  the test happened to be written on — it will not rot tomorrow.
+
+## Why this suite is legitimately RED before implementation
+
+Executed against the phase-2 worktree state, the suite fails to load at all:
+
+```
+Error: Cannot find module '../src/shared/dates' imported from
+.../test/task-list-contract.test.ts
+```
+
+This is an honest red rather than a strong one, and it is recorded as such:
+`src/shared/dates.ts` is the seam this phase creates, and in TypeScript/ESM a
+reference to a not-yet-created module breaks the whole test file rather than
+individual cases. An import-error red proves the module is absent; it does NOT
+by itself prove the ordering and limit assertions would fail against the old
+route.
+
+**That proof is therefore taken separately.** The implementer runs this suite a
+second time after Tasks 1 and 2 (which create `src/shared/dates.ts` and
+`MAX_TASK_LIMIT`) but BEFORE Task 3 rewrites the list route, and the resulting
+per-case failures are recorded on this manifest below. That intermediate run is
+the real `R-RED-LEGITIMATE` evidence for AC-6 and AC-10.
+
+### Behavioural red, captured before the route changed
+
+Recorded after Tasks 1–2, before Task 3: **13 failed | 9 passed (22)**.
+
+The 9 passes are recorded here as NOT constituting evidence, with the reason
+for each:
+
+- the four `todayIn` unit assertions — the module now exists and is correct; it
+  is the seam, not the behaviour under test;
+- the unknown-status 400, which the old route already answered;
+- "returns everything when no limit is supplied" and "accepts the ceiling
+  itself", which pass vacuously against a route that ignores `?limit=` entirely
+  whenever the fixture is smaller than the cap;
+- "keeps the ordering under the status filter" and "combines with the status
+  filter", which pass **by luck**: `created_at` is `unixepoch()` at
+  whole-second resolution, so every row a single test creates shares one
+  timestamp and the old `ORDER BY created_at DESC` degenerates to storage
+  order. That is a real property of the old route worth naming — its ordering
+  was not merely wrong, it was non-deterministic within a second — and it is
+  why these two cases cannot be read as the suite agreeing with the old
+  behaviour.
+
+The new implementation is deterministic where it matters: rows are ordered by
+an explicit date key, and no assertion in this suite depends on the relative
+order of two Tasks sharing the same date.
+
+The 13 failures are the whole of AC-6 and AC-10: every ordering assertion (the
+old route sorts by `createdAt` descending), every limit assertion that
+discriminates (the old route ignores the parameter, so all six invalid values
+returned 200 instead of 400 and `?limit=2` returned four Tasks), and the
+detached-visibility case (the old `where` clause filtered the corrected
+occurrence out of the list).
+
+No test asserts on an invented method name, a private field, or a call count;
+every assertion is on an observable HTTP status, a response field, a returned id
+sequence, or a stored row. No mocks are used.
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no update/delete this session) | — | — | — |
+
+No existing test was updated or removed. The existing list assertions check
+containment rather than position, so the new default order does not invalidate
+them — which is itself part of what AC-7 requires and is verified by running
+them unmodified.
+
+## Status
+
+*Approved: 2026-08-15*
+*Status: APPROVED*

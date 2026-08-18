@@ -1,0 +1,36 @@
+{
+  "feature": "task-detail-and-dates",
+  "phase": 1,
+  "reviewed_run": "PRPs/reports/task-detail-and-dates/run.json",
+  "verdict": "APPROVED",
+  "timestamp": "2026-08-15T21:56:30Z",
+  "concerns": [],
+  "checks": [
+    {
+      "id": "removed-test-functions",
+      "passed": true,
+      "detail": "git diff over the worktree shows zero removed `it(`, `test(`, `describe(` or `expect(` lines. No test file appears in the implementer's diff at all; the only test-file change this phase is the untracked test/task-priority.test.ts created by the APPROVED test-first suite."
+    },
+    {
+      "id": "newly-added-skip-markers",
+      "passed": true,
+      "detail": "no `.skip`, `.todo`, `.only`, `xit`, or `xdescribe` was introduced. The new suite uses `it` and `it.each` throughout."
+    },
+    {
+      "id": "coverage-direction",
+      "passed": true,
+      "detail": "coverage increased rather than dropped: 109 tests before this phase, 124 after (7 files, +15 cases), with every pre-existing assertion in test/tasks.test.ts left byte-identical — which is itself the verification of PRD AC-7 ('complete, reopen and delete behave identically')."
+    },
+    {
+      "id": "lifecycle-ledger",
+      "passed": true,
+      "detail": "the APPROVED suite manifest's lifecycle ledger is empty ((none — no update/delete this session)), so there is no removal or skip requiring positive authorization. Nothing to adjudicate."
+    },
+    {
+      "id": "green-not-obtained-by-weakening",
+      "passed": true,
+      "detail": "the green was obtained by implementing the two missing behaviours the suite named — route-boundary priority validation and the tasks_priority_chk CHECK — confirmed independently by a live probe outside the suite: a direct `wrangler d1 execute` insert of priority 'urgent' is rejected by the database."
+    }
+  ],
+  "notes": "Post-green reviewer protocol adopted inline by /relay-execute rather than dispatched via Task: this session carries an explicit instruction not to dispatch agents without the user asking."
+}

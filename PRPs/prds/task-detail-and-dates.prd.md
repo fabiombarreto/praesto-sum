@@ -279,6 +279,14 @@ does not apply here.
   CHECK, mirroring every other domain enum in the schema. The column is
   currently **100% NULL** — no interface has ever written to it — which is why
   the owner accepted running this before chore C6 exists (Decisions Log).
+  *(Correction 2026-08-15, from the pre-migration dump: this was **false**.
+  One production row — `Smoke test do primeiro deploy`, created by the
+  2026-08-04 first-deploy smoke test — carried the integer `2`. The value was
+  meaningless (priority had no documented scale), and it would have aborted the
+  migration on the CHECK rather than corrupting anything. The owner chose to
+  NULL it, and the migration then applied cleanly. The claim is left standing
+  above rather than edited away, because the mandatory dump is precisely what
+  caught it — which is the argument for keeping that step.)*
 - **`PATCH` semantics.** The route distinguishes an omitted key from an
   explicit `null`. This is why the input type cannot reuse `CreateTaskInput`,
   whose optional fields already mean "absent".
@@ -308,10 +316,10 @@ does not apply here.
 
 | # | Phase | Description | Status | Parallel | Depends | PRP Plan |
 |---|---|---|---|---|---|---|
-| 1 | Priority as a domain enum | `priority` becomes `high\|normal\|low`, enforced by a TypeScript union and a SQL CHECK, over a 100%-NULL column | pending | no | - | |
-| 2 | Task update route | `PATCH /api/tasks/:id` with partial-update semantics, date exclusivity and the `detached` rule | pending | no | 1 | |
-| 3 | Frozen read contract | Urgency ordering produced by the API, plus the documented filter and paging shape the later units inherit | pending | no | 1 | |
-| 4 | Detail screen and inline title edit | The owner reaches all of it: title corrected in place, everything else one tap away | pending | no | 2, 3 | |
+| 1 | Priority as a domain enum | `priority` becomes `high\|normal\|low`, enforced by a TypeScript union and a SQL CHECK, over a 100%-NULL column | complete | no | - | PRPs/plans/completed/task-detail-and-dates-phase-1-priority-as-a-domain-enum.plan.md |
+| 2 | Task update route | `PATCH /api/tasks/:id` with partial-update semantics, date exclusivity and the `detached` rule | complete | no | 1 | PRPs/plans/completed/task-detail-and-dates-phase-2-task-update-route.plan.md |
+| 3 | Frozen read contract | Urgency ordering produced by the API, plus the documented filter and paging shape the later units inherit | complete | no | 1 | PRPs/plans/completed/task-detail-and-dates-phase-3-frozen-read-contract.plan.md |
+| 4 | Detail screen and inline title edit | The owner reaches all of it: title corrected in place, everything else one tap away | complete | no | 2, 3 | PRPs/plans/completed/task-detail-and-dates-phase-4-detail-screen-and-inline-title-edit.plan.md |
 
 ### Phase Details
 

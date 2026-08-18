@@ -1,0 +1,70 @@
+# TDD initial suite — phase 1
+# Source PRD: PRPs/prds/task-detail-and-dates.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/task-detail-and-dates-phase-1-priority-as-a-domain-enum.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Mode: test-first (tdd: true, test_frameworks: ["vitest"])
+# Generated: 2026-08-15
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-4 | NEW_TEST_REQUIRED | `.worktrees/task-detail-and-dates/test/task-priority.test.ts` |
+| AC-7 | EXISTING_TEST_COVERS | `test/tasks.test.ts:40` (create + list), `test/tasks.test.ts:52` (complete + reopen), `test/tasks.test.ts:72` (delete), `test/tasks.test.ts:95` (input rejection), `test/tasks.test.ts:103` (token gate) |
+| AC-1 | OUT_OF_PHASE_SCOPE | (deferred to phase 2 — `PATCH /api/tasks/:id`) |
+| AC-2 | OUT_OF_PHASE_SCOPE | (deferred to phase 2) |
+| AC-3 | OUT_OF_PHASE_SCOPE | (deferred to phase 2) |
+| AC-5 | OUT_OF_PHASE_SCOPE | (deferred to phase 2) |
+| AC-6 | OUT_OF_PHASE_SCOPE | (deferred to phase 3 — urgency ordering) |
+| AC-8 | OUT_OF_PHASE_SCOPE | (deferred to phase 4 — DOM-bound, verified manually) |
+| AC-9 | OUT_OF_PHASE_SCOPE | (deferred to phase 2) |
+| AC-10 | OUT_OF_PHASE_SCOPE | (deferred to phase 3) |
+
+## Test files written this session
+
+- `.worktrees/task-detail-and-dates/test/task-priority.test.ts` — 12 cases across
+  7 `it`/`it.each` blocks, all deriving from PRD AC-4:
+  - three accepted enum values round-trip through `POST /api/tasks` and are
+    present in the stored row, not merely echoed in the response;
+  - an omitted priority and an explicit `null` both persist as "not set"
+    (the PRD Decisions Log: `NULL` means not set and sorts as `normal`);
+  - five out-of-enum inputs (`"urgent"`, the legacy integer `3`, a boolean,
+    an empty string, and the wrong-cased `"High"`) are each rejected with 400
+    **and** leave the table empty — the "nothing is written" half of AC-4;
+  - a direct Drizzle insert of `'urgent'` is rejected by the database itself,
+    proving the SQL CHECK exists rather than only the TypeScript union;
+  - the three enum values and `NULL` are each accepted on a direct insert, so
+    the CHECK is not merely rejecting everything.
+
+## Why this suite is legitimately RED before implementation
+
+Against `HEAD` (`09931ba`) the failures are the two that matter, and they fail
+for the right reason rather than by construction:
+
+- `POST /api/tasks` forwards `input.priority ?? null` straight into the insert
+  (`src/worker/routes/tasks.ts:74`) with no validation, so every out-of-enum
+  case returns 201 today instead of 400.
+- `tasks.priority` is `integer("priority")` with no CHECK
+  (`src/worker/db/schema.ts:158`), so the direct-write case inserts happily
+  instead of throwing.
+
+No test asserts on an invented method name, a private field, or a call count;
+every assertion is on an observable HTTP status, a response field, or a stored
+row. No mocks are used at all — the suite runs the real Worker inside workerd
+against an ephemeral D1 built from `migrations/`, matching the idiom already
+established by `test/tasks.test.ts`.
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no update/delete this session) | — | — | — |
+
+No existing test was updated or removed. AC-7 is a standing "nothing changes"
+obligation, so the existing `test/tasks.test.ts` assertions are the criterion —
+touching them would defeat the check they perform.
+
+## Status
+
+*Approved: 2026-08-15*
+*Status: APPROVED*

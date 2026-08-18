@@ -1,0 +1,36 @@
+{
+  "feature": "task-detail-and-dates",
+  "phase": 3,
+  "reviewed_run": "PRPs/reports/task-detail-and-dates/phase-3/run.json",
+  "verdict": "APPROVED",
+  "timestamp": "2026-08-15T22:25:30Z",
+  "concerns": [],
+  "checks": [
+    {
+      "id": "removed-test-functions",
+      "passed": true,
+      "detail": "git diff shows zero removed `it(`, `test(`, `describe(` or `expect(` lines. This is the check that mattered most this phase: it changed an existing route's default ordering, which is exactly the situation where an existing assertion is most tempting to relax. None was touched."
+    },
+    {
+      "id": "newly-added-skip-markers",
+      "passed": true,
+      "detail": "no `.skip`, `.todo`, `.only`, `xit` or `xdescribe` was introduced."
+    },
+    {
+      "id": "coverage-direction",
+      "passed": true,
+      "detail": "coverage increased: 163 tests before this phase, 185 after (+22 cases, 9 files). The three pre-existing Task suites pass byte-identical under the new default order — their list assertions check containment rather than position, which is what AC-7 required and what running them unmodified verifies."
+    },
+    {
+      "id": "lifecycle-ledger",
+      "passed": true,
+      "detail": "the APPROVED suite manifest's lifecycle ledger is empty ((none — no update/delete this session)), so no removal or skip requires positive authorization."
+    },
+    {
+      "id": "green-not-obtained-by-weakening",
+      "passed": true,
+      "detail": "the green was obtained by implementing the ordering, the limit validation and the visibility repair the suite named. The evidence is unusually strong here because the writer captured a behavioural red (13 failed | 9 passed) after the seam existed but before the route changed, and accounted for every one of the 9 passes as non-evidence — including two that passed only because created_at has whole-second resolution and the old ORDER BY degenerated to storage order."
+    }
+  ],
+  "notes": "Post-green reviewer protocol adopted inline by /relay-execute rather than dispatched via Task, per this session's standing constraint."
+}
