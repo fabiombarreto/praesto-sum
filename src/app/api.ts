@@ -1,4 +1,4 @@
-import type { CreateTaskInput, TaskDto, TaskStatus } from "../shared/api";
+import type { CreateTaskInput, TaskDto, TaskStatus, UpdateTaskInput } from "../shared/api";
 import { createTokenStore } from "../shared/token-store";
 import { durableTokenStorage, legacyTokenStorage } from "./token-storage";
 
@@ -78,8 +78,21 @@ export async function checkHealth(): Promise<void> {
   await request<{ ok: boolean }>("/api/health");
 }
 
-export async function listTasks(status?: TaskStatus): Promise<TaskDto[]> {
-  const query = status === undefined ? "" : `?status=${status}`;
+/**
+ * FR-007 — read Tasks in the API's urgency order: overdue, then today, then
+ * future ascending, then undated last.
+ *
+ * The returned array is NOT re-sorted here, deliberately. The order is the
+ * frozen read contract's guarantee, and re-deriving it client-side would put
+ * the one thing every consumer must agree on in the one place they cannot
+ * share (`docs/api-reference.md`, "Task read contract").
+ */
+export async function listTasks(status?: TaskStatus, limit?: number): Promise<TaskDto[]> {
+  const params = new URLSearchParams();
+  if (status !== undefined) params.set("status", status);
+  if (limit !== undefined) params.set("limit", String(limit));
+  const query = params.size === 0 ? "" : `?${params.toString()}`;
+
   const body = await request<{ tasks: TaskDto[] }>(`/api/tasks${query}`);
   return body.tasks;
 }
@@ -87,6 +100,19 @@ export async function listTasks(status?: TaskStatus): Promise<TaskDto[]> {
 export async function createTask(input: CreateTaskInput): Promise<TaskDto> {
   const body = await request<{ task: TaskDto }>("/api/tasks", {
     method: "POST",
+    body: JSON.stringify(input),
+  });
+  return body.task;
+}
+
+/**
+ * FR-002 — edit a Task. An omitted key leaves the field unchanged; an explicit
+ * `null` clears it. `JSON.stringify` preserves that distinction as long as the
+ * caller omits keys rather than passing `undefined`.
+ */
+export async function updateTask(id: string, input: UpdateTaskInput): Promise<TaskDto> {
+  const body = await request<{ task: TaskDto }>(`/api/tasks/${id}`, {
+    method: "PATCH",
     body: JSON.stringify(input),
   });
   return body.task;

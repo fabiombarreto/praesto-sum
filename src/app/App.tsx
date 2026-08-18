@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
-import type { TaskDto } from "../shared/api";
+import { TASK_PRIORITIES, type TaskDto, type TaskPriority } from "../shared/api";
 import { classifyRequestFailure } from "../shared/request-failure";
 import type { ShareTarget } from "../shared/share-target";
+import { buildTaskPatch, dateModeOf, type TaskDateMode, type TaskDraft } from "../shared/task-edit";
 import {
   ApiError,
   completeTask,
@@ -11,6 +12,7 @@ import {
   readToken,
   reopenTask,
   saveToken,
+  updateTask,
 } from "./api";
 
 /**
@@ -124,6 +126,8 @@ function TaskBoard({
   const [title, setTitle] = useState(initialShare?.title ?? "");
   const [busy, setBusy] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
+  // Two views need `useState`, not a router dependency (ADR-0005).
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   const handleFailure = useCallback(
     (cause: unknown) => {
@@ -163,6 +167,30 @@ function TaskBoard({
 
   const open = tasks?.filter((task) => task.status === "open") ?? [];
   const closed = tasks?.filter((task) => task.status !== "open") ?? [];
+
+  // Derived from the already-loaded list rather than re-fetched. If a refresh
+  // removed the Task, this falls back to the board instead of rendering an
+  // empty panel.
+  const selected = tasks?.find((task) => task.id === selectedTaskId) ?? null;
+
+  if (selected !== null) {
+    return (
+      <TaskDetail
+        task={selected}
+        busy={busy}
+        error={error}
+        onClose={() => setSelectedTaskId(null)}
+        onSave={(patch) =>
+          void run(async () => {
+            await updateTask(selected.id, patch);
+            // Close only after the await resolves, so a failed save leaves the
+            // panel open with the owner's edits intact.
+            setSelectedTaskId(null);
+          })
+        }
+      />
+    );
+  }
 
   return (
     <main style={styles.page}>
@@ -231,7 +259,24 @@ function TaskBoard({
             >
               ○
             </button>
-            <span style={styles.grow}>{task.title}</span>
+            <InlineTitle
+              task={task}
+              busy={busy}
+              onCommit={(title) =>
+                void run(async () => {
+                  await updateTask(task.id, { title });
+                })
+              }
+            />
+            <button
+              style={styles.link}
+              type="button"
+              disabled={busy}
+              onClick={() => setSelectedTaskId(task.id)}
+              aria-label={`Open ${task.title}`}
+            >
+              ⋯
+            </button>
             <button
               style={styles.link}
               type="button"
@@ -273,6 +318,213 @@ function TaskBoard({
   );
 }
 
+/**
+ * The title, corrected where the owner sees it (PRD AC-8, the first of the two
+ * moments the PRD names: fixing a typo right after capture).
+ *
+ * Commits on Enter and on blur; Escape abandons. The request is skipped
+ * entirely when nothing changed or the title is empty — an empty body and an
+ * empty title are both 400s, and neither is the owner's problem.
+ */
+function InlineTitle({
+  task,
+  busy,
+  onCommit,
+}: {
+  task: TaskDto;
+  busy: boolean;
+  onCommit: (title: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(task.title);
+
+  if (!editing) {
+    return (
+      <button
+        style={{ ...styles.grow, ...styles.titleButton }}
+        type="button"
+        disabled={busy}
+        onClick={() => {
+          setDraft(task.title);
+          setEditing(true);
+        }}
+      >
+        {task.title}
+      </button>
+    );
+  }
+
+  function commit() {
+    const trimmed = draft.trim();
+    setEditing(false);
+    if (trimmed === "" || trimmed === task.title) return;
+    onCommit(trimmed);
+  }
+
+  return (
+    <input
+      style={{ ...styles.grow, ...styles.input }}
+      value={draft}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          commit();
+        }
+        if (event.key === "Escape") {
+          event.preventDefault();
+          setEditing(false);
+        }
+      }}
+      aria-label={`Edit title of ${task.title}`}
+      autoFocus
+    />
+  );
+}
+
+/**
+ * Everything that is not the title, one tap away (PRD AC-8, the second moment:
+ * deciding *when* something must happen).
+ *
+ * The date control offers three explicit, mutually exclusive choices. It never
+ * presents one date field with a defaulted meaning: the owner's 2026-08-12
+ * decision is that "complete by" versus "do on" is chosen deliberately, and a
+ * default would let the cheaper-to-type option silently win.
+ */
+function TaskDetail({
+  task,
+  busy,
+  error,
+  onClose,
+  onSave,
+}: {
+  task: TaskDto;
+  busy: boolean;
+  error: string | null;
+  onClose: () => void;
+  onSave: (patch: ReturnType<typeof buildTaskPatch>) => void;
+}) {
+  const [draft, setDraft] = useState<TaskDraft>({
+    title: task.title,
+    description: task.description ?? "",
+    dateMode: dateModeOf(task),
+    date: task.deadline ?? task.scheduledDate ?? "",
+    priority: task.priority,
+  });
+
+  function patch<K extends keyof TaskDraft>(key: K, value: TaskDraft[K]) {
+    setDraft((current) => ({ ...current, [key]: value }));
+  }
+
+  const dateLabels: Record<TaskDateMode, string> = {
+    none: "No date",
+    deadline: "Complete by",
+    scheduled: "Do on",
+  };
+
+  return (
+    <main style={styles.page}>
+      <button style={styles.link} type="button" onClick={onClose}>
+        ← Back
+      </button>
+
+      <h1 style={styles.title}>Edit Task</h1>
+
+      <label style={styles.field}>
+        <span style={styles.label}>Title</span>
+        <input
+          style={styles.input}
+          value={draft.title}
+          onChange={(event) => patch("title", event.target.value)}
+          aria-label="Title"
+        />
+      </label>
+
+      <label style={styles.field}>
+        <span style={styles.label}>Description</span>
+        <textarea
+          style={{ ...styles.input, minHeight: "5rem" }}
+          value={draft.description}
+          onChange={(event) => patch("description", event.target.value)}
+          aria-label="Description"
+        />
+      </label>
+
+      <fieldset style={styles.fieldset}>
+        <legend style={styles.label}>Date</legend>
+        {(["none", "deadline", "scheduled"] as const).map((mode) => (
+          <label key={mode} style={styles.choice}>
+            <input
+              type="radio"
+              name="dateMode"
+              checked={draft.dateMode === mode}
+              onChange={() => patch("dateMode", mode)}
+            />
+            {dateLabels[mode]}
+          </label>
+        ))}
+        <input
+          style={styles.input}
+          type="date"
+          value={draft.date}
+          disabled={draft.dateMode === "none"}
+          onChange={(event) => patch("date", event.target.value)}
+          aria-label="Date"
+        />
+      </fieldset>
+
+      <label style={styles.field}>
+        <span style={styles.label}>Priority</span>
+        <select
+          style={styles.input}
+          value={draft.priority ?? ""}
+          onChange={(event) =>
+            patch(
+              "priority",
+              event.target.value === "" ? null : (event.target.value as TaskPriority),
+            )
+          }
+          aria-label="Priority"
+        >
+          <option value="">Not set</option>
+          {TASK_PRIORITIES.map((level) => (
+            <option key={level} value={level}>
+              {level[0]?.toUpperCase()}
+              {level.slice(1)}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {error !== null && <p style={styles.error}>{error}</p>}
+
+      <div style={styles.row}>
+        <button
+          style={styles.button}
+          type="button"
+          disabled={busy}
+          onClick={() => {
+            const changes = buildTaskPatch(task, draft);
+            // Nothing changed: the route rejects an empty body by design, so
+            // never issue the request at all.
+            if (Object.keys(changes).length === 0) {
+              onClose();
+              return;
+            }
+            onSave(changes);
+          }}
+        >
+          Save
+        </button>
+        <button style={styles.button} type="button" disabled={busy} onClick={onClose}>
+          Cancel
+        </button>
+      </div>
+    </main>
+  );
+}
+
 const styles = {
   page: {
     fontFamily: "system-ui, sans-serif",
@@ -299,4 +551,16 @@ const styles = {
     padding: 0,
     lineHeight: 1,
   },
+  titleButton: {
+    background: "none",
+    border: "none",
+    cursor: "text",
+    font: "inherit",
+    padding: 0,
+    textAlign: "left",
+  },
+  field: { display: "block", marginBottom: "1rem" },
+  fieldset: { border: "none", padding: 0, margin: "0 0 1rem" },
+  label: { display: "block", fontSize: "0.85rem", opacity: 0.7, marginBottom: "0.25rem" },
+  choice: { display: "inline-flex", alignItems: "center", gap: "0.3rem", marginRight: "1rem" },
 } as const satisfies Record<string, CSSProperties>;

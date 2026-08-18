@@ -1,6 +1,6 @@
 ---
 status: draft
-last_updated: 2026-08-11
+last_updated: 2026-08-15
 review_trigger: "a pending technical decision is resolved (new ADR accepted), or stack/component/data/integration changes"
 ---
 
@@ -74,6 +74,28 @@ There is deliberately no merge, sync, or offline-write logic anywhere in the sys
 Canonical copy in Cloudflare D1 (SQLite-class managed database), per [ADR-0003](../60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md). Binding safeguards: day-1 export of 100% of the data (JSON + iCalendar, FR-042); automated export snapshots landing on the owner's PC so Cloudflare never holds the only copy (FR-043); no offline write queue without a superseding ADR.
 
 > **Mechanism clarification (2026-08-03).** ADR-0003 phrases safeguard 2 as snapshots being "shipped off the server" to the owner's PC. A Worker cannot reach a home machine, so the direction is inverted in implementation: **the PC pulls** — a local script on a Windows Scheduled Task calls the authenticated export endpoint and stores the file (roadmap chore C5). The ADR's intent is unchanged and fully met: a recent local copy always exists, and the provider never holds the only copy. This is an implementation note, not an amendment — accepted ADRs are append-only.
+
+### The Task read contract is frozen (2026-08-15, unit 2)
+
+The Task wire contract had one consumer when it was written and has eleven by
+the end of the roadmap (units 3, 5, 8, 9, 10, 11, 13, 14, 20). Unit 2
+`task-detail-and-dates` is the contract-freeze point, so the shape those units
+inherit is fixed rather than negotiated one unit at a time.
+
+Three commitments are load-bearing. **Ordering is produced by the API** — overdue,
+then today, then future ascending, then undated last — because it is the one
+guarantee every consumer must agree on, and a client-side sort is the one place
+they cannot share it. **Paging is `limit`-only**: no cursor, a hard cap of 500,
+and an invalid `limit` rejected rather than clamped, so adding a cursor later is
+additive rather than a reshape. **Adding a field stays backward-compatible;
+renaming, removing or retyping one does not** — that asymmetry is what the
+freeze actually protects, and it is why `updatedAt` and `detached` are
+deliberately absent from the wire.
+
+The full contract — the ordering key, the filter vocabulary reserved for unit 3,
+and the paging revisit trigger — is recorded in
+[`docs/api-reference.md`](../../docs/api-reference.md), which is the document
+the PWA and every later unit code against.
 
 ## External integrations
 

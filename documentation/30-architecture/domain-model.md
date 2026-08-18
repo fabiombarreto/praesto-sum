@@ -1,6 +1,6 @@
 ---
 status: draft
-last_updated: 2026-08-04
+last_updated: 2026-08-15
 review_trigger: "a new domain concept appears, an ambiguity is resolved, or the glossary changes"
 ---
 
@@ -41,6 +41,7 @@ Something the owner intends to do; it has no fixed position on the calendar by i
 - Description (optional)
 - Deadline (optional — date to complete *by*) **or** scheduled date (optional — the specific date it is to be done *on*); distinct semantics, resolved 2026-08-03
 - Status — lifecycle: `open → done`; a recurring occurrence may instead end as **`missed`** (terminal, system-written when the next occurrence's date arrives without completion — [ADR-0006](../60-decisions/ADR-0006-recurrence-model.md)). No other states in the MVP; deletion covers abandonment.
+- Priority (optional — FR-006): exactly three values, `high | normal | low`, enforced twice (a TypeScript union *and* the `tasks_priority_chk` CHECK), owner-validated 2026-08-12. `NULL` means "not set" and sorts as `normal`
 - Life Area it belongs to
 - Linked Events (zero or more — N:N, resolved 2026-08-03)
 - Recurrence via **Recurrence Series** ([ADR-0006](../60-decisions/ADR-0006-recurrence-model.md)): the series holds the shared rule + task template; each occurrence is a real Task row; at most one open per active series; done + missed rows are the realization history

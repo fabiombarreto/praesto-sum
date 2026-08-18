@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-03
+last_updated: 2026-08-15
 review_trigger: "a new domain concept appears or an ambiguity between terms is resolved"
 ---
 
@@ -19,6 +19,7 @@ review_trigger: "a new domain concept appears or an ambiguity between terms is r
 | **Event** | Something that happens at a specific date and time (or a date/time range). Occupies a slot on the calendar and has no completion state — it occurs (or is cancelled), it is not "done". | appointment, meeting, calendar entry |
 | **Reminder** | A notification that directs the owner's attention at a chosen moment — about a Task, about an Event, or standalone (e.g. "drink water at 3pm"). It is never an item of work in itself. | alert, alarm, notification (as a domain term) |
 | **Life Area** | A domain of personal life the assistant organizes (e.g. Calendar, Tasks now; others later). The top-level unit of scope in the [vision](vision.md). | module, category, domain, section |
+| **Priority** | An optional level a Task carries to say how much it matters (FR-006). Exactly three values: high, normal, low. `NULL` means the owner has not set one, and an unset priority sorts as `normal` — it is deliberately distinguishable from a deliberate `normal`. | importance, urgency, severity, P1/P2/P3, a numeric scale |
 
 Formerly open points, resolved by the owner on 2026-08-03:
 
@@ -47,4 +48,4 @@ Concepts that may matter for future Life Areas but are **not yet modeled**. List
 | Future Life Area candidates (e.g. finances, health, habits, notes) | Would each bring their own vocabulary | TBD — pending owner input |
 | Recurrence | Resolved by [ADR-0006](../60-decisions/ADR-0006-recurrence-model.md): shared rule (Recurrence Series); Tasks materialize the current occurrence with `missed` recording; Events are master + exceptions, expanded virtually | Resolved 2026-08-03 |
 | Project / grouping of Tasks | Larger goals may need Tasks grouped | Not needed for the seed scope |
-| Priority / urgency | Ordering Tasks may need a canonical scale | Not needed for the seed scope |
+| Priority / urgency | Ordering Tasks may need a canonical scale | Resolved 2026-08-12 — **Priority** is now a canonical term above: exactly three values (high, normal, low), owner-validated, enforced by a TypeScript union and a SQL CHECK |

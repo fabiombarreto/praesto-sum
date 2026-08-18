@@ -11,7 +11,8 @@
 - Tasks never convert into Events; a Task may be linked to any number of Events and vice versa, navigable from both sides (FR-010, Phase 2).
 - Tasks can recur (FR-009, Phase 1) per ADR-0006: a **Recurrence Series** holds the shared rule + template; each occurrence is a real Task row; **at most one open occurrence per active series** (unique index); completing spawns the next (calendar- or completion-anchored per series).
 - An occurrence superseded without completion becomes **`missed`** (terminal, system-written) — every skipped cycle leaves a permanent record. Done + missed rows are the realization history powering adherence visibility (FR-011) and repeated-miss notifications (FR-012) — the honest-mirror principle (vision principle 6).
-- Tasks are listable and filterable by completion status, dates and priority (FR-007); priority is optional (FR-006, unscheduled).
+- A Task can be edited after capture (FR-002, shipped in unit 2): `PATCH /api/tasks/:id` covers title, description, the two dates and priority. An omitted key leaves the field unchanged; an explicit `null` clears it. Setting one date clears the other, and editing a recurrence occurrence sets `detached` (ADR-0006).
+- Tasks are listable and filterable by completion status, dates and priority (FR-007). Priority is optional (FR-006, unit 2 `task-detail-and-dates`): exactly three values, `high | normal | low`, enforced by a TypeScript union AND the `tasks_priority_chk` CHECK. `NULL` means "not set" and sorts as `normal`.
 - A Task may belong to a Life Area (FR-008, unscheduled).
 - Capture must be near-zero friction on any device (FR-045 — vision principle 5).
 

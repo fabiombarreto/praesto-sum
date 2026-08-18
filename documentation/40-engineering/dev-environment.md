@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-12
+last_updated: 2026-08-15
 review_trigger: "a setup step changes, fails on a fresh machine, or the scaffold validates the planned commands"
 ---
 
@@ -72,9 +72,31 @@ Not yet implemented: the export snapshot of FR-042 (`db:snapshot`) — it lands 
 | # | Command | Expected |
 |---|---|---|
 | 5 | `npm run check` and `npm test` | Both green *before* anything touches production. Non-negotiable. |
-| 6 | Read the pending SQL in `migrations/` | Confirm no `PRAGMA foreign_keys=OFF/ON` (see Known issues). `0000_neat_the_fallen.sql` is clean: `CREATE TABLE`/`CREATE INDEX` only. |
-| 7 | `npm run db:migrate:remote` | Applies to **production** and auto-confirms in a non-interactive shell. The first run executed 17 commands. |
+| 6 | Read the pending SQL in `migrations/` | Confirm no `PRAGMA foreign_keys=OFF/ON` (see Known issues). `0000_neat_the_fallen.sql` is clean: `CREATE TABLE`/`CREATE INDEX` only. `0001_violet_pretty_boy.sql` recreates `tasks` and was hand-rewritten to `PRAGMA defer_foreign_keys=ON`. |
+| 7 | `npm run db:migrate:remote` | Applies to **production** and auto-confirms in a non-interactive shell. The first run executed 17 commands. **If the pending migration rewrites an existing table, do the Remote migration steps below instead of running this bare.** |
 | 8 | `npm run deploy` | Ends with the URL and `schedule: */5 * * * *`. |
+
+### Remote migration over existing data
+
+D1 holds the only canonical copy of the owner's data (ADR-0003), and chore C5
+(automated snapshots) does not exist yet. Any migration that rewrites a table
+that already carries rows runs these four steps, in this order, by hand. The
+first one is the two-minute stand-in for C5.
+
+| # | Command | Why |
+|---|---|---|
+| 1 | `npx wrangler d1 execute praesto-db --remote --command "SELECT * FROM tasks"` | Dump the table before touching it. Keep the output **off-repo** (it is personal data). This is the only copy that exists if the migration goes wrong. |
+| 2 | `npx wrangler d1 migrations list praesto-db --remote` | Confirm exactly which migrations are pending — never assume. |
+| 3 | `npm run db:migrate:remote` | Apply. |
+| 4 | `npx wrangler d1 migrations list praesto-db --remote` | Confirm nothing is pending and the count matches step 2. |
+
+Before step 1, the generated SQL must already have been read end to end and any
+`PRAGMA foreign_keys=OFF/ON` rewritten as `PRAGMA defer_foreign_keys=ON` — D1
+ignores the former inside a migration, so a table recreation that relies on it
+can fail on foreign keys mid-flight. SQLite cannot alter a column type or add a
+CHECK in place, so drizzle-kit emits a full `__new_<table>` recreate-copy-drop-
+rename for those changes; read the recreated table's column list, indexes,
+CHECKs and foreign keys against `src/worker/db/schema.ts` before applying.
 
 ### Two failures the first deploy hit
 
