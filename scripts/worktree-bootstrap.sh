@@ -6,19 +6,46 @@
 # Invoked by /relay-worktree as: scripts/worktree-bootstrap.sh <absolute-worktree-path>
 # Timeout: 60 seconds (relay default, D9). $1 = absolute path to the new worktree.
 #
+# Enabled 2026-08-15, after unit 2 was delivered with every step below still
+# commented out. The cost was paid four times in one session: each worktree came
+# up with no node_modules and no .dev.vars, so `npm run check` and `npm test`
+# both failed for reasons that had nothing to do with the change under review.
+#
 set -euo pipefail
 WORKTREE_PATH="${1:?Usage: worktree-bootstrap.sh <absolute-worktree-path>}"
 
-# TODO: Uncomment and adapt — env-file replication
-# Copy gitignored env files from the repo root into the new worktree.
-# cp .env.local "${WORKTREE_PATH}/.env.local"
-# cp .dev.vars  "${WORKTREE_PATH}/.dev.vars"
+# --- Env-file replication -----------------------------------------------------
+# `.dev.vars` is gitignored, so a fresh worktree has no secrets. That is not a
+# cosmetic gap: without it `wrangler types --check` regenerates
+# worker-configuration.d.ts WITHOUT the secret bindings (API_BEARER_TOKEN, the
+# VAPID keys), so `npm run check` fails — and the failure looks like a type
+# error in the code under review rather than a missing file.
+#
+# This project has no `.env.local`; `.dev.vars` is the only env file.
+if [ -f .dev.vars ]; then
+  cp .dev.vars "${WORKTREE_PATH}/.dev.vars"
+  echo "bootstrap: copied .dev.vars into the worktree"
+else
+  # Non-fatal: a machine that has never run local dev legitimately has none.
+  echo "bootstrap: warning — no .dev.vars at the repo root; the worktree has no secrets" >&2
+fi
 
-# TODO: Uncomment and adapt — dependency install
-# Run after env files are in place so the install can read them.
-# cd "${WORKTREE_PATH}" && npm ci
+# --- Dependency install -------------------------------------------------------
+# node_modules is NOT shared between worktrees, so without this the worktree
+# cannot run tsc, vitest, wrangler or vite at all.
+#
+# The flags keep this inside /relay-worktree's 60-second bootstrap timeout (D9)
+# on a warm npm cache. If the timeout does kill it, node_modules is left
+# partial — re-run `npm ci` inside the worktree by hand; it is idempotent and
+# repairs the partial state.
+if [ -d "${WORKTREE_PATH}/node_modules" ]; then
+  echo "bootstrap: node_modules already present; skipping install"
+else
+  ( cd "${WORKTREE_PATH}" && npm ci --prefer-offline --no-audit --no-fund )
+  echo "bootstrap: dependencies installed"
+fi
 
-# TODO: Uncomment and adapt — port allocation
-# Derive an offset from the feature slug hash to avoid port collisions.
-# OFFSET=$(( $(echo -n "${WORKTREE_PATH}" | cksum | cut -d' ' -f1) % 1000 ))
-# echo "PORT=$(( 3000 + OFFSET ))" >> "${WORKTREE_PATH}/.env.local"
+# --- Port allocation ----------------------------------------------------------
+# Deliberately not used. There is one owner (CON-002) and one dev server, on the
+# fixed port in .claude/launch.json; worktrees are worked one at a time. Revisit
+# only if two ever need to serve simultaneously.

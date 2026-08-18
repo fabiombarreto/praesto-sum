@@ -155,7 +155,8 @@ export const tasks = sqliteTable(
     deadline: text("deadline"),
     /** Local calendar day to do it ON. Mutually exclusive with deadline. */
     scheduledDate: text("scheduled_date"),
-    priority: integer("priority"),
+    /** Optional (FR-006). NULL means "not set", and sorts as 'normal'. */
+    priority: text("priority", { enum: ["high", "normal", "low"] }),
     lifeAreaId: text("life_area_id").references(() => lifeAreas.id, {
       onUpdate: "cascade",
       onDelete: "set null",
@@ -198,6 +199,10 @@ export const tasks = sqliteTable(
 
     check("tasks_title_not_empty", sql`length(trim(${t.title})) > 0`),
     check("tasks_status_chk", sql`${t.status} in ('open','done','missed')`),
+    check(
+      "tasks_priority_chk",
+      sql`${t.priority} is null or ${t.priority} in ('high','normal','low')`,
+    ),
     // Deadline XOR scheduled date (either may be absent; never both present).
     check("tasks_single_date_chk", sql`${t.deadline} is null or ${t.scheduledDate} is null`),
     // A closed Task records when it closed; an open one does not.
