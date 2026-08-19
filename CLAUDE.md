@@ -1,6 +1,8 @@
 # Praesto Sum
 
-Personal assistant built by its single user (the owner) to organize personal life — Tasks and Calendar first, more Life Areas later. Latin: "I am ready, at your service" (short form: `praesto`). Phase 1 (MVP Tasks) in progress: the stack is scaffolded and verified end to end; Task create/list/complete/delete works. Recurrence, Reminders/push, search and export are next.
+Personal assistant built by its single user (the owner) to organize personal life — Tasks and Calendar first, more Life Areas later. Latin: "I am ready, at your service" (short form: `praesto`). Phase 1 (MVP Tasks) in progress: the stack is scaffolded and verified end to end; Task create/list/complete/delete/edit works. Recurrence, Reminders/push, search and export are next.
+
+**Delivery units are ON HOLD since 2026-08-18** — the app has no visual foundation yet. `documentation/50-planning/ui-ux-plan.md` (guidelines, layout standard, visual direction, UI library, design pass) runs first; no roadmap unit starts until its exit criterion is met. Read that plan before touching any screen. When it produces the UI/UX guidelines document, it must be linked from this file and followed on every interface change.
 
 ## Project documentation — read FIRST, keep updated ALWAYS
 

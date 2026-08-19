@@ -91,6 +91,15 @@ Atualizado pelo Docs Updater após cada aprovação de implementação.
 
 ---
 
+## [2026-08-18] Visible UI copy in Brazilian Portuguese; every other artifact stays English
+
+**Context:** ADR-0001 fixed English for artifacts but never said which language the product speaks to its single user; `index.html`/manifest declared `pt-BR` while every shipped string was English. Surfaced by the UI/UX plan (pending decision 7) because voice-and-tone and the design pass depend on it.
+**Decision:** All visible UI copy (labels, buttons, placeholders, states, notifications, install/update prompts, manifest text, `lang`) in **pt-BR**; code, identifiers, comments, tests, commits, docs and string keys stay **English**. No i18n layer (one user, one language). English strings still in the app are translated in the design pass (A5); tests pinning owner-facing messages pin the Portuguese wording from then on.
+**Reason:** The owner reads this text daily — friction paid for a consistency that benefits nobody; keeps ADR-0001 intact by scoping, not editing.
+**Areas affected:** all · Source: `documentation/60-decisions/ADR-0009-ui-copy-in-brazilian-portuguese.md`
+
+---
+
 <!-- Template for future entries:
 
 ## [YYYY-MM-DD] Title of the decision

@@ -6,6 +6,8 @@ Tier 2 index: one entry per doc, 1-2 lines each. Details live in the target file
 
 **Project documentation (authoritative)** — vision, requirements (FR/QA/CON), architecture, ADRs, roadmap; owner-validated source of truth for the whole project. → documentation/README.md
 
+**UI/UX plan (roadmap units ON HOLD since 2026-08-18)** — the track that gives the app its visual foundation before any further unit: PWA UI/UX guidelines, layout standard, visual direction (minimalist + gamer-community ambience), one consolidated UI library, design pass over existing screens; opened pending decisions 5–7. → documentation/50-planning/ui-ux-plan.md
+
 ## Governance (AI control)
 
 **Decision Gate** — mandatory gate before planning, coding or reviewing; consultation sources and evidence block format. → docs/decision-gate.md

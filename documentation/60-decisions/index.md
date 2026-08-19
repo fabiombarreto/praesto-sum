@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-04
+last_updated: 2026-08-18
 review_trigger: "an ADR is created or changes state, or a pending decision is added, reordered or resolved"
 ---
 
@@ -17,11 +17,13 @@ One file per decision, named `ADR-nnnn-short-kebab-title.md` and copied from [ad
 
 The order was deliberate: the data posture constrained the interface, and both constrained the stack. Decisions 1–3 were resolved on 2026-08-03 by [ADR-0003](ADR-0003-store-canonical-data-in-cloudflare-d1.md) (canonical data on Cloudflare D1 + Workers), [ADR-0004](ADR-0004-single-pwa-as-sole-interface.md) (single installable PWA as the sole MVP interface) and [ADR-0005](ADR-0005-implementation-stack-react-vite-hono-drizzle.md) (React SPA + Vite + Hono + Drizzle stack). Numbers are stable and never reused.
 
-**The queue is empty.** Decision 4 was resolved on 2026-08-04 by [ADR-0007](ADR-0007-google-calendar-bidirectional-sync.md) — the owner arbitrated the privacy × convenience trade-off in favour of bidirectional Google Calendar sync for Events, under a closed mirror inventory. New decisions are added here as they arise.
+Decision 4 was resolved on 2026-08-04 by [ADR-0007](ADR-0007-google-calendar-bidirectional-sync.md) — the owner arbitrated the privacy × convenience trade-off in favour of bidirectional Google Calendar sync for Events, under a closed mirror inventory. The queue was empty from then until 2026-08-18, when the [UI/UX plan](../50-planning/ui-ux-plan.md) opened decisions 5–7. Decision 7 was resolved the same day by [ADR-0009](ADR-0009-ui-copy-in-brazilian-portuguese.md) (visible UI copy in Brazilian Portuguese; every other artifact stays English). **Open decisions: 5, 6.** They are resolved inside that plan's activities and land here as ADRs; the plan holds the open questions and the owner's answers.
 
 | # | Topic | Why it comes at this position | Blocks what |
 |---|---|---|---|
-| — | *(none pending)* | | |
+| 5 | **Visual identity and theming** — who Praesto is visually: brand attributes, the mark (keep, evolve or replace the plumb-bob), palette, typography, iconography, motion signature and voice, expressed as a design language that is minimalist and few-elements-per-screen with a gamer-community ambience à la Steam/Discord/Epic; its tokens; dark-only vs dark+light; how "fun" coexists with the honest-mirror principle | The library must be able to *express* the identity, so the identity is fixed first; it is a product choice the owner makes from rendered candidates, following a designer's step-by-step, not a technical comparison | UI/UX plan activities A2 → A4 → A5; every screen of every later unit |
+| 6 | **UI library and styling approach** — the one consolidated, actively maintained, large-community component library that becomes the standard, and the styling pipeline it drags in (e.g. Tailwind, CSS-in-JS, CSS Modules) under exact-pinned deps and yearly deliberate upgrades | Comes after 5 because it is chosen *for* the direction; comes before the design pass because the pass is built with it | UI/UX plan activity A5; the `40-engineering/tech-stack.md` UI row; unit 3 onward |
+| ~~7~~ | ~~Language of the visible UI copy~~ — **resolved 2026-08-18** by [ADR-0009](ADR-0009-ui-copy-in-brazilian-portuguese.md): pt-BR on screen, English everywhere else | Surfaced and resolved by the UI/UX plan the same day | — |
 
 ## Decisions index
 
@@ -35,3 +37,4 @@ The order was deliberate: the data posture constrained the interface, and both c
 | [ADR-0006](ADR-0006-recurrence-model.md) | Recurrence: shared rule, per-entity instantiation, missed recording | accepted | 2026-08-03 |
 | [ADR-0007](ADR-0007-google-calendar-bidirectional-sync.md) | Bidirectional Google Calendar sync for Events, closed mirror inventory | accepted | 2026-08-04 |
 | [ADR-0008](ADR-0008-adopt-test-first-methodology.md) | Adopt test-first (TDD) as the declared methodology | accepted | 2026-08-04 |
+| [ADR-0009](ADR-0009-ui-copy-in-brazilian-portuguese.md) | Visible UI copy in Brazilian Portuguese; every other artifact stays English | accepted | 2026-08-18 |

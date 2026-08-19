@@ -109,6 +109,8 @@ Atualizado pelo Docs Updater após cada aprovação de implementação.
 **What to do instead:** English everywhere in the repo.
 **Areas affected:** all
 
+**Carve-out (ADR-0009, 2026-08-18).** The *visible UI copy* — the string **values** the owner reads on screen (labels, buttons, placeholders, states, notifications, manifest text) — is written in **pt-BR**. Everything around those values stays English: identifiers, string keys, comments, tests, commits, docs. A Portuguese identifier or comment is still this anti-pattern; an English button label in the app is now the opposite drift.
+
 ## Glossary synonym drift
 
 **What it is:** Using "todo", "appointment", "alert", "category" etc. for domain concepts.

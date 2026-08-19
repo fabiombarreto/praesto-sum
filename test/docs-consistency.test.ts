@@ -103,31 +103,44 @@ describe("no derived doc calls a decision open that documentation records as res
   // read, create, edit and delete..."), which names the decision by its old
   // label while describing its resolution. The discriminator is the presence of
   // a still-open claim on the same line, not the phrase "pending decision".
-  const queueIsEmpty = read(posix.join(ADR_DIR, "index.md")).includes("The queue is empty");
+  //
+  // Relaxed on 2026-08-18, exactly as the original failure message prescribed:
+  // the UI/UX plan opened decisions 5–7, so the queue is no longer empty. The
+  // rule now reads the numbers the index itself lists as open (the numeric
+  // first cell of each queue-table row) and only flags a derived line that
+  // calls a decision open when the index does NOT list that number.
+  const indexText = read(posix.join(ADR_DIR, "index.md"));
+  const queueIsEmpty = indexText.includes("The queue is empty");
+  const openDecisions = new Set(
+    [...indexText.matchAll(/^\|\s*(\d+)\s*\|/gm)].map((match) => Number(match[1])),
+  );
 
   const STILL_OPEN =
     /\bnot decided\b|\bnot integrated\b|\bundecided\b|do not build against|\bstill pending\b/i;
-  const NAMES_A_DECISION = /pending decision\s+\d+/i;
+  const NAMES_A_DECISION = /pending decision\s+(\d+)/i;
 
-  it("documentation still declares the pending queue empty (the precondition this rule reads)", () => {
+  it("documentation either declares the queue empty or lists the open decisions by number (the precondition this rule reads)", () => {
     expect(
-      queueIsEmpty,
-      "documentation/60-decisions/index.md no longer says 'The queue is empty'. If a new pending " +
-        "decision was genuinely opened, relax this rule to the specific decision numbers still " +
-        "open rather than deleting it.",
+      queueIsEmpty || openDecisions.size > 0,
+      "documentation/60-decisions/index.md neither says 'The queue is empty' nor has a queue-table " +
+        "row whose first cell is a decision number. Either restore the sentence or list the open " +
+        "decisions as numbered rows — this rule reads those numbers.",
     ).toBe(true);
   });
 
-  it.each(docsMarkdown)("%s describes no decision as still open", (file) => {
-    const offenders = lines(read(file)).filter(
-      (line) => NAMES_A_DECISION.test(line.content) && STILL_OPEN.test(line.content),
-    );
+  it.each(docsMarkdown)("%s describes no resolved decision as still open", (file) => {
+    const offenders = lines(read(file)).filter((line) => {
+      const named = NAMES_A_DECISION.exec(line.content);
+      if (!named?.[1] || !STILL_OPEN.test(line.content)) return false;
+      return !openDecisions.has(Number(named[1]));
+    });
 
     expect(
       offenders.map((line) => `${file}:${line.number}: ${line.content.trim()}`),
-      `documentation/60-decisions/index.md says the pending-decisions queue is empty, but this ` +
-        `derived file still describes a decision as unresolved. Correct the derived file to match ` +
-        `documentation/ — never the other way round, and never by editing an accepted ADR.`,
+      `documentation/60-decisions/index.md does not list this decision as open (open: ` +
+        `${[...openDecisions].join(", ") || "none"}), but this derived file still describes it as ` +
+        `unresolved. Correct the derived file to match documentation/ — never the other way ` +
+        `round, and never by editing an accepted ADR.`,
     ).toEqual([]);
   });
 });
