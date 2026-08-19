@@ -2,7 +2,9 @@
 
 Personal assistant built by its single user (the owner) to organize personal life — Tasks and Calendar first, more Life Areas later. Latin: "I am ready, at your service" (short form: `praesto`). Phase 1 (MVP Tasks) in progress: the stack is scaffolded and verified end to end; Task create/list/complete/delete/edit works. Recurrence, Reminders/push, search and export are next.
 
-**Delivery units are ON HOLD since 2026-08-18** — the app has no visual foundation yet. `documentation/50-planning/ui-ux-plan.md` (guidelines, layout standard, visual direction, UI library, design pass) runs first; no roadmap unit starts until its exit criterion is met. Read that plan before touching any screen. When it produces the UI/UX guidelines document, it must be linked from this file and followed on every interface change.
+**Delivery units are ON HOLD since 2026-08-18** — the app has no visual foundation yet. `documentation/50-planning/ui-ux-plan.md` (guidelines, layout standard, visual identity, UI library, design pass) runs first; no roadmap unit starts until its exit criterion is met. Read that plan before touching any screen.
+
+**UI/UX guidelines — MANDATORY on every interface change:** `documentation/40-engineering/ui-ux-guidelines.md` (derived pointer: `docs/context/ui-guidelines.md`). Before touching `src/app/`, `index.html`, the manifest or `src/sw.ts`, read it; run its **review checklist** on the change and paste the ✔/✘ result in the PR or plan record. Visible UI copy is pt-BR (ADR-0009); code, identifiers and tests stay English.
 
 ## Project documentation — read FIRST, keep updated ALWAYS
 
@@ -44,6 +46,7 @@ Before implementing anything, read:
 - docs/context/constraints.md — what NOT to do
 - docs/context/methodology.md — methodology declaration (TDD opt-in)
 - docs/context/testing.md — mandatory test guardrail (see section below)
+- docs/context/ui-guidelines.md — pointer to the mandatory UI/UX guidelines + review checklist (any screen change)
 - docs/domain/areas/[relevant-area].md — business rules for the area being changed
 - docs/decision-gate.md — mandatory gate before planning or coding
 

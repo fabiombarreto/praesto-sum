@@ -28,6 +28,8 @@ Tier 2 index: one entry per doc, 1-2 lines each. Details live in the target file
 
 **Methodology** — `tdd: true` (test-first, declared 2026-08-04 by ADR-0008); `docs_sync: true`; `figma_track: false`; browser-API work splits the logic into `src/shared` behind a port and exempts only the adapter. → docs/context/methodology.md
 
+**UI/UX guidelines (pointer)** — MANDATORY on any change under `src/app/`, `index.html`, the manifest or `src/sw.ts`: read the authoritative rules, apply the owner decisions (pt-BR copy, dark-only, WCAG 2.2 A + 48 px targets + reduced motion), run the 10-item review checklist and paste ✔/✘. → docs/context/ui-guidelines.md
+
 **Testing guardrail** — binding contract: keep suites green on EVERY change; fallback warning protocol; one detected tier (Vitest + `@cloudflare/vitest-pool-workers`, `npm test`), no browser/e2e tier yet. → docs/context/testing.md
 
 ## Domain

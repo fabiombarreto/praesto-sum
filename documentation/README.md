@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-18
+last_updated: 2026-08-19
 review_trigger: "any document is created, renamed, merged or changes status"
 ---
 
@@ -11,7 +11,7 @@ review_trigger: "any document is created, renamed, merged or changes status"
 
 ## What is this project
 
-A personal assistant built by its single user — the owner — to organize personal life: calendar and tasks (to-dos) first, other life areas later. The project is documentation-first: everything is defined here before implementation starts. Phase 0 closed on 2026-08-03 with the full document set validated and decisions 1–3 resolved as ADRs; Phase 1 (MVP Tasks) is now in progress. All four foundational decisions are resolved. **Since 2026-08-18 the delivery units are on hold** while the [UI/UX plan](50-planning/ui-ux-plan.md) gives the app its visual foundation — guidelines, layout standard, visual direction and UI library — and that plan opened decisions 5–7 in the [decisions index](60-decisions/index.md).
+A personal assistant built by its single user — the owner — to organize personal life: calendar and tasks (to-dos) first, other life areas later. The project is documentation-first: everything is defined here before implementation starts. Phase 0 closed on 2026-08-03 with the full document set validated and decisions 1–3 resolved as ADRs; Phase 1 (MVP Tasks) is now in progress. All four foundational decisions are resolved. **Since 2026-08-18 the delivery units are on hold** while the [UI/UX plan](50-planning/ui-ux-plan.md) gives the app its visual foundation — guidelines, layout standard, visual identity and UI library — and that plan opened decisions 5–7 in the [decisions index](60-decisions/index.md).
 
 > **Praesto Sum** — Latin for "I am ready, at your service" ([ADR-0002](60-decisions/ADR-0002-name-the-project-praesto-sum.md)). Short form for the future repository and CLI: **praesto**.
 
@@ -31,6 +31,7 @@ A personal assistant built by its single user — the owner — to organize pers
 | [engineering-conventions](40-engineering/engineering-conventions.md) | Code, git and naming conventions | Before writing code |
 | [dev-environment](40-engineering/dev-environment.md) | Machine setup and day-to-day commands | On a new machine or after a pause |
 | [testing-strategy](40-engineering/testing-strategy.md) | What gets tested and what deliberately does not | Before writing tests |
+| [ui-ux-guidelines](40-engineering/ui-ux-guidelines.md) | The rules every interface change follows (platform, layout, colour, type, motion, states, pt-BR copy, WCAG 2.2 A, performance budget) + the review checklist | Before touching any screen, manifest or service worker — and on every UI review |
 | [roadmap](50-planning/roadmap.md) | Current phase, milestones, backlog, delivery history | To know where we are and what is next |
 | [ui-ux-plan](50-planning/ui-ux-plan.md) | The UI/UX track: activities, open decisions, exit criterion — runs while the roadmap's units are on hold | Before touching any screen, and to know why units are paused |
 | [decisions index](60-decisions/index.md) | ADR index + pending decisions queue | Before deciding anything non-obvious |
@@ -51,6 +52,7 @@ This is also the writing order of Phase 0. Architecture and engineering document
 | Stack, component, data or integration changes | [architecture-overview](30-architecture/architecture-overview.md) + affected 40-engineering/ docs |
 | A milestone completes or a phase closes | [roadmap](50-planning/roadmap.md) |
 | A UI/UX-plan activity changes state, an open question there is answered, or the hold on units opens or lifts | [ui-ux-plan](50-planning/ui-ux-plan.md) + [roadmap](50-planning/roadmap.md) (hold state, delivery history) |
+| A UI rule proves useless or wrong in practice, or a platform behaviour a rule cites changes | [ui-ux-guidelines](40-engineering/ui-ux-guidelines.md) (+ `docs/context/ui-guidelines.md` pointer) + a History line in [ui-ux-plan](50-planning/ui-ux-plan.md) |
 | A convention proves useful or useless in practice | [documentation-guidelines](00-meta/documentation-guidelines.md) |
 
 A document that has no row in this map should not exist.
@@ -73,8 +75,9 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 40-engineering/engineering-conventions.md | active | 2026-08-03 |
 | 40-engineering/dev-environment.md | active | 2026-08-15 |
 | 40-engineering/testing-strategy.md | active | 2026-08-12 |
-| 50-planning/roadmap.md | active | 2026-08-18 |
-| 50-planning/ui-ux-plan.md | active | 2026-08-18 |
+| 40-engineering/ui-ux-guidelines.md | active | 2026-08-19 |
+| 50-planning/roadmap.md | active | 2026-08-19 |
+| 50-planning/ui-ux-plan.md | active | 2026-08-19 |
 | 60-decisions/index.md | active | 2026-08-18 |
 | 60-decisions/ADR-0001-write-all-artifacts-in-english.md | accepted | 2026-08-02 |
 | 60-decisions/ADR-0002-name-the-project-praesto-sum.md | accepted | 2026-08-03 |
