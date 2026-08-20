@@ -1,0 +1,215 @@
+<title>Moodboard Praesto</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&family=Space+Grotesk:wght@500;700&family=Unbounded:wght@600&family=Geist:wght@500;600&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root{
+    --bg:#101014; --surface:#18181c; --elevated:#202024; --raised:#28282c;
+    --line:rgba(255,255,255,.08); --ink:#f2f2f4; --muted:#9a9aa3;
+    --accent:#f5a524; --danger:#ff6161;
+    --amber:#f5a524; --orange:#ff7a1a; --gold:#d9a642; --blurple:#5865F2;
+  }
+  body{background:var(--bg); color:var(--ink); font-family:Manrope,system-ui,sans-serif; line-height:1.6; margin:0;}
+  .wrap{max-width:40rem; margin:0 auto; padding:2rem 1rem 4rem;}
+  header h1{font-family:'Space Grotesk',Manrope,sans-serif; font-size:1.7rem; margin:0 0 .3rem; text-wrap:balance;}
+  header p{color:var(--muted); margin:.2rem 0; font-size:.95rem;}
+  .howto{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0; background:var(--surface); padding: .8rem 1rem; margin:1.2rem 0 2rem; font-size:.92rem;}
+  section{margin:2.2rem 0;}
+  .eyebrow{font-size:.75rem; letter-spacing:.12em; text-transform:none; color:var(--accent); font-weight:700; margin-bottom:.6rem;}
+  .grid{display:grid; gap:.8rem;}
+  @media(min-width:520px){.grid.g2{grid-template-columns:1fr 1fr;}}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:1rem;}
+  .id{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--bg); background:var(--accent); border-radius:6px; padding:.05rem .45rem; font-weight:600; margin-bottom:.5rem;}
+  .tags{margin-top:.6rem; font-size:.78rem; color:var(--muted);}
+  .cap{font-size:.85rem; color:var(--muted); margin-top:.4rem;}
+  .sw{display:flex; border-radius:10px; overflow:hidden; border:1px solid var(--line);}
+  .sw div{flex:1; height:64px; display:flex; align-items:flex-end; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:.68rem; color:var(--muted); padding-bottom:.3rem;}
+  .btn{display:inline-block; border:none; border-radius:12px; padding:.65rem 1.2rem; font:600 .95rem Manrope,sans-serif; color:#101014;}
+  .dot{display:inline-block; width:.65rem; height:.65rem; border-radius:50%; vertical-align:middle; margin-right:.45rem;}
+  .wordmark{font-size:1.9rem; margin:.15rem 0; line-height:1.3;}
+  .wm-label{font-size:.75rem; color:var(--muted); font-family:'JetBrains Mono',monospace;}
+  .soft{background:var(--elevated); border-radius:14px; border:1px solid var(--line); box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 4px 10px rgba(0,0,0,.45); padding:.65rem 1.2rem; color:var(--ink); font:600 .95rem Manrope,sans-serif;}
+  .glowchip{display:inline-flex; align-items:center; gap:.5rem; background:var(--elevated); border:1px solid rgba(245,165,36,.5); color:var(--ink); border-radius:9999px; padding:.45rem 1rem; font-size:.9rem; box-shadow:0 0 14px rgba(245,165,36,.35);}
+  .pulse{width:.6rem; height:.6rem; border-radius:50%; background:var(--accent); animation:pu 1.6s ease-in-out infinite;}
+  @keyframes pu{50%{box-shadow:0 0 0 6px rgba(245,165,36,.15);}}
+  @media(prefers-reduced-motion:reduce){.pulse{animation:none;}}
+  .frames{display:flex; gap:1.4rem; align-items:center;}
+  .fr{width:2rem; height:2rem; border-radius:50%; border:2px solid var(--muted); display:flex; align-items:center; justify-content:center;}
+  .fr.done{border-color:var(--accent); background:rgba(245,165,36,.15); color:var(--accent); font-weight:700;}
+  .fr.ring{box-shadow:0 0 0 5px rgba(245,165,36,.18);}
+  .radii{display:flex; gap:.8rem; align-items:flex-end; flex-wrap:wrap;}
+  .radii div{background:var(--elevated); border:1px solid var(--line); width:64px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:.68rem; color:var(--muted);}
+  .list-mock{display:flex; flex-direction:column; gap:.6rem;}
+  .row-mock{display:flex; align-items:center; gap:.9rem; background:var(--elevated); border:1px solid var(--line); border-radius:12px; padding: .85rem 1rem; min-height:48px;}
+  .veto .card{border-left:3px solid var(--danger); border-radius:0 14px 14px 0;}
+  .veto .id{background:var(--danger); color:#101014;}
+  svg.icon{width:22px;height:22px;stroke:var(--ink);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;margin-right:.6rem;}
+  a{color:var(--accent);}
+</style>
+<div class="wrap">
+<header>
+  <h1>Moodboard Praesto</h1>
+  <p>Etapa 2.5 · atributos visíveis antes de desenhar · 2026-08-20</p>
+  <p>Alvo: <strong style="color:var(--ink)">moderno · ágil · nerd</strong> → <strong style="color:var(--ink)">minimalista · gamer · enérgico</strong> · nunca <span style="color:var(--danger)">sombrio, sério, corporativo</span></p>
+</header>
+<div class="howto">
+  <strong>Passada de veto:</strong> abra no celular, de preferência à noite e de dia. Cada item tem um ID. Responda no chat com o que cortar ou manter — ex.: <em>"corta M3 e M9; M2 é o acento"</em>. O que sobrar alimenta as três direções renderizadas (etapa 2.6).
+</div>
+
+<section>
+  <div class="eyebrow">Base — o escuro vivo</div>
+  <div class="card">
+    <span class="id">M1</span>
+    <div class="sw">
+      <div style="background:#101014">#101014</div>
+      <div style="background:#18181c">#18181c</div>
+      <div style="background:#202024">#202024</div>
+      <div style="background:#28282c">#28282c</div>
+    </div>
+    <p class="cap">Escada de grafite (verificada na Epic Games Store). Profundidade por camadas + fio de 1&nbsp;px — sem sombras pesadas. Texto <span style="font-family:'JetBrains Mono',monospace">#f2f2f4</span>, apagado <span style="font-family:'JetBrains Mono',monospace">#9a9aa3</span>.</p>
+    <div class="tags">minimalista · engenheirado · não é sombrio (a base é neutra; a vida vem do acento)</div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Acento — um só, fazendo todo o trabalho</div>
+  <div class="grid g2">
+    <div class="card"><span class="id">M2</span>
+      <p style="margin:.2rem 0"><span class="dot" style="background:var(--amber)"></span><strong>Âmbar</strong> <span class="wm-label">#f5a524</span></p>
+      <button class="btn" style="background:var(--amber)">Concluir</button>
+      <p class="cap">Quente, arcade, legível no grafite. Vizinho do dourado da marca.</p>
+      <div class="tags">gamer · enérgico · quente (refs R6/R7)</div>
+    </div>
+    <div class="card"><span class="id">M3</span>
+      <p style="margin:.2rem 0"><span class="dot" style="background:var(--orange)"></span><strong>Laranja</strong> <span class="wm-label">#ff7a1a</span></p>
+      <button class="btn" style="background:var(--orange)">Concluir</button>
+      <p class="cap">Mais elétrico e jovem; um passo do "urgente" — pediria disciplina.</p>
+      <div class="tags">enérgico · lúdico (ref R6)</div>
+    </div>
+    <div class="card"><span class="id">M4</span>
+      <p style="margin:.2rem 0"><span class="dot" style="background:var(--gold)"></span><strong>Dourado-prumo</strong> <span class="wm-label">#d9a642</span></p>
+      <button class="btn" style="background:var(--gold)">Concluir</button>
+      <p class="cap">Tirado do latão da própria marca (<span class="wm-label">#f2d08a→#b57f23</span>). Premium, instrumento.</p>
+      <div class="tags">preciso · nerd · a marca já era ouro (refs R8/R9)</div>
+    </div>
+    <div class="card"><span class="id">M5</span>
+      <p style="margin:.2rem 0"><span class="dot" style="background:var(--blurple)"></span><strong>Blurple</strong> <span class="wm-label">#5865F2</span></p>
+      <button class="btn" style="background:var(--blurple);color:#fff">Concluir</button>
+      <p class="cap">O único frio (Discord, verificado). Entra como contraste ou sai.</p>
+      <div class="tags">gamer · comunidade (ref R5)</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Tipo — o wordmark em quatro vozes</div>
+  <div class="card"><span class="id">M6</span>
+    <p class="wordmark" style="font-family:'Space Grotesk'; font-weight:700">praesto <span class="wm-label">Space Grotesk · geométrica com manha</span></p>
+    <p class="wordmark" style="font-family:Unbounded; font-weight:600; font-size:1.5rem">praesto <span class="wm-label">Unbounded · display largo, gamer</span></p>
+    <p class="wordmark" style="font-family:Geist; font-weight:600">praesto <span class="wm-label">Geist · dev-tool limpa</span></p>
+    <p class="wordmark" style="font-family:Inter; font-weight:600">praesto <span class="wm-label">Inter · neutra humanista</span></p>
+    <p class="cap">Todas OFL, self-hostáveis em um WOFF2. Minúsculas — sem caixa alta (regra da casa).</p>
+    <div class="tags">moderno · engenheirado · leve</div>
+  </div>
+  <div class="card" style="margin-top:.8rem"><span class="id">M7</span>
+    <p style="font-family:'JetBrains Mono',monospace; font-size:.95rem; margin:.2rem 0">qua., 19 de ago. · 14:05 · <span style="color:var(--accent)">3/5 concluídas</span></p>
+    <p class="cap">Dados em mono, números tabulares: o lado nerd aparece nos detalhes, não nos títulos.</p>
+    <div class="tags">nerd por dentro · preciso</div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Profundidade e vida</div>
+  <div class="grid g2">
+    <div class="card"><span class="id">M8</span>
+      <div style="background:var(--elevated); border:1px solid var(--line); border-radius:12px; padding:.8rem">
+        <div style="background:var(--raised); border:1px solid var(--line); border-radius:10px; padding:.6rem">superfície sobre superfície</div>
+      </div>
+      <p class="cap">Elevação = escada de superfícies + fio, nunca sombra derramada.</p>
+      <div class="tags">engenheirado · minimalista</div>
+    </div>
+    <div class="card"><span class="id">M9</span>
+      <button class="soft">Tátil suave</button>
+      <p class="cap">Neumorfismo-lite das refs R1/R9: um sopro de relevo nos controles, contraste preservado. Fica ou sai inteiro.</p>
+      <div class="tags">lúdico · capricho (risco: tendência)</div>
+    </div>
+    <div class="card"><span class="id">M10</span>
+      <span class="glowchip"><span class="pulse"></span>Lembrete agora</span>
+      <p class="cap">Brilho só para o que está vivo agora — nunca decoração parada.</p>
+      <div class="tags">enérgico nos momentos (refs R2/R8)</div>
+    </div>
+    <div class="card"><span class="id">M11</span>
+      <div class="frames">
+        <span class="fr"></span><span style="color:var(--muted)">→</span>
+        <span class="fr done ring">✓</span><span style="color:var(--muted)">→</span>
+        <span class="fr done">✓</span>
+      </div>
+      <p class="cap">O momento-assinatura: concluir pulsa um anel e assenta. Única animação "de festa" do app.</p>
+      <div class="tags">energia nos momentos · honesto (não esconde o resto)</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Forma e ritmo</div>
+  <div class="grid g2">
+    <div class="card"><span class="id">M12</span>
+      <div class="radii">
+        <div style="border-radius:4px">4</div>
+        <div style="border-radius:8px">8</div>
+        <div style="border-radius:12px">12</div>
+        <div style="border-radius:16px">16</div>
+        <div style="border-radius:9999px">pill</div>
+      </div>
+      <p class="cap">Raio generoso (12–16 em cartões, pill em chips) — arredondado sem virar balão.</p>
+      <div class="tags">lúdico · moderno (refs R1/R6/R7)</div>
+    </div>
+    <div class="card"><span class="id">M13</span>
+      <p style="margin:.4rem 0">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M5 13l4 4 10-11"/></svg>
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 1 6 6v3l2 3H4l2-3V9a6 6 0 0 1 6-6zM10 20a2 2 0 0 0 4 0"/></svg>
+        <svg class="icon" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 11h16"/></svg>
+      </p>
+      <p class="cap">Ícones outline, traço 2&nbsp;px, cantos arredondados — um conjunto só, SVG embarcado.</p>
+      <div class="tags">moderno · leve</div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:.8rem"><span class="id">M16</span>
+    <div class="list-mock">
+      <div class="row-mock"><span class="fr" style="width:1.4rem;height:1.4rem"></span> Pagar aluguel <span style="margin-left:auto" class="wm-label">até sex.</span></div>
+      <div class="row-mock"><span class="fr done" style="width:1.4rem;height:1.4rem">✓</span> <span style="color:var(--muted);text-decoration:line-through">Renovar CNH</span></div>
+    </div>
+    <p class="cap">Densidade-alvo (esparso 35): linhas de 48&nbsp;px+, respiro entre elas, uma informação secundária no máximo.</p>
+    <div class="tags">minimalista · esparso</div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Marca e voz</div>
+  <div class="grid g2">
+    <div class="card"><span class="id">M14</span>
+      <p style="display:flex; gap:1.2rem; align-items:center; margin:.3rem 0">
+        <svg width="72" height="72" viewBox="0 0 100 100" role="img" aria-label="Fio de prumo"><defs><linearGradient id="b2" x1="0" y1="28.5" x2="0" y2="86" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#f2d08a"/><stop offset="1" stop-color="#b57f23"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="#18181c"/><rect x="48.7" y="10" width="2.6" height="18.5" fill="#9aa1ab"/><path d="M46.5 28.5 H53.5 L55.5 34.5 A10.5 15.5 0 0 1 66 50 L50 86 L34 50 A10.5 15.5 0 0 1 44.5 34.5 Z" fill="url(#b2)"/></svg>
+        <svg width="72" height="72" viewBox="0 0 100 100" role="img" aria-label="Fio de prumo monocromático"><rect width="100" height="100" rx="22" fill="#18181c"/><rect x="48.7" y="10" width="2.6" height="18.5" fill="#f5a524"/><path d="M46.5 28.5 H53.5 L55.5 34.5 A10.5 15.5 0 0 1 66 50 L50 86 L34 50 A10.5 15.5 0 0 1 44.5 34.5 Z" fill="#f5a524"/></svg>
+      </p>
+      <p class="cap">O prumo hoje (latão) e a variante chapada no acento — o gradiente fica só na marca, nunca na UI.</p>
+      <div class="tags">preciso · a identidade já estava aqui</div>
+    </div>
+    <div class="card"><span class="id">M15</span>
+      <p style="margin:.2rem 0"><strong>Vazio:</strong> "Nenhuma tarefa para hoje. Bora capturar a primeira?"</p>
+      <p style="margin:.2rem 0"><strong>Sucesso:</strong> "Tarefa concluída" · <span style="color:var(--accent)">Desfazer</span></p>
+      <p style="margin:.2rem 0"><strong>Espelho honesto:</strong> "Você não concluiu <em>Pagar aluguel</em> em 2 de 5 semanas."</p>
+      <p class="cap">Leve no vazio e no sucesso; plano e direto no que importa. Nunca no erro.</p>
+      <div class="tags">leve por fora · honesto</div>
+    </div>
+  </div>
+</section>
+
+<section class="veto">
+  <div class="eyebrow" style="color:var(--danger)">Não é — o filtro (não são candidatos)</div>
+  <div class="grid g2">
+    <div class="card"><span class="id">V1</span> <strong>Densidade Steam</strong><p class="cap">Da R4 fica só o orgulho de organizar a própria biblioteca — nunca as três colunas.</p></div>
+    <div class="card"><span class="id">V2</span> <strong>Drama do grind</strong><p class="cap">Da R8 fica o brilho premium — nunca o tom "guerreiro sofrendo" (sério demais).</p></div>
+    <div class="card"><span class="id">V3</span> <strong>Sobriedade corporativa</strong><p class="cap">Da R3 fica o respiro editorial — nunca a neutralidade sisuda sem um pingo de jogo.</p></div>
+    <div class="card"><span class="id">V4</span> <strong>Gradientes e metais na UI</strong><p class="cap">Da R9 fica a ideia do styleguide — o cobre derretido não entra (regra §4.2).</p></div>
+  </div>
+</section>
+</div>

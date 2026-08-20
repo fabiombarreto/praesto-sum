@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-19
+last_updated: 2026-08-20
 review_trigger: "any document is created, renamed, merged or changes status"
 ---
 
@@ -22,6 +22,7 @@ A personal assistant built by its single user — the owner — to organize pers
 | [documentation-guidelines](00-meta/documentation-guidelines.md) | Writing rules, frontmatter, lifecycle, stable IDs, templates | Before writing or editing any doc |
 | [vision](10-product/vision.md) | Problem, vision, principles, non-goals, success criteria | To understand why the project exists |
 | [glossary](10-product/glossary.md) | Canonical domain vocabulary | Before naming anything |
+| [visual-identity](10-product/visual-identity.md) | Who Praesto is visually: name, attributes, brief, mark, tokens, voice | Before any visual or copy choice — filled in by UI/UX-plan activity A2 |
 | [functional-requirements](20-requirements/functional-requirements.md) | FR-nnn by area, MoSCoW-prioritized | To know what the system must do |
 | [quality-attributes](20-requirements/quality-attributes.md) | QA-nnn as verifiable scenarios | Before any architectural choice |
 | [constraints](20-requirements/constraints.md) | CON-nnn: hard limits every decision must respect | Before analyzing alternatives |
@@ -52,6 +53,7 @@ This is also the writing order of Phase 0. Architecture and engineering document
 | Stack, component, data or integration changes | [architecture-overview](30-architecture/architecture-overview.md) + affected 40-engineering/ docs |
 | A milestone completes or a phase closes | [roadmap](50-planning/roadmap.md) |
 | A UI/UX-plan activity changes state, an open question there is answered, or the hold on units opens or lifts | [ui-ux-plan](50-planning/ui-ux-plan.md) + [roadmap](50-planning/roadmap.md) (hold state, delivery history) |
+| An identity element changes (mark, tokens, voice) | [visual-identity](10-product/visual-identity.md) + `src/app/tokens.css` + an ADR when non-obvious |
 | A UI rule proves useless or wrong in practice, or a platform behaviour a rule cites changes | [ui-ux-guidelines](40-engineering/ui-ux-guidelines.md) (+ `docs/context/ui-guidelines.md` pointer) + a History line in [ui-ux-plan](50-planning/ui-ux-plan.md) |
 | A convention proves useful or useless in practice | [documentation-guidelines](00-meta/documentation-guidelines.md) |
 
@@ -66,6 +68,7 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 00-meta/documentation-guidelines.md | active | 2026-08-02 |
 | 10-product/vision.md | active | 2026-08-04 |
 | 10-product/glossary.md | active | 2026-08-15 |
+| 10-product/visual-identity.md | draft | 2026-08-20 |
 | 20-requirements/functional-requirements.md | active | 2026-08-12 |
 | 20-requirements/quality-attributes.md | active | 2026-08-03 |
 | 20-requirements/constraints.md | active | 2026-08-04 |
@@ -75,9 +78,9 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 40-engineering/engineering-conventions.md | active | 2026-08-03 |
 | 40-engineering/dev-environment.md | active | 2026-08-15 |
 | 40-engineering/testing-strategy.md | active | 2026-08-12 |
-| 40-engineering/ui-ux-guidelines.md | active | 2026-08-19 |
+| 40-engineering/ui-ux-guidelines.md | active | 2026-08-20 |
 | 50-planning/roadmap.md | active | 2026-08-19 |
-| 50-planning/ui-ux-plan.md | active | 2026-08-19 |
+| 50-planning/ui-ux-plan.md | active | 2026-08-20 |
 | 60-decisions/index.md | active | 2026-08-18 |
 | 60-decisions/ADR-0001-write-all-artifacts-in-english.md | accepted | 2026-08-02 |
 | 60-decisions/ADR-0002-name-the-project-praesto-sum.md | accepted | 2026-08-03 |

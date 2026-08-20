@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-19
+last_updated: 2026-08-20
 review_trigger: "a rule proves useless or wrong in practice (UI/UX plan A6 retro), a UI/UX-plan decision changes what a rule depends on, or a platform behaviour a rule cites changes"
 ---
 
@@ -14,11 +14,17 @@ review_trigger: "a rule proves useless or wrong in practice (UI/UX plan A6 retro
 - **Always / Never** are non-negotiable; **Prefer / Avoid** ask for judgement; **an untagged rule is Always.** A `TBD` is an explicit gap owned by a named activity or decision — never a licence to improvise around it.
 - Read it before touching anything under `src/app/`, `index.html`, `public/manifest.webmanifest` or `src/sw.ts`. Run **Tier A** of the [checklist](#review-checklist) on every interface change (including one-line ones) and **Tier B** once per shipped screen; paste the ✔/✘ result in the implementation plan (`PRPs/plans/…plan.md`) or the PR description. One ✘ without a recorded, conscious exception means the change is not done.
 - It sits above the identity and the layout standard: tokens, the mark, voice and the screen anatomy **will** live in `10-product/visual-identity.md`, `src/app/tokens.css` and `40-engineering/ui-layout-standard.md` — deliverables of plan A2/A3 that do not exist yet; until they do, the TBD lines below apply. This document says *what must be true*; those say *what it looks like*.
-- Owner decisions it encodes (2026-08-18): visible copy in pt-BR ([ADR-0009](../60-decisions/ADR-0009-ui-copy-in-brazilian-portuguese.md)); dark-only now, tokens born as light/dark pairs; **WCAG 2.2 Level A** as the formal bar, with ≥ 48 px targets and `prefers-reduced-motion` as rules; no gamification mechanics; gamer-app *ambience*, never their density. **Two house rules go beyond the owner's Level A answer and await his confirmation:** visible keyboard focus (§4.5) and no all-caps UI text (§9.2).
+- Owner decisions it encodes (2026-08-18): visible copy in pt-BR ([ADR-0009](../60-decisions/ADR-0009-ui-copy-in-brazilian-portuguese.md)); dark-only now, tokens born as light/dark pairs; **WCAG 2.2 Level A** as the formal bar, with ≥ 48 px targets and `prefers-reduced-motion` as rules; no gamification mechanics; gamer-app *ambience*, never their density. Two house rules go beyond the Level A answer and were **confirmed by the owner on 2026-08-20** (plan Q14): visible keyboard focus (§4.5) and no all-caps UI text (§9.2).
 
 ## 1. Design principles
 
-TBD — pending owner input (UI/UX plan step 2.4: three to five principles in "[A] over [B], so we will / won't …" form, reality-checked against a real screen). Until then the [product principles' design consequences](../50-planning/ui-ux-plan.md#what-the-product-principles-demand-of-the-design) apply: few elements per screen is a rule, capture is the hero, "fun" never hides a miss, one library / one token set / one pipeline, the owner's references are the brief.
+Approved by the owner on 2026-08-20 (UI/UX plan step 2.4; derived from the attribute session in `PRPs/reports/visual-identity/02-attributes.md`). They are the tie-breaker in every design review; each one's opposite is a position a reasonable team could hold — that is what makes them decisions, not slogans.
+
+1. **Precise over decorated.** Grid, alignment and exact spacing come before any ornament — if a pixel is off plumb, fix the plumb. So we won't ship decoration that does not serve reading.
+2. **Lively dark over sober dark.** Near-black base, one saturated accent, warm feedback — if a screen feels like a bank vault, we got it wrong. So we won't do gloomy grey-on-grey.
+3. **Energy in moments over constant energy.** At rest the interface is quiet; completing, capturing and celebrating are where it wakes up. So we will have one signature completion animation — and nothing blinking idly.
+4. **Fewer elements over more visible features.** Every new element pays rent; what does not serve today's screen moves to a sheet or the detail. So every screen keeps exactly one primary action.
+5. **Nerd inside, light outside.** Technical precision in the data (dates, counts, tabular numerals) with copy that winks — never bureaucratic. So humour may appear in empty and success states, never in errors (§9).
 
 ## 2. Platform — an installed PWA on Android and Windows
 
@@ -45,7 +51,7 @@ TBD — pending owner input (UI/UX plan step 2.4: three to five principles in "[
 2. **Near-black, not pure black**, off-white text, lighter and desaturated accent tones in dark mode (the identity fixes the values); depth from a surface ladder and hairlines — **avoid** drop shadows and gradients; one saturated accent per screen; a glow only for *live* state (something happening now: a Reminder firing, an action in flight).
 3. **Contrast:** the formal bar is Level A, which has **no numeric contrast criterion**, so contrast is **measured and reported**, never blocking and never silent (Q11): with the DevTools colour picker (or axe DevTools), for five pairs — body text, muted text, accent on surface, focus ring on surface, icon on surface — recorded as `pair: x.x:1 ✔/✘` against the targets 4.5:1 text / 3:1 UI, on every token change and once per shipped screen (Tier B).
 4. **Never** convey meaning by colour alone (Level A 1.4.1): overdue, priority, done, missed, offline also carry text or an icon.
-5. **Focus** is visible with `:focus-visible` — **never** `outline: none` without a replacement; a two-tone ring (light inner + dark outer) or ring + offset so it survives any surface. *House rule above Level A (2.4.7 is AA) — owner to confirm.*
+5. **Focus** is visible with `:focus-visible` — **never** `outline: none` without a replacement; a two-tone ring (light inner + dark outer) or ring + offset so it survives any surface. *House rule above Level A (2.4.7 is AA) — owner-confirmed 2026-08-20 (plan Q14).*
 
 ## 5. Typography
 
@@ -88,7 +94,7 @@ TBD — pending owner input (UI/UX plan step 2.4: three to five principles in "[
 The *voice* (who Praesto sounds like) is TBD — see the pending decisions queue in [60-decisions/index.md](../60-decisions/index.md) (decision 5; plan step 2.8). The *mechanics* below apply now:
 
 1. **Buttons in the infinitive** ("Salvar", "Excluir", "Concluir"), verb first, ≤ 2 words, no articles; instructions in the imperative ("Tente novamente"). Canonical verbs: Salvar · Excluir · Remover (from a set) · Limpar · Concluir · Reabrir · Cancelar · Desfazer · Editar · Adicionar / Criar · Pesquisar · Mostrar / Ocultar · Continuar / Voltar · Próximo / Anterior. **Avoid** anglicisms where a Portuguese word exists; established loans ("e-mail", "site", "login", "download", "offline") stay.
-2. **Sentence case everywhere** — titles, buttons, labels, messages (chosen 2026-08-19; gov.br prescribes Title Case on buttons — the owner may flip this line). **No all-caps UI text**, including CSS `text-transform`; acronyms keep their caps and diacritics ("sáb.", "Configurações"). *House rule — owner to confirm.*
+2. **Sentence case everywhere** — titles, buttons, labels, messages (chosen 2026-08-19; gov.br prescribes Title Case on buttons — the owner may flip this line). **No all-caps UI text**, including CSS `text-transform`; acronyms keep their caps and diacritics ("sáb.", "Configurações"). *House rule — owner-confirmed 2026-08-20 (plan Q14).*
 3. **Address the owner as "você"** or with an implied subject; never "tu", never "o usuário"; present indicative, active voice; short fragments are fine ("Pronto", "Tarefa salva").
 4. **Numbers, dates, times** come from `Intl` with `pt-BR`: `19/08/2026`, `qua., 19 de ago.`, `14:05` (24 h), `1.234,50`, NBSP between number and unit. Prose may say "ontem / hoje / amanhã" (`RelativeTimeFormat`, `numeric: 'auto'`). CLDR puts **zero in the singular** (`PluralRules('pt-BR').select(0) === 'one'`) — **always** special-case zero ("Nenhuma tarefa").
 5. **Success** is a past participle without "!" ("Tarefa concluída"); "!" only for genuine milestones. Quotes are curved “ ”; UI element names inside sentences are written as they appear on screen; never "clique aqui".
@@ -111,7 +117,7 @@ Conformance is per screen and all 31 Level A criteria must hold (N/A ones vacuou
 - **4.1.2** custom controls expose name, role, value and state — **prefer** native elements.
 - N/A by design — confirm on each new feature: media criteria (1.2.x, 1.4.2), 2.3.1 (no flashing), 2.5.4 (no motion actuation).
 
-**Recommended, not rules** (AA/AAA; the owner chose A): contrast 4.5:1 / 3:1 (1.4.3, 1.4.11 — measured per §4.3), resize text 200 % (1.4.4 — §5.1 Prefer), reflow at 320 px (1.4.10), focus not obscured (2.4.11 — §2.7 Prefer), dragging alternatives (2.5.7 — covered by §10 2.1.1), target size 24 px (2.5.8 — exceeded by §3.3), status messages (4.1.3). Kept as **house rules above the bar**: focus visible (§4.5), no all-caps (§9.2) — both await the owner's confirmation.
+**Recommended, not rules** (AA/AAA; the owner chose A): contrast 4.5:1 / 3:1 (1.4.3, 1.4.11 — measured per §4.3), resize text 200 % (1.4.4 — §5.1 Prefer), reflow at 320 px (1.4.10), focus not obscured (2.4.11 — §2.7 Prefer), dragging alternatives (2.5.7 — covered by §10 2.1.1), target size 24 px (2.5.8 — exceeded by §3.3), status messages (4.1.3). Kept as **house rules above the bar**: focus visible (§4.5), no all-caps (§9.2) — both owner-confirmed 2026-08-20 (plan Q14).
 
 ## 11. Performance budget
 
