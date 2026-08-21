@@ -1,0 +1,251 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Direções Praesto</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800&family=Space+Grotesk:wght@700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root{
+    color-scheme:dark;
+    --sp1:.25rem;--sp2:.5rem;--sp3:.75rem;--sp4:1rem;--sp6:1.5rem;--sp8:2rem;
+    --t1:.75rem;--t2:.875rem;--t3:1rem;--t4:1.25rem;--t5:1.75rem;
+    --ink:#f2f2f4;--muted:#a0a0a8;--faint:#86868f;--danger:#ff6b6b;--danger-rgb:255,107,107;
+    --mono:'JetBrains Mono',ui-monospace,monospace;--body:Inter,system-ui,sans-serif;
+    --bg:#101014;--s1:#18181c;--s2:#202024;--s3:#28282c;--line:rgba(255,255,255,.08);--line-strong:rgba(255,255,255,.35);
+    --accent:#f5a524;--accent-rgb:245,165,36;--accent-deep:#b8751a;--on-accent:#16120a;
+    --second:#f5a524;--second-rgb:245,165,36;--late:var(--danger);--late-rgb:var(--danger-rgb);
+    --display:'Space Grotesk',var(--body);--heading:'Space Grotesk',var(--body);--wm-weight:700;
+    --r-card:10px;--r-ctl:8px;--r-chip:9999px;
+    --row-bg:var(--s1);--row-border:1px solid var(--line);--row-shadow:none;--row-radius:var(--r-card);
+    --btn-shadow:none;--btn-press:translateY(1px);--deck-bg:var(--s1);--deck-shadow:0 -1px 0 var(--line);--field-shadow:none;
+  }
+  html[data-dir="a"]{
+    --bg:#161012;--s1:#1f1816;--s2:#2a211e;--s3:#352a25;--line:rgba(255,255,255,.09);
+    --accent:#f5a524;--accent-rgb:245,165,36;--accent-deep:#b8751a;--on-accent:#1a1206;
+    --second:#ff5c1f;--second-rgb:255,92,31;--late:var(--second);--late-rgb:var(--second-rgb);
+    --display:Unbounded,var(--body);--heading:Inter,var(--body);--wm-weight:800;
+    --r-card:18px;--r-ctl:14px;
+    --row-bg:var(--s2);--row-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 1px 2px rgba(0,0,0,.4);
+    --btn-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 3px 0 var(--accent-deep),0 6px 12px rgba(0,0,0,.35);--btn-press:translateY(3px);
+    --deck-bg:var(--s2);--deck-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 -12px 30px rgba(0,0,0,.5);--field-shadow:inset 0 2px 4px rgba(0,0,0,.35);
+  }
+  html[data-dir="b"]{
+    --accent:#d9a642;--accent-rgb:217,166,66;--accent-deep:#9c7528;--on-accent:#151003;
+    --second:#d9a642;--second-rgb:217,166,66;
+    --display:'Space Grotesk',var(--body);--heading:'Space Grotesk',var(--body);--wm-weight:700;
+    --r-card:12px;--r-ctl:10px;
+    --row-bg:transparent;--row-border:0;--row-shadow:inset 0 -1px 0 var(--line);--row-radius:0;
+    --btn-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(0,0,0,.25);--btn-press:translateY(1px);
+    --deck-bg:var(--s2);--deck-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#0c0c0f;color:var(--ink);font-family:var(--body);font-size:var(--t3);line-height:1.5}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;box-shadow:0 0 0 4px var(--bg)}
+  .wrap{max-width:42rem;margin:0 auto;padding:var(--sp4) var(--sp4) var(--sp8)}
+  .switch{position:sticky;top:0;z-index:5;background:#0c0c0f;padding:var(--sp2) 0 var(--sp3);display:flex;gap:var(--sp2);align-items:center;flex-wrap:wrap}
+  .switch button{min-height:48px;min-width:48px;border:1px solid var(--line);background:#16161a;color:var(--ink);border-radius:12px;padding:var(--sp2) var(--sp3);font:600 var(--t2) var(--body);cursor:pointer}
+  .switch button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:transparent}
+  .switch .lab{font:500 var(--t1) var(--mono);color:var(--muted);margin-left:auto}
+  h1.page{font:700 var(--t4) var(--body);margin:var(--sp2) 0 0}
+  .sub{color:var(--muted);font-size:var(--t2);margin:var(--sp1) 0 var(--sp4)}
+
+  .phone{background:var(--bg);border:1px solid var(--line);border-radius:28px;max-width:375px;margin:0 auto;min-height:700px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+  .top{padding:var(--sp6) var(--sp4) var(--sp2);display:flex;align-items:baseline;justify-content:space-between}
+  .wm{font-family:var(--display);font-weight:var(--wm-weight);font-size:var(--t4);letter-spacing:-.01em}
+  .date{font:500 var(--t1) var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+  .sec{padding:var(--sp2) var(--sp4);display:flex;justify-content:space-between;align-items:baseline}
+  .sec h1{margin:0;font:700 var(--t4) var(--heading)}
+  .sec .cnt{font-family:var(--display);font-weight:var(--wm-weight);font-size:var(--t4);color:var(--accent);font-variant-numeric:tabular-nums}
+  .list{padding:0 var(--sp4) var(--sp2);display:flex;flex-direction:column;gap:var(--sp2)}
+  .row{display:flex;align-items:center;gap:var(--sp2);background:var(--row-bg);border:var(--row-border);border-radius:var(--row-radius);padding:var(--sp2) var(--sp3) var(--sp2) var(--sp2);min-height:64px;box-shadow:var(--row-shadow)}
+  html[data-dir="b"] .row.done{box-shadow:inset 3px 0 0 var(--accent),inset 0 -1px 0 var(--line);padding-left:var(--sp3)}
+  .chk{flex:none;width:48px;height:48px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;cursor:pointer;border-radius:var(--r-ctl);padding:0}
+  .chk span{width:26px;height:26px;border-radius:50%;border:2px solid var(--faint);display:flex;align-items:center;justify-content:center;color:var(--on-accent);transition:transform .15s}
+  .chk span svg{width:16px;height:16px;stroke:var(--on-accent);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+  .chk:active span{transform:scale(.92)}
+  .chk.done span{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 5px rgba(var(--accent-rgb),.14)}
+  .title{flex:1;font-size:var(--t3);font-weight:500}
+  .row.done .title{color:var(--muted);text-decoration:line-through}
+  .meta{font:500 var(--t1) var(--mono);color:var(--muted);white-space:nowrap;min-width:6ch;text-align:right;font-variant-numeric:tabular-nums}
+  .badge{font:600 var(--t1) var(--mono);border-radius:var(--r-chip);padding:var(--sp1) var(--sp2);white-space:nowrap;color:var(--late);border:1px solid rgba(var(--late-rgb),.75)}
+  .toast{margin:0 var(--sp4) var(--sp2);min-height:48px;display:flex;align-items:center;gap:var(--sp3);background:var(--s2);border:1px solid rgba(var(--second-rgb),.45);border-radius:var(--r-ctl);padding:var(--sp2) var(--sp4);font-size:var(--t2);box-shadow:0 0 16px rgba(var(--second-rgb),.3)}
+  .pulse{position:relative;flex:none;width:.6rem;height:.6rem;border-radius:50%;background:var(--second)}
+  .pulse::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid rgba(var(--second-rgb),.6);animation:ring 1.2s ease-out 3}
+  @keyframes ring{to{transform:scale(2);opacity:0}}
+  .toast .act{margin-left:auto;font:600 var(--t2) var(--body);color:var(--accent)}
+  @media(prefers-reduced-motion:reduce){.pulse::after{animation:none;display:none}.chk span{transition-duration:80ms}}
+  .spacer{flex:1}
+  .deck{background:var(--deck-bg);border-top:1px solid var(--line);padding:var(--sp3) var(--sp4) var(--sp4);box-shadow:var(--deck-shadow)}
+  .deck .eyebrow{font:600 var(--t1) var(--mono);color:var(--muted);margin:0 0 var(--sp2)}
+  .field{display:flex;align-items:center;min-height:56px;border:1px solid var(--line-strong);background:var(--s1);border-radius:var(--r-ctl);padding:0 var(--sp1) 0 var(--sp4);box-shadow:var(--field-shadow)}
+  html[data-dir="a"] .field{background:var(--s1)}
+  .field .ph{flex:1;font:400 var(--t3) var(--body);color:var(--muted)}
+  .field .go{flex:none;width:48px;height:48px;border:none;border-radius:calc(var(--r-ctl) - 2px);background:var(--accent);color:var(--on-accent);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--btn-shadow)}
+  .field .go:active{transform:var(--btn-press);box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+  .field .go svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+  nav.bar{display:flex;justify-content:space-around;padding:var(--sp1) 0 var(--sp2);background:var(--s1);border-top:1px solid var(--line)}
+  nav.bar button{font:500 var(--t1) var(--body);color:var(--faint);display:flex;flex-direction:column;align-items:center;gap:var(--sp1);min-width:64px;min-height:48px;justify-content:center;background:transparent;border:none;cursor:pointer;padding:0 var(--sp2);border-radius:var(--r-ctl)}
+  nav.bar button[aria-current="page"]{color:var(--accent);font-weight:600;box-shadow:inset 0 -2px 0 var(--accent)}
+  svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+  .strip{margin-top:var(--sp6);background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:var(--sp4)}
+  .strip h2{margin:0 0 var(--sp3);font:600 var(--t1) var(--mono);color:var(--muted);letter-spacing:.06em}
+  .sw{display:flex;border-radius:10px;overflow:hidden;border:1px solid var(--line);margin-bottom:var(--sp4)}
+  .sw div{flex:1;height:52px;font:400 .62rem var(--mono);display:flex;align-items:flex-end;justify-content:center;padding-bottom:var(--sp1)}
+  .rungs p{margin:0;line-height:1.35}
+  .rungs .l{font:400 .62rem var(--mono);color:var(--faint);margin-left:var(--sp2)}
+  .ctls{display:flex;gap:var(--sp2);flex-wrap:wrap;align-items:center;margin:var(--sp3) 0}
+  .btn{min-height:48px;border:none;border-radius:var(--r-ctl);padding:0 var(--sp4);font:600 var(--t2) var(--body);cursor:pointer}
+  .btn.pri{background:var(--accent);color:var(--on-accent);box-shadow:var(--btn-shadow)}
+  .btn.pri:active{transform:var(--btn-press);box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+  .btn.sec{background:var(--s2);color:var(--ink);border:1px solid var(--line);box-shadow:var(--btn-shadow)}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn[disabled]{opacity:.55;cursor:default}
+  .btn.focus{outline:2px solid var(--accent);outline-offset:2px;box-shadow:0 0 0 4px var(--bg)}
+  .chip{min-height:48px;display:inline-flex;align-items:center;gap:var(--sp1);border:1px solid var(--line);border-radius:var(--r-chip);padding:0 var(--sp3);font:500 var(--t2) var(--body);background:var(--s2);color:var(--ink);cursor:pointer}
+  .chip[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:transparent;font-weight:600}
+  .chip svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+  .spbar{display:flex;gap:var(--sp2);align-items:flex-end}
+  .spbar div{background:rgba(var(--accent-rgb),.35);border:1px solid var(--accent)}
+  .spbar span{font:400 .62rem var(--mono);color:var(--faint)}
+  .rad{display:flex;gap:var(--sp2);align-items:center}
+  .rad div{width:44px;height:36px;background:var(--s2);border:1px solid var(--line);border-radius:var(--r-card)}
+  .rad div.c{border-radius:var(--r-ctl)} .rad div.p{border-radius:var(--r-chip)}
+  .cap{font-size:var(--t1);color:var(--muted);margin:var(--sp1) 0 0}
+  .sig{margin-top:var(--sp3)}
+  .sig .row{max-width:340px}
+  html[data-dir="a"] .sig .chk span{transform:translateY(2px) scale(.94);box-shadow:0 0 0 8px rgba(var(--accent-rgb),.2)}
+  html[data-dir="b"] .sig .row{box-shadow:inset 3px 0 0 var(--accent),inset 0 -1px 0 var(--line);padding-left:var(--sp3)}
+  html[data-dir="c"] .sig .row{background:var(--s2)}
+  .dirblock{display:none}
+  html[data-dir="a"] .dir-a,html[data-dir="b"] .dir-b,html[data-dir="c"] .dir-c{display:block}
+
+  .why{margin-top:var(--sp4);background:#121216;border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:var(--sp4)}
+  .why h2{margin:0 0 var(--sp2);font:700 var(--t4) var(--heading)}
+  .why ol{margin:var(--sp1) 0 0 var(--sp4);padding:0;font-size:var(--t2)}
+  .why li{margin:var(--sp1) 0}
+  .why .swap{margin-top:var(--sp3);padding-top:var(--sp2);border-top:1px solid rgba(255,255,255,.07);font-size:var(--t2);color:var(--muted)}
+  .howto{margin-top:var(--sp6);font-size:var(--t2);color:var(--muted);border-left:3px solid var(--accent);padding:var(--sp2) var(--sp4)}
+</style>
+<div class="wrap" lang="pt-BR">
+  <div class="switch" role="group" aria-label="Direção">
+    <button type="button" data-d="a" aria-pressed="true">A · Arcade</button>
+    <button type="button" data-d="b" aria-pressed="false">B · Oficina</button>
+    <button type="button" data-d="c" aria-pressed="false">C · Grafite</button>
+    <span class="lab">etapa 2.6 · 20/08/2026</span>
+  </div>
+  <h1 class="page">Direções Praesto</h1>
+  <p class="sub">A mesma tela — captura + lista de hoje — em três tratamentos: extrudado, pautado e em camadas. Troque acima; olhe no celular de dia e à noite, e no PC.</p>
+
+  <section class="phone" aria-label="Tela de hoje">
+    <div class="top"><span class="wm">praesto</span><span class="date">qua., 20/08</span></div>
+    <div class="sec"><h1>Hoje</h1><span class="cnt">1/4</span></div>
+    <div class="list">
+      <div class="row"><button class="chk" type="button" aria-label="Concluir Pagar aluguel"><span></span></button><span class="title">Pagar aluguel</span><span class="badge">atrasada · 2&nbsp;d</span></div>
+      <div class="row"><button class="chk" type="button" aria-label="Concluir Revisar o PR do Guilherme"><span></span></button><span class="title">Revisar o PR do Guilherme</span><span class="meta">até 18:00</span></div>
+      <div class="row done"><button class="chk done" type="button" aria-label="Reabrir Ligar para o dentista"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-9"/></svg></span></button><span class="title">Ligar para o dentista</span><span class="meta">14:05</span></div>
+      <div class="row"><button class="chk" type="button" aria-label="Concluir Comprar ração"><span></span></button><span class="title">Comprar ração</span><span class="meta">sem data</span></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="toast" role="status"><span class="pulse"></span><span>Lembrete agora · Beber água</span><span class="act">Concluir</span></div>
+    <div class="deck">
+      <p class="eyebrow">Nova tarefa</p>
+      <div class="field"><span class="ph">O que precisa ser feito?</span><button class="go" type="button" aria-label="Adicionar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
+    </div>
+    <nav class="bar" aria-label="Navegação">
+      <button type="button" aria-current="page"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12l9-8 9 8v8a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Hoje</button>
+      <button type="button"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Pesquisar</button>
+      <button type="button"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14 3h-4l-.6 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12a7 7 0 0 0 .1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L10 21h4l.6-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.07-.4.1-.8.1-1.2z"/></svg>Configurações</button>
+    </nav>
+  </section>
+
+  <section class="strip">
+    <h2>amostra de estilo</h2>
+    <div class="sw" id="ladder"></div>
+    <div class="rungs">
+      <p style="font:800 var(--t5) var(--display)">praesto<span class="l">t5 · 28 px · marca e contagens</span></p>
+      <p style="font:700 var(--t4) var(--heading)">Hoje<span class="l">t4 · 20 px · títulos</span></p>
+      <p style="font:500 var(--t3) var(--body)">Revisar o PR do Guilherme<span class="l">t3 · 16 px · tarefas</span></p>
+      <p style="font:400 var(--t2) var(--body)">Você não concluiu <em>Pagar aluguel</em> em 2 de 5 semanas.<span class="l">t2 · 14 px · corpo</span></p>
+      <p style="font:500 var(--t1) var(--mono)">qua., 20/08 · 14:05 · 3/5<span class="l">t1 · 12 px · dados</span></p>
+    </div>
+    <div class="ctls">
+      <button class="btn pri" type="button">Salvar</button>
+      <button class="btn sec" type="button">Cancelar</button>
+      <button class="btn ghost" type="button">Desfazer</button>
+      <button class="btn pri" type="button" disabled>Salvar</button>
+      <button class="btn sec focus" type="button">Foco</button>
+    </div>
+    <div class="ctls">
+      <button class="chip" type="button" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-9"/></svg>Hoje</button>
+      <button class="chip" type="button" aria-pressed="false">Atrasadas</button>
+      <button class="chip" type="button" aria-pressed="false">Sem data</button>
+    </div>
+    <div class="ctls">
+      <span class="spbar"><div style="width:4px;height:24px"></div><div style="width:8px;height:24px"></div><div style="width:16px;height:24px"></div><div style="width:24px;height:24px"></div><span>4 · 8 · 16 · 24</span></span>
+      <span class="rad"><div></div><div class="c"></div><div class="p"></div><span class="cap" id="radcap"></span></span>
+      <span style="display:inline-flex;gap:var(--sp2)"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-9"/></svg><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 1 6 6v3l2 3H4l2-3V9a6 6 0 0 1 6-6zM10 20a2 2 0 0 0 4 0"/></svg><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 11h16"/></svg></span>
+    </div>
+    <div class="sig">
+      <div class="row done"><button class="chk done" type="button" aria-label="Exemplo de conclusão"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-9"/></svg></span></button><span class="title">Ligar para o dentista</span><span class="meta" id="sigmeta">14:05</span></div>
+      <p class="cap dir-a dirblock">Momento de concluir em A: o check afunda 2 px e dispara um anel âmbar único (~400 ms), depois assenta.</p>
+      <p class="cap dir-b dirblock">Momento de concluir em B: uma linha dourada “cai no prumo” pela borda da linha (~300 ms) e fica como marca do feito.</p>
+      <p class="cap dir-c dirblock">Momento de concluir em C: a linha ganha a superfície s2 e a contagem vira 1/4 → 2/4 (~250 ms). Só isso — de propósito.</p>
+    </div>
+  </section>
+
+  <section class="why dir-a dirblock">
+    <h2>A · Arcade — extrudado</h2>
+    <ol>
+      <li>Relevo com física: botão com face inferior de 3 px que afunda 3 px ao toque; o deck de captura é o único plano elevado da tela.</li>
+      <li>Grafite <strong>castanho</strong> de verdade (#161012 → #352a25): o escuro que não vira cofre.</li>
+      <li>Âmbar primário; <strong>laranja-quente</strong> (#ff5c1f) só no que está vivo — e no atraso, para a paleta ter uma temperatura só.</li>
+      <li>Unbounded apenas em ≥ 20 px (marca e contagem); títulos em Inter 600; dados em mono.</li>
+      <li>Raios 18/14: o lúdico sem virar balão. Elevação no escuro = superfície mais clara, não sombra preta.</li>
+      <li>Relevo em 3 dos 14 tokens (botão, deck, campo) — e em zero textos.</li>
+    </ol>
+    <div class="swap">Teste de troca: o vizinho real é uma landing Web3 (a Unbounded é a fonte da Polkadot) cruzada com botões à la Duolingo. O que quebra a semelhança: a coluna de dados em mono, o prumo e só <em>um</em> objeto extrudado por tela.</div>
+  </section>
+  <section class="why dir-b dirblock">
+    <h2>B · Oficina — pautado</h2>
+    <ol>
+      <li>Sem caixas: linhas separadas por fios de 1 px sobre o fundo, como papel pautado de oficina.</li>
+      <li>A <strong>régua de prumo</strong>: 3 px dourados na borda esquerda da tarefa concluída — a marca vira gesto.</li>
+      <li>Dourado-prumo (#d9a642) e <strong>nada mais</strong>: o atraso é a única exceção, em texto.</li>
+      <li>Space Grotesk em marca, títulos e contagem; dados em mono, tabulares, alinhados à direita.</li>
+      <li>Relevo só onde se toca: fio de luz no topo dos botões e no deck; zero sombras em superfícies.</li>
+      <li>Raios 12/10: firme, sem rigidez.</li>
+    </ol>
+    <div class="swap">Teste de troca: o vizinho real é o “premium dourado” de apps de disciplina (o NOVA dos seus prints). O que quebra a semelhança: pauta em vez de cartões, nenhum nível/XP, e a copy que pisca o olho.</div>
+  </section>
+  <section class="why dir-c dirblock">
+    <h2>C · Grafite — em camadas</h2>
+    <ol>
+      <li>Profundidade só por camadas + fio; zero box-shadow em superfícies (a direção-controle).</li>
+      <li>Âmbar em três lugares — botão, check, contagem — e mais nenhum.</li>
+      <li>Space Grotesk + Inter; raios 10/8: o mais próximo de uma ferramenta de desenvolvedor.</li>
+      <li>Toda a vida vem do momento de concluir e da copy — “energia nos momentos” no limite.</li>
+      <li>O mais barato de manter: 11 tokens, sem relevo.</li>
+      <li>Risco declarado: flerta com “sério”. Se parecer cofre, o relevo de A/B é necessidade, não enfeite.</li>
+    </ol>
+    <div class="swap">Teste de troca: o vizinho real é o starter Tailwind (zinc-950/900 + amber-400). O que quebra a semelhança: pouca coisa — o momento de concluir e a copy. É o preço de ser o controle.</div>
+  </section>
+
+  <div class="howto">Como avaliar (etapa 2.7): abra cada direção no celular à luz do dia e à noite, depois no PC. Pergunte: parece <em>moderno · ágil · nerd</em>? Quer ser <em>minimalista · gamer · enérgico</em>? Viola <em>sombrio · sério · corporativo</em>? Responda no chat com a vencedora e o que levar das outras (ex.: “B, mas com o botão de A”). Notas: layout ilustrativo — navegação e posição da captura são da A3; as fontes vêm do Google Fonts só nesta prova — o app terá uma família variável própria (+ mono do sistema), decidida no ADR.</div>
+</div>
+<script>
+(function(){
+  var L={a:["#161012","#1f1816","#2a211e","#352a25","#f5a524","#ff5c1f"],b:["#101014","#18181c","#202024","#28282c","#d9a642","#d9a642"],c:["#101014","#18181c","#202024","#28282c","#f5a524","#f5a524"]};
+  var R={a:"18 · 14 · pílula",b:"12 · 10 · pílula",c:"10 · 8 · pílula"};
+  var root=document.documentElement,lad=document.getElementById("ladder"),cap=document.getElementById("radcap");
+  function set(d){
+    root.setAttribute("data-dir",d);
+    document.querySelectorAll(".switch button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.d===d));});
+    lad.innerHTML=L[d].map(function(c,i){return '<div style="background:'+c+';color:'+(i>3?'#16120a':'#a0a0a8')+'">'+c+'</div>';}).join("");
+    cap.textContent=R[d];
+    try{localStorage.setItem("praesto-dir",d);}catch(e){}
+  }
+  document.querySelectorAll(".switch button").forEach(function(b){b.addEventListener("click",function(){set(b.dataset.d);});});
+  var s=null;try{s=localStorage.getItem("praesto-dir");}catch(e){}
+  set(s||"a");
+})();
+</script>

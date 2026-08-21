@@ -44,7 +44,7 @@ Decision Q10 (owner, 2026-08-18): **keep the plumb-bob concept, evolve the execu
 
 ## Palette, typography, iconography, motion — tokens (steps 2.5–2.8)
 
-TBD — see the pending decisions queue in [60-decisions/index.md](../60-decisions/index.md) (decision 5): moodboard → three rendered directions (hot / medium / mild) → owner's on-device choice (ADR) → `src/app/tokens.css` v1. Candidate directions from the [plan's scouting](../50-planning/ui-ux-plan.md#preliminary-scouting-2026-08-18), to be re-weighted by the attributes above (tension 1 favours the lively-dark family).
+TBD — see the pending decisions queue in [60-decisions/index.md](../60-decisions/index.md) (decision 5): moodboard → three rendered directions (hot / medium / mild) → owner's on-device choice (ADR) → `src/app/tokens.css` v1. **Narrowed by the moodboard veto (2026-08-20, `PRPs/reports/visual-identity/03-moodboard-veto.md`):** accent is warm — âmbar `#f5a524` or dourado-prumo `#d9a642` as primary, laranja `#ff7a1a` at most secondary, blurple cut; display type Space Grotesk › Unbounded, body Inter; **tactile / simulated-3D depth is an identity trait** (the owner's explicit wish), dosed per direction under two conditions — it serves hierarchy or affordance, and it never lowers measured contrast.
 
 ## Voice and tone (step 2.8)
 
@@ -58,5 +58,7 @@ TBD — after A5 ships: a week of cold opens on the phone against the three É w
 
 | Date | What changed |
 |---|---|
+| 2026-08-20 | Three rendered directions (A Arcade extruded · B Oficina ruled · C Grafite layered) critiqued, revised, measured and published for the owner's choice (`PRPs/reports/visual-identity/04-directions.md`) |
+| 2026-08-20 | Moodboard veto recorded: warm primaries (âmbar / dourado-prumo), laranja secondary at most, blurple cut; type ranked Space Grotesk › Unbounded › Inter › Geist; tactile/3D depth adopted as a trait |
 | 2026-08-20 | References received and digested (warm-accent signal named); design principles approved and recorded in the guidelines; moodboard (step 2.5) published for the owner's veto pass |
 | 2026-08-20 | Document opened (draft) with name, brief (minus references) and the owner's attribute sheet; everything else explicitly TBD, owned by A2 steps |
