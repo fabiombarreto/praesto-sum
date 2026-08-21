@@ -109,6 +109,15 @@ Atualizado pelo Docs Updater após cada aprovação de implementação.
 
 ---
 
+## [2026-08-21] UI library: shadcn-style owned components over Base UI + Tailwind v4
+
+**Context:** UI/UX plan A4 — weighted matrix over the verified scouting (shadcn 65/70, Mantine 50, Chakra 50, HeroUI 41) and two spikes rendering the layout standard's Today screen in the Arcade tokens, measured in production builds (shadcn: JS 102.7 KB / CSS 5.5 KB gzip; Mantine: 107.0 / 11.3 per-component, 35.3 global) and judged by the owner on the phone.
+**Decision:** Components we own under `src/app/components/ui/` (cva + cn, Base UI data attributes), exact pins: `@base-ui/react 1.7.0`, `class-variance-authority 0.7.1`, `clsx 2.1.1`, `tailwind-merge 3.6.0`, `lucide-react 1.33.0`; dev `tailwindcss 4.3.3`, `@tailwindcss/vite 4.3.3`. `src/app/styles.css` maps `tokens.css` into Tailwind with `@theme inline reference` — Tailwind emits no variables of its own. `shadcn init` is never run; `shadcn add` output is adapted to the tokens. Native `<dialog>` stays first for sheets unless Base UI Dialog is verified to honour Android close requests. No PostCSS/ESLint/Prettier plugins.
+**Reason:** No house look to bend, smallest measured footprint, largest community, pin discipline natural (components never auto-update), Base UI a11y underneath; Mantine taxed every identity rule with overrides.
+**Areas affected:** all UI · Source: `documentation/60-decisions/ADR-0011-ui-library-shadcn-style-base-ui-tailwind.md`
+
+---
+
 <!-- Template for future entries:
 
 ## [YYYY-MM-DD] Title of the decision

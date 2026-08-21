@@ -1,4 +1,5 @@
 import { cloudflare } from "@cloudflare/vite-plugin";
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
@@ -9,6 +10,8 @@ export default defineConfig({
   server: { host: "127.0.0.1" },
   plugins: [
     react(),
+    // Tailwind v4 reads src/app/styles.css (ADR-0011); tokens.css stays the source of values.
+    tailwindcss(),
     // Reads wrangler.jsonc automatically; `main` is the Worker entry. The Worker
     // runs inside real workerd during `vite dev`, in the same process as the SPA.
     cloudflare(),

@@ -1,0 +1,68 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+/*
+ * Tailwind reads Praesto's tokens — never the other way round. `inline reference`
+ * makes utilities emit `var(--token)` directly and emits no variables of its own,
+ * so tokens.css stays the single source (guidelines §3.5, ADR-0010).
+ */
+@theme inline reference {
+  --color-bg: var(--color-bg);
+  --color-surface-1: var(--color-surface-1);
+  --color-surface-2: var(--color-surface-2);
+  --color-surface-3: var(--color-surface-3);
+  --color-line: var(--color-line);
+  --color-line-strong: var(--color-line-strong);
+  --color-ink: var(--color-ink);
+  --color-muted: var(--color-muted);
+  --color-faint: var(--color-faint);
+  --color-accent: var(--color-accent);
+  --color-accent-deep: var(--color-accent-deep);
+  --color-on-accent: var(--color-on-accent);
+  --color-live: var(--color-live);
+  --color-overdue: var(--color-overdue);
+
+  --radius-card: var(--radius-card);
+  --radius-control: var(--radius-control);
+  --radius-pill: var(--radius-pill);
+
+  --shadow-row: var(--elevation-row);
+  --shadow-deck: var(--elevation-deck);
+  --shadow-control: var(--elevation-control);
+  --shadow-control-pressed: var(--elevation-control-pressed);
+  --shadow-field: var(--inset-field);
+  --shadow-glow-live: var(--glow-live);
+  --shadow-halo-done: var(--halo-done);
+  --shadow-focus: var(--focus-ring);
+
+  --font-text: var(--font-text);
+  --font-display: var(--font-display);
+  --font-data: var(--font-data);
+
+  --text-t1: var(--text-1);
+  --text-t2: var(--text-2);
+  --text-t3: var(--text-3);
+  --text-t4: var(--text-4);
+  --text-t5: var(--text-5);
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    overscroll-behavior-y: contain;
+  }
+  body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-text);
+    font-size: var(--text-3);
+    line-height: var(--leading);
+    overscroll-behavior-y: contain;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px var(--color-bg);
+  }
+}

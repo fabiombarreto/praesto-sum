@@ -14,6 +14,7 @@
 - Formatting: Prettier, default config. Linting: minimal ESLint flat config (typescript-eslint recommended only).
 - Entity types originate in `src/worker/db/schema.ts` (Drizzle) and flow through `src/shared/` — never hand-duplicated.
 - Domain logic (recurrence, dates, invariants) lives in pure functions in `src/shared/`, unit-tested.
+- UI code: components under `src/app/components/ui/` (PascalCase, one per file), Tailwind classes over `src/app/tokens.css` only (no raw literals, no second scale), `cva` variants + `cn()`, Base UI data attributes; pt-BR string literals in components (ADR-0009). Run the UI/UX guidelines checklist on every interface change (docs/context/ui-guidelines.md).
 
 ## Dependencies
 

@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-20
+last_updated: 2026-08-21
 review_trigger: "any document is created, renamed, merged or changes status"
 ---
 
@@ -11,7 +11,7 @@ review_trigger: "any document is created, renamed, merged or changes status"
 
 ## What is this project
 
-A personal assistant built by its single user — the owner — to organize personal life: calendar and tasks (to-dos) first, other life areas later. The project is documentation-first: everything is defined here before implementation starts. Phase 0 closed on 2026-08-03 with the full document set validated and decisions 1–3 resolved as ADRs; Phase 1 (MVP Tasks) is now in progress. All four foundational decisions are resolved. **Since 2026-08-18 the delivery units are on hold** while the [UI/UX plan](50-planning/ui-ux-plan.md) gives the app its visual foundation — guidelines, layout standard, visual identity and UI library — and that plan opened decisions 5–7 in the [decisions index](60-decisions/index.md) — 7 (ADR-0009) and 5 (ADR-0010) are already resolved.
+A personal assistant built by its single user — the owner — to organize personal life: calendar and tasks (to-dos) first, other life areas later. The project is documentation-first: everything is defined here before implementation starts. Phase 0 closed on 2026-08-03 with the full document set validated and decisions 1–3 resolved as ADRs; Phase 1 (MVP Tasks) is now in progress. All four foundational decisions are resolved. **Since 2026-08-18 the delivery units are on hold** while the [UI/UX plan](50-planning/ui-ux-plan.md) gives the app its visual foundation — guidelines, layout standard, visual identity and UI library — and that plan opened decisions 5–7 in the [decisions index](60-decisions/index.md) — all three are resolved (ADR-0009, ADR-0010, ADR-0011).
 
 > **Praesto Sum** — Latin for "I am ready, at your service" ([ADR-0002](60-decisions/ADR-0002-name-the-project-praesto-sum.md)). Short form for the future repository and CLI: **praesto**.
 
@@ -76,15 +76,15 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 20-requirements/constraints.md | active | 2026-08-04 |
 | 30-architecture/architecture-overview.md | draft | 2026-08-15 |
 | 30-architecture/domain-model.md | draft | 2026-08-15 |
-| 40-engineering/tech-stack.md | active | 2026-08-03 |
-| 40-engineering/engineering-conventions.md | active | 2026-08-03 |
+| 40-engineering/tech-stack.md | active | 2026-08-21 |
+| 40-engineering/engineering-conventions.md | active | 2026-08-21 |
 | 40-engineering/dev-environment.md | active | 2026-08-15 |
 | 40-engineering/testing-strategy.md | active | 2026-08-12 |
-| 40-engineering/ui-ux-guidelines.md | active | 2026-08-20 |
+| 40-engineering/ui-ux-guidelines.md | active | 2026-08-21 |
 | 40-engineering/ui-layout-standard.md | active | 2026-08-20 |
-| 50-planning/roadmap.md | active | 2026-08-20 |
-| 50-planning/ui-ux-plan.md | active | 2026-08-20 |
-| 60-decisions/index.md | active | 2026-08-20 |
+| 50-planning/roadmap.md | active | 2026-08-21 |
+| 50-planning/ui-ux-plan.md | active | 2026-08-21 |
+| 60-decisions/index.md | active | 2026-08-21 |
 | 60-decisions/ADR-0001-write-all-artifacts-in-english.md | accepted | 2026-08-02 |
 | 60-decisions/ADR-0002-name-the-project-praesto-sum.md | accepted | 2026-08-03 |
 | 60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md | accepted | 2026-08-03 |
@@ -95,6 +95,7 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 60-decisions/ADR-0008-adopt-test-first-methodology.md | accepted | 2026-08-04 |
 | 60-decisions/ADR-0009-ui-copy-in-brazilian-portuguese.md | accepted | 2026-08-18 |
 | 60-decisions/ADR-0010-visual-identity-direction-arcade.md | accepted | 2026-08-20 |
+| 60-decisions/ADR-0011-ui-library-shadcn-style-base-ui-tailwind.md | accepted | 2026-08-21 |
 
 ## How AI assistants should use this folder
 

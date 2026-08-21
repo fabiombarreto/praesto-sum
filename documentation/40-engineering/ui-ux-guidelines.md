@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-20
+last_updated: 2026-08-21
 review_trigger: "a rule proves useless or wrong in practice (UI/UX plan A6 retro), a UI/UX-plan decision changes what a rule depends on, or a platform behaviour a rule cites changes"
 ---
 
@@ -134,7 +134,7 @@ Self-imposed, at or under the web's 10th percentile; React 19.2 + ReactDOM alone
 
 ## 12. Components and code
 
-1. **Use the standard library's component first** — TBD — see the pending decisions queue in [60-decisions/index.md](../60-decisions/index.md) (decision 6, plan A4); a bespoke component needs a one-line reason in the PR. Components live under `src/app/components/`, one per file, `PascalCase`.
+1. **Use the owned component library first** — shadcn-style components over Base UI + Tailwind v4 ([ADR-0011](../60-decisions/ADR-0011-ui-library-shadcn-style-base-ui-tailwind.md)) under `src/app/components/ui/`, one per file, `PascalCase`, `cva` variants, `cn()` composition; a new primitive is copied from the shadcn registry or written in its style and adapted to the tokens before commit; a bespoke component needs a one-line reason in the PR.
 2. **Tokens only** per §3.5; inline `style` objects are retired in A5 and **never** reintroduced.
 3. **Strings:** pt-BR literals written in the component — **no i18n library, no key indirection**; only strings that business logic produces or tests assert on (request-failure messages, date phrases, plural forms) live in `src/shared/*` and are tested in Portuguese (ADR-0009).
 4. **Lists of Tasks:** rows ≥ 48 px, the whole row opens the detail, the complete control is a real checkbox/button with its own 48 px target; titles wrap to 2 lines then ellipsis; swipe actions only as shortcuts to visible controls; a completed row animates out within the §7 scale and can be undone (§8); `content-visibility: auto` + `contain-intrinsic-size` first, windowing only for the "all Tasks" view; lists refetch on `visibilitychange` → visible and on reconnect (the roadmap's "refresh on foreground" idea) — there is no manual refresh gesture; SPA navigation restores scroll itself (`history.scrollRestoration = 'manual'`).

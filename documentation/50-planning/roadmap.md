@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-20
+last_updated: 2026-08-21
 review_trigger: "a unit changes state, a unit is reordered/deferred/dropped, a chore is executed, a phase opens or closes, a backlog idea is triaged, or the UI/UX track opens or closes"
 ---
 
@@ -161,6 +161,7 @@ Newest first. One row per meaningful delivery, reordering or state change, added
 
 | Date | Delivered |
 |---|---|
+| 2026-08-21 | **UI/UX plan activity A4 done — the UI library is decided and installed.** [ADR-0011](../60-decisions/ADR-0011-ui-library-shadcn-style-base-ui-tailwind.md): owned shadcn-style components over Base UI 1.7 + Tailwind v4, chosen by the owner from two measured spikes; pins on `main`, pipeline in `npm run check`, first components under `src/app/components/ui/`. The pending-decisions queue is empty. Units remain on hold; A5 (design pass) is next and is the last activity before unit 3 reopens. Details in the [plan's History](ui-ux-plan.md#history) |
 | 2026-08-20 | **UI/UX plan activity A3 done — the layout standard exists.** [ui-layout-standard.md](../40-engineering/ui-layout-standard.md) `active`: single screen + sheets (owner's choice from sketches), Today anatomy that already places units 3–13, native `<dialog>` sheets, the Android keyboard decision, desktop list-detail. Units remain on hold; A4 (UI library, decision 6) is next. Details in the [plan's History](ui-ux-plan.md#history) |
 | 2026-08-20 | **UI/UX plan activity A2 done — Praesto has a visual identity.** Direction A "Arcade" chosen by the owner from three rendered directions and accepted as [ADR-0010](../60-decisions/ADR-0010-visual-identity-direction-arcade.md) (decision 5 closed; only decision 6, the UI library, stays open); [visual-identity.md](../10-product/visual-identity.md) `active`; `src/app/tokens.css` written (applied in A5). Units remain on hold; A3 (layout standard) is next. Details in the [plan's History](ui-ux-plan.md#history) |
 | 2026-08-19 | **UI/UX plan activity A1 done — the UI/UX guidelines exist and are mandatory.** [`40-engineering/ui-ux-guidelines.md`](../40-engineering/ui-ux-guidelines.md) is `active` and linked from `CLAUDE.md`; every interface change now runs its checklist. Units remain on hold; A2 (visual identity) is next. Details in the [plan's History](ui-ux-plan.md#history) |

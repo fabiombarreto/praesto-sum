@@ -12,7 +12,7 @@ Tier 2 index: one entry per doc, 1-2 lines each. Details live in the target file
 
 **Decision Gate** — mandatory gate before planning, coding or reviewing; consultation sources and evidence block format. → docs/decision-gate.md
 
-**Decisions** — relay-facing index of the settled decisions (ADR-0001..0005 + MVP freeze); never re-evaluate. → docs/decisions.md
+**Decisions** — relay-facing index of the settled decisions (ADR-0001..0011 + MVP freeze; includes the identity ADR-0010 and the UI library ADR-0011); never re-evaluate. → docs/decisions.md
 
 **Anti-patterns** — forbidden by decision: offline queues, live-DB sync, SSR/meta-frameworks, version ranges, synonym drift, test-weakening. → docs/anti-patterns.md
 
