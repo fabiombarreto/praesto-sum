@@ -40,11 +40,26 @@ Approved by the owner on 2026-08-20 and recorded at the top of the [UI/UX guidel
 
 ## Mark (step 2.8)
 
-Decision Q10 (owner, 2026-08-18): **keep the plumb-bob concept, evolve the execution** — recolour to the tokens, respect the maskable safe zone, add the wordmark ladder and a monochrome variant; no new symbol. Execution: TBD — see the pending decisions queue in [60-decisions/index.md](../60-decisions/index.md) (decision 5).
+Decision Q10 (owner, 2026-08-18) and [ADR-0010](../60-decisions/ADR-0010-visual-identity-direction-arcade.md): **the plumb-bob stays** — brass gradient kept on the icon, a flat amber variant for monochrome/badge uses, maskable safe zone respected; wordmark `praesto` in Unbounded 800 lowercase, shipped as SVG; responsive ladder full lockup → wordmark → mark → favicon. Files: TBD — produced in step 2.8.
 
-## Palette, typography, iconography, motion — tokens (steps 2.5–2.8)
+## Palette, typography, depth, shape, motion — the decided system (ADR-0010, 2026-08-20)
 
-TBD — see the pending decisions queue in [60-decisions/index.md](../60-decisions/index.md) (decision 5): moodboard → three rendered directions (hot / medium / mild) → owner's on-device choice (ADR) → `src/app/tokens.css` v1. **Narrowed by the moodboard veto (2026-08-20, `PRPs/reports/visual-identity/03-moodboard-veto.md`):** accent is warm — âmbar `#f5a524` or dourado-prumo `#d9a642` as primary, laranja `#ff7a1a` at most secondary, blurple cut; display type Space Grotesk › Unbounded, body Inter; **tactile / simulated-3D depth is an identity trait** (the owner's explicit wish), dosed per direction under two conditions — it serves hierarchy or affordance, and it never lowers measured contrast.
+**Direction A — Arcade**, chosen by the owner from three rendered directions (`PRPs/reports/visual-identity/04-directions.md`). Machine truth lands in `src/app/tokens.css` (step 2.8); this is the human summary:
+
+| Role | Value |
+|---|---|
+| Surfaces | `bg #161012` · `s1 #1f1816` · `s2 #2a211e` · `s3 #352a25` — warm brown-black, never pure black |
+| Lines | hairline `rgba(255,255,255,.09)` · strong (input boundary) `rgba(255,255,255,.35)` |
+| Text | `ink #f2f2f4` · `muted #a0a0a8` · `faint #86868f` |
+| Accent | `âmbar #f5a524` · lower face `#b8751a` · on-accent `#1a1206` |
+| Live / overdue | `#ff5c1f` — only for a Reminder firing and for overdue; no cool accent exists |
+| Depth | elevation = lighter surface + 1 px top highlight; one elevated plane per screen (the capture deck); primary controls: 3 px lower face, sink 3 px on press; relief never on text or static panels; gradients only on the mark |
+| Shape | radius 18 (cards) · 14 (controls) · pill (chips); 48 px hit areas; 64 px rows; 56 px capture field |
+| Type | Inter variable (body, headings 600, tabular numerals); Unbounded 800 for the wordmark and ≥ 20 px display moments; data in a system mono stack |
+| Scale | spacing 4 · 8 · 12 · 16 · 24 · 32 px; type 12 · 14 · 16 · 20 · 28 px |
+| Motion | guidelines bands; signature completion: check sinks 2 px + one amber ring (~400 ms); a firing Reminder pulses 3× then rests on a static glow; reduced motion shortens, never removes |
+
+Light-theme values: TBD — pending owner input (plan Q1: tokens are declared as pairs; the light side is filled when real use asks for it).
 
 ## Voice and tone (step 2.8)
 
@@ -58,6 +73,7 @@ TBD — after A5 ships: a week of cold opens on the phone against the three É w
 
 | Date | What changed |
 |---|---|
+| 2026-08-20 | **Direction A "Arcade" chosen by the owner → [ADR-0010](../60-decisions/ADR-0010-visual-identity-direction-arcade.md) accepted, decision 5 closed**; the decided system recorded above; mark decision settled |
 | 2026-08-20 | Three rendered directions (A Arcade extruded · B Oficina ruled · C Grafite layered) critiqued, revised, measured and published for the owner's choice (`PRPs/reports/visual-identity/04-directions.md`) |
 | 2026-08-20 | Moodboard veto recorded: warm primaries (âmbar / dourado-prumo), laranja secondary at most, blurple cut; type ranked Space Grotesk › Unbounded › Inter › Geist; tactile/3D depth adopted as a trait |
 | 2026-08-20 | References received and digested (warm-accent signal named); design principles approved and recorded in the guidelines; moodboard (step 2.5) published for the owner's veto pass |

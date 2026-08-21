@@ -100,6 +100,15 @@ Atualizado pelo Docs Updater após cada aprovação de implementação.
 
 ---
 
+## [2026-08-20] Visual identity: direction A "Arcade"
+
+**Context:** UI/UX plan activity A2 — audit + nine owner references (warm accents on dark), attribute session (É moderno/ágil/nerd · quer ser minimalista/gamer/enérgico · não é sombrio/sério/corporativo), five design principles, moodboard veto (warm primaries, blurple cut, tactile/3D depth adopted), three directions rendered on the real screen, critiqued and measured; owner chose A.
+**Decision:** Warm brown-black ladder `#161012/#1f1816/#2a211e/#352a25`; accent âmbar `#f5a524` (face `#b8751a`, on-accent `#1a1206`), `#ff5c1f` only for live + overdue; depth = lighter surface + top highlight, ONE elevated plane per screen (capture deck), primary controls with a 3 px lower face that sinks 3 px on press, relief never on text or static panels, gradients only on the mark; radius 18/14/pill; Inter variable (one shipped file) + Unbounded 800 wordmark as SVG (count in Unbounded only if a measured subset fits ≤ 100 KB total); 4 px spacing, type rungs 12/14/16/20/28; signature completion = check sinks + single ring; plumb-bob kept. Dark-only ships; tokens declared as pairs.
+**Reason:** The owner's pick from rendered candidates; reconciles his warm references with the brass mark; the tactile depth he asked for, constrained by affordance and measured contrast.
+**Areas affected:** all UI · Source: `documentation/60-decisions/ADR-0010-visual-identity-direction-arcade.md`
+
+---
+
 <!-- Template for future entries:
 
 ## [YYYY-MM-DD] Title of the decision
