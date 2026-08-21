@@ -81,7 +81,7 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 40-engineering/dev-environment.md | active | 2026-08-15 |
 | 40-engineering/testing-strategy.md | active | 2026-08-12 |
 | 40-engineering/ui-ux-guidelines.md | active | 2026-08-20 |
-| 40-engineering/ui-layout-standard.md | draft | 2026-08-20 |
+| 40-engineering/ui-layout-standard.md | active | 2026-08-20 |
 | 50-planning/roadmap.md | active | 2026-08-20 |
 | 50-planning/ui-ux-plan.md | active | 2026-08-20 |
 | 60-decisions/index.md | active | 2026-08-20 |

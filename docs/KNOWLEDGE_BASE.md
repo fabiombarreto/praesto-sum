@@ -32,6 +32,8 @@ Tier 2 index: one entry per doc, 1-2 lines each. Details live in the target file
 
 **Visual identity (authoritative doc)** — ADR-0010 "Arcade": warm brown-black ladder, amber accent (+ hot orange for live/overdue), tactile depth with press physics, radius 18/14/pill, Inter + Unbounded, 4 px grid; voice & tone + approved microcopy table; machine truth in `src/app/tokens.css` (applied in A5). → documentation/10-product/visual-identity.md
 
+**UI layout standard (authoritative doc)** — single screen + sheets (no bottom bar until three equal destinations exist), Today anatomy (header with remaining count, chip row, agenda stack, Atrasadas > Hoje > Próximas > Sem data, 64 px rows, capture deck), native `<dialog>` sheets with back-to-close, `interactive-widget=resizes-content`, desktop list-detail from 840 px, per-unit plug-in table. → documentation/40-engineering/ui-layout-standard.md
+
 **Testing guardrail** — binding contract: keep suites green on EVERY change; fallback warning protocol; one detected tier (Vitest + `@cloudflare/vitest-pool-workers`, `npm test`), no browser/e2e tier yet. → docs/context/testing.md
 
 ## Domain

@@ -1,5 +1,5 @@
 ---
-status: draft
+status: active
 last_updated: 2026-08-20
 review_trigger: "a screen is added that the anatomy does not fit, a navigation destination of equal weight appears, or a platform behaviour a rule relies on changes"
 ---
@@ -9,14 +9,14 @@ review_trigger: "a screen is added that the anatomy does not fit, a navigation d
 > **Purpose:** The skeleton every Praesto screen shares — navigation model, screen anatomy, the anchor screens, state placements and desktop adaptation — so units build *on* a standard instead of inventing one per screen.
 > **Update when:** A new screen does not fit the anatomy (fix the standard or record the exception here), a third destination of equal daily weight appears (the navigation rule flips), or a platform behaviour a rule relies on changes. Record each change in the [UI/UX plan](../50-planning/ui-ux-plan.md) History while the plan is open.
 
-Derived from UI/UX-plan activity A3 (research evidence: `PRPs/reports/layout-standard/01-research-evidence.md`; sketches: `PRPs/reports/layout-standard/sketches.html`). It implements the [guidelines](ui-ux-guidelines.md) (§2, §3, §8, §12) and the [identity](../10-product/visual-identity.md) (ADR-0010); values come from `src/app/tokens.css`. Status flips `draft → active` when the owner answers Q4 (navigation model) from the sketches.
+Derived from UI/UX-plan activity A3 (research evidence: `PRPs/reports/layout-standard/01-research-evidence.md`; sketches: `PRPs/reports/layout-standard/sketches.html`). It implements the [guidelines](ui-ux-guidelines.md) (§2, §3, §8, §12) and the [identity](../10-product/visual-identity.md) (ADR-0010); values come from `src/app/tokens.css`. Active since 2026-08-20, when the owner chose the navigation model from the sketches.
 
 ## 1. Navigation model
 
-**Q4 — TBD — pending owner input** (decided from the sketches). The two candidates, both with the capture deck as the single elevated bottom plane:
+**Decided (owner, 2026-08-20, from the sketches): model B — single screen + sheets.** Recorded here with the rejected alternative so the choice is not re-litigated:
 
-- **(B) single screen + sheets — recommended.** *Hoje* is the only destination; *Pesquisar* (unit 8) and *Configurações* are icon buttons in the header; detail and filters open as native `<dialog>` sheets; there is no bottom bar. Evidence: Material 3 says not to use a navigation bar for fewer than three destinations and that settings are not a top-level destination; the single-user apps the owner admires (Things, Reminders, Google Tasks, Microsoft To Do) run without a bar; a bar would stack ~64 px of chrome under the 56 px capture field. Cost: whatever is not on *Hoje* is one tap behind an icon.
-- **(A) bottom bar of three** (*Hoje · Pesquisar · Configurações*) above the deck. Cost: two bottom planes competing in the thumb zone, unequal destinations today, and the bar must hide while the capture field has focus.
+- **(B) single screen + sheets — chosen.** *Hoje* is the only destination; *Pesquisar* (unit 8) and *Configurações* are icon buttons in the header; detail and filters open as native `<dialog>` sheets; there is no bottom bar. Evidence: Material 3 says not to use a navigation bar for fewer than three destinations and that settings are not a top-level destination; the single-user apps the owner admires (Things, Reminders, Google Tasks, Microsoft To Do) run without a bar; a bar would stack ~64 px of chrome under the 56 px capture field. Cost: whatever is not on *Hoje* is one tap behind an icon.
+- **(A) bottom bar of three** (*Hoje · Pesquisar · Configurações*) above the deck — rejected for now: two bottom planes competing in the thumb zone, unequal destinations today, and the bar would have to hide while the capture field has focus.
 
 **Flip rule (binding either way):** the moment Praesto has **three destinations of equal daily weight** (plausibly *Hoje · Agenda · Áreas* after units 4 and 13), the bottom bar enters on compact widths and the rail from 600 dp — never before, and never padded with unequal items. Tabs are not a bridge: *Hoje*'s groups are sections of one list, not peers.
 
@@ -33,7 +33,7 @@ Top to bottom, every screen that lists Tasks:
 7. **Empty state:** inside the list region, centred between header and deck: *Nada para hoje.* + one cue pointing at the deck (*Escreva abaixo para capturar a primeira.*); no duplicate button. Filter-induced empties read *Nenhuma tarefa com esse filtro.* + *Limpar filtros*. Per-group empties collapse to one line or are omitted.
 8. **Toast:** above the deck, one at a time (§8); rendered inside an open `<dialog>` subtree with `popover="manual"` when a sheet is open, or it is inert.
 9. **Capture deck:** bottom-anchored, the one elevated plane; eyebrow *Nova tarefa* in mono, 56 px field with the icon-only 48 px submit (*Adicionar*); `autofocus` here and only here when the app opens on *Hoje* (guidelines §12.5); disabled with an inline hint while offline.
-10. **Bottom bar** — only in model A, only below the deck, hidden (`translate` + `inert`) while the capture field has focus.
+10. **No bottom bar** (model B). If the flip rule of §1 ever fires, the bar sits below the deck and hides (`translate` + `inert`) while the capture field has focus.
 
 ## 3. Surfaces: detail, filters, dialogs
 
@@ -47,8 +47,8 @@ Top to bottom, every screen that lists Tasks:
 
 ## 5. Desktop and Windows
 
-- **600–839 dp:** one pane, the list column capped at ~640 px and centred; detail as a side sheet from the right; the deck stays bottom-anchored inside the column. Model A swaps the bar for a rail; model B keeps header icons.
-- **≥ 840 dp (a half-snapped 1920 px window lands here):** list + detail. Left: the rail (model A) with the wordmark at top. Middle: a **fixed 420 px list pane** with the same header, chip row, agenda and groups, and the deck at its bottom. Right: a **flat** detail pane (no elevation — the deck stays the single elevated plane) with an empty placeholder when nothing is selected; `Esc` clears the selection; shrinking below 840 keeps the detail and hides the list, back returns to the list.
+- **600–839 dp:** one pane, the list column capped at ~640 px and centred; detail as a side sheet from the right; the deck stays bottom-anchored inside the column; search and settings stay as header icons (no rail until the flip rule fires).
+- **≥ 840 dp (a half-snapped 1920 px window lands here):** list + detail. Left: a **fixed 420 px list pane** (a small wordmark sits before the page title in its header; no rail) with the same header, chip row, agenda and groups, and the deck at its bottom. Right: a **flat** detail pane (no elevation — the deck stays the single elevated plane) with an empty placeholder when nothing is selected; `Esc` clears the selection; shrinking below 840 keeps the detail and hides the list, back returns to the list.
 - **Keyboard:** rows are one tab stop with roving focus — `↑/↓` or `J/K` move, `Home/End` jump, `Enter` opens, `E` completes, `T` opens the date, `1–3` set priority, `N` focuses capture, `/` focuses search, `Esc` closes; shortcuts appear in tooltips and a help sheet and never override OS shortcuts (guidelines §2.7). Windows below 640 px are treated as compact.
 - Window Controls Overlay is optional polish, deferred until the layout is stable.
 
@@ -61,7 +61,7 @@ Top to bottom, every screen that lists Tasks:
 | 5 data-export | A settings route with one action; result as a toast |
 | 6 push-channel-proven | A settings route (*Notificações*) with the toggle, priming sheet and a diagnostics sub-page |
 | 7 reminders | Reminder fields inside the detail sheet; standalone Reminders as rows with a bell glyph in *Hoje*; the live toast when one fires |
-| 8 text-search | Model B: the header search icon opens a search route with the field at the top; model A: the *Pesquisar* destination |
+| 8 text-search | The header search icon opens a search route with the field at the top |
 | 9–12 recurrence, misses, adherence, nudge | Series glyph in the row metadata; adherence as a settings-level route, surfaced on *Hoje* only by counts and plain text |
 | 13 life-areas | Area dot in the row metadata and an area filter chip; if areas become a daily destination, the flip rule of §1 applies |
 
@@ -69,4 +69,5 @@ Top to bottom, every screen that lists Tasks:
 
 | Date | What changed |
 |---|---|
+| 2026-08-20 | **Owner chose model B (single screen + sheets) → `active`.** Model A kept in §1 as the rejected alternative with the flip rule |
 | 2026-08-20 | Written as draft from the A3 research (three lenses, verified) and the sketches; Q4 pending the owner's choice; keyboard decision taken |
