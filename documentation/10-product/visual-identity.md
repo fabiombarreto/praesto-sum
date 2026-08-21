@@ -1,5 +1,5 @@
 ---
-status: draft
+status: active
 last_updated: 2026-08-20
 review_trigger: "a step of UI/UX-plan activity A2 lands, an identity element (mark, tokens, voice) changes, or decision 5 is accepted"
 ---
@@ -55,15 +55,15 @@ Decision Q10 (owner, 2026-08-18) and [ADR-0010](../60-decisions/ADR-0010-visual-
 | Live / overdue | `#ff5c1f` — only for a Reminder firing and for overdue; no cool accent exists |
 | Depth | elevation = lighter surface + 1 px top highlight; one elevated plane per screen (the capture deck); primary controls: 3 px lower face, sink 3 px on press; relief never on text or static panels; gradients only on the mark |
 | Shape | radius 18 (cards) · 14 (controls) · pill (chips); 48 px hit areas; 64 px rows; 56 px capture field |
-| Type | Inter variable 400–700 (body, headings 600, tabular numerals) + Unbounded 800 (wordmark and ≥ 20 px display moments) — two self-hosted latin-subset WOFF2, measured 48.3 + 21.8 = 70 KB; data in a system mono stack |
+| Type | Inter variable 400–700 (body, headings 600, tabular numerals) + Unbounded 800 (wordmark and ≥ 20 px display moments) — two self-hosted latin-subset WOFF2, measured 48.3 + 21.8 = 70 KB, both SIL Open Font License 1.1; data in a system mono stack |
 | Scale | spacing 4 · 8 · 12 · 16 · 24 · 32 px; type 12 · 14 · 16 · 20 · 28 px |
 | Motion | guidelines bands; signature completion: check sinks 2 px + one amber ring (~400 ms); a firing Reminder pulses 3× then rests on a static glow; reduced motion shortens, never removes |
 
 Light-theme values: TBD — pending owner input (plan Q1: tokens are declared as pairs; the light side is filled when real use asks for it).
 
-## Voice and tone (step 2.8 — drafted 2026-08-20, pending owner input)
+## Voice and tone (step 2.8 — approved by the owner 2026-08-20)
 
-The mechanics (infinitive buttons, "você", sentence case, `Intl`, zero special-cased, no all-caps) bind via [guidelines §9](../40-engineering/ui-ux-guidelines.md#9-copy-and-voice-pt-br--adr-0009); this is the *voice* on top of them — "nerd inside, light outside" (principle 5), in four pairs the owner approves or edits:
+The mechanics (infinitive buttons, "você", sentence case, `Intl`, zero special-cased, no all-caps) bind via [guidelines §9](../40-engineering/ui-ux-guidelines.md#9-copy-and-voice-pt-br--adr-0009); this is the *voice* on top of them — "nerd inside, light outside" (principle 5), in four pairs, approved verbatim:
 
 - **Direto, mas não seco.** Says what happened and what to do, without filler or apology.
 - **Leve, mas não bobo.** A wink is allowed in empty and success states; never in errors, never in a miss.
@@ -89,7 +89,7 @@ Microcopy table (UI values in pt-BR — ADR-0009; the keys stay English in code)
 | Reminder notification | title = the Task title · body *Agora · 14:05* / *Hoje, 15:00* |
 | Still loading | Ainda carregando… |
 
-Approval: TBD — pending owner input.
+Approved by the owner on 2026-08-20 ("voz & tom aprovado. microcopy aprovado"). New states get their copy added here first, then in code.
 
 ## Validation (step 2.10)
 
@@ -99,6 +99,7 @@ TBD — after A5 ships: a week of cold opens on the phone against the three É w
 
 | Date | What changed |
 |---|---|
+| 2026-08-20 | **Step 2.9: voice & tone and microcopy approved; document `draft → active`.** Step 2.10 (a week of validation in use) runs after A5 ships. The dev-only `/design` playground moves to A5, where the tokens are first applied |
 | 2026-08-20 | Step 2.8: `src/app/tokens.css` written (machine truth; applied in A5); mark variants under `public/brand/`; fonts measured (Inter 48.3 KB + Unbounded 21.8 KB) → two files ship; voice & tone drafted for the owner's approval |
 | 2026-08-20 | **Direction A "Arcade" chosen by the owner → [ADR-0010](../60-decisions/ADR-0010-visual-identity-direction-arcade.md) accepted, decision 5 closed**; the decided system recorded above; mark decision settled |
 | 2026-08-20 | Three rendered directions (A Arcade extruded · B Oficina ruled · C Grafite layered) critiqued, revised, measured and published for the owner's choice (`PRPs/reports/visual-identity/04-directions.md`) |

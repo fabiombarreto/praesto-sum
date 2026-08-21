@@ -15,6 +15,8 @@ Any change under `src/app/`, `index.html`, `public/manifest.webmanifest` or `src
 
 ## Related
 
+- The visual identity (ADR-0010, tokens, voice & tone, approved microcopy): `documentation/10-product/visual-identity.md` · machine truth `src/app/tokens.css`
+
 - The plan that produced it and tracks its open TBDs (design principles, tokens, layout standard, UI library): `documentation/50-planning/ui-ux-plan.md`
 - Copy language decision: `documentation/60-decisions/ADR-0009-ui-copy-in-brazilian-portuguese.md`
 - UI verification stays manual: `documentation/40-engineering/testing-strategy.md`
