@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Praesto Sum">
+  <title>Praesto Sum</title>
+  <!-- Mark, monochrome variant (ADR-0010): single colour, transparent background — notification badge (Android tints it), themed icons. -->
+  <rect x="48.7" y="10" width="2.6" height="18.5" fill="#ffffff" />
+  <path d="M46.5 28.5 H53.5 L55.5 34.5 A10.5 15.5 0 0 1 66 50 L50 86 L34 50 A10.5 15.5 0 0 1 44.5 34.5 Z" fill="#ffffff" />
+</svg>

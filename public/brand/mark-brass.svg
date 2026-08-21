@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Praesto Sum">
+  <title>Praesto Sum</title>
+  <!-- Mark, brass variant (ADR-0010): same geometry as favicon.svg and scripts/generate-icons.js — change one, change all. Background = --color-bg. -->
+  <defs><linearGradient id="brass" x1="0" y1="28.5" x2="0" y2="86" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#f2d08a" /><stop offset="1" stop-color="#b57f23" /></linearGradient></defs>
+  <rect width="100" height="100" rx="22" fill="#161012" />
+  <rect x="48.7" y="10" width="2.6" height="18.5" fill="#9aa1ab" />
+  <path d="M46.5 28.5 H53.5 L55.5 34.5 A10.5 15.5 0 0 1 66 50 L50 86 L34 50 A10.5 15.5 0 0 1 44.5 34.5 Z" fill="url(#brass)" />
+</svg>

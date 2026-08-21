@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Praesto Sum">
+  <title>Praesto Sum</title>
+  <!-- Mark, flat amber variant (ADR-0010): for monochrome and badge uses; the only variant allowed inside the UI (no gradients on UI surfaces). -->
+  <rect width="100" height="100" rx="22" fill="#161012" />
+  <rect x="48.7" y="10" width="2.6" height="18.5" fill="#f5a524" />
+  <path d="M46.5 28.5 H53.5 L55.5 34.5 A10.5 15.5 0 0 1 66 50 L50 86 L34 50 A10.5 15.5 0 0 1 44.5 34.5 Z" fill="#f5a524" />
+</svg>

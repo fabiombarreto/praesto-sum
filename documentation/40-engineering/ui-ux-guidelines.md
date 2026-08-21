@@ -57,7 +57,7 @@ Approved by the owner on 2026-08-20 (UI/UX plan step 2.4; derived from the attri
 
 1. Size in `rem`; the base size and scale come from tokens (§3.5); **never** `px`-only type. Fluid type, if used, keeps max ≤ 2.5 × min. **Prefer** layouts that survive 200 % zoom.
 2. Line length 50–75 characters for prose; headings are hierarchy, not decoration. **Design for Portuguese lengths** (~15 % longer than English): labels, chips and buttons must not truncate "Concluir" or "Configurações".
-3. **One self-hosted variable WOFF2** — Inter, per ADR-0010; the wordmark ships as SVG; Unbounded may join as a second file only if step 2.8 measures Inter + Unbounded ≤ 100 KB together (then this line reads "≤ 2 files, ≤ 100 KB total") — subset, `@font-face` inline in `<head>`, precached by the SW, `font-display: optional`; data in a system monospace stack with `tabular-nums`. **Never** request fonts, icons or scripts from another origin (offline, CON-005, same-origin) — this is the only place that rule is stated; §6 and the checklist refer here.
+3. **At most two self-hosted WOFF2 files, ≤ 100 KB together** (ADR-0010, measured 2026-08-20 on the Google Fonts latin subsets: Inter variable 400–700 = 48.3 KB, Unbounded 800 = 21.8 KB — 70 KB; the self-hosted files in A5 must stay within that) — latin subset, `@font-face` inline in `<head>`, precached by the SW, `font-display: optional`; data in a system monospace stack with `tabular-nums`. Unbounded is used only for the wordmark and ≥ 20 px display moments. **Never** request fonts, icons or scripts from another origin (offline, CON-005, same-origin) — this is the only place that rule is stated; §6 and the checklist refer here.
 
 ## 6. Iconography
 

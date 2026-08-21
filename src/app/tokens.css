@@ -1,0 +1,114 @@
+/*
+ * Praesto design tokens — machine truth of the visual identity (ADR-0010,
+ * direction A "Arcade"). documentation/10-product/visual-identity.md explains
+ * the values; documentation/40-engineering/ui-ux-guidelines.md §3.5 makes this
+ * file the only scale a component may use.
+ *
+ * Lifecycle: written in UI/UX plan step 2.8, APPLIED in activity A5. Until A5
+ * lands, App.tsx keeps its inline `styles` scale (guidelines §3.5) and this file
+ * is not imported anywhere.
+ *
+ * Exempt-by-design literals that must move together with --color-bg:
+ * index.html critical CSS, public/manifest.webmanifest (theme_color,
+ * background_color), scripts/generate-icons.js (guidelines §2.4, §3.5).
+ *
+ * Dark-only ships (plan Q1). Every colour role is declared once here and has a
+ * light pair slot below, deliberately empty until real use asks for a light
+ * theme.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* Surfaces — warm brown-black, never pure black */
+  --color-bg: #161012;
+  --color-surface-1: #1f1816;
+  --color-surface-2: #2a211e;
+  --color-surface-3: #352a25;
+  --color-line: rgb(255 255 255 / 0.09);
+  --color-line-strong: rgb(255 255 255 / 0.35);
+
+  /* Text */
+  --color-ink: #f2f2f4;
+  --color-muted: #a0a0a8;
+  --color-faint: #86868f;
+
+  /* Accent — one hot family */
+  --color-accent: #f5a524;
+  --color-accent-rgb: 245 165 36;
+  --color-accent-deep: #b8751a;
+  --color-on-accent: #1a1206;
+  --color-live: #ff5c1f;
+  --color-live-rgb: 255 92 31;
+  --color-overdue: var(--color-live);
+
+  /* Depth — elevation is a lighter surface plus a top highlight; one elevated
+     plane per screen (the capture deck); primary controls have a 3 px lower
+     face and sink 3 px on press; relief never on text or static panels */
+  --elevation-row: inset 0 1px 0 rgb(255 255 255 / 0.08), 0 1px 2px rgb(0 0 0 / 0.4);
+  --elevation-deck: inset 0 1px 0 rgb(255 255 255 / 0.1), 0 -12px 30px rgb(0 0 0 / 0.5);
+  --elevation-control:
+    inset 0 1px 0 rgb(255 255 255 / 0.3), 0 3px 0 var(--color-accent-deep),
+    0 6px 12px rgb(0 0 0 / 0.35);
+  --elevation-control-pressed: inset 0 1px 0 rgb(255 255 255 / 0.3);
+  --press-depth: 3px;
+  --inset-field: inset 0 2px 4px rgb(0 0 0 / 0.35);
+  --glow-live: 0 0 16px rgb(var(--color-live-rgb) / 0.3);
+  --halo-done: 0 0 0 5px rgb(var(--color-accent-rgb) / 0.14);
+
+  /* Shape and hit areas */
+  --radius-card: 18px;
+  --radius-control: 14px;
+  --radius-pill: 9999px;
+  --hit-min: 48px;
+  --row-min: 64px;
+  --field-min: 56px;
+
+  /* Space — 4 px grid */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Type — Inter for text and numerals (tabular), Unbounded 800 for the
+     wordmark and ≥ 20 px display moments, a system mono stack for data */
+  --font-text: Inter, system-ui, sans-serif;
+  --font-display: Unbounded, Inter, system-ui, sans-serif;
+  --font-data: ui-monospace, "Cascadia Mono", "Roboto Mono", Consolas, monospace;
+  --text-1: 0.75rem;
+  --text-2: 0.875rem;
+  --text-3: 1rem;
+  --text-4: 1.25rem;
+  --text-5: 1.75rem;
+  --leading: 1.5;
+
+  /* Motion — short / medium / long bands; one signature completion moment */
+  --duration-short: 150ms;
+  --duration-medium: 300ms;
+  --duration-long: 500ms;
+  --duration-complete: 400ms;
+  --pulse-count: 3;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-exit: cubic-bezier(0.3, 0, 0.8, 0.15);
+
+  /* Focus — two-tone ring that survives any surface */
+  --focus-ring: 0 0 0 2px var(--color-accent), 0 0 0 6px var(--color-bg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-short: 80ms;
+    --duration-medium: 120ms;
+    --duration-long: 160ms;
+    --duration-complete: 160ms;
+    --pulse-count: 0;
+  }
+}
+
+/* Light pair — TBD, pending owner input (UI/UX plan Q1). Declared so the switch
+   is a token file, not a rewrite; empty on purpose until real use asks for it. */
+[data-theme="light"] {
+}
