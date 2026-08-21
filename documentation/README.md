@@ -33,6 +33,7 @@ A personal assistant built by its single user — the owner — to organize pers
 | [dev-environment](40-engineering/dev-environment.md) | Machine setup and day-to-day commands | On a new machine or after a pause |
 | [testing-strategy](40-engineering/testing-strategy.md) | What gets tested and what deliberately does not | Before writing tests |
 | [ui-ux-guidelines](40-engineering/ui-ux-guidelines.md) | The rules every interface change follows (platform, layout, colour, type, motion, states, pt-BR copy, WCAG 2.2 A, performance budget) + the review checklist | Before touching any screen, manifest or service worker — and on every UI review |
+| [ui-layout-standard](40-engineering/ui-layout-standard.md) | The skeleton every screen shares: navigation model, Today anatomy, sheets, keyboard decision, desktop list-detail, where each unit plugs in | Before designing or building any screen |
 | [roadmap](50-planning/roadmap.md) | Current phase, milestones, backlog, delivery history | To know where we are and what is next |
 | [ui-ux-plan](50-planning/ui-ux-plan.md) | The UI/UX track: activities, open decisions, exit criterion — runs while the roadmap's units are on hold | Before touching any screen, and to know why units are paused |
 | [decisions index](60-decisions/index.md) | ADR index + pending decisions queue | Before deciding anything non-obvious |
@@ -54,6 +55,7 @@ This is also the writing order of Phase 0. Architecture and engineering document
 | A milestone completes or a phase closes | [roadmap](50-planning/roadmap.md) |
 | A UI/UX-plan activity changes state, an open question there is answered, or the hold on units opens or lifts | [ui-ux-plan](50-planning/ui-ux-plan.md) + [roadmap](50-planning/roadmap.md) (hold state, delivery history) |
 | An identity element changes (mark, tokens, voice) | [visual-identity](10-product/visual-identity.md) + `src/app/tokens.css` + an ADR when non-obvious |
+| A screen does not fit the layout anatomy, or a third destination of equal weight appears | [ui-layout-standard](40-engineering/ui-layout-standard.md) (+ a History line in [ui-ux-plan](50-planning/ui-ux-plan.md)) |
 | A UI rule proves useless or wrong in practice, or a platform behaviour a rule cites changes | [ui-ux-guidelines](40-engineering/ui-ux-guidelines.md) (+ `docs/context/ui-guidelines.md` pointer) + a History line in [ui-ux-plan](50-planning/ui-ux-plan.md) |
 | A convention proves useful or useless in practice | [documentation-guidelines](00-meta/documentation-guidelines.md) |
 
@@ -79,6 +81,7 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 40-engineering/dev-environment.md | active | 2026-08-15 |
 | 40-engineering/testing-strategy.md | active | 2026-08-12 |
 | 40-engineering/ui-ux-guidelines.md | active | 2026-08-20 |
+| 40-engineering/ui-layout-standard.md | draft | 2026-08-20 |
 | 50-planning/roadmap.md | active | 2026-08-20 |
 | 50-planning/ui-ux-plan.md | active | 2026-08-20 |
 | 60-decisions/index.md | active | 2026-08-20 |

@@ -1,0 +1,299 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Layout Praesto</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root{color-scheme:dark;
+    --sp1:4px;--sp2:8px;--sp3:12px;--sp4:16px;--sp6:24px;--sp8:32px;
+    --t1:.75rem;--t2:.875rem;--t3:1rem;--t4:1.25rem;--t5:1.75rem;
+    --bg:#161012;--s1:#1f1816;--s2:#2a211e;--s3:#352a25;--line:rgb(255 255 255/.09);--line-strong:rgb(255 255 255/.35);
+    --ink:#f2f2f4;--muted:#a0a0a8;--faint:#86868f;
+    --accent:#f5a524;--accent-rgb:245 165 36;--accent-deep:#b8751a;--on-accent:#1a1206;--live:#ff5c1f;--live-rgb:255 92 31;
+    --r-card:18px;--r-ctl:14px;--r-pill:9999px;
+    --el-row:inset 0 1px 0 rgb(255 255 255/.08),0 1px 2px rgb(0 0 0/.4);
+    --el-deck:inset 0 1px 0 rgb(255 255 255/.1),0 -12px 30px rgb(0 0 0/.5);
+    --el-ctl:inset 0 1px 0 rgb(255 255 255/.3),0 3px 0 var(--accent-deep),0 6px 12px rgb(0 0 0/.35);
+    --body:Inter,system-ui,sans-serif;--display:Unbounded,var(--body);--mono:'JetBrains Mono',ui-monospace,monospace;}
+  *{box-sizing:border-box}
+  body{margin:0;background:#0c0c0f;color:var(--ink);font-family:var(--body);font-size:var(--t3);line-height:1.5}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;box-shadow:0 0 0 4px var(--bg)}
+  .wrap{max-width:42rem;margin:0 auto;padding:var(--sp4) var(--sp4) var(--sp8)}
+  .switch{position:sticky;top:0;z-index:5;background:#0c0c0f;padding:var(--sp2) 0 var(--sp3);display:flex;gap:var(--sp2);align-items:center;flex-wrap:wrap}
+  .switch button{min-height:48px;border:1px solid var(--line);background:#16161a;color:var(--ink);border-radius:12px;padding:var(--sp2) var(--sp3);font:600 var(--t2) var(--body);cursor:pointer}
+  .switch button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:transparent}
+  .switch .lab{font:500 var(--t1) var(--mono);color:var(--muted);margin-left:auto}
+  h1.page{font:700 var(--t4) var(--body);margin:var(--sp2) 0 0}
+  .sub{color:var(--muted);font-size:var(--t2);margin:var(--sp1) 0 var(--sp4)}
+  h2.sec{font:600 var(--t1) var(--mono);color:var(--muted);letter-spacing:.06em;margin:var(--sp8) 0 var(--sp3)}
+  .opt-a,.opt-b{display:none}
+  html[data-opt="a"] .opt-a,html[data-opt="b"] .opt-b{display:revert}
+
+  .phone{background:var(--bg);border:1px solid var(--line);border-radius:28px;width:375px;max-width:100%;margin:0 auto;min-height:720px;overflow:hidden;display:flex;flex-direction:column;position:relative;box-shadow:0 20px 60px rgb(0 0 0/.6)}
+  .hdr{padding:var(--sp6) var(--sp4) var(--sp2);display:flex;align-items:flex-end;gap:var(--sp3)}
+  .hdr h1{margin:0;font:700 var(--t4) var(--body)}
+  .hdr .date{font:500 var(--t1) var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;padding-bottom:2px}
+  .hdr .left{display:flex;align-items:baseline;gap:var(--sp3)}
+  .hdr .cnt{font:800 var(--t4) var(--display);color:var(--accent);font-variant-numeric:tabular-nums}
+  .hdr .cnt small{font:500 var(--t1) var(--body);color:var(--muted);margin-left:var(--sp1)}
+  .hdr .icons{margin-left:auto;display:flex;gap:var(--sp1)}
+  .ib{width:48px;height:48px;border:none;background:transparent;color:var(--ink);border-radius:var(--r-ctl);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+  .ib .n{position:absolute;top:8px;right:8px;min-width:16px;height:16px;border-radius:8px;background:var(--accent);color:var(--on-accent);font:600 10px var(--mono);display:flex;align-items:center;justify-content:center;padding:0 4px}
+  svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .chips{display:flex;gap:var(--sp2);padding:var(--sp1) var(--sp4) var(--sp2);overflow-x:auto;scrollbar-width:none}
+  .chip{flex:none;min-height:48px;display:inline-flex;align-items:center;gap:var(--sp1);border:1px solid var(--line);border-radius:var(--r-pill);padding:0 var(--sp3);font:500 var(--t2) var(--body);background:var(--s2);color:var(--ink);cursor:pointer;white-space:nowrap}
+  .chip[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:transparent;font-weight:600}
+  .chip svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+  .list{flex:1;overflow:auto;padding:0 var(--sp4) var(--sp2);display:flex;flex-direction:column;gap:var(--sp2)}
+  .gh{display:flex;align-items:center;gap:var(--sp2);min-height:40px;margin-top:var(--sp2)}
+  .gh h2{margin:0;font:600 var(--t2) var(--body)}
+  .gh .c{font:600 var(--t1) var(--mono);color:var(--muted)}
+  .gh .act{margin-left:auto;font:600 var(--t1) var(--body);color:var(--accent);background:transparent;border:none;min-height:48px;padding:0 var(--sp2);border-radius:var(--r-ctl);cursor:pointer}
+  .gh .tog{margin-left:auto;color:var(--faint)}
+  .agenda{display:flex;align-items:center;gap:var(--sp3);border:1px dashed var(--line-strong);border-radius:var(--r-card);padding:var(--sp2) var(--sp3);min-height:48px;color:var(--muted);font-size:var(--t2)}
+  .agenda .t{font:500 var(--t1) var(--mono);color:var(--ink)}
+  .row{display:flex;align-items:center;gap:var(--sp2);background:var(--s2);border-radius:var(--r-card);padding:var(--sp2) var(--sp3) var(--sp2) var(--sp2);min-height:64px;box-shadow:var(--el-row)}
+  .chk{flex:none;width:48px;height:48px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;cursor:pointer;border-radius:var(--r-ctl);padding:0}
+  .chk span{width:26px;height:26px;border-radius:50%;border:2px solid var(--faint);display:flex;align-items:center;justify-content:center}
+  .chk span svg{width:16px;height:16px;stroke:var(--on-accent);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+  .chk.done span{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 5px rgb(var(--accent-rgb)/.14)}
+  .tt{flex:1;min-width:0}
+  .title{font-size:var(--t3);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row.done .title{color:var(--muted);text-decoration:line-through}
+  .meta{font:500 var(--t1) var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;display:flex;gap:var(--sp2);align-items:center}
+  .meta .late{color:var(--live)}
+  .meta .pri{display:inline-flex;align-items:center;gap:2px}
+  .meta .pri svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5}
+  .toast{margin:0 var(--sp4) var(--sp2);min-height:48px;display:flex;align-items:center;gap:var(--sp3);background:var(--s2);border:1px solid var(--line);border-radius:var(--r-ctl);padding:var(--sp2) var(--sp4);font-size:var(--t2);box-shadow:0 6px 16px rgb(0 0 0/.4)}
+  .toast .act{margin-left:auto;font:600 var(--t2) var(--body);color:var(--accent)}
+  .deck{background:var(--s2);border-top:1px solid var(--line);padding:var(--sp3) var(--sp4) var(--sp4);box-shadow:var(--el-deck)}
+  .deck .eyebrow{font:600 var(--t1) var(--mono);color:var(--muted);margin:0 0 var(--sp2)}
+  .field{display:flex;align-items:center;min-height:56px;border:1px solid var(--line-strong);background:var(--s1);border-radius:var(--r-ctl);padding:0 var(--sp1) 0 var(--sp4);box-shadow:inset 0 2px 4px rgb(0 0 0/.35)}
+  .field .ph{flex:1;font:400 var(--t3) var(--body);color:var(--muted)}
+  .field .go{flex:none;width:48px;height:48px;border:none;border-radius:calc(var(--r-ctl) - 2px);background:var(--accent);color:var(--on-accent);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--el-ctl)}
+  .field .go svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+  .deck.off .field{opacity:.55}
+  .deck.off .hint{font:500 var(--t1) var(--body);color:var(--muted);margin:var(--sp2) 0 0}
+  nav.bar{display:flex;justify-content:space-around;padding:var(--sp1) 0 var(--sp2);background:var(--s1);border-top:1px solid var(--line)}
+  nav.bar button{font:500 var(--t1) var(--body);color:var(--faint);display:flex;flex-direction:column;align-items:center;gap:var(--sp1);min-width:64px;min-height:48px;justify-content:center;background:transparent;border:none;cursor:pointer;padding:0 var(--sp2);border-radius:var(--r-ctl)}
+  nav.bar button[aria-current="page"]{color:var(--accent);font-weight:600;box-shadow:inset 0 -2px 0 var(--accent)}
+  .banner{display:flex;align-items:center;gap:var(--sp2);margin:0 var(--sp4);min-height:40px;padding:var(--sp1) var(--sp3);border:1px solid rgb(var(--live-rgb)/.75);border-radius:var(--r-ctl);background:var(--s1);font-size:var(--t2)}
+  .banner svg{color:var(--live)}
+  .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--muted);padding:var(--sp6)}
+  .empty b{display:block;color:var(--ink);font-size:var(--t4);font-weight:600}
+  .kbd{background:#2a2a30;border-top:1px solid var(--line);height:250px;display:grid;place-items:center;color:var(--faint);font:500 var(--t1) var(--mono)}
+  .scrim{position:absolute;inset:0;background:rgb(0 0 0/.5)}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--s1);border-radius:24px 24px 0 0;padding:var(--sp2) var(--sp4) var(--sp4);box-shadow:0 -8px 30px rgb(0 0 0/.5);max-height:90%}
+  .handle{width:32px;height:4px;border-radius:2px;background:var(--line-strong);margin:0 auto var(--sp3)}
+  .sheet .top{display:flex;align-items:center;gap:var(--sp2)}
+  .sheet h2{margin:0;font:600 var(--t4) var(--body);flex:1}
+  .sheet label{display:block;font:600 var(--t1) var(--mono);color:var(--muted);margin:var(--sp3) 0 var(--sp1)}
+  .sheet .in{min-height:48px;border:1px solid var(--line-strong);background:var(--bg);border-radius:var(--r-ctl);padding:0 var(--sp3);display:flex;align-items:center;font-size:var(--t3)}
+  .sheet .ta{min-height:72px;align-items:flex-start;padding-top:var(--sp3);color:var(--muted)}
+  .seg{display:flex;gap:var(--sp2)}
+  .seg .chip{flex:1;justify-content:center}
+  .sheet .acts{display:flex;gap:var(--sp2);justify-content:flex-end;margin-top:var(--sp4)}
+  .btn{min-height:48px;border:none;border-radius:var(--r-ctl);padding:0 var(--sp4);font:600 var(--t2) var(--body);cursor:pointer}
+  .btn.pri{background:var(--accent);color:var(--on-accent);box-shadow:var(--el-ctl)}
+  .btn.sec{background:var(--s2);color:var(--ink);border:1px solid var(--line)}
+
+  .desk{zoom:.68;width:980px;height:640px;background:var(--bg);border:1px solid var(--line);border-radius:16px;display:flex;overflow:hidden;margin:0 auto;box-shadow:0 20px 60px rgb(0 0 0/.6)}
+  .rail{width:88px;background:var(--s1);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:var(--sp4) 0;gap:var(--sp2)}
+  .rail .wm{font:800 var(--t2) var(--display);color:var(--accent);margin-bottom:var(--sp4)}
+  .rail button{width:64px;min-height:56px;border:none;background:transparent;color:var(--faint);font:500 var(--t1) var(--body);display:flex;flex-direction:column;align-items:center;gap:var(--sp1);border-radius:var(--r-ctl);cursor:pointer}
+  .rail button[aria-current="page"]{color:var(--accent);background:rgb(var(--accent-rgb)/.12)}
+  .pane{width:420px;border-right:1px solid var(--line);display:flex;flex-direction:column}
+  .pane .hdr{padding-top:var(--sp4)}
+  .detail{flex:1;padding:var(--sp6) var(--sp8);display:flex;flex-direction:column}
+  .detail h2{margin:0 0 var(--sp2);font:600 var(--t5) var(--body)}
+  .detail .in{min-height:48px;border:1px solid var(--line-strong);background:var(--s1);border-radius:var(--r-ctl);padding:0 var(--sp3);display:flex;align-items:center;max-width:520px}
+  .detail label{display:block;font:600 var(--t1) var(--mono);color:var(--muted);margin:var(--sp4) 0 var(--sp1)}
+  .kbdhint{margin-top:auto;font:500 var(--t1) var(--mono);color:var(--faint)}
+  .kbdhint kbd{border:1px solid var(--line-strong);border-radius:4px;padding:0 4px}
+
+  .grid3{display:grid;gap:var(--sp3);grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  .mini{zoom:.62}
+  .mini .phone{min-height:640px}
+  .cap{font-size:var(--t1);color:var(--muted);margin:var(--sp1) 0 0;text-align:center}
+  .why{margin-top:var(--sp4);background:#121216;border:1px solid rgb(255 255 255/.07);border-radius:16px;padding:var(--sp4)}
+  .why h3{margin:0 0 var(--sp2);font:600 var(--t4) var(--body)}
+  .why ol,.why ul{margin:var(--sp1) 0 0 var(--sp4);padding:0;font-size:var(--t2)}
+  .why li{margin:var(--sp1) 0}
+  .howto{margin-top:var(--sp6);font-size:var(--t2);color:var(--muted);border-left:3px solid var(--accent);padding:var(--sp2) var(--sp4)}
+</style>
+<div class="wrap" lang="pt-BR">
+  <div class="switch" role="group" aria-label="Modelo de navegação">
+    <button type="button" data-o="a" aria-pressed="false">A · Barra inferior</button>
+    <button type="button" data-o="b" aria-pressed="true">B · Tela única + sheets</button>
+    <span class="lab">A3 · 20/08/2026</span>
+  </div>
+  <h1 class="page">Layout Praesto</h1>
+  <p class="sub">A tela Hoje (âncora da unidade 3) nos tokens do Arcade, em dois modelos de navegação. A anatomia — cabeçalho, agenda, grupos, filtros, linhas, deck de captura — é a mesma; muda onde vivem Pesquisar e Configurações.</p>
+
+  <h2 class="sec">celular · tela hoje</h2>
+  <section class="phone" aria-label="Tela de hoje">
+    <div class="hdr">
+      <div class="left"><h1>Hoje</h1><span class="date">qua., 20/08</span></div>
+      <span class="cnt" style="margin-left:var(--sp2)">4<small>restantes</small></span>
+      <div class="icons">
+        <button class="ib opt-b" type="button" aria-label="Pesquisar"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button>
+        <button class="ib" type="button" aria-label="Filtros, 1 ativo"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span class="n">1</span></button>
+        <button class="ib opt-b" type="button" aria-label="Configurações"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14 3h-4l-.6 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12a7 7 0 0 0 .1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L10 21h4l.6-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.07-.4.1-.8.1-1.2z"/></svg></button>
+      </div>
+    </div>
+    <div class="chips" aria-label="Filtros rápidos">
+      <button class="chip" type="button" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-9"/></svg>Abertas</button>
+      <button class="chip" type="button" aria-pressed="false">Alta prioridade</button>
+      <button class="chip" type="button" aria-pressed="false">Com hora</button>
+      <button class="chip" type="button" aria-pressed="false">Filtros…</button>
+    </div>
+    <div class="list">
+      <div class="agenda"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 11h16"/></svg><span class="t">15:00</span><span>Reunião de time</span><span style="margin-left:auto" class="t">Agenda · 2</span></div>
+      <div class="gh"><h2>Atrasadas</h2><span class="c">2</span><button class="act" type="button">Reagendar para hoje</button></div>
+      <div class="row"><button class="chk" type="button" aria-label="Concluir Pagar aluguel"><span></span></button><div class="tt"><div class="title">Pagar aluguel</div><div class="meta"><span class="late">venceu seg., 18/08</span></div></div></div>
+      <div class="row"><button class="chk" type="button" aria-label="Concluir Renovar CNH"><span></span></button><div class="tt"><div class="title">Renovar CNH</div><div class="meta"><span class="late">venceu sex., 15/08</span><span class="pri"><svg viewBox="0 0 24 24"><path d="M12 4v16M5 11l7-7 7 7"/></svg>alta</span></div></div></div>
+      <div class="gh"><h2>Hoje</h2><span class="c">3</span></div>
+      <div class="row"><button class="chk" type="button" aria-label="Concluir Revisar o PR do Guilherme"><span></span></button><div class="tt"><div class="title">Revisar o PR do Guilherme</div><div class="meta"><span>até 18:00</span></div></div></div>
+      <div class="row done"><button class="chk done" type="button" aria-label="Reabrir Ligar para o dentista"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-9"/></svg></span></button><div class="tt"><div class="title">Ligar para o dentista</div><div class="meta"><span>14:05</span></div></div></div>
+      <div class="row"><button class="chk" type="button" aria-label="Concluir Comprar ração"><span></span></button><div class="tt"><div class="title">Comprar ração</div><div class="meta"><span>fazer hoje</span></div></div></div>
+      <div class="gh"><h2>Próximas</h2><span class="c">4</span><span class="tog"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></div>
+      <div class="gh"><h2>Sem data</h2><span class="c">5</span><span class="tog"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></div>
+    </div>
+    <div class="deck"><p class="eyebrow">Nova tarefa</p><div class="field"><span class="ph">O que precisa ser feito?</span><button class="go" type="button" aria-label="Adicionar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div></div>
+    <nav class="bar opt-a" aria-label="Navegação">
+      <button type="button" aria-current="page"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12l9-8 9 8v8a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Hoje</button>
+      <button type="button"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Pesquisar</button>
+      <button type="button"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14 3h-4l-.6 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12a7 7 0 0 0 .1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L10 21h4l.6-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.07-.4.1-.8.1-1.2z"/></svg>Configurações</button>
+    </nav>
+  </section>
+
+  <div class="why opt-a">
+    <h3>A · Barra inferior — o que você está vendo</h3>
+    <ul>
+      <li>Três destinos (Hoje · Pesquisar · Configurações) sempre visíveis; captura como deck acima da barra.</li>
+      <li>Custo: ~64 px de chrome a mais sob o deck; dois planos inferiores disputam a zona do polegar. Com o teclado aberto a barra precisa se esconder (ver "teclado").</li>
+      <li>Risco: hoje só existe um destino real (Hoje). Pesquisar chega na unidade 8; Configurações não é destino pela orientação do Android/Material. A barra nasceria com itens desiguais.</li>
+      <li>Pró: nada fica escondido atrás de ícone — a pesquisa da unidade 8 e os ajustes ficam sempre à vista.</li>
+    </ul>
+  </div>
+  <div class="why opt-b">
+    <h3>B · Tela única + sheets — o que você está vendo</h3>
+    <ul>
+      <li>Hoje é a casa. Pesquisar e Configurações são ícones no cabeçalho; detalhe e filtros abrem como sheets que o <em>back</em> do Android fecha.</li>
+      <li>Pró: o deck de captura é o único plano inferior — o herói sem concorrência; nada sob o teclado para esconder.</li>
+      <li>Custo: o que não está na Hoje fica um toque atrás de um ícone (a pesquisa inclusive).</li>
+      <li>O que viraria A depois: quando existirem três destinos de peso igual (ex.: Hoje · Agenda · Áreas, com as unidades 4 e 13), a barra entra e o deck sobe para cima dela.</li>
+    </ul>
+  </div>
+
+  <h2 class="sec">celular · detalhe (sheet) · estados</h2>
+  <div class="grid3">
+    <div class="mini"><section class="phone" aria-label="Detalhe da tarefa">
+      <div class="hdr"><div class="left"><h1>Hoje</h1><span class="date">qua., 20/08</span></div></div>
+      <div class="list"><div class="row"><button class="chk" type="button" aria-label="Concluir"><span></span></button><div class="tt"><div class="title">Pagar aluguel</div></div></div></div>
+      <div class="deck"><div class="field"><span class="ph">O que precisa ser feito?</span></div></div>
+      <nav class="bar opt-a" aria-label="Navegação"><button type="button" aria-current="page">Hoje</button><button type="button">Pesquisar</button><button type="button">Configurações</button></nav>
+      <div class="scrim"></div>
+      <div class="sheet" role="dialog" aria-label="Editar tarefa">
+        <div class="handle"></div>
+        <div class="top"><h2>Pagar aluguel</h2><button class="ib" type="button" aria-label="Fechar"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+        <label>Data</label>
+        <div class="seg"><button class="chip" type="button" aria-pressed="false">Sem data</button><button class="chip" type="button" aria-pressed="true">Concluir até</button><button class="chip" type="button" aria-pressed="false">Fazer em</button></div>
+        <div class="in" style="margin-top:var(--sp2)">seg., 18/08/2026</div>
+        <label>Prioridade</label>
+        <div class="seg"><button class="chip" type="button" aria-pressed="true">Alta</button><button class="chip" type="button" aria-pressed="false">Normal</button><button class="chip" type="button" aria-pressed="false">Baixa</button></div>
+        <label>Descrição</label>
+        <div class="in ta">Transferência para o proprietário até dia 18.</div>
+        <div class="acts"><button class="btn sec" type="button">Cancelar</button><button class="btn pri" type="button">Salvar</button></div>
+      </div>
+    </section><p class="cap">Detalhe como sheet nativo (<code>&lt;dialog&gt;</code>): back fecha, foco volta à linha; sem fechar por toque fora quando há edição.</p></div>
+
+    <div class="mini"><section class="phone" aria-label="Sem conexão">
+      <div class="hdr"><div class="left"><h1>Hoje</h1><span class="date">qua., 20/08</span></div></div>
+      <div class="banner"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M9 9a9 9 0 0 1 10 1M5 12a12 12 0 0 1 3-2M12 20h.01M8 16a6 6 0 0 1 6-1"/></svg><span>Sem conexão — só leitura até voltar.</span></div>
+      <div class="list"><div class="gh"><h2>Hoje</h2><span class="c">3</span></div><div class="row"><button class="chk" type="button" aria-label="Concluir"><span></span></button><div class="tt"><div class="title">Revisar o PR do Guilherme</div><div class="meta"><span>até 18:00</span></div></div></div></div>
+      <div class="deck off"><div class="field"><span class="ph">O que precisa ser feito?</span></div><p class="hint">Conecte-se para capturar.</p></div>
+      <nav class="bar opt-a" aria-label="Navegação"><button type="button" aria-current="page">Hoje</button><button type="button">Pesquisar</button><button type="button">Configurações</button></nav>
+    </section><p class="cap">Offline: banner persistente no topo, leitura mantida, deck desabilitado com dica — nunca falhar no envio.</p></div>
+
+    <div class="mini"><section class="phone" aria-label="Vazio">
+      <div class="hdr"><div class="left"><h1>Hoje</h1><span class="date">qua., 20/08</span></div></div>
+      <div class="empty"><b>Nada para hoje.</b><span>Escreva abaixo para capturar a primeira.</span></div>
+      <div class="deck"><div class="field"><span class="ph">O que precisa ser feito?</span><button class="go" type="button" aria-label="Adicionar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div></div>
+      <nav class="bar opt-a" aria-label="Navegação"><button type="button" aria-current="page">Hoje</button><button type="button">Pesquisar</button><button type="button">Configurações</button></nav>
+    </section><p class="cap">Vazio: no espaço entre cabeçalho e deck, apontando para o deck — sem botão duplicado.</p></div>
+
+    <div class="mini"><section class="phone" aria-label="Concluída com desfazer">
+      <div class="hdr"><div class="left"><h1>Hoje</h1><span class="date">qua., 20/08</span></div></div>
+      <div class="list"><div class="gh"><h2>Hoje</h2><span class="c">2</span></div><div class="row done"><button class="chk done" type="button" aria-label="Reabrir"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-9"/></svg></span></button><div class="tt"><div class="title">Comprar ração</div></div></div></div>
+      <div class="toast" role="status"><span>Tarefa concluída</span><span class="act">Desfazer</span></div>
+      <div class="deck"><div class="field"><span class="ph">O que precisa ser feito?</span></div></div>
+      <nav class="bar opt-a" aria-label="Navegação"><button type="button" aria-current="page">Hoje</button><button type="button">Pesquisar</button><button type="button">Configurações</button></nav>
+    </section><p class="cap">Toast acima do deck, um por vez; com ação fica até ser usado ou navegar.</p></div>
+
+    <div class="mini"><section class="phone" aria-label="Teclado aberto">
+      <div class="hdr"><div class="left"><h1>Hoje</h1><span class="date">qua., 20/08</span></div></div>
+      <div class="list"><div class="gh"><h2>Hoje</h2><span class="c">3</span></div><div class="row"><button class="chk" type="button" aria-label="Concluir"><span></span></button><div class="tt"><div class="title">Revisar o PR do Guilherme</div></div></div></div>
+      <div class="deck"><div class="field" style="border-color:var(--accent)"><span class="ph" style="color:var(--ink)">Pagar a conta de luz|</span><button class="go" type="button" aria-label="Adicionar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div></div>
+      <div class="kbd">teclado do Android</div>
+    </section><p class="cap">Teclado: <code>interactive-widget=resizes-content</code> — o deck sobe com o teclado, a lista encolhe; <span class="opt-a">a barra se esconde enquanto o campo tem foco.</span><span class="opt-b">nada mais a esconder.</span></p></div>
+  </div>
+
+  <h2 class="sec">desktop · ≥ 840 px · lista + detalhe</h2>
+  <div class="desk" aria-label="Layout de desktop">
+    <div class="rail opt-a">
+      <span class="wm">praesto</span>
+      <button type="button" aria-current="page"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12l9-8 9 8v8a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Hoje</button>
+      <button type="button"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Pesquisar</button>
+      <button type="button"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M5 12a7 7 0 0 1 14 0"/></svg>Config.</button>
+    </div>
+    <div class="pane">
+      <div class="hdr"><div class="left"><span class="opt-b" style="font:800 var(--t2) var(--display);color:var(--accent);margin-right:var(--sp2)">praesto</span><h1>Hoje</h1><span class="date">qua., 20/08</span></div>
+        <div class="icons"><button class="ib opt-b" type="button" aria-label="Pesquisar"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button><button class="ib" type="button" aria-label="Filtros"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg></button><button class="ib opt-b" type="button" aria-label="Configurações"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M5 12a7 7 0 0 1 14 0"/></svg></button></div></div>
+      <div class="list">
+        <div class="gh"><h2>Atrasadas</h2><span class="c">2</span><button class="act" type="button">Reagendar para hoje</button></div>
+        <div class="row" style="outline:2px solid var(--accent);outline-offset:-2px"><button class="chk" type="button" aria-label="Concluir"><span></span></button><div class="tt"><div class="title">Pagar aluguel</div><div class="meta"><span class="late">venceu seg., 18/08</span></div></div></div>
+        <div class="row"><button class="chk" type="button" aria-label="Concluir"><span></span></button><div class="tt"><div class="title">Renovar CNH</div><div class="meta"><span class="late">venceu sex., 15/08</span></div></div></div>
+        <div class="gh"><h2>Hoje</h2><span class="c">3</span></div>
+        <div class="row"><button class="chk" type="button" aria-label="Concluir"><span></span></button><div class="tt"><div class="title">Revisar o PR do Guilherme</div><div class="meta"><span>até 18:00</span></div></div></div>
+        <div class="row"><button class="chk" type="button" aria-label="Concluir"><span></span></button><div class="tt"><div class="title">Comprar ração</div><div class="meta"><span>fazer hoje</span></div></div></div>
+      </div>
+      <div class="deck"><p class="eyebrow">Nova tarefa · <span style="font-weight:400">tecla N</span></p><div class="field"><span class="ph">O que precisa ser feito?</span><button class="go" type="button" aria-label="Adicionar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div></div>
+    </div>
+    <div class="detail">
+      <h2>Pagar aluguel</h2>
+      <div class="meta"><span class="late">venceu seg., 18/08</span><span>· alta</span></div>
+      <label>Data</label><div class="seg" style="max-width:520px"><button class="chip" type="button" aria-pressed="false">Sem data</button><button class="chip" type="button" aria-pressed="true">Concluir até</button><button class="chip" type="button" aria-pressed="false">Fazer em</button></div>
+      <label>Descrição</label><div class="in" style="min-height:96px;align-items:flex-start;padding-top:var(--sp3);color:var(--muted)">Transferência para o proprietário até dia 18.</div>
+      <div style="display:flex;gap:var(--sp2);margin-top:var(--sp4)"><button class="btn sec" type="button">Excluir</button><button class="btn pri" type="button">Salvar</button></div>
+      <p class="kbdhint"><kbd>J</kbd>/<kbd>K</kbd> mover · <kbd>Enter</kbd> abrir · <kbd>E</kbd> concluir · <kbd>T</kbd> data · <kbd>N</kbd> nova · <kbd>/</kbd> pesquisar · <kbd>Esc</kbd> fechar</p>
+    </div>
+  </div>
+  <p class="cap">Desktop: painel de lista fixo (420 px) + painel de detalhe plano (o deck continua o único plano elevado); a partir de 840 px. Entre 600 e 839 px: um painel só, centrado, detalhe como sheet lateral. <span class="opt-a">O trilho substitui a barra a partir de 600 px.</span><span class="opt-b">Sem trilho: ícones no cabeçalho do painel.</span></p>
+
+  <div class="why">
+    <h3>O que a pesquisa diz (verificada)</h3>
+    <ol>
+      <li>Todos os apps admirados põem a captura <strong>embaixo</strong> (FAB ou campo fixo); nenhum no topo.</li>
+      <li>Material 3: barra inferior só com 3–5 destinos de peso igual; <em>"não use com menos de três"</em>; configurações não é destino; barra e toolbar inferior não coexistem.</li>
+      <li>Things, Reminders, Google Tasks, Microsoft To Do e Tweek — os apps de uma pessoa — rodam <strong>sem barra</strong>; Todoist e TickTick usam barra porque têm 4–5 destinos.</li>
+      <li>Atrasadas como grupo separado no topo com ação em lote ("Reagendar") é o padrão (Todoist, TickTick); nenhum app grande mostra "sem data" na Hoje — por isso vem recolhido.</li>
+      <li>Eventos do Google (unidade 4): um bloco próprio no topo, sem checkbox, visual distinto — nunca misturado às tarefas.</li>
+      <li>Barras de progresso antes do esforço aumentam desistência; contagem em texto ("4 restantes") em vez de "1/4".</li>
+      <li>Sheets nativos fecham com o back do Android (Chrome 126+); nunca empilhar sheets; fechar por toque fora só sem edição em curso.</li>
+      <li>Teclado: <code>resizes-content</code> é o equivalente web do adjustResize do Android; a alternativa por JS é instável na animação do teclado.</li>
+    </ol>
+    <p style="font-size:var(--t2);color:var(--muted);margin:var(--sp3) 0 0"><strong>Recomendação:</strong> B agora; A quando existirem três destinos de peso igual (provável com Agenda e Áreas, unidades 4 e 13). O custo de B — um toque a mais para pesquisar — é o menor dos dois.</p>
+  </div>
+
+  <div class="howto">Como avaliar: alterne A/B no topo e olhe no celular. Pergunte: o deck de captura continua o herói? O que eu procuro todo dia está a um toque? Responda com o modelo (A ou B) e qualquer coisa da anatomia que incomode — ordem dos grupos, o "4 restantes", a posição dos ícones, o detalhe como sheet. Copy ilustrativa; a voz aprovada vale.</div>
+</div>
+<script>
+(function(){
+  var root=document.documentElement;
+  function set(o){root.setAttribute("data-opt",o);document.querySelectorAll(".switch button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.o===o));});try{localStorage.setItem("praesto-opt",o);}catch(e){}}
+  document.querySelectorAll(".switch button").forEach(function(b){b.addEventListener("click",function(){set(b.dataset.o);});});
+  var s=null;try{s=localStorage.getItem("praesto-opt");}catch(e){}
+  set(s||"b");
+})();
+</script>
