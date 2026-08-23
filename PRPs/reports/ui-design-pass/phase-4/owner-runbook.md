@@ -139,9 +139,25 @@ Depois de passar pelos passos 3 a 6:
       algo para ajustar).
 
 ```
-Veredito: ____________________________________________
-Data: ________________
+Veredito: "testei, tudo funcionando" — nada a mudar antes da unidade 3.
+Data: 2026-08-23
 ```
+
+**Registrado.** O dono fez o deploy (Version `a312fa7c`), abriu o app no celular
+Android e no PC com Windows e deu o veredito acima. Com isso:
+
+- A atividade **A5 (`design-pass`) está `done`** em
+  `documentation/50-planning/ui-ux-plan.md` — o sinal de saída dela era
+  exatamente essa frase.
+- A **A6 (`close-out`) está liberada**: sincronizar a documentação derivada,
+  tirar a pausa do roadmap, marcar este plano como `deprecated` e levar as
+  divergências acumuladas (listadas no plano da fase 4) para as guidelines.
+- O veredito foi dado como um "tudo funcionando" global, não item a item. O
+  único ponto que tinha consequência de código era a **Pergunta Aberta 1 da
+  PRD** (o gesto de voltar do Android fechando a folha): como nada foi
+  reportado, o reforço `history.pushState` previsto em `Sheet.tsx` **não foi
+  ligado** — o `<dialog>` nativo dá conta. Se algum dia a folha deixar de
+  fechar no gesto de voltar, é esse o reforço a acionar.
 
 ---
 

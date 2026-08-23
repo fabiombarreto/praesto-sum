@@ -232,6 +232,31 @@ keeps patch text inside the repo needs its CSS toolchain scoped to the source
 tree, and this one now does.
 
 
+## The owner's verdict — 2026-08-23, A5's exit signal
+
+> "testei, tudo funcionando"
+
+The owner deployed the pass (Version `a312fa7c`), opened it on the Android
+phone and on the Windows PC, and reported no change wanted before unit 3.
+That sentence is what the UI/UX plan names as A5's exit signal, so:
+
+- `documentation/50-planning/ui-ux-plan.md` marks A5 `done 2026-08-23`;
+- activity A6 (`close-out`) is released — it syncs the derived docs, lifts the
+  roadmap hold, flips the plan to `deprecated` and carries this feature's
+  divergence list into the guidelines;
+- the device checks this report and `owner-runbook.md` had listed as OWED are
+  answered by that verdict, given as a whole rather than item by item. The one
+  with a code consequence was **PRD Open Question 1** — whether the Android
+  back gesture closes the native `<dialog>`. Nothing was reported against it,
+  so the `history.pushState` fallback specified in the phase-3 plan and left
+  unbuilt in `Sheet.tsx` **stays unbuilt**. If the sheet ever stops closing on
+  the back gesture, that is the recipe to reach for.
+
+Two defects were found and fixed between the first deploy and this verdict,
+both recorded above: the capture field's misframed focus ring (owner-reported)
+and the Tailwind scan that was compiling this repository's own prose into CSS.
+
+
 ## Browser-pane Tier B check — main session
 
 Run on 2026-08-22 (23:55–00:10 UTC) by the main session against the running
