@@ -1,0 +1,761 @@
+diff --git a/PRPs/reports/ui-design-pass/phase-4/build-report.md b/PRPs/reports/ui-design-pass/phase-4/build-report.md
+new file mode 100644
+index 0000000..5bc1c82
+--- /dev/null
++++ b/PRPs/reports/ui-design-pass/phase-4/build-report.md
+@@ -0,0 +1,152 @@
++# Build report — ui-design-pass phase 4 (Device verification pass)
++
++Source plan: `PRPs/plans/ui-design-pass-phase-4-device-verification-pass.plan.md`
++(Task 5 — gates + budget probe; plan AC-A6, AC-A7, PRD AC-22).
++
++## Gates (Task 5 / Validation Level 1–2)
++
++All three green, no test weakened or skipped:
++
++- `npm run check` (`wrangler types --check && tsc -b && eslint . && prettier --check .`) — **PASS**
++- `npm test` (`vitest run`, both the `worker` and `docs` projects) — **PASS**, 14 test files / 313 tests — **unchanged from phase 3**, exactly as `PRPs/reports/ui-design-pass/phase-4/test-suite.diff`'s `EXISTING_COVERAGE_SUFFICIENT` verdict predicted: this phase adds no decidable logic (four ARIA/labelling fixes, three records), so the corpus stays at its phase-3 shape with zero files touched under `test/`.
++- `npm run build` (`tsc -b && vite build`, then the PWA service-worker inject pass) — **PASS**
++
++## `vite build` size table
++
++```
++dist/praesto/.dev.vars              0.15 kB
++dist/praesto/.vite/manifest.json    0.15 kB │ gzip:  0.11 kB
++dist/praesto/wrangler.json          1.53 kB │ gzip:  0.79 kB
++dist/praesto/index.js             216.97 kB │ gzip: 50.75 kB
++
++dist/client/.assetsignore                                 0.02 kB
++dist/client/index.html                                    3.96 kB │ gzip:  1.46 kB
++dist/client/assets/index-GY9pM1LF.css                    39.43 kB │ gzip:  7.84 kB
++dist/client/assets/workbox-window.prod.es5-Bd17z0YL.js    5.65 kB │ gzip:  2.20 kB
++dist/client/assets/index-d6dSAhoY.js                    285.53 kB │ gzip: 91.74 kB
++
++dist/client/sw.mjs  17.37 kB │ gzip: 5.86 kB
++
++PWA v1.3.0
++mode      injectManifest
++format:   es
++precache  25 entries (415.81 KiB)
++files generated
++  dist/client/sw.js
++```
++
++Baseline before this phase (phase 3's report, build of the same branch on
++2026-08-22): **JS 92,902 B gzip · CSS 7,756 B gzip** (precache 25 entries /
++415.24 KiB). After this phase's four ARIA/labelling fixes — a removed
++attribute on `Toast.tsx`, a renamed `aria-label` on `TaskSheet.tsx`, one added
++`role` on `CaptureDeck.tsx`, and a new `aria-describedby` + visually-hidden
++`<span className="sr-only">` on `InlineTitle.tsx` (no new CSS file, no new
++token — `sr-only` is a built-in Tailwind v4 utility, confirmed compiled into
++`node_modules/tailwindcss/dist/lib.js`/`lib.mjs` before it was used) — the
++precise gzip probe (below) reads **JS 92,955 B gzip (+53 B, +0.06%)** and
++**CSS 7,802 B gzip (+46 B, +0.6%)**. Both deltas are consistent with four
++small, additive markup/attribute changes and nothing structural; the `/design`
++route stays tree-shaken out of this bundle entirely (verified below); the PWA
++precache grows from 25 entries / 415.24 KiB to 25 entries / 415.81 KiB (same
++25 precached assets, larger only because the JS/CSS bundles themselves grew) —
++still far inside the guidelines §11 ≤ 1 MB precache ceiling.
++
++## §11 budget probe (Task 5 / Validation Level 3)
++
++```
++JS 92955 B gzip (budget 174080) · CSS 7802 B gzip (budget 30720)
++PASS: inside the §11 budget
++```
++
++Both figures are comfortably inside
++`documentation/40-engineering/ui-ux-guidelines.md` §11: **JS at 53.4% of
++budget** (92,955 / 174,080), **CSS at 25.4%** (7,802 / 30,720) — both
++essentially unchanged from phase 3's 53% / 25%, as expected for a phase that
++adds no new component, no new dependency and no new asset. Fonts and precache
++totals track phase 1's figures (70,084 B fonts, unchanged — no font added
++this phase).
++
++## Structural gate (Level 3)
++
++- No inline `style={}` prop, `CSSProperties` import or `const styles` object
++  survives anywhere under `src/app/` outside `DesignPlayground.tsx`'s dynamic
++  `var(--token)` swatches (PRD AC-2, unaffected by this phase's fixes) —
++  confirmed by grep.
++- `src/app/components/ui/Toast.tsx` carries no `aria-live` attribute anywhere
++  in the file — `role={isError ? "alert" : "status"}` alone now carries the
++  toast's politeness — confirmed by grep.
++- `src/app/components/CaptureDeck.tsx` carries `role="status"` on the offline
++  hint, byte-identical copy (`Captura indisponível sem conexão.`) and the
++  pre-existing `role="alert"` on the request error two lines below —
++  confirmed by grep.
++- `src/app/components/TaskSheet.tsx` carries `aria-label="Data — dia"` on the
++  native date input and `label="Data"` unchanged on the date-mode
++  `ChipGroup` — zero remaining controls share the bare name `"Data"` —
++  confirmed by grep (count = 0).
++- `src/app/components/InlineTitle.tsx` carries `aria-describedby` pointing at
++  a new `<span className="sr-only">Enter salva, Esc cancela.</span>`, and its
++  pre-existing `aria-label={\`Editar título de ${task.title}\`}` is untouched
++  — confirmed by grep.
++- `grep -rlF 'tokens e estados' dist/client` finds nothing — the `/design`
++  playground is still absent from the production bundle after the
++  dynamic-import + `import.meta.env.DEV` tree-shake.
++- The three phase-4 records exist:
++  `PRPs/reports/ui-design-pass/phase-4/level-a-walk.md`,
++  `PRPs/reports/ui-design-pass/phase-4/build-report.md` (this file),
++  `PRPs/reports/ui-design-pass/phase-4/owner-runbook.md`.
++- No script under `scripts/` calls `wrangler deploy` — confirmed by grep; the
++  deploy stays the owner's, per the PRD's own Phase Details and this plan's
++  `## NOT Building`.
++
++## Not part of this report
++
++The browser-pane Tier B check (guidelines checklist items 10–14: contrast,
++the §8 states simulated, **375 px and 1280 px** — the first time this feature
++measures the wide width, keyboard/safe-area behaviour, screenshots or the
++written reason none exist) is performed by the main session after this
++Implementer run, per the plan's `## Notes` "Manual verification script" — not
++part of the Implementer's contract (Levels 1–3 only). The device pass itself
++(the Android phone, the Windows PC, the deploy, the owner's verdict) is the
++owner's, recorded through `owner-runbook.md`.
++
++*Generated by the Implementer agent, attempt 1, 2026-08-22.*
++
++## Browser-pane Tier B check — PLACEHOLDER, main session fills after this run
++
++**Nothing below this line is measured yet.** The rows are left as explicit
++placeholders rather than invented figures, per the plan's own instruction
++("do not invent them") and per guidelines §12.6 (never claim a measurement —
++or a screenshot — that was not taken). The main session runs the plan's
++"Manual verification script" (`## Notes`) against the already-running
++`npm run dev` server (port 5173) and fills every `TBD` below in place.
++
++| # | Tier B item | Result |
++|---|---|---|
++| 10 | Contrast, five pairs of §4.3, on whichever surface changed this phase | TBD — this phase changed no colour or token, so phases 1–3's existing contrast measurements (`phase-1/build-report.md:126`, `phase-2/build-report.md:136`, `phase-3/build-report.md:144`) should still hold; re-confirm rather than re-derive |
++| 11 | §8 states re-simulated after the four fixes (toast error tone, offline hint, sheet date fields, inline editor) | TBD |
++| 12 | **375 px** re-check of the four fixed points (Task 1–4) **and 1280 px** — the column cap (`max-w-[640px]` shell, `max-w-[560px]` gate/playground), the sheet as a centred 560 px card with `sm:rounded-card`, no stretched row, no horizontal overflow | TBD — 1280 px has not been measured in any phase of this feature to date |
++| 13 | `vite build` size report read against §11 | ✔ already recorded above by the Implementer — JS 92,955 B gzip (53.4%), CSS 7,802 B gzip (25.4%) |
++| 14 | Screenshots filed, or the reason none exists | TBD — phases 1–3 all recorded "none, pane not compositing frames"; state plainly whether that is still true rather than assuming it |
++
++### Owed checks — recipe for the main session
++
++Open `http://localhost:5173/` in the pane (already running — do not start a
++second `npm run dev`), confirm the dark mode preset and 375 × 812, then:
++re-read `Toast.tsx`'s live announcement behaviour (`role` present, no
++`aria-live`), the deck's hint (`role="status"`), the sheet's two date
++controls (distinct accessible names), and the inline editor (`aria-label` and
++`aria-describedby` both present, the description itself not visible). Then
++resize (or open a second pane) to **1280 px** and record the column cap and
++the sheet's centred-card layout — the first wide measurement of this feature.
++File a screenshot at each width, or restate the reason none exists.
++
++### Verdict for this phase
++
++Tier A: not re-run as a fresh 9-item pass — this phase touches four existing,
++already-Tier-A-cleared surfaces with attribute-only changes; the Level A walk
++(`level-a-walk.md`) is the deeper, screen-wide record this phase exists to
++produce, and supersedes a Tier A re-run for these four points specifically.
++Tier B: build and budget recorded above; contrast, simulated states, 375 px
++re-check, 1280 px and screenshots are the main session's placeholder rows
++above. No further code change requested from the Implementer's own gates —
++Levels 1–3 are all green.
+diff --git a/PRPs/reports/ui-design-pass/phase-4/level-a-walk.md b/PRPs/reports/ui-design-pass/phase-4/level-a-walk.md
+new file mode 100644
+index 0000000..f0c4023
+--- /dev/null
++++ b/PRPs/reports/ui-design-pass/phase-4/level-a-walk.md
+@@ -0,0 +1,318 @@
++# WCAG 2.2 Level A walk — ui-design-pass, activity A5, phase 4
++
++Date: 2026-08-22 · Source plan: `PRPs/plans/ui-design-pass-phase-4-device-verification-pass.plan.md` (Task 4) · PRD: `PRPs/prds/ui-design-pass.prd.md` AC-21.
++
++The pass guidelines §10 says runs "once per screen in A5" — this is that pass. It
++covers the three screens the PRD names: the **token gate** (`TokenGate.tsx`),
++**Hoje** (`TodayScreen.tsx` and its children), and the **detail sheet**
++(`Sheet.tsx` + `TaskSheet.tsx` + `ConfirmView.tsx`).
++
++## Method
++
++**Criteria source.** `documentation/40-engineering/ui-ux-guidelines.md` §10,
++verbatim — no criterion below was invented or added from outside that section.
++§10 states "31 Level A criteria" and lists them as prose bullets, several of
++which name more than one criterion id per bullet (e.g. "1.3.1 ... 2.4.1 ...").
++Expanded one row per id, the section names exactly:
++
++- **24 criteria judged applicable** to this app: 1.1.1, 1.3.1, 2.4.1, 1.3.2,
++  1.3.3, 1.4.1, 2.1.1, 2.1.2, 2.2.1, 2.2.2, 2.4.2, 2.4.3, 2.4.4, 2.5.1, 2.5.2,
++  2.5.3, 3.1.1, 3.2.1, 3.2.2, 3.2.6, 3.3.1, 3.3.2, 3.3.7, 4.1.2.
++- **7 criteria the guidelines mark N/A by design**: the plan's own Task 4
++  wording names these explicitly — "the media criteria 1.2.x, 1.4.2, 2.3.1 and
++  2.5.4 are vacuous here — no media, no flashing, no motion actuation — and
++  2.1.4 has no single-key shortcut to switch off." §10's own text writes the
++  media group as the shorthand "1.2.x"; expanded to the three WCAG 2.2 success
++  criteria it stands for (1.2.1 Audio-only/Video-only, 1.2.2 Captions
++  Prerecorded, 1.2.3 Audio Description or Media Alternative) plus 1.4.2, 2.3.1
++  and 2.5.4, that is 6 ids, plus 2.1.4 named separately by the task = **7**.
++
++24 + 7 = **31**, matching §10's count exactly with nothing added and nothing
++dropped.
++
++**A note on "vacuously true" vs. "n/a".** A few of the 24 applicable criteria
++govern a pattern this app does not currently use at all (a link, a swipe
++gesture, a consistent help mechanism, a visible label on an icon-only
++control). Guidelines §10 does not list these among its 7 named N/A criteria,
++so this walk does not either — marking them "n/a" instead of the app's actual,
++narrower reason ("there is no instance of the pattern to violate this") would
++quietly grow the N/A bucket past what §10 authorizes, which is exactly the
++plan's own named risk ("a criterion is marked n/a to avoid work"). Each such
++row is marked **✔ (vacuous)** instead, with the absence itself as the evidence
++(confirmed by a repo-wide search, cited per row).
++
++**Method for each row.** Every row is decided one of two ways, named in its
++evidence:
++
++1. **Source read** — the component file and line(s) that settle the question
++   structurally (a real `<label>`, a `role`, an `aria-*` attribute, DOM order,
++   the absence of a pattern confirmed by search). Most Level A criteria are
++   structural/semantic and are legitimately decidable this way.
++2. **An existing browser-pane measurement** from phases 1–3's build reports
++   (`PRPs/reports/ui-design-pass/phase-{1,2,3}/build-report.md`) — contrast
++   numbers, the focus-ring sweep, hit-area measurements, the Tab/Enter/Esc
++   walk-throughs already run on `/design` and on the live screens. Cited by
++   report path and line.
++
++Nothing below is measured fresh in a browser by this walk: per the plan's own
++Notes, the browser pane is the main session's job and the phone/PC are the
++owner's. Where neither source nor an existing measurement settles a question,
++the row says so and the item is carried to **## Owed** at the end, never
++guessed.
++
++---
++
++## Screen 1 — Token gate (`src/app/components/TokenGate.tsx`)
++
++| ID | Criterion | Verdict | Evidence |
++|---|---|---|---|
++| 1.1.1 | Non-text content has a text alternative | ✔ | The mark `<img src="/brand/mark-flat.svg" alt="" .../>` is decorative, sitting beside the visible `<h1>praesto</h1>` that names it in text; the `KeyRound` icon is `aria-hidden="true"` beside a full visible sentence; no icon-only control exists on this screen (*Salvar* carries visible text) — `TokenGate.tsx:35-36,41,90-92` |
++| 1.3.1 | Info and relationships (real semantics) | ✔ | `<label htmlFor="api-token">Token da API</label>` bound to `<input id="api-token">`; one `<h1>`; one `<main>` — `TokenGate.tsx:33,36,79-88` |
++| 2.4.1 | Bypass blocks (landmarks, one `<h1>`) | ✔ | `<main>` wraps the whole screen (`:33`), one `<h1>praesto</h1>` (`:36`); no repeated nav block precedes it, so there is nothing to bypass — `TokenGate.tsx:33,36` |
++| 1.3.2 | Meaningful sequence (DOM order = reading order) | ✔ | Linear JSX, no CSS `order`/flex-order/grid-area override anywhere in the file: mark+wordmark → conditional 401 reason → instruction → form → error, matching the visual stack top-to-bottom — `TokenGate.tsx:32-99` |
++| 1.3.3 | Sensory characteristics (never shape/position/colour alone) | ✔ | The only instruction is the sentence "Cole o token da API deste dispositivo." — text, not shape or position — `TokenGate.tsx:47` |
++| 1.4.1 | Use of colour (never the only cue) | ✔ | The 401 reason pairs the `KeyRound` icon with a full sentence, never colour alone; the error is `role="alert"` text in `text-overdue`, always with the message itself — `TokenGate.tsx:39-44,95-98` |
++| 2.1.1 | Keyboard (everything operable by keyboard) | ✔ | One native `<form>`, one `<input>`, one submit `<button>` (Base UI `Button`, a real `<button>` — `src/app/components/ui/Button.tsx:5,28-29`); no custom pointer-only handling anywhere in the file — `TokenGate.tsx:49-93` |
++| 2.1.2 | No keyboard trap | ✔ | No dialog, no focus-management effect on this screen — nothing to trap focus in; Tab cycles the two controls and leaves normally — `TokenGate.tsx:49-93` |
++| 2.2.1 | Timing adjustable (no time limits) | ✔ | No timer, countdown or auto-expiring content anywhere in the file (confirmed by reading the full component) |
++| 2.2.2 | Pause, stop, hide | ✔ (vacuous) | No toast, no moving or auto-updating content is rendered on this screen at all |
++| 2.4.2 | Page titled | ✔ | `document.title = "Praesto Sum"` set on mount — `TokenGate.tsx:29` |
++| 2.4.3 | Focus order (follows the layout) | ✔ | Two focusables in visual order top-to-bottom: the input, then *Salvar* — no `tabIndex` override in the file — `TokenGate.tsx:80-92` |
++| 2.4.4 | Link purpose (in context) | ✔ (vacuous) | No `<a>` element exists anywhere in `TokenGate.tsx` (confirmed by search) |
++| 2.5.1 | Pointer gestures | ✔ (vacuous) | No gesture handler exists in the file; submission is a plain tap/click or Enter, never a multipoint or path gesture |
++| 2.5.2 | Pointer cancellation | ✔ | The submit control is a native/Base UI `<button type="submit">` — standard click/keyup activation, no `onPointerDown`-triggered action anywhere in the file — `TokenGate.tsx:90-92` |
++| 2.5.3 | Label in name | ✔ | The visible label text "Token da API" *is* the input's accessible name via `htmlFor` — no `aria-label` override exists to diverge from it — `TokenGate.tsx:79-88` |
++| 3.1.1 | Language of page | ✔ | `<html lang="pt-BR">`, document-level, applies to every screen — `index.html:2` |
++| 3.2.1 | On focus (no context change) | ✔ | No `onFocus` handler exists anywhere in the file |
++| 3.2.2 | On input (no unrequested context change) | ✔ | The input's `onChange` only calls `setValue`; the request fires solely from the form's explicit `onSubmit` (Enter or tapping *Salvar*) — `TokenGate.tsx:49-76,86` |
++| 3.2.6 | Consistent help | ✔ (vacuous) | No help mechanism exists anywhere in the app yet (repo-wide search for "ajuda"/"help" in `src/app` returns nothing) — nothing to place inconsistently |
++| 3.3.1 | Error identification | ✔ | The failure message renders as a full sentence directly under the form, `role="alert"` — `TokenGate.tsx:95-98` |
++| 3.3.2 | Labels or instructions | ✔ | `<label htmlFor="api-token">Token da API</label>` is a real, visible label; the input carries no `placeholder` attribute at all, so there is no "placeholder as label" trap to fall into — `TokenGate.tsx:79-88` |
++| 3.3.7 | Redundant entry | ✔ | `value` is deliberately not cleared after a failed save (the FR-045 invariant), so the owner never has to retype the token — `TokenGate.tsx:63-64` (comment), `:86` |
++| 4.1.2 | Name, role, value | ✔ | The only interactive control beyond native HTML is `Button`, which renders a real `<button>` under Base UI — native name/role/state, nothing custom to expose — `TokenGate.tsx:90-92`, `src/app/components/ui/Button.tsx:5,28-29` |
++| 1.2.1 / 1.2.2 / 1.2.3 | Media alternatives (prerecorded) | n/a | No audio or video content exists anywhere in the app |
++| 1.4.2 | Audio control | n/a | No audio plays anywhere in the app |
++| 2.1.4 | Character key shortcuts | n/a | No single-key shortcut exists anywhere in `src/app` — the only `onKeyDown` handler in the whole tree is field-scoped (`InlineTitle.tsx:46`), which the guideline's own carve-out exempts regardless ("require focus in a field") |
++| 2.3.1 | Three flashes or below threshold | n/a | No flashing content; motion is limited to the discrete, capped-duration transitions of guidelines §7 |
++| 2.5.4 | Motion actuation | n/a | No feature is operated by device or user motion |
++
++## Screen 2 — Hoje (`TodayScreen.tsx`, `TodayHeader.tsx`, `TaskRow.tsx`, `InlineTitle.tsx`, `CaptureDeck.tsx`, `EmptyState.tsx`, `Skeleton.tsx`, `ui/Toast.tsx`, `ui/Banner.tsx`)
++
++| ID | Criterion | Verdict | Evidence |
++|---|---|---|---|
++| 1.1.1 | Non-text content has a text alternative | ✔ | Every icon-only control carries `aria-label` (*Adicionar*, *Fechar aviso*, `Editar título de …`, `Concluir …`/`Reabrir …`); decorative icons (`WifiOff`, `ChevronDown`, `Check`, the spinner) are `aria-hidden="true"` — `CaptureDeck.tsx:76,81-86`, `ui/Toast.tsx:36,51`, `TaskRow.tsx:89-91,132-137`, `ui/Banner.tsx:12` |
++| 1.3.1 | Info and relationships (real semantics) | ✔ | `<header>` + `<main>`, one `<h1>Hoje</h1>`, a real `<ul>/<li>` list, a disclosure `<button aria-expanded>` for *Concluídas* — `TodayHeader.tsx:11-12`, `TodayScreen.tsx:300-312,331,349-368` |
++| 2.4.1 | Bypass blocks (landmarks, one `<h1>`) | ✔ | `<header>` (`TodayHeader`) + `<main>` (the scroll region), one `<h1>Hoje</h1>`; the layout standard keeps a single-screen model with no repeated nav block to bypass — `TodayScreen.tsx:304,312`, `TodayHeader.tsx:11-12` |
++| 1.3.2 | Meaningful sequence | ✔ | DOM order = header → banner slot → main (skeleton / error / empty / list) → toast slot → capture deck; no CSS reordering anywhere in these components — `TodayScreen.tsx:299-410` |
++| 1.3.3 | Sensory characteristics | ✔ | Overdue/priority/done/missed states are named in words (*atrasada · venceu …*, *· alta*, *não concluída*), never by shape or position alone — `TaskRow.tsx:109-125`, `src/shared/format.ts` (`taskMetaLine`) |
++| 1.4.1 | Use of colour | ✔ | Overdue meta pairs `text-overdue` with the word *atrasada*; priority pairs the chevron glyph with the word *alta*/*baixa*; done pairs `text-muted` + line-through with the control name *Reabrir …*; the offline banner pairs the `WifiOff` icon with a full sentence — `TaskRow.tsx:109-125`, `ui/Banner.tsx:6-15` |
++| 2.1.1 | Keyboard | ✔ | Every control is a real `<button>` or Base UI primitive, reachable and activatable by Tab + Enter/Space; no hover-only or drag-only action anywhere in `src/app` (confirmed by search: no `onTouchStart`/`onDrag`/gesture handler exists) |
++| 2.1.2 | No keyboard trap | ✔ | No dialog lives on this screen; the one disclosure (*Concluídas*) is inline content, not a modal — `TodayScreen.tsx:349-388` |
++| 2.2.1 | Timing adjustable | ✔ | The only auto-expiring content is the informational toast (4 s, `TOAST_AUTO_DISMISS_MS`), and only when it carries **no** action; a toast with an action (*Desfazer*, *Atualizar*) never auto-expires — `autoDismisses()` is `false` whenever `action !== undefined`, and `reduceToast`'s `expire` case is then a no-op — `src/shared/toast.ts:63,73-75,92-97` |
++| 2.2.2 | Pause, stop, hide | ✔ | Same evidence as 2.2.1 (actionable toasts persist until used, dismissed or replaced); nothing else on the screen moves continuously — the only `setInterval` in `src/app` is a silent 1-hour SW-update poll with no visible UI (`pwa.ts:27`), and no CSS animation is `infinite` anywhere (confirmed by search) |
++| 2.4.2 | Page titled | ✔ | `document.title = "Hoje · Praesto Sum"` set on mount — `TodayScreen.tsx:270` |
++| 2.4.3 | Focus order | ✔ | Tab order follows the visual stack top-to-bottom: header → banner (if shown) → each row's controls → pencil → *Concluídas* disclosure → toast → deck field → submit; no `tabIndex` override anywhere in these components (confirmed by search) |
++| 2.4.4 | Link purpose | ✔ (vacuous) | No `<a>` element exists on this screen (confirmed by search); every navigable action is a `<button>` naming its own effect |
++| 2.5.1 | Pointer gestures | ✔ (vacuous) | No swipe or drag gesture is implemented anywhere in `src/app` (confirmed by search); guidelines §12.4 reserves swipe as a shortcut to a visible control for later, not yet built |
++| 2.5.2 | Pointer cancellation | ✔ | Every control is a native/Base UI `<button>` or `Toggle`, activated on click/keyup; no `onPointerDown`-triggered action exists anywhere in `src/app` (confirmed by search) |
++| 2.5.3 | Label in name | ✔ | Text buttons' accessible name equals their visible text exactly (*Nova tarefa*, *Desfazer*, *Tentar de novo*); icon-only controls carry no visible text to diverge from (1.1.1 governs those) — `EmptyState.tsx:13`, `TodayScreen.tsx:321` |
++| 3.1.1 | Language of page | ✔ | `<html lang="pt-BR">`, document-level — `index.html:2` |
++| 3.2.1 | On focus | ✔ | No `onFocus` handler triggers navigation or a request anywhere in these components (confirmed by search) |
++| 3.2.2 | On input | ✔ | Every `onChange` only updates local state (`setTitle`, `InlineTitle`'s `setDraft`); a request fires only from an explicit submit or tap — `CaptureDeck.tsx:71`, `InlineTitle.tsx:44` |
++| 3.2.6 | Consistent help | ✔ (vacuous) | No help mechanism exists anywhere in the app yet (confirmed by search) |
++| 3.3.1 | Error identification | ✔ | The load error and the capture error render as a full sentence next to what failed (`role="alert"`, under the list / under the field) — `TodayScreen.tsx:315-322`, `CaptureDeck.tsx:98-102` |
++| 3.3.2 | Labels or instructions | ✔ — after this phase's fix | The capture field has a real, visible `<label for="capture-title">Nova tarefa</label>` (the field's own `placeholder` is a second, separate hint, not the label); the inline title editor carries `aria-label` (naming the Task) **and**, new this phase, `aria-describedby` (the *Enter salva, Esc cancela.* instruction) — full ruling in **## This phase's four findings**, finding 4 — `CaptureDeck.tsx:47-52,66`; `InlineTitle.tsx` (this phase's edit) |
++| 3.3.7 | Redundant entry | ✔ (vacuous) | The capture flow is single-step (title only); nothing already entered is ever re-asked |
++| 4.1.2 | Name, role, value | ✔ | `CompleteControl` is a Base UI `Checkbox.Root` exposing checkbox role/checked state with `aria-label` (`ui/CompleteControl.tsx:23-27`); chips are Base UI `Toggle`s — real `<button>` + `aria-pressed` (`node_modules/@base-ui/react/toggle/Toggle.js:77,112`) inside a `role="group"` `ToggleGroup` (`node_modules/@base-ui/react/toggle-group/ToggleGroup.js:78`); the *Concluídas* disclosure is a native `<button aria-expanded>` (`TodayScreen.tsx:352`); the toast is `role="alert"`/`role="status"` (`ui/Toast.tsx:31`, this phase's fix) |
++| 1.2.1 / 1.2.2 / 1.2.3 | Media alternatives (prerecorded) | n/a | No audio or video content exists anywhere in the app |
++| 1.4.2 | Audio control | n/a | No audio plays anywhere in the app |
++| 2.1.4 | Character key shortcuts | n/a | No single-key shortcut exists anywhere in `src/app` (same evidence as screen 1) |
++| 2.3.1 | Three flashes or below threshold | n/a | No flashing content; the one signature completion animation is a single, capped-duration transition (guidelines §7), not a repeating flash |
++| 2.5.4 | Motion actuation | n/a | No feature is operated by device or user motion |
++
++## Screen 3 — Detail sheet (`ui/Sheet.tsx`, `TaskSheet.tsx`, `ui/ConfirmView.tsx`)
++
++| ID | Criterion | Verdict | Evidence |
++|---|---|---|---|
++| 1.1.1 | Non-text content has a text alternative | ✔ | *Fechar* carries `aria-label="Fechar"`; the `X`/`Trash2` icons inside it and beside *Excluir* are `aria-hidden="true"`; the drag handle `<div>` is `aria-hidden="true"` — `ui/Sheet.tsx:93-95,102-107`, `TaskSheet.tsx:172` |
++| 1.3.1 | Info and relationships (real semantics) | ✔ | Real `<label htmlFor>` on *Título*/*Descrição*, a real `<form onSubmit>`, an `<h2>` naming the sheet via `aria-labelledby`; the confirmation uses a real `<h3>` — `TaskSheet.tsx:78-103`, `ui/Sheet.tsx:89,97-99`, `ui/ConfirmView.tsx:42` |
++| 2.4.1 | Bypass blocks (landmarks, one `<h1>`) | ✔ — ruling | The sheet is a modal opened from *Hoje*, whose own `<h1>Hoje</h1>` stays the document's single `<h1>` while the page behind is made inert by `showModal()`. The native `<dialog>` carries the implicit ARIA role `dialog` (HTML spec) and is `aria-labelledby` its own `<h2>{title}</h2>` — the correct nested-heading pattern for a modal's title, not a second document `<h1>` — `ui/Sheet.tsx:53-54,84-99` |
++| 1.3.2 | Meaningful sequence | ✔ | Field order in the DOM matches the layout standard §3 order (Título → Descrição → Data → Prioridade → Cancelar/Salvar → error → Excluir); no CSS reordering — `TaskSheet.tsx:70-175` |
++| 1.3.3 | Sensory characteristics | ✔ | The pressed chip state is named by the group's own visible heading plus the pressed option's own text, never by position; the confirmation states the consequence in a full sentence (*Não dá para desfazer.*) — `TaskSheet.tsx:105-142`, `ui/ConfirmView.tsx:43` |
++| 1.4.1 | Use of colour | ✔ | The pressed chip carries fill **and** font-weight **and** a check glyph, never colour alone — `ui/Chip.tsx:40-43`; *Excluir* is icon + word in `muted`, never the live/overdue hue (guidelines §4.2: the destructive button stays neutral) — `ui/ConfirmView.tsx:60-69` |
++| 2.1.1 | Keyboard | ✔ | Every field and button is natively focusable/activatable; Esc, the *Fechar* button and the Android back gesture are all designed to route through the same `close`/`cancel` listener pair — `ui/Sheet.tsx:65-82` |
++| 2.1.2 | No keyboard trap | ✔ (focus-return partially OWED — see ## Owed) | Focus cannot escape to the inert background while the dialog is open (`showModal()`); `ui/Sheet.tsx`'s header comment records that `<dialog>` "returns focus to the opener natively on close" (`:15-17`), and Tab reaches the close button first, never a hidden trap (`:55-59`). Phase 3's pane run could not itself confirm the return-to-opener step (a scripted `.click()` does not move focus the way a real tap does) — see Owed |
++| 2.2.1 | Timing adjustable | ✔ | No timer or auto-expiring content inside the dialog itself; the shared toast rule (screen 2's 2.2.1 evidence) applies identically when `toastSlot` renders inside the sheet — `TaskSheet.tsx:188` |
++| 2.2.2 | Pause, stop, hide | ✔ | Same toast-persistence rule as screen 2; the only motion inside the dialog is the one-shot open/close slide (a state transition, not looping content) — `styles.css:87-134` |
++| 2.4.2 | Page titled | ✔ — ruling | The sheet does not set `document.title` itself; it is a dialog layered over *Hoje* (title *Hoje · Praesto Sum*) or, reached via a 401 route, over the gate (*Praesto Sum*) — the underlying document always carries a meaningful title while the dialog is open, so there is no untitled state to reach |
++| 2.4.3 | Focus order | ✔ | Tab order inside the dialog follows the visual stack: *Fechar* → Título → Descrição → Data chips → Data input → Prioridade chips → Cancelar/Salvar → Excluir; the dialog root itself is `tabIndex={-1}` (skipped in the tab sequence by design, so Tab reaches *Fechar* first, never the invisible dialog wrapper) — `ui/Sheet.tsx:56-59,88` |
++| 2.4.4 | Link purpose | ✔ (vacuous) | No `<a>` element exists inside the sheet or the confirmation (confirmed by search) |
++| 2.5.1 | Pointer gestures | ✔ (vacuous) | No swipe-to-dismiss is implemented; the handle `<div>` at the top is decorative only (`aria-hidden="true"`, no gesture handler attached) — `ui/Sheet.tsx:92-95` |
++| 2.5.2 | Pointer cancellation | ✔ | Every button (*Fechar*, *Cancelar*, *Salvar*, *Excluir*) is a native/Base UI `<button>`, activated on click, never on `pointerdown` |
++| 2.5.3 | Label in name | ✔ | *Cancelar*/*Salvar*/*Excluir*/*Fechar* carry visible text (or, for *Fechar*, an `aria-label` with no competing visible text) equal to their accessible name; the date-mode/priority chips' visible text equals their accessible name (native text-content-derived name) — `TaskSheet.tsx:144-174`, `ui/ConfirmView.tsx:57-69` |
++| 3.1.1 | Language of page | ✔ | Same document-level `<html lang="pt-BR">` — `index.html:2` |
++| 3.2.1 | On focus | ✔ | No `onFocus` handler exists anywhere in `TaskSheet.tsx`, `ui/ConfirmView.tsx` or `ui/Sheet.tsx` |
++| 3.2.2 | On input | ✔ | Every field's `onChange` only calls `onDraftChange` (updates the in-memory draft); the request fires solely from the form's explicit `onSubmit` (*Salvar*) — `TaskSheet.tsx:73-76,85,100,112-114,126,135-137` |
++| 3.2.6 | Consistent help | ✔ (vacuous) | No help mechanism exists anywhere in the app yet |
++| 3.3.1 | Error identification | ✔ | The save error renders as a full sentence directly under the form, `role="alert"`; the confirmation's own error uses the identical pattern — `TaskSheet.tsx:159-163`, `ui/ConfirmView.tsx:44-48` |
++| 3.3.2 | Labels or instructions | ✔ — after this phase's + Task 2's fixes | *Título*/*Descrição* have real `<label for>`; the date-mode group's visible heading is *Data* (`<p id="sheet-date-label">`) and its `ChipGroup`'s own accessible name is `"Data"`; the native date input now carries `aria-label="Data — dia"` — a distinct name from the group while both stay visibly under the same *Data* heading for a sighted user; *Prioridade*'s heading and its `ChipGroup`'s name are both `"Prioridade"`, with no second control to collide (Task 2's check — see finding 2 below) — `TaskSheet.tsx:105-127,130-133` |
++| 3.3.7 | Redundant entry | ✔ | The draft-in-memory rule means a Task edited then closed keeps its draft for the rest of the session; reopening the same Task restores exactly what was typed, so the owner never re-enters the same field twice — `TaskSheet.tsx:54-59` (comment + `lastDraft` ref), `src/shared/task-sheet.ts` (`currentDraft`) |
++| 4.1.2 | Name, role, value | ✔ — after this phase's fix | The date-mode group and the date input now expose two distinct accessible names (*Data* vs *Data — dia*) instead of one shared name (AC-A2); chips are Base UI `Toggle`s with `aria-pressed`; the dialog exposes the native `dialog` role with `aria-labelledby`; *Excluir* replaces the dialog's own content with the confirmation in place — never a second, stacked dialog (`document.querySelectorAll("dialog[open]").length === 1`, confirmed in `PRPs/reports/ui-design-pass/phase-3/build-report.md:135`) — `TaskSheet.tsx:108-127` |
++| 1.2.1 / 1.2.2 / 1.2.3 | Media alternatives (prerecorded) | n/a | No audio or video content exists anywhere in the app |
++| 1.4.2 | Audio control | n/a | No audio plays anywhere in the app |
++| 2.1.4 | Character key shortcuts | n/a | No single-key shortcut exists anywhere in `src/app` (same evidence as screen 1); the sheet's own Enter/Esc handling is native `<form>` submission and the dialog's own close contract, not a custom single-key binding |
++| 2.3.1 | Three flashes or below threshold | n/a | No flashing content; the sheet's slide transition is a single, capped-duration state change |
++| 2.5.4 | Motion actuation | n/a | No feature is operated by device or user motion |
++
++**Verdict for this walk:** 24 of 24 applicable criteria hold ✔ on all three
++screens (72 of 72), 7 of 7 n/a criteria hold vacuously on all three screens
++(21 of 21) — 93 of 93 rows recorded, zero ✘. One structural nuance (2.1.2's
++focus-return sub-step on the sheet) and the product-level Android back
++gesture remain **OWED to the pane/device**, listed in full below — never
++claimed as measured when they were not.
++
++---
++
++## This phase's four findings
++
++The phase-4 grounding pass surfaced four defects the full Level A walk (not
++any Tier A per-change check) was built to catch — each about how a state is
++*announced*, not how it looks. All four are fixed in this attempt; here is
++what each task did and why.
++
++### 1. The toast's error announced no more urgently than a confirmation
++
++`Toast.tsx` set `role={isError ? "alert" : "status"}` **and** an unconditional
++`aria-live="polite"`. `role="alert"` already implies `aria-live="assertive"`
++and `role="status"` already implies `aria-live="polite"` — an explicit
++`aria-live` attribute overrides the role's own implicit value, so the error
++toast (which should interrupt) was announced with the same politeness as
++*Tarefa salva* (which should not). **Task 1** removed the explicit attribute,
++leaving each role to carry its own politeness, and added a comment above the
++`role` line naming the rule (phrased to avoid the same literal string the
++plan's own validation greps for, so the fix and its guard do not collide).
++Delivers AC-A1 / PRD AC-21.
++
++### 2. Two adjacent controls on the detail sheet were both named *Data*
++
++The date-mode `ChipGroup` (`label="Data"`) and the native date input
++(`aria-label="Data"`) shared one accessible name — a Level A 4.1.2 problem in
++a screen-reader's forms list, even though both are visibly grouped under one
++*Data* heading for a sighted user. **Task 2** renamed the date input's
++accessible name to `"Data — dia"`, keeping the chip group's name as `"Data"`
++(the group is still what a sighted user reads as the section heading). The
++priority pair was checked the same way: only the `ChipGroup` carries
++`label="Prioridade"` — no second control on the sheet shares that name, so
++`TaskSheet.tsx` needed no further change there. Delivers AC-A2 / PRD AC-21.
++
++### 3. The capture field's offline hint appeared with no announcement
++
++The connectivity state directly above it (`Banner.tsx`, `role="status"`) is
++announced; the deck's own offline hint (`Captura indisponível sem conexão.`)
++was a plain `<p>`, silent to a screen reader even though the field beside it
++goes disabled at the same moment. **Task 3** wrapped the hint in
++`role="status"` — the identical idiom `Banner.tsx` already uses for the same
++underlying state — with a short comment naming why. The copy, the classes and
++the `!canWrite` condition are byte-identical to before. Delivers AC-A3 / PRD
++AC-21.
++
++### 4. The inline title editor had a name but no instructions — the 3.3.2 ruling
++
++**The finding.** `InlineTitle.tsx`'s `<input>` already carried
++`aria-label={\`Editar título de ${task.title}\`}` — a real, programmatic
++accessible *name*. What Level A 3.3.2 asks for is broader than a name alone:
++"Labels **or instructions** are provided when content requires user input."
++This editor requires input and offers two ways to leave it (Enter commits,
++Esc abandons) that exist nowhere else in the app's vocabulary — a sighted
++user has no visible affordance telling them this either, but infers it from
++platform convention (a text field with a blinking caret invites Enter/Esc).
++A screen-reader user gets neither the visual cue nor the naming convention;
++without an explicit instruction, "Enter salva, Esc cancela" is knowledge only
++a sighted, mouse-and-keyboard-experienced user would guess.
++
++**The ruling.** The editor cannot carry a second *visible* label without
++duplicating the Task's own title, which the editor replaces in place, in the
++exact same visual position and at the exact same size the title just
++occupied. This walk rules that the row's own (momentarily replaced) visible
++title satisfies 3.3.2's "label" half by *spatial and temporal substitution*:
++a sighted user was looking at the Task's name a fraction of a second before
++the input appeared in its exact slot, so the "what does this field belong to"
++question 3.3.2 exists to answer is never actually open for them — and the
++pre-existing `aria-label` answers the identical question for a screen-reader
++user by naming the Task directly, with no substitution needed. What was
++genuinely missing was the "instructions" half: how to use this transient
++control. **Task 4** closed that gap with `aria-describedby` pointing at a
++visually-hidden `<span className="sr-only">Enter salva, Esc cancela.</span>`
++rendered beside the input. (`sr-only` was confirmed to already exist as a
++built-in Tailwind v4 utility — compiled into `node_modules/tailwindcss/dist/lib.js`
++and `lib.mjs` — before it was used, per the plan's own instruction to check
++first; no new CSS file and no new token were added.) Delivers AC-A4 / PRD
++AC-21.
++
++---
++
++## The 2026-08-19 checklist findings, closed
++
++`PRPs/reports/ui-ux-guidelines/checklist-run-2026-08-19.md` recorded **13
++distinct ✘** against the pre-A5 app (its own summary line). Mapped to the
++phase that closed each:
++
++| # | Finding (2026-08-19) | Rule | Closed by |
++|---|---|---|---|
++| 1 | Touch targets under 48 px (gate inputs/buttons 41 px; board row actions ~18 px, the "worst offender") | §3.3 | Phase 2 (board rows/controls rebuilt ≥ 48 px) + Phase 3 (gate rebuilt on the tokens — "the 41 px finding of 2026-08-19 is closed", `phase-3/build-report.md:129`) |
++| 2 | No dark canvas continuity (`color-scheme` meta absent; white canvas behind a dark splash) | §2.4 | Phase 1 (`index.html` chrome: `theme-color #161012`, `color-scheme: dark` meta and CSS — `phase-1/build-report.md:65-67`) |
++| 3 | `overscroll-behavior` not contained (accidental pull-to-refresh risk) | §2.5 | Phase 1 (`overscroll-behavior-y: contain` confirmed live on `html`/`body` — `phase-1/build-report.md:116-118`) |
++| 4 | Visible copy in English (gate and board) | §9 | Phase 2 (board strings) + Phase 3 (gate strings) — both Tier A item 4 in their build reports |
++| 5 | All-caps CSS on the *Closed* label | §9.2 | Phase 2 (zero `text-transform: uppercase` confirmed by the structural gate — `phase-2/build-report.md:66-67`) |
++| 6 | The `missed` state was a bare `!` glyph with no text label | §1.4.1 / §4.4 | Phase 2 (`taskMetaLine` renders the word *não concluída*, AC-6) |
++| 7 | Placeholder-only fields, no visible label (gate token field; capture field) | §10 3.3.2 | Phase 2 (`<label for="capture-title">Nova tarefa</label>`) + Phase 3 (`<label htmlFor="api-token">Token da API</label>`) |
++| 8 | Irreversible delete had no confirmation | §8 | Phase 3 (`ConfirmView`, the in-place confirmation) |
++| 9 | Completing a Task had no *Desfazer* toast | §8 | Phase 2 (`showToast` with `action: {label: "Desfazer"}` on complete) |
++| 10 | No offline / server-unreachable banner | §8, ADR-0004 | Phase 2 (`Banner.tsx` wired into `TodayScreen`) |
++| 11 | The SW update prompt was `window.confirm` | §2.8 | Phase 2 (`main.tsx`'s `onNeedRefresh` → `showToast`; "no `window.confirm` anywhere under `src/app`" — `phase-2/build-report.md:64-65`) |
++| 12 | The empty state had no CTA | §8 Empty | Phase 2 (`EmptyState.tsx`, the *Nova tarefa* CTA) |
++| 13 | The detail screen's only way out was "← Back" with no history entry, so the Android back gesture left the app | §2.2 | **Structurally** closed by Phase 3 (native `<dialog>` + `showModal()`, whose `close`/`cancel` events are wired so Esc and the back gesture *should* close it per the HTML contract — `ui/Sheet.tsx:65-82`). **Still open as a device fact**: whether the owner's actual Android Chrome honours it has never been observed — PRD Open Question 1, phase-3's own "Owner's device check — OWED, not yet run" (`phase-3/build-report.md:210-220`). **Named here as the owner's check** — `PRPs/reports/ui-design-pass/phase-4/owner-runbook.md` step 4 is where it is finally run. |
++
++12 of 13 are closed by code, measured and cited above. The 13th (the back
++gesture) is a **device fact**, not a code question — the fallback
++(`history.pushState` on open, `popstate` → `close()`) already exists as a
++specified, ready-to-switch-on contingency inside `Sheet.tsx`'s own API surface
++per the phase-3 plan's Notes, and is not activated unless the owner's check
++finds it necessary.
++
++---
++
++## Owed
++
++Everything below could not be settled from source or from an existing
++phase 1–3 measurement, and is not guessed:
++
++1. **2.1.2's focus-return sub-step on the sheet, interactively.** Phase 3's
++   pane run could not confirm focus actually lands back on the opening row
++   after a close, because a scripted `.click()` in that session never moved
++   focus the way a real tap does (`phase-3/build-report.md:156`). The
++   structural argument stands (native `<dialog>` returns focus to the opener
++   per the HTML spec, and `ui/Sheet.tsx` adds no override), but a real,
++   interactive confirmation is owed to the browser pane or the device.
++2. **The Android back gesture, on the owner's actual phone and Chrome
++   version** (finding 13 above; PRD Open Question 1; risk row 400). Owed to
++   the owner — `owner-runbook.md` step 4.
++3. **1280 px measurement.** Not a Level A criterion itself (WCAG's reflow
++   criterion, 1.4.10, is AA), but the guidelines' own Tier B item 12 requires
++   it once per shipped screen and it has never been taken in this feature —
++   owed to the browser pane's Tier B pass, recorded in this phase's
++   `build-report.md`, not duplicated here.
++4. **Lighthouse** on the phone and on the built shell — optional, owed to the
++   owner per `owner-runbook.md`; no Lighthouse tooling is installed in this
++   repository and none will be (`testing-strategy.md:37`).
++5. **Screenshots.** None exist for this phase, for the same reason none exist
++   for phases 1–3: the verification browser pane has not composited a frame
++   in this feature to date. Stated here again, not implied, per guidelines
++   §12.6 ("never claim a screenshot you did not take").
++
++None of the five block this walk's own verdict: every Level A criterion above
++is either decided from source, decided from an existing phase 1–3
++measurement, or explicitly carried here as owed — never asserted past what
++the evidence in this document actually shows.
++
++*Written by the Implementer agent, attempt 1, 2026-08-22.*
+diff --git a/PRPs/reports/ui-design-pass/phase-4/owner-runbook.md b/PRPs/reports/ui-design-pass/phase-4/owner-runbook.md
+new file mode 100644
+index 0000000..7af0d88
+--- /dev/null
++++ b/PRPs/reports/ui-design-pass/phase-4/owner-runbook.md
+@@ -0,0 +1,150 @@
++# Roteiro do dono — verificação da fase 4 (ui-design-pass)
++
++Este documento é escrito em português porque é para você seguir — os outros
++dois registros desta fase (`level-a-walk.md`, `build-report.md`) ficam em
++inglês, como todo o resto do repositório. Siga os passos em ordem. O que
++fecha a atividade A5 é a sua resposta no passo 7 — não uma suíte verde
++sozinha.
++
++## 1. Os gates que você pode rodar você mesmo
++
++Antes de mais nada, confirme que a base está verde (o Implementer já rodou os
++três abaixo nesta sessão, mas vale conferir de novo se algo mudou):
++
++```
++npm run check
++npm test
++```
++
++Os dois devem terminar sem erro. Se algum falhar, pare aqui e volte para o
++pipeline — não faça deploy com um gate vermelho.
++
++## 2. O deploy
++
++Citando `documentation/40-engineering/dev-environment.md:70-77` (o passo a
++passo do deploy recorrente):
++
++| # | Comando | O que esperar |
++|---|---|---|
++| 5 | `npm run check` e `npm test` | Os dois verdes *antes* de tocar em produção. Não é negociável. |
++| 6 | Ler o SQL pendente em `migrations/` | Confirmar que não há `PRAGMA foreign_keys=OFF/ON` solto. |
++| 7 | `npm run db:migrate:remote` | Aplica em **produção** e confirma sozinho num shell não interativo. |
++| 8 | `npm run deploy` | Termina com a URL e `schedule: */5 * * * *`. |
++
++**Nota importante desta fase: não há migração nova.** A pasta `migrations/`
++tem só `0000_neat_the_fallen.sql` e `0001_violet_pretty_boy.sql`, os dois já
++aplicados desde o deploy da unidade 2 — confirmado nesta sessão (nenhum
++arquivo novo em `migrations/`). Isso quer dizer que o passo 7
++(`npm run db:migrate:remote`) **não faz nada desta vez** — ele roda, mas não
++encontra migração pendente para aplicar. O comando que de fato muda produção
++nesta fase é só o passo 8, `npm run deploy`. Rode o passo 7 mesmo assim (é
++seguro e é o hábito certo), apenas não espere nenhuma mudança de schema dele.
++
++**Ninguém além de você roda isso.** O pipeline (o plano, os agentes) nunca
++chama `wrangler deploy` — confirmado nesta sessão: nenhum script em
++`scripts/` contém essa chamada. O deploy é decisão e ação sua.
++
++## 3. Teste de fumaça (depois do deploy)
++
++Citando `documentation/40-engineering/dev-environment.md:106-119`. Com
++`$TOKEN` = o `API_BEARER_TOKEN` de produção e `$BASE` =
++`https://praesto.fabiobarreto.workers.dev`:
++
++| Verificação | Comando | Esperado |
++|---|---|---|
++| Portão fechado | `curl -i $BASE/api/health` | `401 {"error":"Unauthorized"}` |
++| Portão aberto | `curl -H "Authorization: Bearer $TOKEN" $BASE/api/health` | `200 {"ok":true}` |
++| SPA servida | `curl $BASE/` | `200 text/html`, a casca do `Praesto Sum` |
++| PWA instalável | `curl -o /dev/null $BASE/manifest.webmanifest` e cada `/icons/*.png` | `200`, tamanhos corretos |
++| Ligação com D1 + migrações | `POST /api/tasks` depois `GET /api/tasks` | `201` e depois a mesma Tarefa de volta |
++| Schema realmente aplicado | `npx wrangler d1 execute praesto-db --remote --command "SELECT name FROM sqlite_master WHERE type='table'"` | `life_areas`, `push_subscriptions`, `recurrence_series`, `reminders`, `tasks`, `d1_migrations` |
++
++A última verificação do teste de fumaça não tem equivalente em `curl`:
++**instale o PWA e use de verdade.** É exatamente isso que os passos 4 e 5
++abaixo pedem, já contra a nova aparência.
++
++## 4. No celular Android
++
++Cada linha é uma coisa para olhar, não um teste automático:
++
++- [ ] **Início a frio (AC-1):** feche o app de vez, abra de novo — a tela de
++      splash, a primeira pintura e o app já rodando devem mostrar a mesma cor
++      `#161012`, sem nenhum flash branco no meio.
++- [ ] **Campo de captura e teclado (AC-17):** toque no campo "O que precisa
++      ser feito?" — o teclado deve abrir sem espremer nem cortar o rodapé; a
++      lista continua rolando por trás dele.
++- [ ] **Alvos de toque (AC-8):** percorra a lista tocando nos controles
++      (círculo de concluir, lápis de editar, o próprio texto da tarefa) — nada
++      deve exigir mira de precisão.
++- [ ] **A folha de detalhe abre e o gesto de voltar do Android a fecha
++      (AC-12; esta é a pergunta em aberto da PRD):** toque numa tarefa para
++      abrir a folha de detalhe, depois use o gesto de **voltar** do Android
++      (não o botão *Fechar* na tela). A folha deve fechar e você deve
++      continuar dentro do app — nunca deve te jogar para fora do Praesto.
++- [ ] **O mesmo gesto na confirmação de exclusão:** dentro da folha, toque em
++      *Excluir*, depois use o gesto de voltar de novo — a folha deve fechar
++      **sem excluir nada**.
++- [ ] **Se o gesto de voltar te jogar para fora do app** em qualquer um dos
++      dois casos acima: isso significa que o `<dialog>` nativo não está
++      capturando o gesto neste seu Chrome. Nesse caso, peça para ligar o
++      reforço já preparado (`history.pushState` ao abrir a folha, com
++      `popstate` fechando-a) dentro de `Sheet.tsx` — é a única mudança de
++      código prevista para esta fase além das quatro já feitas — e repita os
++      dois testes acima depois.
++
++## 5. No PC com Windows
++
++Abra o mesmo endereço numa janela larga:
++
++- [ ] A tela deve ficar centrada com uma coluna de largura limitada — nunca
++      esticada de ponta a ponta da janela.
++- [ ] Ao abrir a folha de detalhe, ela deve aparecer como um **cartão
++      centrado de 560 px**, não como uma folha subindo do rodapé (isso só
++      acontece no celular).
++
++## 6. Lighthouse (opcional)
++
++Nenhuma ferramenta de Lighthouse está instalada neste repositório, e nenhuma
++vai ser instalada — a decisão do projeto é rodar isso à mão, do seu próprio
++Chrome, quando quiser (`documentation/40-engineering/testing-strategy.md`).
++Se quiser rodar:
++
++- **No celular:** `chrome://inspect` no seu computador, conectado ao telefone
++  por USB com a depuração ligada, rodando contra a URL de produção.
++- **No PC:** abra a URL de produção, DevTools → aba Lighthouse, gere o
++  relatório.
++
++Os alvos (guidelines §11), caso rode:
++
++| Medida | Alvo |
++|---|---|
++| LCP (maior pintura) | ≤ 2,5 s |
++| INP (resposta à interação) | ≤ 200 ms |
++| CLS (deslocamento de layout) | ≤ 0,1 |
++| Nota de performance do Lighthouse (build de produção) | ≥ 90 |
++
++Se não rodar, não tem problema — não é obrigatório, e o registro desta fase já
++diz isso com todas as letras.
++
++## 7. Seu veredito
++
++Depois de passar pelos passos 3 a 6:
++
++- [ ] **"Nada a mudar antes da unidade 3."** — se for isso, escreva a frase
++      aqui embaixo com a data. É essa frase que fecha a atividade A5 e libera
++      a A6 (o fechamento de documentação) para começar.
++- [ ] **Ou a lista do que precisa mudar.** — se algo incomodar, liste aqui, um
++      item por linha. Cada item vira uma nova tentativa deste mesmo plano
++      (como aconteceu nas fases 2 e 3, quando o passo de verificação encontrou
++      algo para ajustar).
++
++```
++Veredito: ____________________________________________
++Data: ________________
++```
++
++---
++
++*Gerado pelo agente Implementer, tentativa 1, 2026-08-22. Este arquivo é a
++única peça desta fase escrita para você — o resto (o passeio pelos 31
++critérios de Nível A e o relatório de build) fica em inglês, como sempre.*
+diff --git a/src/app/components/CaptureDeck.tsx b/src/app/components/CaptureDeck.tsx
+index 5fc0788..541fbbf 100644
+--- a/src/app/components/CaptureDeck.tsx
++++ b/src/app/components/CaptureDeck.tsx
+@@ -88,7 +88,12 @@ export function CaptureDeck({
+         </Button>
+       </form>
+       {!canWrite && (
+-        <p className="mt-2 font-text text-t1 text-muted">Captura indisponível sem conexão.</p>
++        // The field goes disabled with no other signal, so the hint needs
++        // its own announcement — the same idiom Banner.tsx uses for the
++        // identical connectivity state.
++        <p role="status" className="mt-2 font-text text-t1 text-muted">
++          Captura indisponível sem conexão.
++        </p>
+       )}
+       {error !== null && (
+         <p role="alert" className="mt-2 font-text text-t2 text-overdue">
+diff --git a/src/app/components/InlineTitle.tsx b/src/app/components/InlineTitle.tsx
+index 1716c5f..79566ee 100644
+--- a/src/app/components/InlineTitle.tsx
++++ b/src/app/components/InlineTitle.tsx
+@@ -3,7 +3,7 @@
+ // phase retires (trimmed; empty or unchanged → no request, just leave edit
+ // mode) — only the trigger changed (the pencil, not the title itself).
+ 
+-import { useEffect, useRef, useState } from "react";
++import { useEffect, useId, useRef, useState } from "react";
+ import type { TaskDto } from "../../shared/api";
+ 
+ export function InlineTitle({
+@@ -17,6 +17,9 @@ export function InlineTitle({
+ }) {
+   const [draft, setDraft] = useState(task.title);
+   const inputRef = useRef<HTMLInputElement>(null);
++  // Sheet.tsx's idiom: a stable, collision-free id for the programmatic
++  // description below (guidelines §10 3.3.2).
++  const descriptionId = useId();
+ 
+   useEffect(() => {
+     // Programmatic focus after the pencil tap — not the `autofocus`
+@@ -34,23 +37,33 @@ export function InlineTitle({
+   }
+ 
+   return (
+-    <input
+-      ref={inputRef}
+-      value={draft}
+-      onChange={(event) => setDraft(event.target.value)}
+-      onBlur={commit}
+-      onKeyDown={(event) => {
+-        if (event.key === "Enter") {
+-          event.preventDefault();
+-          commit();
+-        }
+-        if (event.key === "Escape") {
+-          event.preventDefault();
+-          onCancel();
+-        }
+-      }}
+-      aria-label={`Editar título de ${task.title}`}
+-      className="min-h-12 min-w-0 flex-1 rounded-control border border-line-strong bg-surface-1 px-3 font-text text-t3 text-ink"
+-    />
++    <>
++      <input
++        ref={inputRef}
++        value={draft}
++        onChange={(event) => setDraft(event.target.value)}
++        onBlur={commit}
++        onKeyDown={(event) => {
++          if (event.key === "Enter") {
++            event.preventDefault();
++            commit();
++          }
++          if (event.key === "Escape") {
++            event.preventDefault();
++            onCancel();
++          }
++        }}
++        aria-label={`Editar título de ${task.title}`}
++        aria-describedby={descriptionId}
++        className="min-h-12 min-w-0 flex-1 rounded-control border border-line-strong bg-surface-1 px-3 font-text text-t3 text-ink"
++      />
++      {/* The row's own visible title is this editor's visible label
++          (guidelines §10 3.3.2 ruling, recorded in full in the phase-4
++          Level A walk); this instruction has no visible equivalent to
++          reuse, so it is programmatic only. */}
++      <span id={descriptionId} className="sr-only">
++        Enter salva, Esc cancela.
++      </span>
++    </>
+   );
+ }
+diff --git a/src/app/components/TaskSheet.tsx b/src/app/components/TaskSheet.tsx
+index 115fdce..ae90f8f 100644
+--- a/src/app/components/TaskSheet.tsx
++++ b/src/app/components/TaskSheet.tsx
+@@ -120,7 +120,7 @@ export function TaskSheet({
+           <input
+             id="sheet-date"
+             type="date"
+-            aria-label="Data"
++            aria-label="Data — dia"
+             value={shownDraft.date}
+             disabled={busy || shownDraft.dateMode === "none"}
+             onChange={(event) => onDraftChange({ date: event.target.value })}
+diff --git a/src/app/components/ui/Toast.tsx b/src/app/components/ui/Toast.tsx
+index 1ad15c6..54d9aa6 100644
+--- a/src/app/components/ui/Toast.tsx
++++ b/src/app/components/ui/Toast.tsx
+@@ -24,8 +24,11 @@ export function Toast({
+ 
+   return (
+     <div
++      // The role alone carries the politeness: `alert` implies assertive,
++      // `status` implies polite — an explicit live-region override here
++      // would undo that implicit value, which is why an error used to
++      // announce no more urgently than a confirmation.
+       role={isError ? "alert" : "status"}
+-      aria-live="polite"
+       className="flex min-h-12 items-center gap-3 rounded-control border border-line bg-surface-2 px-4 py-2 text-t2 text-ink shadow-row"
+     >
+       <Icon

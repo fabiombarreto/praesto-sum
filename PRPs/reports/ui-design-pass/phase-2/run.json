@@ -1,0 +1,52 @@
+{
+  "run_id": "7c2e5d4a-9b31-4f8e-a6d0-2f1b8c9e4a57",
+  "feature": "ui-design-pass",
+  "phase": 2,
+  "plan": "PRPs/plans/completed/ui-design-pass-phase-2-today-screen.plan.md",
+  "worktree": "C:/repos/assistente-pessoal (branch feature/ui-design-pass, no separate worktree)",
+  "started_at": "2026-08-21T23:59:05Z",
+  "ended_at": "2026-08-21T23:59:17Z",
+  "elapsed_ms": 11593,
+  "max_test_retries": 3,
+  "max_test_minutes": 30,
+  "attempts": [
+    {
+      "n": 1,
+      "verdict": "GREEN",
+      "record": "phase-2/test-attempts/1/record.json",
+      "implementer_diff": null
+    }
+  ],
+  "outcome": "GREEN",
+  "framework": "vitest",
+  "command": "npm test",
+  "totals": {
+    "files": 13,
+    "passed": 289,
+    "failed": 0,
+    "skipped": 0
+  },
+  "build": "succeeded in the implementer's attempt-2 run and in the code-reviewer's independent rebuild of 2026-08-21 (tsc -b + vite build; PWA precache 25 entries, 396.45 KiB; JS 87,589 B gzip, CSS 7,447 B gzip) - see PRPs/reports/ui-design-pass/phase-2/build-report.md",
+  "time_breakdown": {
+    "attempt_1_suite_ms": 11593,
+    "attempt_1_correction_ms": 0
+  },
+  "tdd_mode": true,
+  "preconditions": {
+    "settings_json": "absent - same deviation as phase 1 and unit 2: the suite was executed by the main session and the record written by hand",
+    "uncommitted_changes": "present (phase-1 + phase-2 implementation and pipeline artefacts, uncommitted by design - Pillar 2 never commits; the owner has not yet authorised a commit)"
+  },
+  "manual_verification": {
+    "criterion": "PRD AC-2/AC-3/AC-8/AC-9/AC-10/AC-13/AC-14/AC-15/AC-16/AC-17/AC-20/AC-22 (the [manual]/[static] set of phase 2; the decidable half of AC-10/AC-15 is test/toast.test.ts)",
+    "environment": "browser pane at 375 x 812 dark against the session's vite dev server (and vite preview on 4173 for the service-worker update), Windows PC",
+    "record": "PRPs/reports/ui-design-pass/phase-2/build-report.md - section Browser-pane Tier A / Tier B check (one defect found and fixed in attempt 2: focus ring on the two text inputs)",
+    "not_verified": [
+      "the steps that need a stored API token (create, complete/undo, inline edit persistence, offline/reconnect refetch, empty D1, failed load retry, Concluídas collapse) - owed to the owner / Phase 4",
+      "the completion animation (hidden pane: no rAF) and the on-screen update toast (toast host mounts with Hoje, the gate was on screen)",
+      "the Android phone (Phase 4)",
+      "1280 px (desktop preset not applied in the hidden pane)",
+      "no screenshot: the browser pane was not displayed"
+    ]
+  },
+  "notes": "First attempt green: 289 tests (227 worker + 62 docs), up from 267 at the end of phase 1 - the delta is the 22 cases of test/toast.test.ts, RED (module not found) before plan Task 1 and green after it. No test file was modified, skipped or deleted in this phase."
+}

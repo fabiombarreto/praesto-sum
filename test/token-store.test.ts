@@ -446,8 +446,13 @@ describe("createTokenStore().save() — reports failure only when nothing was st
     legacy.failNextWriteWith();
 
     // Nothing was persisted anywhere. Swallowing this would leave the owner
-    // looking at a Save button that silently did nothing.
-    await expect(store.save("new-token")).rejects.toThrow(/could not store the API token/i);
+    // looking at a Save button that silently did nothing. The wording is pinned
+    // in Portuguese since ui-design-pass phase 1 (PRPs/prds/ui-design-pass.prd.md
+    // AC-4 pt-br-shared-messages, ADR-0009) — the full sentence, so a paraphrase
+    // or a stray English fallback fails here.
+    await expect(store.save("new-token")).rejects.toThrow(
+      "Não foi possível guardar o token neste dispositivo. O navegador recusou IndexedDB e o armazenamento local — verifique se ele está bloqueando dados do site.",
+    );
     expect(durable.peek()).toBeNull();
     expect(legacy.peek()).toBeNull();
   });

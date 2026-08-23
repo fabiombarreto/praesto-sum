@@ -28,7 +28,7 @@ export default defineConfig({
       // plugin from emitting a second manifest.webmanifest that would collide
       // with the public/ copy in dist/client.
       manifest: false,
-      includeAssets: ["favicon.svg", "manifest.webmanifest", "icons/*.png"],
+      includeAssets: ["favicon.svg", "manifest.webmanifest", "icons/*.png", "fonts/*.woff2"],
       injectManifest: {
         globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2,webmanifest}"],
         maximumFileSizeToCacheInBytes: 3145728,

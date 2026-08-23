@@ -1,0 +1,136 @@
+diff --git a/PRPs/reports/ui-design-pass/phase-3/build-report.md b/PRPs/reports/ui-design-pass/phase-3/build-report.md
+index a5c2985..0aef210 100644
+--- a/PRPs/reports/ui-design-pass/phase-3/build-report.md
++++ b/PRPs/reports/ui-design-pass/phase-3/build-report.md
+@@ -50,7 +50,7 @@ Baseline before this phase (phase 2's report, build of the same branch on
+ `src/shared/task-sheet.ts` reducer, the `TokenGate.tsx` rebuild (adds the
+ `KeyRound` icon) and the `Trash2` icon on the delete controls, and the
+ `/design` playground's new *Sheet de tarefa* section — the precise gzip probe
+-(below) reads **JS 92,820 B gzip (+5,231 B, +6.0%)** and **CSS 7,756 B gzip
++(below) reads **JS 92,902 B gzip (+5,313 B, +6.1%)** and **CSS 7,756 B gzip
+ (+309 B, +4.1%)**. The Base UI `Dialog` import is confirmed gone from `src/`
+ (structural gate below), which the plan expected to show as a reduction; the
+ new sheet/confirmation/gate markup, the two new icons and the transition CSS
+@@ -66,7 +66,7 @@ precache ceiling.
+ ## §11 budget probe (Task 8 / Validation Level 3)
+ 
+ ```
+-JS 92820 B gzip (budget 174080) · CSS 7756 B gzip (budget 30720)
++JS 92902 B gzip (budget 174080) · CSS 7756 B gzip (budget 30720)
+ PASS: inside the §11 budget
+ ```
+ 
+diff --git a/src/app/components/TaskSheet.tsx b/src/app/components/TaskSheet.tsx
+index bd91057..b95b476 100644
+--- a/src/app/components/TaskSheet.tsx
++++ b/src/app/components/TaskSheet.tsx
+@@ -7,8 +7,9 @@
+ // back on every change, it never holds state of its own beyond which Task it
+ // last saw. While the sheet's exit transition plays, `task` becomes `null`
+ // (the reducer already closed) before the animation finishes, so the last
+-// Task is kept in a ref and rendered through the fade instead of popping
+-// empty for ~300 ms.
++// Task AND its last draft are each kept in a ref and rendered through the
++// fade — instead of popping empty, or reverting the fields to the Task's
++// pre-edit values, for ~300 ms.
+ 
+ import { Trash2 } from "lucide-react";
+ import { useRef } from "react";
+@@ -52,8 +53,10 @@ export function TaskSheet({
+ }) {
+   const lastTask = useRef<TaskDto | null>(null);
+   if (task !== null) lastTask.current = task;
++  const lastDraft = useRef<TaskDraft | null>(null);
++  if (draft !== null) lastDraft.current = draft;
+   const shown = task ?? lastTask.current;
+-  const shownDraft = draft ?? (shown === null ? null : draftFromTask(shown));
++  const shownDraft = draft ?? lastDraft.current ?? (shown === null ? null : draftFromTask(shown));
+   if (shown === null || shownDraft === null) return null;
+ 
+   return (
+diff --git a/src/app/components/ui/Sheet.tsx b/src/app/components/ui/Sheet.tsx
+index 6639863..2b2924b 100644
+--- a/src/app/components/ui/Sheet.tsx
++++ b/src/app/components/ui/Sheet.tsx
+@@ -1,15 +1,24 @@
+ // Owned component (ADR-0011): a native <dialog> opened with showModal() — a
+ // bottom sheet with a handle on compact widths, a centred 560 px dialog from
+ // 640 px (Tailwind's existing `sm` breakpoint; layout standard §3's "from
+-// 600 dp" rounds to it rather than adding a second one). The `close` event is
+-// the ONE path Esc, the close button and the Android back gesture all flow
+-// through: `closedby` is left at its `showModal()` default of `closerequest`,
+-// so there is no light dismiss on this editor. `showModal()` itself makes the
+-// page behind inert and scroll-locked (`html:has(dialog[open])` in
+-// styles.css) and returns focus to the opener natively on close. The
+-// `history.pushState` fallback of PRD risk row 400 is NOT built here — it is
+-// specified in the phase-3 plan's `## Notes` and wired only if the owner's
+-// device check finds the Android back gesture does not close this dialog.
++// 600 dp" rounds to it rather than adding a second one). The `close` event
++// remains the ONE contract per the HTML spec: Esc, the close button and the
++// Android back gesture are all meant to raise it, and a native listener below
++// mirrors it into `onOpenChange(false)`. A second native listener mirrors the
++// `cancel` event the same way — a measured guard, not a second contract:
++// `requestClose()` (the exact path Esc and the back gesture take) can close
++// the dialog natively without ever firing `close`, observed in the
++// verification browser even on a bare, React-free <dialog>; without the
++// guard that leaves `open` stuck at `true` in React state forever, since no
++// event would call `onOpenChange(false)` again and the sheet could never be
++// reopened short of a reload. `closedby` is left at its `showModal()` default
++// of `closerequest`, so there is no light dismiss on this editor. `showModal()`
++// itself makes the page behind inert and scroll-locked
++// (`html:has(dialog[open])` in styles.css) and returns focus to the opener
++// natively on close. The `history.pushState` fallback of PRD risk row 400 is
++// NOT built here — it is specified in the phase-3 plan's `## Notes` and wired
++// only if the owner's device check finds the Android back gesture does not
++// close this dialog.
+ 
+ import { X } from "lucide-react";
+ import { useEffect, useId, useRef } from "react";
+@@ -30,6 +39,14 @@ export function Sheet({
+   const ref = useRef<HTMLDialogElement>(null);
+   const titleId = useId();
+ 
++  // A ref, not a dependency, mirrors useConnectivity.ts: `onOpenChange` is
++  // typically a fresh arrow function on every render (TaskSheet.tsx,
++  // DesignPlayground.tsx), so depending on it directly in the effect below
++  // would tear the native listeners down and rebuild them every render. The
++  // ref always reads the latest callback without that churn.
++  const onOpenChangeRef = useRef(onOpenChange);
++  onOpenChangeRef.current = onOpenChange;
++
+   useEffect(() => {
+     const dialog = ref.current;
+     if (!dialog) return;
+@@ -45,13 +62,31 @@ export function Sheet({
+     }
+   }, [open]);
+ 
++  useEffect(() => {
++    const dialog = ref.current;
++    if (!dialog) return;
++    // Mirrors both `close` (the one contract per the HTML spec) and `cancel`
++    // (the measured guard the header comment explains) into React state.
++    // `event.preventDefault()` is never called here — the platform still
++    // closes the dialog either way; this only reports the request. A
++    // `cancel`-then-`close` pair for the same gesture is harmless noise:
++    // `reduceTaskSheet`'s `close` event is idempotent (AC-A8), so a
++    // duplicate `onOpenChange(false)` never double-acts.
++    const handleClose = () => onOpenChangeRef.current(false);
++    dialog.addEventListener("close", handleClose);
++    dialog.addEventListener("cancel", handleClose);
++    return () => {
++      dialog.removeEventListener("close", handleClose);
++      dialog.removeEventListener("cancel", handleClose);
++    };
++  }, []);
++
+   return (
+     <dialog
+       ref={ref}
+       data-sheet
+       tabIndex={-1}
+       aria-labelledby={titleId}
+-      onClose={() => onOpenChange(false)}
+       className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[90dvh] w-full max-w-none overflow-y-auto overscroll-contain rounded-t-[24px] border-0 bg-surface-1 p-0 px-4 pt-2 pb-4 text-ink shadow-deck outline-none sm:inset-0 sm:m-auto sm:h-fit sm:w-[560px] sm:max-w-[calc(100vw-2rem)] sm:rounded-card"
+     >
+       <div

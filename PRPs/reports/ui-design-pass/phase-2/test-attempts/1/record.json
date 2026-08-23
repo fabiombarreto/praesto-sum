@@ -1,0 +1,26 @@
+{
+  "run_id": "7c2e5d4a-9b31-4f8e-a6d0-2f1b8c9e4a57",
+  "attempt": 1,
+  "feature": "ui-design-pass",
+  "phase": 2,
+  "framework": "vitest",
+  "command": "npm test",
+  "verdict": "GREEN",
+  "outcome": "GREEN",
+  "started_at": "2026-08-21T23:59:05Z",
+  "ended_at": "2026-08-21T23:59:17Z",
+  "elapsed_ms": 11593,
+  "totals": {
+    "files": 13,
+    "passed": 289,
+    "failed": 0,
+    "skipped": 0
+  },
+  "projects": {
+    "worker": "227 passed (12 files, inside workerd against an ephemeral D1) - includes the phase-2 test-first suite test/toast.test.ts (22 cases)",
+    "docs": "62 passed (1 file, plain Node)"
+  },
+  "stdout_log": "PRPs/reports/ui-design-pass/phase-2/test-attempts/1/stdout.log",
+  "classification": "no failures to classify",
+  "runner": "executed by the main session: the worktree still has no .claude/settings.json, so the test-runner agent would abort with ABORT_INFRA / missing_settings_json as it did in phase 1 and unit 2; the run wrote only this record and stdout.log. Phase-2 artefacts live under phase-2/test-attempts/ so phase 1's feature-level attempts/1/ record is preserved."
+}

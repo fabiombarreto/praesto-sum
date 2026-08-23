@@ -53,12 +53,11 @@ function hasToken(value: string | null): value is string {
  * failure the owner has to be told about: a Save that persisted nothing and
  * said nothing is the silent absorption FR-045 and vision principle 6 (honest
  * mirror) exist to rule out. The message lives here, in the tested module,
- * rather than in the untested UI, so its wording is pinned by a test.
+ * rather than in the untested UI, so its wording is pinned by a test. Written
+ * in pt-BR since ui-design-pass phase 1 (ADR-0009): the owner reads it.
  */
 const TOKEN_NOT_STORED =
-  "Praesto could not store the API token on this device. Both IndexedDB and " +
-  "local storage refused — check whether this browser is blocking site data " +
-  "for this site.";
+  "Não foi possível guardar o token neste dispositivo. O navegador recusou IndexedDB e o armazenamento local — verifique se ele está bloqueando dados do site.";
 
 /**
  * Builds a `TokenStore` over the given ports. Implements the seven

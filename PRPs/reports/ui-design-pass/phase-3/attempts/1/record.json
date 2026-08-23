@@ -1,0 +1,34 @@
+{
+  "attempt": 1,
+  "verdict": "IMPLEMENTATION_COMPLETE",
+  "base_commit": "0c306f153853b38e0bbb62114d38731d966ebd59",
+  "plan": "PRPs/plans/ui-design-pass-phase-3-sheet-confirmation-and-token-gate.plan.md",
+  "feature": "ui-design-pass",
+  "phase": 3,
+  "implementer_dispatched_at": "2026-08-22T21:08:41Z",
+  "implementer_returned_at": "2026-08-22T21:38:00Z",
+  "files_changed_by_implementer": [
+    "src/shared/task-sheet.ts",
+    "src/app/components/ui/Sheet.tsx",
+    "src/app/styles.css",
+    "src/app/components/ui/ConfirmView.tsx",
+    "src/app/components/TaskSheet.tsx",
+    "src/app/components/TodayScreen.tsx",
+    "src/app/components/TaskDetail.tsx (deleted)",
+    "src/app/components/TokenGate.tsx",
+    "src/app/App.tsx",
+    "src/app/components/DesignPlayground.tsx",
+    "PRPs/reports/ui-design-pass/phase-3/build-report.md"
+  ],
+  "provenance_note": "pre-state.txt = `git status --porcelain` with everything staged immediately before the dispatch; diff.implementer.patch = `git diff` against that index (plus intent-to-add of new files), i.e. exactly this attempt's changes; diff.patch = the whole branch vs base. No test/ file was touched by the implementer (test/task-sheet.test.ts is the APPROVED test-first suite, pre-existing).",
+  "validation": {
+    "level_1": "PASS",
+    "level_2": "PASS",
+    "level_3": "PASS"
+  },
+  "validation_summary": {
+    "worker_project": "13 files / 251 tests green (task-sheet.test.ts 24 green)",
+    "docs_project": "62 green",
+    "build": "JS 92820 B gzip, CSS 7756 B gzip (budgets 174080 / 30720); +5231 B JS / +309 B CSS vs phase 2"
+  }
+}

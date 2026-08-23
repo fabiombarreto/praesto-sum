@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-20
+last_updated: 2026-08-21
 review_trigger: "a step of UI/UX-plan activity A2 lands, an identity element (mark, tokens, voice) changes, or decision 5 is accepted"
 ---
 
@@ -88,6 +88,19 @@ Microcopy table (UI values in pt-BR — ADR-0009; the keys stay English in code)
 | Missed (honest mirror) | Você não concluiu *Pagar aluguel* em 2 de 5 semanas. |
 | Reminder notification | title = the Task title · body *Agora · 14:05* / *Hoje, 15:00* |
 | Still loading | Ainda carregando… |
+| Token gate | wordmark *praesto* · **Cole o token da API deste dispositivo.** · label *Token da API* · button *Salvar* |
+| Token gate — store failure (tested) | `Não foi possível guardar o token neste dispositivo. O navegador recusou IndexedDB e o armazenamento local — verifique se ele está bloqueando dados do site.` |
+| Header | **Hoje** · `sex., 21/08` · *N restantes* / *1 restante* / *nenhuma restante* |
+| Capture deck | eyebrow *Nova tarefa* · placeholder *O que precisa ser feito?* · submit *Adicionar* · offline hint `Captura indisponível sem conexão.` |
+| Row meta line | *até hoje* · *até amanhã* · *até sáb., 22/08* · *fazer hoje* · *fazer sáb., 22/08* · *atrasada · venceu ontem* · *atrasada · venceu ter., 18/08* · *atrasada · era para ter., 18/08* · *alta* / *baixa* · *não concluída* |
+| Row actions (accessible names) | *Concluir {título}* / *Reabrir {título}* · *Editar título* |
+| Section | **Concluídas** · count |
+| Toasts | *Tarefa reaberta* · *Tarefa excluída* |
+| List load error | the approved request-error sentence · *Tentar de novo* |
+| Request errors (tested) | `Sem conexão com o servidor. Nada se perdeu — tente de novo quando a conexão voltar.` · `O servidor recusou a operação (código N). Tente de novo.` |
+| Detail sheet | labels *Título · Descrição · Data · Prioridade* · chips *Sem data · Concluir até · Fazer em* and *Alta · Normal · Baixa* (no chip selected = no priority) · *Cancelar* / *Salvar* / *Excluir* · close button *Fechar* |
+| `<title>` | *Hoje · Praesto Sum* · *Praesto Sum* |
+| Manifest | `name` *Praesto Sum* · `short_name` *Praesto* · shortcut *Nova tarefa* — *Abrir o Praesto com o campo de captura vazio* |
 
 Approved by the owner on 2026-08-20 ("voz & tom aprovado. microcopy aprovado"). New states get their copy added here first, then in code.
 
@@ -99,6 +112,8 @@ TBD — after A5 ships: a week of cold opens on the phone against the three É w
 
 | Date | What changed |
 |---|---|
+| 2026-08-21 | **ui-design-pass Phase 2 (Task 10): one microcopy row added ahead of the code that uses it** (`PRPs/plans/ui-design-pass-phase-2-today-screen.plan.md`) — *List load error*, the retry copy the *Hoje* screen shows under a failed first load, pairing the existing request-error sentence with the infinitive button *Tentar de novo* |
+| 2026-08-21 | **ui-design-pass Phase 1: the A5 microcopy rows approved by the owner in the PRD scope round added to the table above, ahead of Phase 1's code** (`PRPs/prds/ui-design-pass.prd.md`, "Microcopy added by this pass") — token gate, token-store failure, header, capture deck, row meta line, row actions, section, toasts, request errors, detail sheet, `<title>`, manifest |
 | 2026-08-20 | **Step 2.9: voice & tone and microcopy approved; document `draft → active`.** Step 2.10 (a week of validation in use) runs after A5 ships. The dev-only `/design` playground moves to A5, where the tokens are first applied |
 | 2026-08-20 | Step 2.8: `src/app/tokens.css` written (machine truth; applied in A5); mark variants under `public/brand/`; fonts measured (Inter 48.3 KB + Unbounded 21.8 KB) → two files ship; voice & tone drafted for the owner's approval |
 | 2026-08-20 | **Direction A "Arcade" chosen by the owner → [ADR-0010](../60-decisions/ADR-0010-visual-identity-direction-arcade.md) accepted, decision 5 closed**; the decided system recorded above; mark decision settled |

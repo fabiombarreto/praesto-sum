@@ -1,0 +1,33 @@
+{
+  "attempt": 2,
+  "verdict": "IMPLEMENTATION_COMPLETE",
+  "base_commit": "0c306f153853b38e0bbb62114d38731d966ebd59",
+  "plan": "PRPs/plans/ui-design-pass-phase-2-today-screen.plan.md",
+  "feature": "ui-design-pass",
+  "phase": 2,
+  "kind": "post-visual fix round (main-session browser-pane Tier A check, guidelines item 5 — focus visible), after attempt 1 was APPROVED by the code-reviewer; shape of /relay-implement Phase A.3.4 step 5, own budget of 1 round, outside the A.1 pre-flight",
+  "implementer_dispatched_at": "2026-08-21T23:25:50Z",
+  "implementer_returned_at": "2026-08-21T23:30:00Z",
+  "prior_feedback": [
+    {
+      "rubric_id": "visual-gate/guidelines-item-5 (focus visible)",
+      "reason": "CaptureDeck #capture-title and InlineTitle input carried Tailwind `outline-none`, which overrides the base `:focus-visible` ring (styles.css 63-67); with the keyboard only the dark halo remained. Class strings came verbatim from the plan (lines 605, 681)."
+    }
+  ],
+  "files_changed_by_implementer": [
+    "src/app/components/InlineTitle.tsx",
+    "src/app/components/CaptureDeck.tsx",
+    "PRPs/reports/ui-design-pass/phase-2/build-report.md"
+  ],
+  "provenance_note": "pre-state.txt = `git status --porcelain` with everything staged immediately before this dispatch; diff.implementer.patch = `git diff` (index = pre-state) restricted to the three files the implementer reported — the docs-updater agent was editing docs/context/*.md concurrently (its own manifest: PRPs/reports/ui-design-pass/docs-update.md), so the unrestricted unstaged set also contained its tail. No test/ file touched.",
+  "validation": {
+    "level_1": "PASS",
+    "level_2": "PASS",
+    "level_3": "PASS"
+  },
+  "validation_summary": {
+    "worker_project": "12 files / 227 tests green",
+    "docs_project": "62 green",
+    "build": "JS 87589 B gzip, CSS 7447 B gzip (budgets 174080 / 30720)"
+  }
+}

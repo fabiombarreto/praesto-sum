@@ -19,6 +19,10 @@
  * separates a received HTTP-level error from an unreachable server. Only
  * `typeof cause.status === "number"` counts; a `status` field of any other
  * type (e.g. a string) does not classify as an http-error.
+ *
+ * The two messages are pt-BR since the ui-design-pass phase 1 pass
+ * (ADR-0009): the owner reads them, so they are written in his language, and
+ * their exact wording is pinned by test/request-failure.test.ts.
  */
 
 /** Result of classifying a caught request failure. */
@@ -42,13 +46,12 @@ export function classifyRequestFailure(cause: unknown): RequestFailure {
     const status = (cause as { status: number }).status;
     return {
       kind: "http-error",
-      message: `The server rejected the request (status ${status}).`,
+      message: `O servidor recusou a operação (código ${status}). Tente de novo.`,
     };
   }
 
   return {
     kind: "server-unreachable",
-    message:
-      "Praesto could not reach the server. Nothing was lost — try saving again once you're back online.",
+    message: "Sem conexão com o servidor. Nada se perdeu — tente de novo quando a conexão voltar.",
   };
 }

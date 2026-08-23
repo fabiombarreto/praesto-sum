@@ -1,0 +1,24 @@
+
+> test
+> vitest run
+
+
+ RUN  v4.1.10 C:/repos/assistente-pessoal
+
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+
+ Test Files  12 passed (12)
+      Tests  267 passed (267)
+   Start at  18:39:42
+   Duration  9.91s (transform 11.55s, setup 31.79s, import 1.67s, tests 2.77s, environment 3ms)
+

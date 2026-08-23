@@ -19,8 +19,9 @@ import { deflateSync } from "node:zlib";
 const OUT_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "public", "icons");
 
 // --- Palette --------------------------------------------------------------
-// Background matches theme_color/background_color in public/manifest.webmanifest.
-const BACKGROUND = [0x0b, 0x0b, 0x0c];
+// Background matches --color-bg in src/app/tokens.css and theme_color /
+// background_color in public/manifest.webmanifest.
+const BACKGROUND = [0x16, 0x10, 0x12];
 const CORD = [0x9a, 0xa1, 0xab];
 const BOB_TOP = [0xf2, 0xd0, 0x8a];
 const BOB_TIP = [0xb5, 0x7f, 0x23];

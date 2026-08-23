@@ -2,17 +2,109 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+    />
     <title>Praesto Sum</title>
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <!-- iOS picks the home-screen icon from this link, NOT from the manifest.
          Without it "Add to Home Screen" falls back to a screenshot of the page. -->
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
-    <meta name="theme-color" content="#0b0b0c" />
+    <meta name="theme-color" content="#161012" />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/inter-latin-var.woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/unbounded-latin-800.woff2"
+      crossorigin
+    />
+    <style>
+      /* Inline @font-face so both weights are available before styles.css
+         arrives (guidelines §5.3); font-display: optional means an
+         already-cached font paints immediately and an uncached one never
+         causes a reflow — text simply uses the fallback stack once and
+         swaps only on the next natural repaint. */
+      @font-face {
+        font-family: "Inter";
+        font-style: normal;
+        font-weight: 400 700;
+        font-display: optional;
+        src: url("/fonts/inter-latin-var.woff2") format("woff2");
+        unicode-range:
+          U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+          U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      @font-face {
+        font-family: "Unbounded";
+        font-style: normal;
+        font-weight: 800;
+        font-display: optional;
+        src: url("/fonts/unbounded-latin-800.woff2") format("woff2");
+        unicode-range:
+          U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+          U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+
+      /* Critical CSS: painted before any stylesheet arrives, so splash,
+         first paint and the running app (src/app/styles.css) never disagree
+         on the canvas colour (guidelines §2.4). */
+      html {
+        background: #161012;
+        color-scheme: dark;
+      }
+
+      /* Pre-JavaScript shell silhouette — createRoot() replaces it on first
+         render, so nothing in main.tsx has to remove it. Surfaces mirror
+         --color-surface-1 / --color-surface-2 as literals, the same way the
+         background above mirrors --color-bg (tokens.css is not loaded yet). */
+      .shell-skeleton {
+        display: grid;
+        grid-template-rows: 64px 1fr 96px;
+        height: 100dvh;
+        overflow: clip;
+      }
+      .shell-skeleton-header {
+        background: #1f1816;
+      }
+      .shell-skeleton-list {
+        display: grid;
+        align-content: start;
+        gap: 8px;
+        padding: 16px;
+      }
+      .shell-skeleton-row {
+        height: 64px;
+        border-radius: 18px;
+        background: #1f1816;
+      }
+      .shell-skeleton-deck {
+        border-radius: 18px 18px 0 0;
+        background: #2a211e;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="shell-skeleton" aria-hidden="true">
+        <div class="shell-skeleton-header"></div>
+        <div class="shell-skeleton-list">
+          <div class="shell-skeleton-row"></div>
+          <div class="shell-skeleton-row"></div>
+          <div class="shell-skeleton-row"></div>
+        </div>
+        <div class="shell-skeleton-deck"></div>
+      </div>
+    </div>
     <script type="module" src="/src/app/main.tsx"></script>
   </body>
 </html>

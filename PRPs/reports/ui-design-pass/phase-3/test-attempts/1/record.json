@@ -1,0 +1,26 @@
+{
+  "run_id": "b41f7c92-3ad6-4e15-9c80-6d2ea7f1b038",
+  "attempt": 1,
+  "feature": "ui-design-pass",
+  "phase": 3,
+  "framework": "vitest",
+  "command": "npm test",
+  "verdict": "GREEN",
+  "outcome": "GREEN",
+  "started_at": "2026-08-22T22:45:28Z",
+  "ended_at": "2026-08-22T22:45:48Z",
+  "elapsed_ms": 19512,
+  "totals": {
+    "files": 14,
+    "passed": 313,
+    "failed": 0,
+    "skipped": 0
+  },
+  "projects": {
+    "worker": "251 passed (13 files, inside workerd against an ephemeral D1) - includes the phase-3 test-first suite test/task-sheet.test.ts (24 cases)",
+    "docs": "62 passed (1 file, plain Node)"
+  },
+  "stdout_log": "PRPs/reports/ui-design-pass/phase-3/test-attempts/1/stdout.log",
+  "classification": "no failures to classify",
+  "runner": "executed by the main session: the worktree still has no .claude/settings.json, so the test-runner agent would abort with ABORT_INFRA / missing_settings_json as in phases 1-2 and unit 2; the run wrote only this record and stdout.log."
+}

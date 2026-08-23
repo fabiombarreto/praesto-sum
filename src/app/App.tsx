@@ -1,33 +1,26 @@
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
-import { TASK_PRIORITIES, type TaskDto, type TaskPriority } from "../shared/api";
-import { classifyRequestFailure } from "../shared/request-failure";
+import { useEffect, useState } from "react";
 import type { ShareTarget } from "../shared/share-target";
-import { buildTaskPatch, dateModeOf, type TaskDateMode, type TaskDraft } from "../shared/task-edit";
-import {
-  ApiError,
-  completeTask,
-  createTask,
-  deleteTask,
-  listTasks,
-  readToken,
-  reopenTask,
-  saveToken,
-  updateTask,
-} from "./api";
+import { readToken } from "./api";
+import { TodayScreen } from "./components/TodayScreen";
+import { TokenGate, type TokenGateReason } from "./components/TokenGate";
+import { Skeleton } from "./components/ui/Skeleton";
 
 /**
- * Phase 1 walking skeleton: capture a Task, see it, complete it.
+ * The token-gate switch — everything else lives in `TodayScreen` (A5),
+ * `TokenGate` (A5 phase 3) and their shared `src/app/components/ui/`.
  *
  * It exists to prove the whole stack end to end (PWA → Worker → D1) and to be
  * the surface the remaining Phase 1 requirements grow into — recurrence
  * (FR-009), misses (FR-011/FR-012), reminders (FR-041/FR-044), search (FR-040).
- * Styling is deliberately minimal; the design pass is its own slice.
  */
 export function App({ initialShare }: { initialShare: ShareTarget | null }) {
   // `null` = still checking IndexedDB for a stored token. `readToken()` is
   // async (the token now lives behind src/shared/token-store.ts), so this
   // starts as "unknown" rather than assuming unauthorized.
   const [authorized, setAuthorized] = useState<boolean | null>(null);
+  // Why the gate is showing again — set on a 401 route from `TodayScreen`,
+  // cleared once a fresh token is saved.
+  const [gateReason, setGateReason] = useState<TokenGateReason>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,7 +32,7 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
         // Unreachable by contract: `read()` guards every storage call and is
         // tested never to reject. Kept anyway because this is the app's one
         // unrecoverable state — an unhandled rejection here leaves `authorized`
-        // at `null` forever, and the owner stares at "Loading…" with no way
+        // at `null` forever, and the owner stares at the skeleton with no way
         // forward. Degrading to the token screen is always recoverable; a hang
         // never is. If a future change makes `read()` able to reject, this line
         // is what keeps that a bad afternoon instead of a dead app.
@@ -54,513 +47,27 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
     // Never render TokenGate while the read is still pending — doing so
     // would flash the token screen on every cold start, which is exactly
     // what AC-2 forbids.
-    return (
-      <main style={styles.page}>
-        <p style={styles.muted}>Loading…</p>
-      </main>
-    );
+    return <Skeleton />;
   }
 
   if (!authorized) {
-    return <TokenGate onAuthorized={() => setAuthorized(true)} />;
-  }
-  return <TaskBoard onUnauthorized={() => setAuthorized(false)} initialShare={initialShare} />;
-}
-
-function TokenGate({ onAuthorized }: { onAuthorized: () => void }) {
-  const [value, setValue] = useState("");
-  const [error, setError] = useState<string | null>(null);
-
-  return (
-    <main style={styles.page}>
-      <h1 style={styles.title}>Praesto Sum</h1>
-      <p style={styles.muted}>Paste the API token for this device.</p>
-      <form
-        style={styles.row}
-        onSubmit={async (event) => {
-          event.preventDefault();
-          const token = value.trim();
-          if (!token) return;
-          try {
-            await saveToken(token);
-          } catch (cause) {
-            // `saveToken` rejects in exactly one case: the token reached
-            // NEITHER store (`src/shared/token-store.ts`). That message is
-            // written for the owner and pinned by a test, so surface it as-is
-            // instead of restating it here. `value` is deliberately not
-            // cleared — the same "never lose what was typed" invariant the
-            // capture form keeps (FR-045).
-            setError(cause instanceof Error ? cause.message : "Could not store the API token.");
-            return;
-          }
-          setError(null);
-          onAuthorized();
-        }}
-      >
-        <input
-          style={styles.input}
-          type="password"
-          value={value}
-          onChange={(event) => setValue(event.target.value)}
-          placeholder="API token"
-          aria-label="API token"
-        />
-        <button style={styles.button} type="submit">
-          Save
-        </button>
-      </form>
-      {error !== null && <p style={styles.error}>{error}</p>}
-    </main>
-  );
-}
-
-function TaskBoard({
-  onUnauthorized,
-  initialShare,
-}: {
-  onUnauthorized: () => void;
-  initialShare: ShareTarget | null;
-}) {
-  const [tasks, setTasks] = useState<TaskDto[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [title, setTitle] = useState(initialShare?.title ?? "");
-  const [busy, setBusy] = useState(false);
-  const [justSaved, setJustSaved] = useState(false);
-  // Two views need `useState`, not a router dependency (ADR-0005).
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-
-  const handleFailure = useCallback(
-    (cause: unknown) => {
-      if (cause instanceof ApiError && cause.status === 401) {
-        onUnauthorized();
-        return;
-      }
-      setError(classifyRequestFailure(cause).message);
-    },
-    [onUnauthorized],
-  );
-
-  const refresh = useCallback(async () => {
-    try {
-      setTasks(await listTasks());
-      setError(null);
-    } catch (cause) {
-      handleFailure(cause);
-    }
-  }, [handleFailure]);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  async function run(action: () => Promise<unknown>) {
-    setBusy(true);
-    try {
-      await action();
-      await refresh();
-    } catch (cause) {
-      handleFailure(cause);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const open = tasks?.filter((task) => task.status === "open") ?? [];
-  const closed = tasks?.filter((task) => task.status !== "open") ?? [];
-
-  // Derived from the already-loaded list rather than re-fetched. If a refresh
-  // removed the Task, this falls back to the board instead of rendering an
-  // empty panel.
-  const selected = tasks?.find((task) => task.id === selectedTaskId) ?? null;
-
-  if (selected !== null) {
     return (
-      <TaskDetail
-        task={selected}
-        busy={busy}
-        error={error}
-        onClose={() => setSelectedTaskId(null)}
-        onSave={(patch) =>
-          void run(async () => {
-            await updateTask(selected.id, patch);
-            // Close only after the await resolves, so a failed save leaves the
-            // panel open with the owner's edits intact.
-            setSelectedTaskId(null);
-          })
-        }
+      <TokenGate
+        reason={gateReason}
+        onAuthorized={() => {
+          setGateReason(null);
+          setAuthorized(true);
+        }}
       />
     );
   }
-
   return (
-    <main style={styles.page}>
-      <h1 style={styles.title}>Praesto Sum</h1>
-
-      <form
-        style={styles.row}
-        onSubmit={(event) => {
-          event.preventDefault();
-          const trimmed = title.trim();
-          if (!trimmed || busy) return;
-          void run(async () => {
-            await createTask({ title: trimmed });
-            // Phase 4 (install-and-quick-capture) invariant, locked in
-            // explicitly: `setTitle("")` is deliberately sequenced AFTER the
-            // awaited `createTask(...)` call above, never before or
-            // unconditionally. A thrown failure — network-unreachable or
-            // HTTP-level, both now surfaced via `classifyRequestFailure` in
-            // `handleFailure` — exits this callback before this line runs,
-            // so on any failed save the owner's typed text is not lost; it
-            // remains exactly as typed in the input's `value={title}`
-            // binding (PRD AC-4).
-            setTitle("");
-            setJustSaved(true);
-            setTimeout(() => setJustSaved(false), 2000);
-          });
-        }}
-      >
-        <input
-          style={styles.input}
-          value={title}
-          onChange={(event) => {
-            setTitle(event.target.value);
-            setJustSaved(false);
-          }}
-          placeholder="What needs doing?"
-          aria-label="Task title"
-          // Phase 3 (install-and-quick-capture) decision: `autoFocus` stays
-          // unconditional across devices, not gated by device/pointer type.
-          // The PRD's Open Question 1 raises this ("may be unwelcome on
-          // desktop, where it raises the on-screen keyboard on touch
-          // laptops") but explicitly defers it — "to be validated in real
-          // use rather than decided now" — and no device/pointer-type
-          // detection exists anywhere in this codebase today. Revisit with
-          // a `matchMedia("(any-pointer: coarse)")` check if real use on
-          // the owner's Windows PC surfaces friction.
-          autoFocus
-        />
-        <button style={styles.button} type="submit" disabled={busy}>
-          Add
-        </button>
-      </form>
-
-      {justSaved && <p style={styles.muted}>Saved</p>}
-      {error !== null && <p style={styles.error}>{error}</p>}
-      {tasks === null && error === null && <p style={styles.muted}>Loading…</p>}
-
-      <ul style={styles.list}>
-        {open.map((task) => (
-          <li key={task.id} style={styles.item}>
-            <button
-              style={styles.link}
-              type="button"
-              disabled={busy}
-              onClick={() => void run(() => completeTask(task.id))}
-            >
-              ○
-            </button>
-            <InlineTitle
-              task={task}
-              busy={busy}
-              onCommit={(title) =>
-                void run(async () => {
-                  await updateTask(task.id, { title });
-                })
-              }
-            />
-            <button
-              style={styles.link}
-              type="button"
-              disabled={busy}
-              onClick={() => setSelectedTaskId(task.id)}
-              aria-label={`Open ${task.title}`}
-            >
-              ⋯
-            </button>
-            <button
-              style={styles.link}
-              type="button"
-              disabled={busy}
-              onClick={() => void run(() => deleteTask(task.id))}
-              aria-label={`Delete ${task.title}`}
-            >
-              ×
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      {closed.length > 0 && (
-        <>
-          <h2 style={styles.subtitle}>Closed</h2>
-          <ul style={styles.list}>
-            {closed.map((task) => (
-              <li key={task.id} style={styles.item}>
-                <button
-                  style={styles.link}
-                  type="button"
-                  disabled={busy || task.status === "missed"}
-                  onClick={() => void run(() => reopenTask(task.id))}
-                >
-                  {task.status === "done" ? "●" : "!"}
-                </button>
-                <span style={{ ...styles.grow, ...styles.closedText }}>{task.title}</span>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-
-      {tasks !== null && tasks.length === 0 && (
-        <p style={styles.muted}>Nothing here yet. Add the first one above.</p>
-      )}
-    </main>
-  );
-}
-
-/**
- * The title, corrected where the owner sees it (PRD AC-8, the first of the two
- * moments the PRD names: fixing a typo right after capture).
- *
- * Commits on Enter and on blur; Escape abandons. The request is skipped
- * entirely when nothing changed or the title is empty — an empty body and an
- * empty title are both 400s, and neither is the owner's problem.
- */
-function InlineTitle({
-  task,
-  busy,
-  onCommit,
-}: {
-  task: TaskDto;
-  busy: boolean;
-  onCommit: (title: string) => void;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(task.title);
-
-  if (!editing) {
-    return (
-      <button
-        style={{ ...styles.grow, ...styles.titleButton }}
-        type="button"
-        disabled={busy}
-        onClick={() => {
-          setDraft(task.title);
-          setEditing(true);
-        }}
-      >
-        {task.title}
-      </button>
-    );
-  }
-
-  function commit() {
-    const trimmed = draft.trim();
-    setEditing(false);
-    if (trimmed === "" || trimmed === task.title) return;
-    onCommit(trimmed);
-  }
-
-  return (
-    <input
-      style={{ ...styles.grow, ...styles.input }}
-      value={draft}
-      onChange={(event) => setDraft(event.target.value)}
-      onBlur={commit}
-      onKeyDown={(event) => {
-        if (event.key === "Enter") {
-          event.preventDefault();
-          commit();
-        }
-        if (event.key === "Escape") {
-          event.preventDefault();
-          setEditing(false);
-        }
+    <TodayScreen
+      onUnauthorized={() => {
+        setGateReason("unauthorized");
+        setAuthorized(false);
       }}
-      aria-label={`Edit title of ${task.title}`}
-      autoFocus
+      initialShare={initialShare}
     />
   );
 }
-
-/**
- * Everything that is not the title, one tap away (PRD AC-8, the second moment:
- * deciding *when* something must happen).
- *
- * The date control offers three explicit, mutually exclusive choices. It never
- * presents one date field with a defaulted meaning: the owner's 2026-08-12
- * decision is that "complete by" versus "do on" is chosen deliberately, and a
- * default would let the cheaper-to-type option silently win.
- */
-function TaskDetail({
-  task,
-  busy,
-  error,
-  onClose,
-  onSave,
-}: {
-  task: TaskDto;
-  busy: boolean;
-  error: string | null;
-  onClose: () => void;
-  onSave: (patch: ReturnType<typeof buildTaskPatch>) => void;
-}) {
-  const [draft, setDraft] = useState<TaskDraft>({
-    title: task.title,
-    description: task.description ?? "",
-    dateMode: dateModeOf(task),
-    date: task.deadline ?? task.scheduledDate ?? "",
-    priority: task.priority,
-  });
-
-  function patch<K extends keyof TaskDraft>(key: K, value: TaskDraft[K]) {
-    setDraft((current) => ({ ...current, [key]: value }));
-  }
-
-  const dateLabels: Record<TaskDateMode, string> = {
-    none: "No date",
-    deadline: "Complete by",
-    scheduled: "Do on",
-  };
-
-  return (
-    <main style={styles.page}>
-      <button style={styles.link} type="button" onClick={onClose}>
-        ← Back
-      </button>
-
-      <h1 style={styles.title}>Edit Task</h1>
-
-      <label style={styles.field}>
-        <span style={styles.label}>Title</span>
-        <input
-          style={styles.input}
-          value={draft.title}
-          onChange={(event) => patch("title", event.target.value)}
-          aria-label="Title"
-        />
-      </label>
-
-      <label style={styles.field}>
-        <span style={styles.label}>Description</span>
-        <textarea
-          style={{ ...styles.input, minHeight: "5rem" }}
-          value={draft.description}
-          onChange={(event) => patch("description", event.target.value)}
-          aria-label="Description"
-        />
-      </label>
-
-      <fieldset style={styles.fieldset}>
-        <legend style={styles.label}>Date</legend>
-        {(["none", "deadline", "scheduled"] as const).map((mode) => (
-          <label key={mode} style={styles.choice}>
-            <input
-              type="radio"
-              name="dateMode"
-              checked={draft.dateMode === mode}
-              onChange={() => patch("dateMode", mode)}
-            />
-            {dateLabels[mode]}
-          </label>
-        ))}
-        <input
-          style={styles.input}
-          type="date"
-          value={draft.date}
-          disabled={draft.dateMode === "none"}
-          onChange={(event) => patch("date", event.target.value)}
-          aria-label="Date"
-        />
-      </fieldset>
-
-      <label style={styles.field}>
-        <span style={styles.label}>Priority</span>
-        <select
-          style={styles.input}
-          value={draft.priority ?? ""}
-          onChange={(event) =>
-            patch(
-              "priority",
-              event.target.value === "" ? null : (event.target.value as TaskPriority),
-            )
-          }
-          aria-label="Priority"
-        >
-          <option value="">Not set</option>
-          {TASK_PRIORITIES.map((level) => (
-            <option key={level} value={level}>
-              {level[0]?.toUpperCase()}
-              {level.slice(1)}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      {error !== null && <p style={styles.error}>{error}</p>}
-
-      <div style={styles.row}>
-        <button
-          style={styles.button}
-          type="button"
-          disabled={busy}
-          onClick={() => {
-            const changes = buildTaskPatch(task, draft);
-            // Nothing changed: the route rejects an empty body by design, so
-            // never issue the request at all.
-            if (Object.keys(changes).length === 0) {
-              onClose();
-              return;
-            }
-            onSave(changes);
-          }}
-        >
-          Save
-        </button>
-        <button style={styles.button} type="button" disabled={busy} onClick={onClose}>
-          Cancel
-        </button>
-      </div>
-    </main>
-  );
-}
-
-const styles = {
-  page: {
-    fontFamily: "system-ui, sans-serif",
-    maxWidth: "34rem",
-    margin: "0 auto",
-    padding: "1.5rem 1rem 4rem",
-  },
-  title: { fontSize: "1.5rem", margin: "0 0 1rem" },
-  subtitle: { fontSize: "0.9rem", textTransform: "uppercase", opacity: 0.6, marginTop: "2rem" },
-  muted: { opacity: 0.6 },
-  error: { color: "#b00020" },
-  row: { display: "flex", gap: "0.5rem", marginBottom: "1rem" },
-  input: { flex: 1, padding: "0.6rem", fontSize: "1rem" },
-  button: { padding: "0.6rem 1rem", fontSize: "1rem", cursor: "pointer" },
-  list: { listStyle: "none", padding: 0, margin: 0 },
-  item: { display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.5rem 0" },
-  grow: { flex: 1 },
-  closedText: { opacity: 0.5, textDecoration: "line-through" },
-  link: {
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    fontSize: "1.1rem",
-    padding: 0,
-    lineHeight: 1,
-  },
-  titleButton: {
-    background: "none",
-    border: "none",
-    cursor: "text",
-    font: "inherit",
-    padding: 0,
-    textAlign: "left",
-  },
-  field: { display: "block", marginBottom: "1rem" },
-  fieldset: { border: "none", padding: 0, margin: "0 0 1rem" },
-  label: { display: "block", fontSize: "0.85rem", opacity: 0.7, marginBottom: "0.25rem" },
-  choice: { display: "inline-flex", alignItems: "center", gap: "0.3rem", marginRight: "1rem" },
-} as const satisfies Record<string, CSSProperties>;

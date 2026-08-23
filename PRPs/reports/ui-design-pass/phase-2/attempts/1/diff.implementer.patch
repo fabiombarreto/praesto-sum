@@ -1,0 +1,2401 @@
+diff --git a/PRPs/reports/ui-design-pass/phase-2/attempts/1/pre-state.txt b/PRPs/reports/ui-design-pass/phase-2/attempts/1/pre-state.txt
+new file mode 100644
+index 0000000..df88e62
+--- /dev/null
++++ b/PRPs/reports/ui-design-pass/phase-2/attempts/1/pre-state.txt
+@@ -0,0 +1,55 @@
++A  PRPs/plans/completed/ui-design-pass-phase-1-chrome-fonts-and-foundation.plan.md
++A  PRPs/plans/ui-design-pass-phase-1-chrome-fonts-and-foundation.code-review.jsonl
++A  PRPs/plans/ui-design-pass-phase-1-chrome-fonts-and-foundation.review.jsonl
++A  PRPs/plans/ui-design-pass-phase-1-chrome-fonts-and-foundation.test-write-review.jsonl
++A  PRPs/plans/ui-design-pass-phase-2-today-screen.plan.md
++A  PRPs/plans/ui-design-pass-phase-2-today-screen.review.jsonl
++A  PRPs/plans/ui-design-pass-phase-2-today-screen.test-write-review.jsonl
++A  PRPs/prds/ui-design-pass.prd.md
++A  PRPs/prds/ui-design-pass.review.jsonl
++A  PRPs/reports/ui-design-pass/attempts/1/record.json
++A  PRPs/reports/ui-design-pass/attempts/1/stdout.log
++A  PRPs/reports/ui-design-pass/docs-review.jsonl
++A  PRPs/reports/ui-design-pass/docs-update.md
++A  PRPs/reports/ui-design-pass/phase-1/attempts/1/diff.implementer.patch
++A  PRPs/reports/ui-design-pass/phase-1/attempts/1/diff.patch
++A  PRPs/reports/ui-design-pass/phase-1/attempts/1/pre-state.txt
++A  PRPs/reports/ui-design-pass/phase-1/attempts/1/record.json
++A  PRPs/reports/ui-design-pass/phase-1/build-report.md
++A  PRPs/reports/ui-design-pass/phase-1/run.json
++A  PRPs/reports/ui-design-pass/phase-1/test-review.json
++A  PRPs/reports/ui-design-pass/phase-1/test-suite.diff
++A  PRPs/reports/ui-design-pass/phase-2/test-suite.diff
++A  PRPs/reports/ui-design-pass/run.json
++A  PRPs/reports/ui-design-pass/test-review.json
++M  docs/context/architecture.md
++M  docs/context/conventions.md
++M  documentation/10-product/visual-identity.md
++M  documentation/50-planning/roadmap.md
++M  documentation/50-planning/ui-ux-plan.md
++M  index.html
++M  public/favicon.svg
++A  public/fonts/OFL-Inter.txt
++A  public/fonts/OFL-Unbounded.txt
++A  public/fonts/inter-latin-var.woff2
++A  public/fonts/unbounded-latin-800.woff2
++M  public/icons/apple-touch-icon-180.png
++M  public/icons/icon-192.png
++M  public/icons/icon-512.png
++M  public/icons/maskable-512.png
++M  public/manifest.webmanifest
++A  scripts/fetch-fonts.mjs
++M  scripts/generate-icons.js
++A  src/app/components/DesignPlayground.tsx
++M  src/app/main.tsx
++A  src/shared/connectivity.ts
++A  src/shared/format.ts
++M  src/shared/request-failure.ts
++M  src/shared/token-store.ts
++A  test/connectivity.test.ts
++A  test/format.test.ts
++M  test/request-failure.test.ts
++A  test/toast.test.ts
++M  test/token-store.test.ts
++M  vite.config.ts
++?? PRPs/reports/ui-design-pass/phase-2/attempts/
+diff --git a/PRPs/reports/ui-design-pass/phase-2/build-report.md b/PRPs/reports/ui-design-pass/phase-2/build-report.md
+new file mode 100644
+index 0000000..725d30d
+--- /dev/null
++++ b/PRPs/reports/ui-design-pass/phase-2/build-report.md
+@@ -0,0 +1,102 @@
++# Build report — ui-design-pass phase 2 (Today screen)
++
++Source plan: `PRPs/plans/ui-design-pass-phase-2-today-screen.plan.md`
++(Task 11 — gates + budget probe; plan AC-A12, PRD AC-22).
++
++## Gates (Task 11 / Validation Level 1–2)
++
++All three green, no test weakened or skipped:
++
++- `npm run check` (`wrangler types --check && tsc -b && eslint . && prettier --check .`) — **PASS**
++- `npm test` (`vitest run`, both the `worker` and `docs` projects) — **PASS**, 13 test files / 289 tests, including the test pair's new `test/toast.test.ts` (22 cases, `src/shared/toast.ts`'s `reduceToast` / `autoDismisses`); every phase-1 suite (`test/format.test.ts`, `test/connectivity.test.ts`, `test/request-failure.test.ts`, `test/token-store.test.ts`, and the rest) stayed untouched and green.
++- `npm run build` (`tsc -b && vite build`, then the PWA service-worker inject pass) — **PASS**
++
++## `vite build` size table
++
++```
++dist/praesto/.dev.vars              0.15 kB
++dist/praesto/.vite/manifest.json    0.15 kB │ gzip:  0.11 kB
++dist/praesto/wrangler.json          1.53 kB │ gzip:  0.79 kB
++dist/praesto/index.js             216.97 kB │ gzip: 50.75 kB
++
++dist/client/.assetsignore                                 0.02 kB
++dist/client/index.html                                    3.96 kB │ gzip:  1.46 kB
++dist/client/assets/index-JBg_vZMF.css                    36.98 kB │ gzip:  7.40 kB
++dist/client/assets/workbox-window.prod.es5-Bd17z0YL.js    5.65 kB │ gzip:  2.20 kB
++dist/client/assets/index-BapuwNz7.js                    267.51 kB │ gzip: 86.28 kB
++
++dist/client/sw.mjs  17.37 kB │ gzip: 5.86 kB
++
++PWA v1.3.0
++mode      injectManifest
++format:   es
++precache  25 entries (395.82 KiB)
++files generated
++  dist/client/sw.js
++```
++
++Baseline before this phase (phase 1's report, build of the phase-1 branch on
++2026-08-21): JS 66,511 B gzip, CSS 6,882 B gzip. After this phase — the *Hoje*
++screen rebuilt into eleven new components, the module-level toast store, and
++the `useConnectivity` hook, all replacing the old inline-styled board — JS
++grows to 87,535 B gzip (+21,024 B, still 50% of budget) and CSS to 7,359 B
++gzip (+477 B, still 24% of budget). The `/design` route stays tree-shaken out
++of this bundle entirely (verified below); `TaskDetail.tsx` and `TokenGate.tsx`
++(moved verbatim, still inline-styled) contribute no new CSS.
++
++## §11 budget probe (Task 11 / Validation Level 3)
++
++```
++JS 87535 B gzip (budget 174080) · CSS 7359 B gzip (budget 30720)
++PASS: inside the §11 budget
++```
++
++Both figures are comfortably inside
++`documentation/40-engineering/ui-ux-guidelines.md` §11: JS at 50% of budget,
++CSS at 24%. Fonts and precache totals are unchanged from phase 1 (no font or
++asset added this phase).
++
++## Structural gate (Level 3)
++
++- No inline `style={}` object survives outside `DesignPlayground.tsx`,
++  `TaskDetail.tsx` and `TokenGate.tsx` (the two files Phase 3 rebuilds); no
++  `CSSProperties` import remains in `App.tsx`.
++- No `window.confirm` anywhere under `src/app` — `src/app/main.tsx`'s
++  `onNeedRefresh` now calls `showToast({ key: "sw-update", … })`.
++- No CSS `text-transform: uppercase` / `textTransform` anywhere under
++  `src/app/**/*.tsx` (guidelines §9.2).
++- `src/app/components/TaskRow.tsx` carries `[content-visibility:auto]`;
++  `src/app/styles.css` carries the `praesto-complete` / `praesto-leave`
++  keyframes anchored on `[data-shell]:has(…)`, not `:root`;
++  `src/app/components/TodayScreen.tsx` registers the `visibilitychange`
++  refetch that closes the roadmap's "refresh on foreground" backlog row.
++- `grep -rl 'tokens e estados' dist/client` finds nothing — the `/design`
++  playground (now carrying the new *Tela Hoje* section) is still absent from
++  the production bundle after the dynamic-import + `import.meta.env.DEV`
++  tree-shake.
++
++## Not part of this report
++
++The browser-pane Tier A / Tier B check of *Hoje* (guidelines checklist items
++1–9, the §8 states simulated, contrast at the row and deck surfaces, 375 px
++and 1280 px, keyboard/safe-area behaviour, screenshots or the written reason
++none exist) is performed by the main session after this Implementer run, per
++the plan's `## Notes` "Manual verification script" — not part of the
++Implementer's contract (Levels 1–3 only).
++
++*Generated by the Implementer agent, attempt 1, 2026-08-21.*
++
++## Browser-pane Tier A / Tier B check — main session
++
++**PLACEHOLDER — not yet run.** The Implementer has no browser access; this
++section is filled in by the main session against `npm run dev` at 375 px
++(dark, `prefers-color-scheme: dark`), following the plan's `## Notes`
++"Manual verification script" (steps 1–12: skeleton → *Hoje* hand-over, hit-area
++measurements, the capture deck's label/focus/save/error/offline states, the
++complete → *Desfazer* → reopen sequence, the pencil's inline edit, the offline
++banner and reconnect refetch, the empty state, the failed-load *Tentar de
++novo* state, the *Concluídas* collapse persisting across reload, the five
++contrast pairs, and the update toast on a `npm run preview` second build), and
++recording the Tier A / Tier B tables in the same shape as
++`PRPs/reports/ui-design-pass/phase-1/build-report.md`'s own section. Do not
++invent measurements here — leave this placeholder until that session runs.
+diff --git a/documentation/10-product/visual-identity.md b/documentation/10-product/visual-identity.md
+index 6902a0d..010cd0c 100644
+--- a/documentation/10-product/visual-identity.md
++++ b/documentation/10-product/visual-identity.md
+@@ -96,6 +96,7 @@ Microcopy table (UI values in pt-BR — ADR-0009; the keys stay English in code)
+ | Row actions (accessible names) | *Concluir {título}* / *Reabrir {título}* · *Editar título* |
+ | Section | **Concluídas** · count |
+ | Toasts | *Tarefa reaberta* · *Tarefa excluída* |
++| List load error | the approved request-error sentence · *Tentar de novo* |
+ | Request errors (tested) | `Sem conexão com o servidor. Nada se perdeu — tente de novo quando a conexão voltar.` · `O servidor recusou a operação (código N). Tente de novo.` |
+ | Detail sheet | labels *Título · Descrição · Data · Prioridade* · chips *Sem data · Concluir até · Fazer em* and *Alta · Normal · Baixa* (no chip selected = no priority) · *Cancelar* / *Salvar* / *Excluir* · close button *Fechar* |
+ | `<title>` | *Hoje · Praesto Sum* · *Praesto Sum* |
+@@ -111,6 +112,7 @@ TBD — after A5 ships: a week of cold opens on the phone against the three É w
+ 
+ | Date | What changed |
+ |---|---|
++| 2026-08-21 | **ui-design-pass Phase 2 (Task 10): one microcopy row added ahead of the code that uses it** (`PRPs/plans/ui-design-pass-phase-2-today-screen.plan.md`) — *List load error*, the retry copy the *Hoje* screen shows under a failed first load, pairing the existing request-error sentence with the infinitive button *Tentar de novo* |
+ | 2026-08-21 | **ui-design-pass Phase 1: the A5 microcopy rows approved by the owner in the PRD scope round added to the table above, ahead of Phase 1's code** (`PRPs/prds/ui-design-pass.prd.md`, "Microcopy added by this pass") — token gate, token-store failure, header, capture deck, row meta line, row actions, section, toasts, request errors, detail sheet, `<title>`, manifest |
+ | 2026-08-20 | **Step 2.9: voice & tone and microcopy approved; document `draft → active`.** Step 2.10 (a week of validation in use) runs after A5 ships. The dev-only `/design` playground moves to A5, where the tokens are first applied |
+ | 2026-08-20 | Step 2.8: `src/app/tokens.css` written (machine truth; applied in A5); mark variants under `public/brand/`; fonts measured (Inter 48.3 KB + Unbounded 21.8 KB) → two files ship; voice & tone drafted for the owner's approval |
+diff --git a/documentation/50-planning/roadmap.md b/documentation/50-planning/roadmap.md
+index 3718c30..59a40f0 100644
+--- a/documentation/50-planning/roadmap.md
++++ b/documentation/50-planning/roadmap.md
+@@ -144,7 +144,7 @@ Ideas land here first. They are raw, unprioritized, and carry no commitment.
+ | Flexible views and correlation of information with commitments | 2026-08-03 | open | From the owner's stated vision; partially served by unit 17, but the broader "see my data differently" idea is unmodelled |
+ | Proactive daily summary ("good morning, your day has X") | 2026-08-03 | open | Would reuse the cron and push channel of units 5–6 |
+ | Notes / personal information as the next Life Area | 2026-08-03 | open | Leading candidate in the [vision](../10-product/vision.md); would open a "Later" phase |
+-| Refresh the view when a window returns to the foreground | 2026-08-04 | open | Observed by the owner on 2026-08-04, right after the first deploy: a Task created on the phone does not appear in an already-open desktop window until it is reloaded. **Not a data divergence** — D1 holds the single canonical copy (ADR-0003) — and **not blocked by any decision**: revalidating a read is one `GET`, not the sync engine ADR-0003 forbids. Today `src/app/App.tsx` calls `refresh()` only on mount and after a mutation made in that same tab; there is no polling, no `visibilitychange` listener, no socket. Cheapest fix is a `visibilitychange` listener reusing the `refresh` that already exists; polling and push-driven invalidation (reusing unit 6's channel) cost more and buy little. Worth triaging early: phone + desktop is the owner's actual pattern and is what motivated ADR-0003, so this is felt daily |
++| Refresh the view when a window returns to the foreground | 2026-08-04 | done 2026-08-21 | Observed by the owner on 2026-08-04, right after the first deploy: a Task created on the phone does not appear in an already-open desktop window until it is reloaded. **Not a data divergence** — D1 holds the single canonical copy (ADR-0003) — and **not blocked by any decision**: revalidating a read is one `GET`, not the sync engine ADR-0003 forbids. Today `src/app/App.tsx` calls `refresh()` only on mount and after a mutation made in that same tab; there is no polling, no `visibilitychange` listener, no socket. Cheapest fix is a `visibilitychange` listener reusing the `refresh` that already exists; polling and push-driven invalidation (reusing unit 6's channel) cost more and buy little. Worth triaging early: phone + desktop is the owner's actual pattern and is what motivated ADR-0003, so this is felt daily. Closed by the UI/UX plan's A5 phase 2: the Hoje screen refetches on visibilitychange → visible and on reconnect (guidelines §12.4). |
+ | Browser test tier (Vitest browser mode or Playwright) | 2026-08-11 | open — **trigger set** | Decided 2026-08-11 not to buy a browser tier for token storage: the logic moves to `src/shared` behind a port instead (see [methodology](../../docs/context/methodology.md)). Buy it when unit 6 `push-channel-proven` needs it — push failure is silent by nature, so manual verification genuinely stops being enough there. Days of work, so it becomes a delivery unit at triage, never a chore |
+ | Sync Tasks and Reminders to Google (beyond Events) | 2026-08-04 | open | The owner wants it "in the future" — deliberately outside the closed mirror inventory of [ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md), so it needs its own ADR. Note two real costs to weigh then: Google Tasks is a separate API and separate integration, and mirroring Reminders as Google events would double every notification the owner receives |
+ 
+diff --git a/src/app/App.tsx b/src/app/App.tsx
+index 847c85c..608a7e3 100644
+--- a/src/app/App.tsx
++++ b/src/app/App.tsx
+@@ -1,27 +1,17 @@
+-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+-import { TASK_PRIORITIES, type TaskDto, type TaskPriority } from "../shared/api";
+-import { classifyRequestFailure } from "../shared/request-failure";
++import { useEffect, useState } from "react";
+ import type { ShareTarget } from "../shared/share-target";
+-import { buildTaskPatch, dateModeOf, type TaskDateMode, type TaskDraft } from "../shared/task-edit";
+-import {
+-  ApiError,
+-  completeTask,
+-  createTask,
+-  deleteTask,
+-  listTasks,
+-  readToken,
+-  reopenTask,
+-  saveToken,
+-  updateTask,
+-} from "./api";
++import { readToken } from "./api";
++import { TodayScreen } from "./components/TodayScreen";
++import { TokenGate } from "./components/TokenGate";
++import { Skeleton } from "./components/ui/Skeleton";
+ 
+ /**
+- * Phase 1 walking skeleton: capture a Task, see it, complete it.
++ * The token-gate switch — everything else lives in `TodayScreen` (A5) and,
++ * transitionally, in `TokenGate` and `TaskDetail`.
+  *
+  * It exists to prove the whole stack end to end (PWA → Worker → D1) and to be
+  * the surface the remaining Phase 1 requirements grow into — recurrence
+  * (FR-009), misses (FR-011/FR-012), reminders (FR-041/FR-044), search (FR-040).
+- * Styling is deliberately minimal; the design pass is its own slice.
+  */
+ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
+   // `null` = still checking IndexedDB for a stored token. `readToken()` is
+@@ -39,7 +29,7 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
+         // Unreachable by contract: `read()` guards every storage call and is
+         // tested never to reject. Kept anyway because this is the app's one
+         // unrecoverable state — an unhandled rejection here leaves `authorized`
+-        // at `null` forever, and the owner stares at "Loading…" with no way
++        // at `null` forever, and the owner stares at the skeleton with no way
+         // forward. Degrading to the token screen is always recoverable; a hang
+         // never is. If a future change makes `read()` able to reject, this line
+         // is what keeps that a bad afternoon instead of a dead app.
+@@ -54,513 +44,11 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
+     // Never render TokenGate while the read is still pending — doing so
+     // would flash the token screen on every cold start, which is exactly
+     // what AC-2 forbids.
+-    return (
+-      <main style={styles.page}>
+-        <p style={styles.muted}>Loading…</p>
+-      </main>
+-    );
++    return <Skeleton />;
+   }
+ 
+   if (!authorized) {
+     return <TokenGate onAuthorized={() => setAuthorized(true)} />;
+   }
+-  return <TaskBoard onUnauthorized={() => setAuthorized(false)} initialShare={initialShare} />;
++  return <TodayScreen onUnauthorized={() => setAuthorized(false)} initialShare={initialShare} />;
+ }
+-
+-function TokenGate({ onAuthorized }: { onAuthorized: () => void }) {
+-  const [value, setValue] = useState("");
+-  const [error, setError] = useState<string | null>(null);
+-
+-  return (
+-    <main style={styles.page}>
+-      <h1 style={styles.title}>Praesto Sum</h1>
+-      <p style={styles.muted}>Paste the API token for this device.</p>
+-      <form
+-        style={styles.row}
+-        onSubmit={async (event) => {
+-          event.preventDefault();
+-          const token = value.trim();
+-          if (!token) return;
+-          try {
+-            await saveToken(token);
+-          } catch (cause) {
+-            // `saveToken` rejects in exactly one case: the token reached
+-            // NEITHER store (`src/shared/token-store.ts`). That message is
+-            // written for the owner and pinned by a test, so surface it as-is
+-            // instead of restating it here. `value` is deliberately not
+-            // cleared — the same "never lose what was typed" invariant the
+-            // capture form keeps (FR-045).
+-            setError(cause instanceof Error ? cause.message : "Could not store the API token.");
+-            return;
+-          }
+-          setError(null);
+-          onAuthorized();
+-        }}
+-      >
+-        <input
+-          style={styles.input}
+-          type="password"
+-          value={value}
+-          onChange={(event) => setValue(event.target.value)}
+-          placeholder="API token"
+-          aria-label="API token"
+-        />
+-        <button style={styles.button} type="submit">
+-          Save
+-        </button>
+-      </form>
+-      {error !== null && <p style={styles.error}>{error}</p>}
+-    </main>
+-  );
+-}
+-
+-function TaskBoard({
+-  onUnauthorized,
+-  initialShare,
+-}: {
+-  onUnauthorized: () => void;
+-  initialShare: ShareTarget | null;
+-}) {
+-  const [tasks, setTasks] = useState<TaskDto[] | null>(null);
+-  const [error, setError] = useState<string | null>(null);
+-  const [title, setTitle] = useState(initialShare?.title ?? "");
+-  const [busy, setBusy] = useState(false);
+-  const [justSaved, setJustSaved] = useState(false);
+-  // Two views need `useState`, not a router dependency (ADR-0005).
+-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+-
+-  const handleFailure = useCallback(
+-    (cause: unknown) => {
+-      if (cause instanceof ApiError && cause.status === 401) {
+-        onUnauthorized();
+-        return;
+-      }
+-      setError(classifyRequestFailure(cause).message);
+-    },
+-    [onUnauthorized],
+-  );
+-
+-  const refresh = useCallback(async () => {
+-    try {
+-      setTasks(await listTasks());
+-      setError(null);
+-    } catch (cause) {
+-      handleFailure(cause);
+-    }
+-  }, [handleFailure]);
+-
+-  useEffect(() => {
+-    void refresh();
+-  }, [refresh]);
+-
+-  async function run(action: () => Promise<unknown>) {
+-    setBusy(true);
+-    try {
+-      await action();
+-      await refresh();
+-    } catch (cause) {
+-      handleFailure(cause);
+-    } finally {
+-      setBusy(false);
+-    }
+-  }
+-
+-  const open = tasks?.filter((task) => task.status === "open") ?? [];
+-  const closed = tasks?.filter((task) => task.status !== "open") ?? [];
+-
+-  // Derived from the already-loaded list rather than re-fetched. If a refresh
+-  // removed the Task, this falls back to the board instead of rendering an
+-  // empty panel.
+-  const selected = tasks?.find((task) => task.id === selectedTaskId) ?? null;
+-
+-  if (selected !== null) {
+-    return (
+-      <TaskDetail
+-        task={selected}
+-        busy={busy}
+-        error={error}
+-        onClose={() => setSelectedTaskId(null)}
+-        onSave={(patch) =>
+-          void run(async () => {
+-            await updateTask(selected.id, patch);
+-            // Close only after the await resolves, so a failed save leaves the
+-            // panel open with the owner's edits intact.
+-            setSelectedTaskId(null);
+-          })
+-        }
+-      />
+-    );
+-  }
+-
+-  return (
+-    <main style={styles.page}>
+-      <h1 style={styles.title}>Praesto Sum</h1>
+-
+-      <form
+-        style={styles.row}
+-        onSubmit={(event) => {
+-          event.preventDefault();
+-          const trimmed = title.trim();
+-          if (!trimmed || busy) return;
+-          void run(async () => {
+-            await createTask({ title: trimmed });
+-            // Phase 4 (install-and-quick-capture) invariant, locked in
+-            // explicitly: `setTitle("")` is deliberately sequenced AFTER the
+-            // awaited `createTask(...)` call above, never before or
+-            // unconditionally. A thrown failure — network-unreachable or
+-            // HTTP-level, both now surfaced via `classifyRequestFailure` in
+-            // `handleFailure` — exits this callback before this line runs,
+-            // so on any failed save the owner's typed text is not lost; it
+-            // remains exactly as typed in the input's `value={title}`
+-            // binding (PRD AC-4).
+-            setTitle("");
+-            setJustSaved(true);
+-            setTimeout(() => setJustSaved(false), 2000);
+-          });
+-        }}
+-      >
+-        <input
+-          style={styles.input}
+-          value={title}
+-          onChange={(event) => {
+-            setTitle(event.target.value);
+-            setJustSaved(false);
+-          }}
+-          placeholder="What needs doing?"
+-          aria-label="Task title"
+-          // Phase 3 (install-and-quick-capture) decision: `autoFocus` stays
+-          // unconditional across devices, not gated by device/pointer type.
+-          // The PRD's Open Question 1 raises this ("may be unwelcome on
+-          // desktop, where it raises the on-screen keyboard on touch
+-          // laptops") but explicitly defers it — "to be validated in real
+-          // use rather than decided now" — and no device/pointer-type
+-          // detection exists anywhere in this codebase today. Revisit with
+-          // a `matchMedia("(any-pointer: coarse)")` check if real use on
+-          // the owner's Windows PC surfaces friction.
+-          autoFocus
+-        />
+-        <button style={styles.button} type="submit" disabled={busy}>
+-          Add
+-        </button>
+-      </form>
+-
+-      {justSaved && <p style={styles.muted}>Saved</p>}
+-      {error !== null && <p style={styles.error}>{error}</p>}
+-      {tasks === null && error === null && <p style={styles.muted}>Loading…</p>}
+-
+-      <ul style={styles.list}>
+-        {open.map((task) => (
+-          <li key={task.id} style={styles.item}>
+-            <button
+-              style={styles.link}
+-              type="button"
+-              disabled={busy}
+-              onClick={() => void run(() => completeTask(task.id))}
+-            >
+-              ○
+-            </button>
+-            <InlineTitle
+-              task={task}
+-              busy={busy}
+-              onCommit={(title) =>
+-                void run(async () => {
+-                  await updateTask(task.id, { title });
+-                })
+-              }
+-            />
+-            <button
+-              style={styles.link}
+-              type="button"
+-              disabled={busy}
+-              onClick={() => setSelectedTaskId(task.id)}
+-              aria-label={`Open ${task.title}`}
+-            >
+-              ⋯
+-            </button>
+-            <button
+-              style={styles.link}
+-              type="button"
+-              disabled={busy}
+-              onClick={() => void run(() => deleteTask(task.id))}
+-              aria-label={`Delete ${task.title}`}
+-            >
+-              ×
+-            </button>
+-          </li>
+-        ))}
+-      </ul>
+-
+-      {closed.length > 0 && (
+-        <>
+-          <h2 style={styles.subtitle}>Closed</h2>
+-          <ul style={styles.list}>
+-            {closed.map((task) => (
+-              <li key={task.id} style={styles.item}>
+-                <button
+-                  style={styles.link}
+-                  type="button"
+-                  disabled={busy || task.status === "missed"}
+-                  onClick={() => void run(() => reopenTask(task.id))}
+-                >
+-                  {task.status === "done" ? "●" : "!"}
+-                </button>
+-                <span style={{ ...styles.grow, ...styles.closedText }}>{task.title}</span>
+-              </li>
+-            ))}
+-          </ul>
+-        </>
+-      )}
+-
+-      {tasks !== null && tasks.length === 0 && (
+-        <p style={styles.muted}>Nothing here yet. Add the first one above.</p>
+-      )}
+-    </main>
+-  );
+-}
+-
+-/**
+- * The title, corrected where the owner sees it (PRD AC-8, the first of the two
+- * moments the PRD names: fixing a typo right after capture).
+- *
+- * Commits on Enter and on blur; Escape abandons. The request is skipped
+- * entirely when nothing changed or the title is empty — an empty body and an
+- * empty title are both 400s, and neither is the owner's problem.
+- */
+-function InlineTitle({
+-  task,
+-  busy,
+-  onCommit,
+-}: {
+-  task: TaskDto;
+-  busy: boolean;
+-  onCommit: (title: string) => void;
+-}) {
+-  const [editing, setEditing] = useState(false);
+-  const [draft, setDraft] = useState(task.title);
+-
+-  if (!editing) {
+-    return (
+-      <button
+-        style={{ ...styles.grow, ...styles.titleButton }}
+-        type="button"
+-        disabled={busy}
+-        onClick={() => {
+-          setDraft(task.title);
+-          setEditing(true);
+-        }}
+-      >
+-        {task.title}
+-      </button>
+-    );
+-  }
+-
+-  function commit() {
+-    const trimmed = draft.trim();
+-    setEditing(false);
+-    if (trimmed === "" || trimmed === task.title) return;
+-    onCommit(trimmed);
+-  }
+-
+-  return (
+-    <input
+-      style={{ ...styles.grow, ...styles.input }}
+-      value={draft}
+-      onChange={(event) => setDraft(event.target.value)}
+-      onBlur={commit}
+-      onKeyDown={(event) => {
+-        if (event.key === "Enter") {
+-          event.preventDefault();
+-          commit();
+-        }
+-        if (event.key === "Escape") {
+-          event.preventDefault();
+-          setEditing(false);
+-        }
+-      }}
+-      aria-label={`Edit title of ${task.title}`}
+-      autoFocus
+-    />
+-  );
+-}
+-
+-/**
+- * Everything that is not the title, one tap away (PRD AC-8, the second moment:
+- * deciding *when* something must happen).
+- *
+- * The date control offers three explicit, mutually exclusive choices. It never
+- * presents one date field with a defaulted meaning: the owner's 2026-08-12
+- * decision is that "complete by" versus "do on" is chosen deliberately, and a
+- * default would let the cheaper-to-type option silently win.
+- */
+-function TaskDetail({
+-  task,
+-  busy,
+-  error,
+-  onClose,
+-  onSave,
+-}: {
+-  task: TaskDto;
+-  busy: boolean;
+-  error: string | null;
+-  onClose: () => void;
+-  onSave: (patch: ReturnType<typeof buildTaskPatch>) => void;
+-}) {
+-  const [draft, setDraft] = useState<TaskDraft>({
+-    title: task.title,
+-    description: task.description ?? "",
+-    dateMode: dateModeOf(task),
+-    date: task.deadline ?? task.scheduledDate ?? "",
+-    priority: task.priority,
+-  });
+-
+-  function patch<K extends keyof TaskDraft>(key: K, value: TaskDraft[K]) {
+-    setDraft((current) => ({ ...current, [key]: value }));
+-  }
+-
+-  const dateLabels: Record<TaskDateMode, string> = {
+-    none: "No date",
+-    deadline: "Complete by",
+-    scheduled: "Do on",
+-  };
+-
+-  return (
+-    <main style={styles.page}>
+-      <button style={styles.link} type="button" onClick={onClose}>
+-        ← Back
+-      </button>
+-
+-      <h1 style={styles.title}>Edit Task</h1>
+-
+-      <label style={styles.field}>
+-        <span style={styles.label}>Title</span>
+-        <input
+-          style={styles.input}
+-          value={draft.title}
+-          onChange={(event) => patch("title", event.target.value)}
+-          aria-label="Title"
+-        />
+-      </label>
+-
+-      <label style={styles.field}>
+-        <span style={styles.label}>Description</span>
+-        <textarea
+-          style={{ ...styles.input, minHeight: "5rem" }}
+-          value={draft.description}
+-          onChange={(event) => patch("description", event.target.value)}
+-          aria-label="Description"
+-        />
+-      </label>
+-
+-      <fieldset style={styles.fieldset}>
+-        <legend style={styles.label}>Date</legend>
+-        {(["none", "deadline", "scheduled"] as const).map((mode) => (
+-          <label key={mode} style={styles.choice}>
+-            <input
+-              type="radio"
+-              name="dateMode"
+-              checked={draft.dateMode === mode}
+-              onChange={() => patch("dateMode", mode)}
+-            />
+-            {dateLabels[mode]}
+-          </label>
+-        ))}
+-        <input
+-          style={styles.input}
+-          type="date"
+-          value={draft.date}
+-          disabled={draft.dateMode === "none"}
+-          onChange={(event) => patch("date", event.target.value)}
+-          aria-label="Date"
+-        />
+-      </fieldset>
+-
+-      <label style={styles.field}>
+-        <span style={styles.label}>Priority</span>
+-        <select
+-          style={styles.input}
+-          value={draft.priority ?? ""}
+-          onChange={(event) =>
+-            patch(
+-              "priority",
+-              event.target.value === "" ? null : (event.target.value as TaskPriority),
+-            )
+-          }
+-          aria-label="Priority"
+-        >
+-          <option value="">Not set</option>
+-          {TASK_PRIORITIES.map((level) => (
+-            <option key={level} value={level}>
+-              {level[0]?.toUpperCase()}
+-              {level.slice(1)}
+-            </option>
+-          ))}
+-        </select>
+-      </label>
+-
+-      {error !== null && <p style={styles.error}>{error}</p>}
+-
+-      <div style={styles.row}>
+-        <button
+-          style={styles.button}
+-          type="button"
+-          disabled={busy}
+-          onClick={() => {
+-            const changes = buildTaskPatch(task, draft);
+-            // Nothing changed: the route rejects an empty body by design, so
+-            // never issue the request at all.
+-            if (Object.keys(changes).length === 0) {
+-              onClose();
+-              return;
+-            }
+-            onSave(changes);
+-          }}
+-        >
+-          Save
+-        </button>
+-        <button style={styles.button} type="button" disabled={busy} onClick={onClose}>
+-          Cancel
+-        </button>
+-      </div>
+-    </main>
+-  );
+-}
+-
+-const styles = {
+-  page: {
+-    fontFamily: "system-ui, sans-serif",
+-    maxWidth: "34rem",
+-    margin: "0 auto",
+-    padding: "1.5rem 1rem 4rem",
+-  },
+-  title: { fontSize: "1.5rem", margin: "0 0 1rem" },
+-  subtitle: { fontSize: "0.9rem", textTransform: "uppercase", opacity: 0.6, marginTop: "2rem" },
+-  muted: { opacity: 0.6 },
+-  error: { color: "#b00020" },
+-  row: { display: "flex", gap: "0.5rem", marginBottom: "1rem" },
+-  input: { flex: 1, padding: "0.6rem", fontSize: "1rem" },
+-  button: { padding: "0.6rem 1rem", fontSize: "1rem", cursor: "pointer" },
+-  list: { listStyle: "none", padding: 0, margin: 0 },
+-  item: { display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.5rem 0" },
+-  grow: { flex: 1 },
+-  closedText: { opacity: 0.5, textDecoration: "line-through" },
+-  link: {
+-    background: "none",
+-    border: "none",
+-    cursor: "pointer",
+-    fontSize: "1.1rem",
+-    padding: 0,
+-    lineHeight: 1,
+-  },
+-  titleButton: {
+-    background: "none",
+-    border: "none",
+-    cursor: "text",
+-    font: "inherit",
+-    padding: 0,
+-    textAlign: "left",
+-  },
+-  field: { display: "block", marginBottom: "1rem" },
+-  fieldset: { border: "none", padding: 0, margin: "0 0 1rem" },
+-  label: { display: "block", fontSize: "0.85rem", opacity: 0.7, marginBottom: "0.25rem" },
+-  choice: { display: "inline-flex", alignItems: "center", gap: "0.3rem", marginRight: "1rem" },
+-} as const satisfies Record<string, CSSProperties>;
+diff --git a/src/app/components/CaptureDeck.tsx b/src/app/components/CaptureDeck.tsx
+new file mode 100644
+index 0000000..f7ede03
+--- /dev/null
++++ b/src/app/components/CaptureDeck.tsx
+@@ -0,0 +1,100 @@
++// The single elevated plane of the layout standard §2.9: the eyebrow IS the
++// field's visible `<label for>` (WCAG 3.3.2), an in-flow grid row — never
++// `position: fixed`, because `interactive-widget=resizes-content` shrinks
++// the layout viewport and fixed elements drift.
++
++import { LoaderCircle, Plus } from "lucide-react";
++import { useEffect, useState, type Ref } from "react";
++import { Button } from "./ui/Button";
++
++export function CaptureDeck({
++  value,
++  onChange,
++  onSubmit,
++  busy,
++  canWrite,
++  error,
++  autoFocus,
++  inputRef,
++}: {
++  value: string;
++  onChange: (value: string) => void;
++  onSubmit: () => void;
++  busy: boolean;
++  canWrite: boolean;
++  error: string | null;
++  autoFocus: boolean;
++  inputRef: Ref<HTMLInputElement>;
++}) {
++  // No indicator flashes on a fast save (guidelines §8): the icon only
++  // switches to the spinner once the request has been pending for 400 ms.
++  const [showPending, setShowPending] = useState(false);
++
++  useEffect(() => {
++    if (!busy) {
++      setShowPending(false);
++      return;
++    }
++    const timer = setTimeout(() => setShowPending(true), 400);
++    return () => clearTimeout(timer);
++  }, [busy]);
++
++  return (
++    <section
++      data-deck
++      className="border-t border-line bg-surface-2 px-4 pt-3 shadow-deck [padding-bottom:calc(var(--space-4)+env(safe-area-inset-bottom,0px))]"
++    >
++      <label
++        htmlFor="capture-title"
++        className="m-0 mb-2 block font-data text-t1 font-semibold text-muted"
++      >
++        Nova tarefa
++      </label>
++      <form
++        className="flex min-h-14 items-center rounded-control border border-line-strong bg-surface-1 pr-1 pl-4 shadow-field"
++        onSubmit={(event) => {
++          event.preventDefault();
++          if (value.trim() === "" || busy) return;
++          onSubmit();
++        }}
++      >
++        <input
++          id="capture-title"
++          ref={inputRef}
++          type="text"
++          enterKeyHint="done"
++          placeholder="O que precisa ser feito?"
++          autoComplete="off"
++          autoFocus={autoFocus}
++          disabled={!canWrite}
++          value={value}
++          onChange={(event) => onChange(event.target.value)}
++          className="min-h-12 min-w-0 flex-1 bg-transparent font-text text-t3 text-ink outline-none placeholder:text-muted disabled:opacity-55"
++        />
++        <Button
++          type="submit"
++          aria-label="Adicionar"
++          className="size-12 px-0"
++          disabled={busy || !canWrite}
++        >
++          {showPending ? (
++            <LoaderCircle
++              className="size-5 animate-spin motion-reduce:animate-none"
++              aria-hidden="true"
++            />
++          ) : (
++            <Plus className="size-5" aria-hidden="true" />
++          )}
++        </Button>
++      </form>
++      {!canWrite && (
++        <p className="mt-2 font-text text-t1 text-muted">Captura indisponível sem conexão.</p>
++      )}
++      {error !== null && (
++        <p role="alert" className="mt-2 font-text text-t2 text-overdue">
++          {error}
++        </p>
++      )}
++    </section>
++  );
++}
+diff --git a/src/app/components/DesignPlayground.tsx b/src/app/components/DesignPlayground.tsx
+index 25786dd..b889c18 100644
+--- a/src/app/components/DesignPlayground.tsx
++++ b/src/app/components/DesignPlayground.tsx
+@@ -2,18 +2,69 @@
+ // that exist today, in one page, mounted from src/app/main.tsx only when
+ // `import.meta.env.DEV && location.pathname === "/design"`, through a
+ // dynamic import, so this module never reaches the production bundle.
+-// Later phases register their own components here as they are built (row
+-// states, toast, banner, empty, skeleton, confirmation) — see this plan's
+-// `## Notes`, "Playground completion is staged by design.": this phase
+-// renders every token and the four primitives that exist on `main`.
++// A5 phase 2 adds the "Tela Hoje" section: a row in every state (open,
++// overdue, done, missed, editing), a toast with and without an action, the
++// banner, the empty state, the skeleton and the capture deck — every state
++// registered here still never reaches the production bundle either.
+ 
+ import type { ReactNode } from "react";
+-import { useState } from "react";
++import { useRef, useState } from "react";
++import type { TaskDto } from "../../shared/api";
++import { CaptureDeck } from "./CaptureDeck";
++import { EmptyState } from "./EmptyState";
++import { TaskRow } from "./TaskRow";
++import { Banner } from "./ui/Banner";
+ import { Button } from "./ui/Button";
+ import { Chip, ChipGroup } from "./ui/Chip";
+ import { cn } from "./ui/cn";
+ import { CompleteControl } from "./ui/CompleteControl";
+ import { Sheet } from "./ui/Sheet";
++import { Skeleton } from "./ui/Skeleton";
++import { Toast } from "./ui/Toast";
++
++/** The fixture dates `test/format.test.ts` pins, so the rendered phrases are known. */
++const PLAYGROUND_TODAY = "2026-08-21";
++
++function playgroundTask(
++  task: Pick<TaskDto, "id" | "title" | "status"> & Partial<TaskDto>,
++): TaskDto {
++  return {
++    description: null,
++    deadline: null,
++    scheduledDate: null,
++    priority: null,
++    lifeAreaId: null,
++    seriesId: null,
++    occurrenceDate: null,
++    completedAt: null,
++    createdAt: 0,
++    ...task,
++  };
++}
++
++const PLAYGROUND_TASKS: TaskDto[] = [
++  playgroundTask({
++    id: "row-open",
++    title: "Pagar aluguel",
++    status: "open",
++    deadline: "2026-08-21",
++    priority: "high",
++  }),
++  playgroundTask({
++    id: "row-overdue",
++    title: "Renovar o passaporte antes da viagem de outubro",
++    status: "open",
++    deadline: "2026-08-18",
++  }),
++  playgroundTask({
++    id: "row-done",
++    title: "Levar o carro para revisão",
++    status: "done",
++    completedAt: 1755000000,
++  }),
++  playgroundTask({ id: "row-missed", title: "Ligar para o dentista", status: "missed" }),
++  playgroundTask({ id: "row-editing", title: "Escrever o relatório mensal", status: "open" }),
++];
+ 
+ /** Every colour-role token src/app/tokens.css declares (guidelines §3.5). */
+ const COLOR_TOKENS = [
+@@ -72,6 +123,8 @@ export function DesignPlayground() {
+   const [checkedDone, setCheckedDone] = useState(true);
+   const [chips, setChips] = useState<string[]>(["alta"]);
+   const [sheetOpen, setSheetOpen] = useState(false);
++  const [playgroundTitle, setPlaygroundTitle] = useState("");
++  const playgroundCaptureRef = useRef<HTMLInputElement>(null);
+ 
+   return (
+     <main className="mx-auto flex max-w-[560px] flex-col gap-8 bg-bg px-4 pt-8 pb-16 text-ink">
+@@ -229,6 +282,67 @@ export function DesignPlayground() {
+         </div>
+       </Section>
+ 
++      <Section title="Tela Hoje">
++        <div className="flex flex-col gap-4">
++          <ul className="m-0 flex list-none flex-col gap-2 p-0">
++            {PLAYGROUND_TASKS.map((task) => (
++              <TaskRow
++                key={task.id}
++                task={task}
++                today={PLAYGROUND_TODAY}
++                busy={false}
++                editing={task.id === "row-editing"}
++                onToggle={() => {}}
++                onOpen={() => {}}
++                onEdit={() => {}}
++                onCommitTitle={() => {}}
++                onCancelEdit={() => {}}
++              />
++            ))}
++          </ul>
++
++          <Toast
++            toast={{ key: "task-done", text: "Tarefa concluída", action: { label: "Desfazer" } }}
++            onAction={() => {}}
++            onSecondary={() => {}}
++            onDismiss={() => {}}
++          />
++          <Toast
++            toast={{ key: "task-saved", text: "Tarefa salva" }}
++            onAction={() => {}}
++            onSecondary={() => {}}
++            onDismiss={() => {}}
++          />
++          <Toast
++            toast={{
++              key: "task-error",
++              tone: "error",
++              text: "Sem conexão com o servidor. Nada se perdeu — tente de novo quando a conexão voltar.",
++            }}
++            onAction={() => {}}
++            onSecondary={() => {}}
++            onDismiss={() => {}}
++          />
++
++          <Banner lead="Sem conexão." body="Dá para ler, mas não para salvar por enquanto." />
++
++          <EmptyState onCapture={() => {}} />
++
++          <Skeleton slow />
++
++          <CaptureDeck
++            value={playgroundTitle}
++            onChange={setPlaygroundTitle}
++            onSubmit={() => {}}
++            busy={false}
++            canWrite={true}
++            error={null}
++            autoFocus={false}
++            inputRef={playgroundCaptureRef}
++          />
++        </div>
++      </Section>
++
+       <Section title="Foco">
+         <p className="font-text text-t2 text-muted">
+           Pressione Tab para navegar pelos controles acima e ver o anel de foco em duas cores.
+diff --git a/src/app/components/EmptyState.tsx b/src/app/components/EmptyState.tsx
+new file mode 100644
+index 0000000..834dbd5
+--- /dev/null
++++ b/src/app/components/EmptyState.tsx
+@@ -0,0 +1,16 @@
++// The list region's empty state (layout standard §2.7, guidelines §8): a
++// positive title, one line of body, one CTA that focuses capture — no
++// duplicate button, never a blank region.
++
++import { Button } from "./ui/Button";
++
++export function EmptyState({ onCapture }: { onCapture: () => void }) {
++  return (
++    <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-8 text-center">
++      <p className="m-0 font-display text-t4 font-extrabold text-ink">Nada para hoje.</p>
++      <p className="m-0 font-text text-t2 text-muted">Bora capturar a primeira?</p>
++      {/* prettier-ignore */}
++      <Button variant="secondary" onClick={onCapture}>Nova tarefa</Button>
++    </div>
++  );
++}
+diff --git a/src/app/components/InlineTitle.tsx b/src/app/components/InlineTitle.tsx
+new file mode 100644
+index 0000000..321ec34
+--- /dev/null
++++ b/src/app/components/InlineTitle.tsx
+@@ -0,0 +1,56 @@
++// The in-place title editor a Task row swaps in for its body while
++// `editing`. Mirrors the exact commit rule of the App.tsx InlineTitle this
++// phase retires (trimmed; empty or unchanged → no request, just leave edit
++// mode) — only the trigger changed (the pencil, not the title itself).
++
++import { useEffect, useRef, useState } from "react";
++import type { TaskDto } from "../../shared/api";
++
++export function InlineTitle({
++  task,
++  onCommit,
++  onCancel,
++}: {
++  task: TaskDto;
++  onCommit: (title: string) => void;
++  onCancel: () => void;
++}) {
++  const [draft, setDraft] = useState(task.title);
++  const inputRef = useRef<HTMLInputElement>(null);
++
++  useEffect(() => {
++    // Programmatic focus after the pencil tap — not the `autofocus`
++    // attribute, which guidelines §12.5 reserves for the capture field.
++    inputRef.current?.focus();
++  }, []);
++
++  function commit() {
++    const trimmed = draft.trim();
++    if (trimmed === "" || trimmed === task.title) {
++      onCancel();
++      return;
++    }
++    onCommit(trimmed);
++  }
++
++  return (
++    <input
++      ref={inputRef}
++      value={draft}
++      onChange={(event) => setDraft(event.target.value)}
++      onBlur={commit}
++      onKeyDown={(event) => {
++        if (event.key === "Enter") {
++          event.preventDefault();
++          commit();
++        }
++        if (event.key === "Escape") {
++          event.preventDefault();
++          onCancel();
++        }
++      }}
++      aria-label={`Editar título de ${task.title}`}
++      className="min-h-12 min-w-0 flex-1 rounded-control border border-line-strong bg-surface-1 px-3 font-text text-t3 text-ink outline-none"
++    />
++  );
++}
+diff --git a/src/app/components/TaskDetail.tsx b/src/app/components/TaskDetail.tsx
+new file mode 100644
+index 0000000..97b3715
+--- /dev/null
++++ b/src/app/components/TaskDetail.tsx
+@@ -0,0 +1,181 @@
++// Moved verbatim out of App.tsx (A5, Task 6) — transitional. Its inline
++// `styles` object and its English labels are allowed here until Phase 3
++// rebuilds the detail screen as the native `<dialog>` sheet.
++
++import { useState } from "react";
++import type { CSSProperties } from "react";
++import { TASK_PRIORITIES, type TaskDto, type TaskPriority } from "../../shared/api";
++import {
++  buildTaskPatch,
++  dateModeOf,
++  type TaskDateMode,
++  type TaskDraft,
++} from "../../shared/task-edit";
++
++/**
++ * Everything that is not the title, one tap away (PRD AC-8, the second moment:
++ * deciding *when* something must happen).
++ *
++ * The date control offers three explicit, mutually exclusive choices. It never
++ * presents one date field with a defaulted meaning: the owner's 2026-08-12
++ * decision is that "complete by" versus "do on" is chosen deliberately, and a
++ * default would let the cheaper-to-type option silently win.
++ */
++export function TaskDetail({
++  task,
++  busy,
++  error,
++  onClose,
++  onSave,
++}: {
++  task: TaskDto;
++  busy: boolean;
++  error: string | null;
++  onClose: () => void;
++  onSave: (patch: ReturnType<typeof buildTaskPatch>) => void;
++}) {
++  const [draft, setDraft] = useState<TaskDraft>({
++    title: task.title,
++    description: task.description ?? "",
++    dateMode: dateModeOf(task),
++    date: task.deadline ?? task.scheduledDate ?? "",
++    priority: task.priority,
++  });
++
++  function patch<K extends keyof TaskDraft>(key: K, value: TaskDraft[K]) {
++    setDraft((current) => ({ ...current, [key]: value }));
++  }
++
++  const dateLabels: Record<TaskDateMode, string> = {
++    none: "No date",
++    deadline: "Complete by",
++    scheduled: "Do on",
++  };
++
++  return (
++    <main style={styles.page}>
++      <button style={styles.link} type="button" onClick={onClose}>
++        ← Back
++      </button>
++
++      <h1 style={styles.title}>Edit Task</h1>
++
++      <label style={styles.field}>
++        <span style={styles.label}>Title</span>
++        <input
++          style={styles.input}
++          value={draft.title}
++          onChange={(event) => patch("title", event.target.value)}
++          aria-label="Title"
++        />
++      </label>
++
++      <label style={styles.field}>
++        <span style={styles.label}>Description</span>
++        <textarea
++          style={{ ...styles.input, minHeight: "5rem" }}
++          value={draft.description}
++          onChange={(event) => patch("description", event.target.value)}
++          aria-label="Description"
++        />
++      </label>
++
++      <fieldset style={styles.fieldset}>
++        <legend style={styles.label}>Date</legend>
++        {(["none", "deadline", "scheduled"] as const).map((mode) => (
++          <label key={mode} style={styles.choice}>
++            <input
++              type="radio"
++              name="dateMode"
++              checked={draft.dateMode === mode}
++              onChange={() => patch("dateMode", mode)}
++            />
++            {dateLabels[mode]}
++          </label>
++        ))}
++        <input
++          style={styles.input}
++          type="date"
++          value={draft.date}
++          disabled={draft.dateMode === "none"}
++          onChange={(event) => patch("date", event.target.value)}
++          aria-label="Date"
++        />
++      </fieldset>
++
++      <label style={styles.field}>
++        <span style={styles.label}>Priority</span>
++        <select
++          style={styles.input}
++          value={draft.priority ?? ""}
++          onChange={(event) =>
++            patch(
++              "priority",
++              event.target.value === "" ? null : (event.target.value as TaskPriority),
++            )
++          }
++          aria-label="Priority"
++        >
++          <option value="">Not set</option>
++          {TASK_PRIORITIES.map((level) => (
++            <option key={level} value={level}>
++              {level[0]?.toUpperCase()}
++              {level.slice(1)}
++            </option>
++          ))}
++        </select>
++      </label>
++
++      {error !== null && <p style={styles.error}>{error}</p>}
++
++      <div style={styles.row}>
++        <button
++          style={styles.button}
++          type="button"
++          disabled={busy}
++          onClick={() => {
++            const changes = buildTaskPatch(task, draft);
++            // Nothing changed: the route rejects an empty body by design, so
++            // never issue the request at all.
++            if (Object.keys(changes).length === 0) {
++              onClose();
++              return;
++            }
++            onSave(changes);
++          }}
++        >
++          Save
++        </button>
++        <button style={styles.button} type="button" disabled={busy} onClick={onClose}>
++          Cancel
++        </button>
++      </div>
++    </main>
++  );
++}
++
++const styles = {
++  page: {
++    fontFamily: "system-ui, sans-serif",
++    maxWidth: "34rem",
++    margin: "0 auto",
++    padding: "1.5rem 1rem 4rem",
++  },
++  title: { fontSize: "1.5rem", margin: "0 0 1rem" },
++  error: { color: "#b00020" },
++  row: { display: "flex", gap: "0.5rem", marginBottom: "1rem" },
++  input: { flex: 1, padding: "0.6rem", fontSize: "1rem" },
++  button: { padding: "0.6rem 1rem", fontSize: "1rem", cursor: "pointer" },
++  link: {
++    background: "none",
++    border: "none",
++    cursor: "pointer",
++    fontSize: "1.1rem",
++    padding: 0,
++    lineHeight: 1,
++  },
++  field: { display: "block", marginBottom: "1rem" },
++  fieldset: { border: "none", padding: 0, margin: "0 0 1rem" },
++  label: { display: "block", fontSize: "0.85rem", opacity: 0.7, marginBottom: "0.25rem" },
++  choice: { display: "inline-flex", alignItems: "center", gap: "0.3rem", marginRight: "1rem" },
++} as const satisfies Record<string, CSSProperties>;
+diff --git a/src/app/components/TaskRow.tsx b/src/app/components/TaskRow.tsx
+new file mode 100644
+index 0000000..3fee61c
+--- /dev/null
++++ b/src/app/components/TaskRow.tsx
+@@ -0,0 +1,142 @@
++// The 64 px row of the layout standard §2.6: the completion control, a
++// two-line title, the meta line, and the row's single trailing element (the
++// pencil, open Tasks only — never a chevron, never a delete).
++
++import { ChevronDown, ChevronUp, Pencil } from "lucide-react";
++import { useState } from "react";
++import type { TaskDto, TaskPriority } from "../../shared/api";
++import { taskMetaLine } from "../../shared/format";
++import { InlineTitle } from "./InlineTitle";
++import { Button } from "./ui/Button";
++import { cn } from "./ui/cn";
++import { CompleteControl } from "./ui/CompleteControl";
++
++/**
++ * Splits a formatted meta line into its prefix and the trailing priority
++ * word, so the priority glyph can be inserted right before that word
++ * without re-deriving it from `task.priority` and `taskMetaLine` twice.
++ */
++function splitMeta(
++  meta: { text: string; overdue: boolean },
++  priority: TaskPriority | null,
++): { prefix: string; priorityWord: "alta" | "baixa" | null } {
++  if (priority === "high" && meta.text.endsWith("alta")) {
++    return { prefix: meta.text.slice(0, meta.text.length - "alta".length), priorityWord: "alta" };
++  }
++  if (priority === "low" && meta.text.endsWith("baixa")) {
++    return { prefix: meta.text.slice(0, meta.text.length - "baixa".length), priorityWord: "baixa" };
++  }
++  return { prefix: meta.text, priorityWord: null };
++}
++
++export function TaskRow({
++  task,
++  today,
++  busy,
++  editing,
++  onToggle,
++  onOpen,
++  onEdit,
++  onCommitTitle,
++  onCancelEdit,
++}: {
++  task: TaskDto;
++  today: string;
++  busy: boolean;
++  editing: boolean;
++  onToggle: (next: boolean) => void;
++  onOpen: () => void;
++  onEdit: () => void;
++  onCommitTitle: (title: string) => void;
++  onCancelEdit: () => void;
++}) {
++  // The signature completion moment (ADR-0010): checking an open Task plays
++  // the ring + row-leave animations (Task 7) before the optimistic status
++  // change fires, so the row survives on screen until its own animation
++  // ends. Reopening (next === false) is immediate — there is no moment to
++  // stage there.
++  const [completing, setCompleting] = useState(false);
++  const isOpen = task.status === "open";
++  const meta = taskMetaLine(task, today);
++  const metaSplit = meta === null ? null : splitMeta(meta, task.priority);
++
++  return (
++    <li
++      data-completing={completing || undefined}
++      onAnimationEnd={(event) => {
++        // `--duration-complete` (the ring) always outlasts `--duration-medium`
++        // (this row's own leave animation) — reduced motion shortens both
++        // but keeps that ordering (tokens.css). The ring's keyframes bubble
++        // up from CompleteControl's inner span; filtering by name is what
++        // makes the optimistic change land "after the ring fired" instead
++        // of firing twice (once per animation) or racing the row's own
++        // shorter leave animation.
++        if (event.animationName !== "praesto-complete") return;
++        setCompleting(false);
++        onToggle(true);
++      }}
++      className="flex min-h-16 items-center gap-2 rounded-card bg-surface-2 py-2 pr-2 pl-2 shadow-row [content-visibility:auto] [contain-intrinsic-size:auto_64px]"
++    >
++      <CompleteControl
++        checked={!isOpen}
++        onCheckedChange={(next) => {
++          if (isOpen && next) {
++            setCompleting(true);
++            return;
++          }
++          onToggle(next);
++        }}
++        label={isOpen ? `Concluir ${task.title}` : `Reabrir ${task.title}`}
++        disabled={task.status === "missed" || busy}
++      />
++
++      {editing ? (
++        <InlineTitle task={task} onCommit={onCommitTitle} onCancel={onCancelEdit} />
++      ) : (
++        <button
++          type="button"
++          onClick={onOpen}
++          className="flex min-h-12 min-w-0 flex-1 flex-col items-start justify-center rounded-control bg-transparent text-left"
++        >
++          <span
++            className={cn(
++              "line-clamp-2 w-full font-text text-t3 font-medium text-ink",
++              task.status === "done" && "text-muted line-through",
++            )}
++          >
++            {task.title}
++          </span>
++          {meta !== null && metaSplit !== null && (
++            <span
++              className={cn(
++                "font-data text-t1 font-medium text-muted tabular-nums",
++                meta.overdue && "text-overdue",
++              )}
++            >
++              {metaSplit.prefix}
++              {metaSplit.priorityWord === "alta" && (
++                <ChevronUp className="inline size-3" aria-hidden="true" />
++              )}
++              {metaSplit.priorityWord === "baixa" && (
++                <ChevronDown className="inline size-3" aria-hidden="true" />
++              )}
++              {metaSplit.priorityWord !== null && ` ${metaSplit.priorityWord}`}
++            </span>
++          )}
++        </button>
++      )}
++
++      {isOpen && (
++        <Button
++          type="button"
++          variant="icon"
++          aria-label={`Editar título de ${task.title}`}
++          onClick={onEdit}
++          disabled={busy}
++        >
++          <Pencil className="size-5" aria-hidden="true" />
++        </Button>
++      )}
++    </li>
++  );
++}
+diff --git a/src/app/components/TodayHeader.tsx b/src/app/components/TodayHeader.tsx
+new file mode 100644
+index 0000000..3cdd400
+--- /dev/null
++++ b/src/app/components/TodayHeader.tsx
+@@ -0,0 +1,26 @@
++// The flat, never-elevated header of the layout standard §2.1: the page
++// title, the date in mono, and the remaining count. No icon buttons yet —
++// nothing exists behind them in this phase.
++
++import { formatHeaderDate, formatRemaining } from "../../shared/format";
++
++export function TodayHeader({ now, remaining }: { now: Date; remaining: number }) {
++  const { figure, label } = formatRemaining(remaining);
++
++  return (
++    <header className="flex items-end gap-3 px-4 pt-6 pb-2">
++      <h1 className="m-0 font-text text-t4 font-bold text-ink">Hoje</h1>
++      <span className="pb-0.5 font-data text-t1 font-medium text-muted tabular-nums">
++        {formatHeaderDate(now)}
++      </span>
++      <span className="ml-auto flex items-baseline gap-1 pb-0.5">
++        {figure !== null && (
++          <span className="font-display text-t4 font-extrabold text-accent tabular-nums">
++            {figure}
++          </span>
++        )}
++        <span className="font-text text-t1 font-medium text-muted">{label}</span>
++      </span>
++    </header>
++  );
++}
+diff --git a/src/app/components/TodayScreen.tsx b/src/app/components/TodayScreen.tsx
+new file mode 100644
+index 0000000..09c74ad
+--- /dev/null
++++ b/src/app/components/TodayScreen.tsx
+@@ -0,0 +1,367 @@
++// The shell grid of the layout standard §2/§4: header / banner / list /
++// toast / deck, `100dvh` with `overflow: clip`, the list as its own scroll
++// container. Owns the screen state: the Task list, one optimistic status
++// change at a time with rollback, connectivity, refetch, the *Concluídas*
++// collapse, and the selected Task that still opens the old `TaskDetail`
++// until Phase 3 swaps in the sheet.
++
++import { ChevronDown } from "lucide-react";
++import { useEffect, useRef, useState } from "react";
++import type { TaskDto } from "../../shared/api";
++import { canWrite } from "../../shared/connectivity";
++import { todayIn } from "../../shared/dates";
++import { classifyRequestFailure } from "../../shared/request-failure";
++import type { ShareTarget } from "../../shared/share-target";
++import { ApiError, completeTask, createTask, listTasks, reopenTask, updateTask } from "../api";
++import { useConnectivity } from "../hooks/useConnectivity";
++import { dismissToast, showToast, useToast } from "../toast-store";
++import { CaptureDeck } from "./CaptureDeck";
++import { EmptyState } from "./EmptyState";
++import { TaskDetail } from "./TaskDetail";
++import { TaskRow } from "./TaskRow";
++import { TodayHeader } from "./TodayHeader";
++import { Banner } from "./ui/Banner";
++import { Button } from "./ui/Button";
++import { cn } from "./ui/cn";
++import { Skeleton } from "./ui/Skeleton";
++import { Toast } from "./ui/Toast";
++
++const DONE_COLLAPSED_KEY = "praesto.today.doneCollapsed";
++
++/** Guarded like the legacy token storage (`src/app/token-storage.ts`): a denial or a missing API degrades to the default, never throws. */
++function readDoneCollapsed(): boolean {
++  try {
++    return window.localStorage.getItem(DONE_COLLAPSED_KEY) === "1";
++  } catch {
++    return false;
++  }
++}
++
++function writeDoneCollapsed(value: boolean): void {
++  try {
++    window.localStorage.setItem(DONE_COLLAPSED_KEY, value ? "1" : "0");
++  } catch {
++    // Best-effort — a denial or a missing API must never break the toggle.
++  }
++}
++
++export function TodayScreen({
++  onUnauthorized,
++  initialShare,
++}: {
++  onUnauthorized: () => void;
++  initialShare: ShareTarget | null;
++}) {
++  const [tasks, setTasks] = useState<TaskDto[] | null>(null);
++  const [loadError, setLoadError] = useState<string | null>(null);
++  const [captureError, setCaptureError] = useState<string | null>(null);
++  const [title, setTitle] = useState(initialShare?.title ?? "");
++  const [busy, setBusy] = useState(false);
++  const [slow, setSlow] = useState(false);
++  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
++  const [editingId, setEditingId] = useState<string | null>(null);
++  const [doneCollapsed, setDoneCollapsed] = useState(readDoneCollapsed);
++  const captureRef = useRef<HTMLInputElement>(null);
++
++  const today = todayIn(new Date());
++  const now = new Date();
++
++  const { state: connectivity, report } = useConnectivity({ onOnline: () => void refresh() });
++  const toast = useToast();
++  const writable = canWrite(connectivity);
++
++  /** A 401 routes to the token gate; otherwise reports the failure kind and returns its message (`null` on the 401 route, since the caller is about to unmount). */
++  function handleFailure(cause: unknown): string | null {
++    if (cause instanceof ApiError && cause.status === 401) {
++      onUnauthorized();
++      return null;
++    }
++    const failure = classifyRequestFailure(cause);
++    report({ type: "request-failed", kind: failure.kind });
++    return failure.message;
++  }
++
++  async function refresh(): Promise<void> {
++    try {
++      const next = await listTasks();
++      setTasks(next);
++      setLoadError(null);
++      report({ type: "request-succeeded" });
++    } catch (cause) {
++      const message = handleFailure(cause);
++      if (message !== null) setLoadError(message);
++    }
++  }
++
++  /** The server-first mutation path (busy → action → refresh) — capture and inline title edits. */
++  async function run(action: () => Promise<unknown>): Promise<void> {
++    setBusy(true);
++    try {
++      await action();
++      setCaptureError(null);
++      await refresh();
++    } catch (cause) {
++      const message = handleFailure(cause);
++      if (message !== null) setCaptureError(message);
++    } finally {
++      setBusy(false);
++    }
++  }
++
++  function submitCapture(): void {
++    const trimmed = title.trim();
++    if (trimmed === "" || busy) return;
++    void run(async () => {
++      await createTask({ title: trimmed });
++      // FR-045 invariant, locked in explicitly: `setTitle("")` is sequenced
++      // AFTER the awaited `createTask(...)` call above, never before or
++      // unconditionally — a thrown failure exits this callback before this
++      // line runs, so a failed save never loses what the owner typed.
++      setTitle("");
++      showToast({ key: "task-saved", text: "Tarefa salva" });
++    });
++  }
++
++  function commitTitle(id: string, newTitle: string): void {
++    setEditingId(null);
++    void run(() => updateTask(id, { title: newTitle }));
++  }
++
++  // Complete / reopen are optimistic (AC-A3): the local status flips first,
++  // the request follows, and a failure restores the array captured before
++  // the change — the only behavioural change in how writes are made here.
++  async function complete(id: string): Promise<void> {
++    const previous = tasks;
++    setTasks((current) =>
++      current === null
++        ? current
++        : current.map((task): TaskDto =>
++            task.id === id
++              ? { ...task, status: "done", completedAt: Math.floor(Date.now() / 1000) }
++              : task,
++          ),
++    );
++    try {
++      await completeTask(id);
++      showToast({
++        key: "task-done",
++        text: "Tarefa concluída",
++        action: { label: "Desfazer", run: () => void reopen(id) },
++      });
++      await refresh();
++    } catch (cause) {
++      setTasks(previous);
++      const message = handleFailure(cause);
++      if (message !== null) showToast({ key: "task-error", tone: "error", text: message });
++    }
++  }
++
++  async function reopen(id: string): Promise<void> {
++    const previous = tasks;
++    setTasks((current) =>
++      current === null
++        ? current
++        : current.map((task): TaskDto =>
++            task.id === id ? { ...task, status: "open", completedAt: null } : task,
++          ),
++    );
++    try {
++      await reopenTask(id);
++      showToast({
++        key: "task-reopened",
++        text: "Tarefa reaberta",
++        action: { label: "Desfazer", run: () => void complete(id) },
++      });
++      await refresh();
++    } catch (cause) {
++      setTasks(previous);
++      const message = handleFailure(cause);
++      if (message !== null) showToast({ key: "task-error", tone: "error", text: message });
++    }
++  }
++
++  function toggleDoneCollapsed(): void {
++    setDoneCollapsed((current) => {
++      const next = !current;
++      writeDoneCollapsed(next);
++      return next;
++    });
++  }
++
++  useEffect(() => {
++    // Runs once, on mount — every later refetch is triggered explicitly
++    // (a mutation, `visibilitychange`, or reconnecting).
++    void refresh();
++  }, []);
++
++  useEffect(() => {
++    function handleVisibilityChange(): void {
++      if (document.visibilityState === "visible") void refresh();
++    }
++    document.addEventListener("visibilitychange", handleVisibilityChange);
++    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
++  }, []);
++
++  useEffect(() => {
++    document.title = "Hoje · Praesto Sum";
++  }, []);
++
++  useEffect(() => {
++    if (tasks !== null) {
++      setSlow(false);
++      return;
++    }
++    const timer = setTimeout(() => setSlow(true), 10000);
++    return () => clearTimeout(timer);
++  }, [tasks]);
++
++  const open = tasks?.filter((task) => task.status === "open") ?? [];
++  const closed = tasks?.filter((task) => task.status !== "open") ?? [];
++  const selected = tasks?.find((task) => task.id === selectedTaskId) ?? null;
++  const currentToast = toast.current;
++
++  if (selected !== null) {
++    return (
++      <TaskDetail
++        task={selected}
++        busy={busy}
++        error={captureError}
++        onClose={() => setSelectedTaskId(null)}
++        onSave={(patch) =>
++          void run(async () => {
++            await updateTask(selected.id, patch);
++            // Close only after the await resolves, so a failed save leaves
++            // the sheet open with the owner's edits intact.
++            setSelectedTaskId(null);
++          })
++        }
++      />
++    );
++  }
++
++  return (
++    <div
++      data-shell
++      className="mx-auto grid h-dvh w-full max-w-[640px] grid-rows-[auto_auto_1fr_auto_auto] overflow-clip bg-bg"
++    >
++      <TodayHeader now={now} remaining={open.length} />
++
++      {connectivity !== "online" ? (
++        <Banner lead="Sem conexão." body="Dá para ler, mas não para salvar por enquanto." />
++      ) : (
++        <div />
++      )}
++
++      <main className="flex flex-col gap-2 overflow-y-auto overscroll-contain px-4 pb-2">
++        {tasks === null && loadError === null && <Skeleton slow={slow} />}
++
++        {tasks === null && loadError !== null && (
++          <>
++            <p role="alert" className="font-text text-t2 text-overdue">
++              {loadError}
++            </p>
++            {/* prettier-ignore */}
++            <Button variant="secondary" onClick={() => void refresh()}>Tentar de novo</Button>
++          </>
++        )}
++
++        {tasks !== null && tasks.length === 0 && (
++          <EmptyState onCapture={() => captureRef.current?.focus()} />
++        )}
++
++        {tasks !== null && tasks.length > 0 && (
++          <>
++            <ul className="m-0 flex list-none flex-col gap-2 p-0">
++              {open.map((task) => (
++                <TaskRow
++                  key={task.id}
++                  task={task}
++                  today={today}
++                  busy={busy || !writable}
++                  editing={editingId === task.id}
++                  onToggle={(next) => void (next ? complete(task.id) : reopen(task.id))}
++                  onOpen={() => setSelectedTaskId(task.id)}
++                  onEdit={() => setEditingId(task.id)}
++                  onCommitTitle={(newTitle) => commitTitle(task.id, newTitle)}
++                  onCancelEdit={() => setEditingId(null)}
++                />
++              ))}
++            </ul>
++
++            {closed.length > 0 && (
++              <section aria-label="Concluídas">
++                <button
++                  type="button"
++                  aria-expanded={!doneCollapsed}
++                  onClick={toggleDoneCollapsed}
++                  className="flex min-h-12 w-full items-center gap-2 rounded-control text-left"
++                >
++                  {/* prettier-ignore */}
++                  <h2 className="m-0 font-text text-t2 font-semibold text-ink">Concluídas</h2>
++                  <span className="font-data text-t1 font-semibold text-muted tabular-nums">
++                    {closed.length}
++                  </span>
++                  <ChevronDown
++                    className={cn(
++                      "ml-auto size-4 transition-transform",
++                      !doneCollapsed && "rotate-180",
++                    )}
++                    aria-hidden="true"
++                  />
++                </button>
++                {!doneCollapsed && (
++                  <ul className="m-0 flex list-none flex-col gap-2 p-0">
++                    {closed.map((task) => (
++                      <TaskRow
++                        key={task.id}
++                        task={task}
++                        today={today}
++                        busy={busy || !writable}
++                        editing={editingId === task.id}
++                        onToggle={(next) => void (next ? complete(task.id) : reopen(task.id))}
++                        onOpen={() => setSelectedTaskId(task.id)}
++                        onEdit={() => setEditingId(task.id)}
++                        onCommitTitle={(newTitle) => commitTitle(task.id, newTitle)}
++                        onCancelEdit={() => setEditingId(null)}
++                      />
++                    ))}
++                  </ul>
++                )}
++              </section>
++            )}
++          </>
++        )}
++      </main>
++
++      {currentToast !== null ? (
++        <div className="px-4 pb-2">
++          <Toast
++            toast={currentToast}
++            onAction={() => {
++              currentToast.action?.run?.();
++              dismissToast(currentToast.key);
++            }}
++            onSecondary={() => {
++              currentToast.secondary?.run?.();
++              dismissToast(currentToast.key, true);
++            }}
++            onDismiss={() => dismissToast(currentToast.key)}
++          />
++        </div>
++      ) : (
++        <div />
++      )}
++
++      <CaptureDeck
++        value={title}
++        onChange={setTitle}
++        onSubmit={submitCapture}
++        busy={busy}
++        canWrite={writable}
++        error={captureError}
++        autoFocus={true}
++        inputRef={captureRef}
++      />
++    </div>
++  );
++}
+diff --git a/src/app/components/TokenGate.tsx b/src/app/components/TokenGate.tsx
+new file mode 100644
+index 0000000..fcd6825
+--- /dev/null
++++ b/src/app/components/TokenGate.tsx
+@@ -0,0 +1,69 @@
++// Moved verbatim out of App.tsx (A5, Task 6) — transitional. Its inline
++// `styles` object and its English labels are allowed here until Phase 3
++// rebuilds the token gate on the tokens.
++
++import { useState } from "react";
++import type { CSSProperties } from "react";
++import { saveToken } from "../api";
++
++export function TokenGate({ onAuthorized }: { onAuthorized: () => void }) {
++  const [value, setValue] = useState("");
++  const [error, setError] = useState<string | null>(null);
++
++  return (
++    <main style={styles.page}>
++      <h1 style={styles.title}>Praesto Sum</h1>
++      <p style={styles.muted}>Paste the API token for this device.</p>
++      <form
++        style={styles.row}
++        onSubmit={async (event) => {
++          event.preventDefault();
++          const token = value.trim();
++          if (!token) return;
++          try {
++            await saveToken(token);
++          } catch (cause) {
++            // `saveToken` rejects in exactly one case: the token reached
++            // NEITHER store (`src/shared/token-store.ts`). That message is
++            // written for the owner and pinned by a test, so surface it as-is
++            // instead of restating it here. `value` is deliberately not
++            // cleared — the same "never lose what was typed" invariant the
++            // capture form keeps (FR-045).
++            setError(cause instanceof Error ? cause.message : "Could not store the API token.");
++            return;
++          }
++          setError(null);
++          onAuthorized();
++        }}
++      >
++        <input
++          style={styles.input}
++          type="password"
++          value={value}
++          onChange={(event) => setValue(event.target.value)}
++          placeholder="API token"
++          aria-label="API token"
++        />
++        <button style={styles.button} type="submit">
++          Save
++        </button>
++      </form>
++      {error !== null && <p style={styles.error}>{error}</p>}
++    </main>
++  );
++}
++
++const styles = {
++  page: {
++    fontFamily: "system-ui, sans-serif",
++    maxWidth: "34rem",
++    margin: "0 auto",
++    padding: "1.5rem 1rem 4rem",
++  },
++  title: { fontSize: "1.5rem", margin: "0 0 1rem" },
++  muted: { opacity: 0.6 },
++  error: { color: "#b00020" },
++  row: { display: "flex", gap: "0.5rem", marginBottom: "1rem" },
++  input: { flex: 1, padding: "0.6rem", fontSize: "1rem" },
++  button: { padding: "0.6rem 1rem", fontSize: "1rem", cursor: "pointer" },
++} as const satisfies Record<string, CSSProperties>;
+diff --git a/src/app/components/ui/Banner.tsx b/src/app/components/ui/Banner.tsx
+new file mode 100644
+index 0000000..0edf2cc
+--- /dev/null
++++ b/src/app/components/ui/Banner.tsx
+@@ -0,0 +1,18 @@
++// Owned component (ADR-0011): the offline / unreachable banner (guidelines
++// §8) — icon + text, directly under the header, never dismissible.
++
++import { WifiOff } from "lucide-react";
++
++export function Banner({ lead, body }: { lead: string; body: string }) {
++  return (
++    <div
++      role="status"
++      className="flex min-h-12 items-center gap-3 border-b border-line bg-surface-1 px-4 text-t2 text-ink"
++    >
++      <WifiOff className="size-5 flex-none text-muted" aria-hidden="true" />
++      <span>
++        <strong>{lead}</strong> {body}
++      </span>
++    </div>
++  );
++}
+diff --git a/src/app/components/ui/CompleteControl.tsx b/src/app/components/ui/CompleteControl.tsx
+index 314c5bb..b0bdf1f 100644
+--- a/src/app/components/ui/CompleteControl.tsx
++++ b/src/app/components/ui/CompleteControl.tsx
+@@ -4,25 +4,35 @@
+ 
+ import { Checkbox } from "@base-ui/react/checkbox";
+ import { Check } from "lucide-react";
++import { cn } from "./cn";
+ 
+ export function CompleteControl({
+   checked,
+   onCheckedChange,
+   label,
++  disabled,
+ }: {
+   checked: boolean;
+   onCheckedChange: (next: boolean) => void;
+   /** Accessible name, e.g. "Concluir Pagar aluguel" — the visible title is in the row, not here. */
+   label: string;
++  /** A terminal (`missed`) Task or a busy row (TaskRow, A5). */
++  disabled?: boolean;
+ }) {
+   return (
+     <Checkbox.Root
+       checked={checked}
+       onCheckedChange={onCheckedChange}
++      disabled={disabled}
+       aria-label={label}
+-      className="group flex size-12 flex-none items-center justify-center rounded-control bg-transparent"
++      className="group flex size-12 flex-none items-center justify-center rounded-control bg-transparent disabled:opacity-55"
+     >
+-      <span className="flex size-[26px] items-center justify-center rounded-full border-2 border-faint transition-transform duration-150 group-active:scale-90 group-data-checked:border-accent group-data-checked:bg-accent group-data-checked:shadow-halo-done">
++      <span
++        className={cn(
++          "praesto-ring",
++          "flex size-[26px] items-center justify-center rounded-full border-2 border-faint transition-transform duration-150 group-active:scale-90 group-data-checked:border-accent group-data-checked:bg-accent group-data-checked:shadow-halo-done",
++        )}
++      >
+         <Checkbox.Indicator>
+           <Check className="size-4 text-on-accent" strokeWidth={2.5} aria-hidden="true" />
+         </Checkbox.Indicator>
+diff --git a/src/app/components/ui/Skeleton.tsx b/src/app/components/ui/Skeleton.tsx
+new file mode 100644
+index 0000000..757e984
+--- /dev/null
++++ b/src/app/components/ui/Skeleton.tsx
+@@ -0,0 +1,20 @@
++// Owned component (ADR-0011): the loading skeleton mirroring the
++// `index.html` shell silhouette (header band, rows, deck) so the hand-over
++// from the critical CSS to React does not jump. No animation — stillness by
++// default (guidelines §7.2); after ~10 s the caller passes `slow` and one
++// line is added.
++
++export function Skeleton({ slow = false }: { slow?: boolean }) {
++  return (
++    <div role="status" aria-busy="true" aria-label="Carregando" className="flex flex-1 flex-col">
++      <div className="h-16 bg-surface-1" aria-hidden="true" />
++      <div className="flex flex-col gap-2 px-4 pt-4">
++        <div className="h-16 rounded-card bg-surface-1" aria-hidden="true" />
++        <div className="h-16 rounded-card bg-surface-1" aria-hidden="true" />
++        <div className="h-16 rounded-card bg-surface-1" aria-hidden="true" />
++      </div>
++      <div className="h-24 rounded-t-card bg-surface-2" aria-hidden="true" />
++      {slow && <p className="px-4 font-text text-t2 text-muted">Ainda carregando…</p>}
++    </div>
++  );
++}
+diff --git a/src/app/components/ui/Toast.tsx b/src/app/components/ui/Toast.tsx
+new file mode 100644
+index 0000000..1ad15c6
+--- /dev/null
++++ b/src/app/components/ui/Toast.tsx
+@@ -0,0 +1,53 @@
++// Owned component (ADR-0011): the one toast slot the app shares (guidelines
++// §8) — text + icon, an optional secondary and action button, and a close
++// control only when the toast persists (has an action). Token utilities and
++// `cn()`, in the Button.tsx idiom.
++
++import { Info, TriangleAlert, Undo2, X } from "lucide-react";
++import type { ToastSpec } from "../../../shared/toast";
++import { Button } from "./Button";
++import { cn } from "./cn";
++
++export function Toast({
++  toast,
++  onAction,
++  onSecondary,
++  onDismiss,
++}: {
++  toast: ToastSpec;
++  onAction: () => void;
++  onSecondary: () => void;
++  onDismiss: () => void;
++}) {
++  const isError = toast.tone === "error";
++  const Icon = isError ? TriangleAlert : toast.action?.label === "Desfazer" ? Undo2 : Info;
++
++  return (
++    <div
++      role={isError ? "alert" : "status"}
++      aria-live="polite"
++      className="flex min-h-12 items-center gap-3 rounded-control border border-line bg-surface-2 px-4 py-2 text-t2 text-ink shadow-row"
++    >
++      <Icon
++        className={cn("size-5 flex-none", isError ? "text-overdue" : "text-muted")}
++        aria-hidden="true"
++      />
++      <span className="flex-1">{toast.text}</span>
++      {toast.secondary && (
++        <Button type="button" variant="ghost" onClick={onSecondary}>
++          {toast.secondary.label}
++        </Button>
++      )}
++      {toast.action && (
++        <Button type="button" variant="ghost" onClick={onAction}>
++          {toast.action.label}
++        </Button>
++      )}
++      {toast.action && (
++        <Button type="button" variant="icon" aria-label="Fechar aviso" onClick={onDismiss}>
++          <X className="size-5" aria-hidden="true" />
++        </Button>
++      )}
++    </div>
++  );
++}
+diff --git a/src/app/hooks/useConnectivity.ts b/src/app/hooks/useConnectivity.ts
+new file mode 100644
+index 0000000..cace2b2
+--- /dev/null
++++ b/src/app/hooks/useConnectivity.ts
+@@ -0,0 +1,53 @@
++import { useCallback, useEffect, useRef, useState } from "react";
++import {
++  reduceConnectivity,
++  type ConnectivityEvent,
++  type ConnectivityState,
++} from "../../shared/connectivity";
++
++/**
++ * The exempt glue over `reduceConnectivity` (`docs/context/methodology.md`,
++ * "Browser-API work: split the logic out, then the glue is exempt"): every
++ * transition rule lives in `src/shared/connectivity.ts`; this hook only adds
++ * the `window` `online` / `offline` listeners, the initial `navigator.onLine`
++ * read, and `report`, which the screen feeds request outcomes through
++ * (`request-succeeded`, `request-failed` with the `kind` from
++ * `classifyRequestFailure`).
++ */
++export function useConnectivity(options?: { onOnline?: () => void }): {
++  state: ConnectivityState;
++  report: (event: ConnectivityEvent) => void;
++} {
++  const [state, setState] = useState<ConnectivityState>(() =>
++    navigator.onLine ? "online" : "offline",
++  );
++
++  // A ref, not a dependency: `options` is typically a fresh object literal on
++  // every render (see TodayScreen's `useConnectivity({ onOnline: … })`), so
++  // depending on it would tear the listeners down and rebuild them every
++  // render. The ref always reads the latest callback without that churn.
++  const onOnlineRef = useRef(options?.onOnline);
++  onOnlineRef.current = options?.onOnline;
++
++  useEffect(() => {
++    function handleOnline() {
++      setState((current) => reduceConnectivity(current, { type: "browser-online" }));
++      onOnlineRef.current?.();
++    }
++    function handleOffline() {
++      setState((current) => reduceConnectivity(current, { type: "browser-offline" }));
++    }
++    window.addEventListener("online", handleOnline);
++    window.addEventListener("offline", handleOffline);
++    return () => {
++      window.removeEventListener("online", handleOnline);
++      window.removeEventListener("offline", handleOffline);
++    };
++  }, []);
++
++  const report = useCallback((event: ConnectivityEvent) => {
++    setState((current) => reduceConnectivity(current, event));
++  }, []);
++
++  return { state, report };
++}
+diff --git a/src/app/main.tsx b/src/app/main.tsx
+index 6712c2f..4efea13 100644
+--- a/src/app/main.tsx
++++ b/src/app/main.tsx
+@@ -6,6 +6,7 @@ import { parseShareTarget, type ShareTarget } from "../shared/share-target";
+ import { App } from "./App";
+ import { setupPwa } from "./pwa";
+ import { requestPersistentStorage } from "./token-storage";
++import { showToast } from "./toast-store";
+ 
+ const container = document.getElementById("root");
+ if (!container) throw new Error("#root not found");
+@@ -55,8 +56,12 @@ function mountApp(container: HTMLElement) {
+   // Registered after render so it does not compete with first paint.
+   setupPwa({
+     onNeedRefresh(update) {
+-      // Replace with real UI (toast/snackbar) later.
+-      if (window.confirm("A new version is available. Update now?")) void update();
++      showToast({
++        key: "sw-update",
++        text: "Nova versão disponível",
++        action: { label: "Atualizar", run: () => void update() },
++        secondary: { label: "Depois" },
++      });
+     },
+     onOfflineReady() {
+       console.info("[pwa] ready for offline use");
+diff --git a/src/app/styles.css b/src/app/styles.css
+index 12d1d1d..393e547 100644
+--- a/src/app/styles.css
++++ b/src/app/styles.css
+@@ -66,3 +66,42 @@
+     box-shadow: 0 0 0 4px var(--color-bg);
+   }
+ }
++
++@layer components {
++  /* Layout standard §4: the deck's safe-area inset does not update under the
++     keyboard, so it is dropped while a field has focus. Anchored on the
++     shell element rather than :root — MDN advises against anchoring :has()
++     on the root, since every DOM mutation then re-evaluates it. */
++  [data-shell]:has(input:focus-visible, textarea:focus-visible) [data-deck] {
++    padding-bottom: var(--space-4);
++  }
++
++  /* The signature completion moment (ADR-0010): the ring sinks and fires one
++     amber halo while the row it belongs to leaves. Durations and easings
++     come from the tokens, so prefers-reduced-motion shortens both through
++     tokens.css with no extra media query here. */
++  [data-completing] .praesto-ring {
++    animation: praesto-complete var(--duration-complete) var(--ease-standard);
++  }
++  [data-completing] {
++    animation: praesto-leave var(--duration-medium) var(--ease-exit) forwards;
++  }
++
++  @keyframes praesto-complete {
++    from {
++      transform: translateY(2px) scale(0.92);
++      box-shadow: 0 0 0 0 rgb(var(--color-accent-rgb) / 0.45);
++    }
++    to {
++      transform: translateY(0) scale(1);
++      box-shadow: var(--halo-done);
++    }
++  }
++
++  @keyframes praesto-leave {
++    to {
++      opacity: 0;
++      transform: translateX(24px);
++    }
++  }
++}
+diff --git a/src/app/toast-store.ts b/src/app/toast-store.ts
+new file mode 100644
+index 0000000..140345f
+--- /dev/null
++++ b/src/app/toast-store.ts
+@@ -0,0 +1,79 @@
++import { useSyncExternalStore } from "react";
++import {
++  INITIAL_TOAST_STATE,
++  TOAST_AUTO_DISMISS_MS,
++  autoDismisses,
++  reduceToast,
++  type ToastEvent,
++  type ToastSpec,
++  type ToastState,
++} from "../shared/toast";
++
++/**
++ * Module-level store over `reduceToast` (`docs/context/methodology.md`'s
++ * exempt glue) — one toast slot the whole app shares, so `main.tsx`'s update
++ * prompt and the *Hoje* screen's own toasts (saved, complete/undo, request
++ * error) go through the same subscription without prop-drilling it through
++ * the tree. Every RULE (one at a time, what persists, what is remembered)
++ * lives in `src/shared/toast.ts`; this file owns only the 4 s auto-dismiss
++ * timer and the `useSyncExternalStore` wiring.
++ */
++
++let state: ToastState = INITIAL_TOAST_STATE;
++const listeners = new Set<() => void>();
++let timer: ReturnType<typeof setTimeout> | null = null;
++
++function clearTimer(): void {
++  if (timer !== null) {
++    clearTimeout(timer);
++    timer = null;
++  }
++}
++
++function dispatch(event: ToastEvent): void {
++  const next = reduceToast(state, event);
++  if (next === state) return;
++  state = next;
++  listeners.forEach((listener) => listener());
++}
++
++/**
++ * Shows `toast`, replacing whatever is current (never a queue). When it
++ * auto-dismisses, arms one `setTimeout` of `TOAST_AUTO_DISMISS_MS` that
++ * dispatches `expire` for its key, clearing any previously armed timer
++ * first. A `toast` whose key is suppressed for the session is a no-op —
++ * nothing is shown and no timer is armed.
++ */
++export function showToast(toast: ToastSpec): void {
++  const before = state;
++  dispatch({ type: "show", toast });
++  if (state === before) return;
++  clearTimer();
++  if (autoDismisses(toast)) {
++    timer = setTimeout(() => {
++      timer = null;
++      dispatch({ type: "expire", key: toast.key });
++    }, TOAST_AUTO_DISMISS_MS);
++  }
++}
++
++/** Dismisses the toast with `key`; `remember` suppresses that key for the rest of the session (the *Depois* rule). */
++export function dismissToast(key: string, remember = false): void {
++  const wasCurrent = state.current !== null && state.current.key === key;
++  dispatch({ type: "dismiss", key, remember });
++  if (wasCurrent) clearTimer();
++}
++
++export function subscribeToast(listener: () => void): () => void {
++  listeners.add(listener);
++  return () => listeners.delete(listener);
++}
++
++/** Returns the SAME object until the state changes, as `useSyncExternalStore` requires. */
++export function getToastSnapshot(): ToastState {
++  return state;
++}
++
++export function useToast(): ToastState {
++  return useSyncExternalStore(subscribeToast, getToastSnapshot);
++}
+diff --git a/src/shared/toast.ts b/src/shared/toast.ts
+new file mode 100644
+index 0000000..cc0a2ee
+--- /dev/null
++++ b/src/shared/toast.ts
+@@ -0,0 +1,99 @@
++/**
++ * The pure toast rules — one toast slot for the whole app (PRD AC-10,
++ * AC-15). Total and side-effect free: it never touches a timer or the DOM,
++ * it only reduces the `show` / `dismiss` / `expire` events it is handed.
++ *
++ * Like `src/shared/connectivity.ts`, this module is compiled into BOTH the
++ * browser and the Worker projects, so it stays environment-agnostic: no DOM
++ * globals and no scheduled callback of its own. The 4 s auto-dismiss clock
++ * lives in `src/app/toast-store.ts` (the exempt glue under
++ * `docs/context/methodology.md`'s "Browser-API work" rule) — it arms one
++ * `TOAST_AUTO_DISMISS_MS` wait and hands this reducer the `expire` event
++ * when it elapses; this module never starts, cancels or knows about that
++ * wait itself.
++ *
++ * `key` is what lets a toast be found again later: `dismiss` with
++ * `remember: true` on a key appends it to `suppressed`, so a later `show`
++ * of the same key is silently ignored for the rest of the session — the
++ * rule that makes the update toast's *Depois* stick (`dismiss` with
++ * `remember: true` on key `"sw-update"`).
++ *
++ * `action.run` / `secondary.run` are opaque callbacks the reducer never
++ * calls, inspects or requires — only `autoDismisses` reads whether `action`
++ * is present at all, never what it does.
++ *
++ * Rules encoded here:
++ * - `show`: a toast whose key is in `suppressed` is ignored, state
++ *   unchanged; otherwise the new toast always REPLACES the current one —
++ *   never a queue, whatever kind either toast is.
++ * - `expire` (the auto-dismiss timer's event): clears the current toast
++ *   only when its key matches AND `autoDismisses` is true for it — a toast
++ *   with an action (*Desfazer*, *Atualizar*) persists until used or
++ *   dismissed, so an expiry for it, for a stale key or for no toast is a
++ *   no-op.
++ * - `dismiss` (used, closed, or *Depois*): clears the current toast only
++ *   when its key matches; with `remember: true` the key is appended to
++ *   `suppressed` (idempotent — never appended twice) whether or not that
++ *   toast was current.
++ *
++ * The function never mutates `state`, `state.suppressed` or the `ToastSpec`
++ * it is given, and always returns a `ToastState` — the SAME state object
++ * when nothing changes (a suppressed `show`, a no-op `expire`), so a caller
++ * fed through `useSyncExternalStore` never re-renders for a no-op event.
++ */
++
++export interface ToastAction {
++  label: string;
++  run?: () => void;
++}
++
++export interface ToastSpec {
++  key: string;
++  text: string;
++  tone?: "info" | "error";
++  action?: ToastAction;
++  secondary?: ToastAction;
++}
++
++export interface ToastState {
++  current: ToastSpec | null;
++  suppressed: readonly string[];
++}
++
++export const TOAST_AUTO_DISMISS_MS = 4000;
++
++export const INITIAL_TOAST_STATE: ToastState = { current: null, suppressed: [] };
++
++export type ToastEvent =
++  | { type: "show"; toast: ToastSpec }
++  | { type: "dismiss"; key: string; remember?: boolean }
++  | { type: "expire"; key: string };
++
++/** True only when `toast` carries no `action` — a toast with an action persists until used, dismissed or replaced (guidelines §8). */
++export function autoDismisses(toast: ToastSpec): boolean {
++  return toast.action === undefined;
++}
++
++export function reduceToast(state: ToastState, event: ToastEvent): ToastState {
++  switch (event.type) {
++    case "show": {
++      if (state.suppressed.includes(event.toast.key)) return state;
++      return { current: event.toast, suppressed: state.suppressed };
++    }
++    case "dismiss": {
++      const current =
++        state.current !== null && state.current.key === event.key ? null : state.current;
++      if (event.remember !== true) return { current, suppressed: state.suppressed };
++      const suppressed = state.suppressed.includes(event.key)
++        ? state.suppressed
++        : [...state.suppressed, event.key];
++      return { current, suppressed };
++    }
++    case "expire": {
++      if (state.current === null) return state;
++      if (state.current.key !== event.key) return state;
++      if (!autoDismisses(state.current)) return state;
++      return { current: null, suppressed: state.suppressed };
++    }
++  }
++}

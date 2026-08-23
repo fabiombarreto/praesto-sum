@@ -1,0 +1,50 @@
+{
+  "run_id": "11d76a9e-9de3-4305-bc61-a7436df22cf0",
+  "feature": "ui-design-pass",
+  "phase": 1,
+  "plan": "PRPs/plans/completed/ui-design-pass-phase-1-chrome-fonts-and-foundation.plan.md",
+  "worktree": "C:/repos/assistente-pessoal (branch feature/ui-design-pass, no separate worktree)",
+  "started_at": "2026-08-21T21:39:40Z",
+  "ended_at": "2026-08-21T21:39:52Z",
+  "elapsed_ms": 12820,
+  "max_test_retries": 3,
+  "max_test_minutes": 30,
+  "attempts": [
+    {
+      "n": 1,
+      "verdict": "GREEN",
+      "record": "attempts/1/record.json",
+      "implementer_diff": null
+    }
+  ],
+  "outcome": "GREEN",
+  "framework": "vitest",
+  "command": "npm test",
+  "totals": {
+    "files": 12,
+    "passed": 267,
+    "failed": 0,
+    "skipped": 0
+  },
+  "build": "succeeded in the code-review run of 2026-08-21 (tsc -b + vite build; PWA precache 25 entries, 333.41 KiB; JS 66,511 B gzip, CSS 6,882 B gzip, fonts 70,084 B) - see PRPs/reports/ui-design-pass/phase-1/build-report.md",
+  "time_breakdown": {
+    "attempt_1_suite_ms": 12820,
+    "attempt_1_correction_ms": 0
+  },
+  "tdd_mode": true,
+  "preconditions": {
+    "settings_json": "absent - the test-runner agent returned ABORT_INFRA (missing_settings_json); the suite was executed by the main session per the unit-2 precedent and the record written by hand",
+    "uncommitted_changes": "present (phase-1 implementation + pipeline artifacts, uncommitted by design - Pillar 2 never commits)"
+  },
+  "manual_verification": {
+    "criterion": "PRD AC-1/AC-3/AC-18/AC-19/AC-20/AC-22 (the [manual]/[static] set of phase 1)",
+    "environment": "browser pane at 375 x 812 dark against the session's vite dev server, Windows PC",
+    "record": "PRPs/reports/ui-design-pass/phase-1/build-report.md - section Browser-pane Tier A / Tier B check",
+    "not_verified": [
+      "the Android phone (Phase 4)",
+      "1280 px (the hidden pane kept the 375 px viewport)",
+      "no screenshot: the browser pane was not displayed"
+    ]
+  },
+  "notes": "First attempt green: 267 tests (205 worker + 62 docs), up from 214 at the start of the phase - the delta is the 43 new cases of test/format.test.ts and test/connectivity.test.ts plus the three re-pinned pt-BR wording assertions."
+}

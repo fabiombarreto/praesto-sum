@@ -25,3 +25,10 @@ coverage/
 # `npm run check` uses `wrangler types --check`, which validates the committed
 # file against wrangler.jsonc without rewriting it. Regenerate with
 # `npm run cf-typegen` whenever wrangler.jsonc changes, and commit the result.
+
+# relay — per-attempt cumulative diffs (whole branch vs base). Exactly
+# reproducible with `git diff <base>..<commit>` once the work is committed, and
+# they nest inside each other (15 MB for one feature), so they stay local. The
+# per-attempt `diff.implementer.patch` slices are NOT reproducible from git and
+# ARE committed.
+PRPs/reports/**/attempts/*/diff.patch

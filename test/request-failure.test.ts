@@ -1,4 +1,7 @@
 // PRPs/prds/install-and-quick-capture.prd.md AC-4 unreachable-server-is-explicit
+// PRPs/prds/ui-design-pass.prd.md AC-4 pt-br-shared-messages (the wording block at the
+// end of this file — the two messages are pinned in Portuguese per ADR-0009 from the
+// ui-design-pass phase 1 on; the structural cases above it are unchanged).
 //
 // Source plan: PRPs/plans/install-and-quick-capture-phase-4-network-honesty.plan.md
 // (Task 1 — classifyRequestFailure(cause: unknown): { kind: "server-unreachable" | "http-error"; message: string }).
@@ -105,5 +108,28 @@ describe("classifyRequestFailure — boundary and malformed causes (PRD AC-4)", 
     expect(() => classifyRequestFailure(undefined)).not.toThrow();
     expect(classifyRequestFailure(null).kind).toBe("server-unreachable");
     expect(classifyRequestFailure(undefined).kind).toBe("server-unreachable");
+  });
+});
+
+// ui-design-pass phase 1 (PRPs/plans/ui-design-pass-phase-1-chrome-fonts-and-foundation.plan.md,
+// Task 4; plan AC-A1). Written BEFORE the Implementer: the module still carries the
+// English sentences, so these two cases are RED for the right reason — a behavioural
+// red, not a missing module — until the wording is translated. They pin the exact
+// sentence the owner reads (ADR-0009: tests that pin owner-facing messages pin the
+// Portuguese wording from A5 on); the cases above keep asserting the structure.
+describe("classifyRequestFailure — pt-BR wording (ui-design-pass PRD AC-4 pt-br-shared-messages)", () => {
+  it("pins the http-error sentence with the status code inside it, never a bare code", () => {
+    expect(classifyRequestFailure({ status: 500 }).message).toBe(
+      "O servidor recusou a operação (código 500). Tente de novo.",
+    );
+    expect(classifyRequestFailure({ status: 401 }).message).toBe(
+      "O servidor recusou a operação (código 401). Tente de novo.",
+    );
+  });
+
+  it("pins the server-unreachable sentence", () => {
+    expect(classifyRequestFailure(new TypeError("Failed to fetch")).message).toBe(
+      "Sem conexão com o servidor. Nada se perdeu — tente de novo quando a conexão voltar.",
+    );
   });
 });

@@ -1,0 +1,75 @@
+# TDD initial suite — phase 4
+# Source PRD: PRPs/prds/ui-design-pass.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/ui-design-pass-phase-4-device-verification-pass.plan.md
+# Aggregate verdict: EXISTING_COVERAGE_SUFFICIENT
+# Mode: test-first (tdd: true, test_frameworks: ["vitest"])
+# Generated: 2026-08-22
+
+> **Path note.** Scoped under `phase-4/` (one manifest per phase, the same
+> convention as `phase-1/`, `phase-2/`, `phase-3/` and unit 2).
+
+## Why this phase writes no test file
+
+`docs/context/methodology.md:30-36` names this case exactly:
+
+> It does **not** mean writing React component tests first: the same document
+> deliberately keeps UI verification manual, and that split is unchanged. A
+> PRD whose acceptance criteria are purely visual produces no test file — that
+> is the `EXISTING_COVERAGE_SUFFICIENT` / no-test-required path, not a
+> violation.
+
+Phase 4 is the verification phase. Its four code changes are ARIA attributes
+and one accessible name — `role`/`aria-live` on the toast, the date input's
+`aria-label`, `role="status"` on the deck's offline hint, `aria-describedby`
+on the inline title editor. None of them adds a decision this project can
+test: there is no DOM in the only test tier (Vitest inside workerd), no
+component tier exists (`documentation/40-engineering/testing-strategy.md:33`
+marks "React components and layout" as **No — manual**), and there is no
+browser tier and no plan to buy one before unit 6
+(`testing-strategy.md:37`, `documentation/50-planning/ui-ux-plan.md:113`).
+Everything else the phase produces is a record: the Level A walk, the build
+report, the owner's runbook.
+
+Writing a test here would mean either asserting on a JSX string (a snapshot of
+markup, which pins nothing about behaviour) or standing up a DOM the project
+has deliberately not bought. Both are worse than the honest answer: the four
+changes are pinned by the plan's own per-task `VALIDATE` greps and by the
+Level 3 structural gate, and their effect is verified where it is observable
+— in the browser pane and on the owner's devices.
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-21 | MANUAL + STATIC | The Level A walk itself is the deliverable (`PRPs/reports/ui-design-pass/phase-4/level-a-walk.md`, plan Task 4); the four fixes are pinned by the Task 1-4 VALIDATE greps and by the Level 3 gate (`aria-live` absent from Toast.tsx, `role="status"` in CaptureDeck.tsx, `aria-label="Data — dia"` in TaskSheet.tsx, `aria-describedby` in InlineTitle.tsx) |
+| AC-22 | STATIC (gate) + artifact | `npm run check`, `npm test`, `npm run build` and the §11 probe (plan Task 5), plus the filed build report with the pane's Tier B section |
+| AC-1 | MANUAL, device | The cold start on the phone (`#161012`, no white flash, matching status bar) — owner's runbook step 4 |
+| AC-8 | MANUAL, device | Hit areas on the phone; already measured in the pane for all three screens in phases 1-3 and this phase |
+| AC-12 | MANUAL, device | The Android back gesture closing the sheet, and closing it from the confirmation without deleting — PRD Open Question 1, owner's runbook step 4 |
+| AC-17 | MANUAL, device | The keyboard shell on the phone (`interactive-widget=resizes-content`, the deck above the keyboard, no pull-to-refresh) — owner's runbook step 4 |
+| AC-2, AC-3, AC-9, AC-10, AC-13, AC-14, AC-15, AC-16, AC-18, AC-19, AC-20 | OUT_OF_PHASE_SCOPE | Delivered and recorded in phases 1-3 |
+| AC-4, AC-5, AC-6, AC-7 | EXISTING_TEST_COVERS | `test/request-failure.test.ts`, `test/token-store.test.ts`, `test/format.test.ts`, `test/connectivity.test.ts` (phase 1) — unchanged by this phase |
+| AC-10 (toast rules), AC-11/AC-12 (sheet state) | EXISTING_TEST_COVERS | `test/toast.test.ts` (phase 2, 22 cases) and `test/task-sheet.test.ts` (phase 3, 24 cases) — the decidable halves, unchanged by this phase |
+
+## Test files written this session
+
+None. The corpus stays at its phase-3 shape: **14 files / 313 cases**
+(251 in the `worker` project, 62 in `docs`).
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no create/update/delete this session) | — | — | — |
+
+## What the Implementer must keep green
+
+Every existing suite, unchanged. The four fixes touch no module any test
+imports (`src/app/components/**` is outside `tsconfig.test.json`'s include
+set), so a red suite after this phase means something unrelated broke and is
+fixed in production code, never in a test.
+
+## Status
+
+*Approved: 2026-08-22*
+*Status: APPROVED*

@@ -1,0 +1,49 @@
+diff --git a/PRPs/reports/ui-design-pass/phase-2/build-report.md b/PRPs/reports/ui-design-pass/phase-2/build-report.md
+index 725d30d..63eb771 100644
+--- a/PRPs/reports/ui-design-pass/phase-2/build-report.md
++++ b/PRPs/reports/ui-design-pass/phase-2/build-report.md
+@@ -39,15 +39,15 @@ Baseline before this phase (phase 1's report, build of the phase-1 branch on
+ 2026-08-21): JS 66,511 B gzip, CSS 6,882 B gzip. After this phase — the *Hoje*
+ screen rebuilt into eleven new components, the module-level toast store, and
+ the `useConnectivity` hook, all replacing the old inline-styled board — JS
+-grows to 87,535 B gzip (+21,024 B, still 50% of budget) and CSS to 7,359 B
+-gzip (+477 B, still 24% of budget). The `/design` route stays tree-shaken out
++grows to 87,589 B gzip (+21,078 B, still 50% of budget) and CSS to 7,447 B
++gzip (+565 B, still 24% of budget). The `/design` route stays tree-shaken out
+ of this bundle entirely (verified below); `TaskDetail.tsx` and `TokenGate.tsx`
+ (moved verbatim, still inline-styled) contribute no new CSS.
+ 
+ ## §11 budget probe (Task 11 / Validation Level 3)
+ 
+ ```
+-JS 87535 B gzip (budget 174080) · CSS 7359 B gzip (budget 30720)
++JS 87589 B gzip (budget 174080) · CSS 7447 B gzip (budget 30720)
+ PASS: inside the §11 budget
+ ```
+ 
+diff --git a/src/app/components/CaptureDeck.tsx b/src/app/components/CaptureDeck.tsx
+index f7ede03..5fc0788 100644
+--- a/src/app/components/CaptureDeck.tsx
++++ b/src/app/components/CaptureDeck.tsx
+@@ -51,7 +51,7 @@ export function CaptureDeck({
+         Nova tarefa
+       </label>
+       <form
+-        className="flex min-h-14 items-center rounded-control border border-line-strong bg-surface-1 pr-1 pl-4 shadow-field"
++        className="flex min-h-14 items-center rounded-control border border-line-strong bg-surface-1 pr-1 pl-4 shadow-field has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-accent has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:[box-shadow:0_0_0_4px_var(--color-bg)]"
+         onSubmit={(event) => {
+           event.preventDefault();
+           if (value.trim() === "" || busy) return;
+diff --git a/src/app/components/InlineTitle.tsx b/src/app/components/InlineTitle.tsx
+index 321ec34..1716c5f 100644
+--- a/src/app/components/InlineTitle.tsx
++++ b/src/app/components/InlineTitle.tsx
+@@ -50,7 +50,7 @@ export function InlineTitle({
+         }
+       }}
+       aria-label={`Editar título de ${task.title}`}
+-      className="min-h-12 min-w-0 flex-1 rounded-control border border-line-strong bg-surface-1 px-3 font-text text-t3 text-ink outline-none"
++      className="min-h-12 min-w-0 flex-1 rounded-control border border-line-strong bg-surface-1 px-3 font-text text-t3 text-ink"
+     />
+   );
+ }

@@ -1,0 +1,90 @@
+# TDD initial suite — phase 2
+# Source PRD: PRPs/prds/ui-design-pass.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/ui-design-pass-phase-2-today-screen.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Mode: test-first (tdd: true, test_frameworks: ["vitest"])
+# Generated: 2026-08-21
+
+> **Path note.** Scoped under `phase-2/` (one manifest per phase, the same
+> convention as `phase-1/` and unit 2).
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-10 | NEW_TEST_REQUIRED (partial — decidable toast half only) | `test/toast.test.ts` — `reduceToast` / `autoDismisses`: a toast with *Desfazer* survives the timer's `expire` and clears only on `dismiss`; a new toast replaces the current one |
+| AC-10 | MANUAL (DOM half) | The optimistic complete, the signature animation, the rollback and the visible toast are verified in the browser pane per the plan's `## Notes` script, steps 4 and 10 |
+| AC-15 | NEW_TEST_REQUIRED (partial — decidable toast half only) | `test/toast.test.ts` — `dismiss` with `remember` suppresses `sw-update` for the session; a later `show` of that key is ignored while other toasts still show |
+| AC-15 | MANUAL (preview build) | The service-worker `waiting` → toast → *Atualizar* reload is verified on `npm run preview` per the plan's script, step 11 |
+| AC-2 | STATIC (plan VALIDATE) | No `style={` outside the two transitional files and the playground; no `CSSProperties` in `App.tsx` — plan Task 6 VALIDATE and the Level 3 gate |
+| AC-3 | MANUAL | The visible strings of *Hoje* (header, deck, rows, section, toasts, banner, empty, loading) read against the approved table in the pane; the one new row (*Tentar de novo*) enters `documentation/10-product/visual-identity.md` in plan Task 10 |
+| AC-8 | MANUAL | Hit areas and row heights measured with `getBoundingClientRect` in the pane (script step 2) |
+| AC-9 | MANUAL + STATIC | The deck's label, placeholder, `enterkeyhint`, `aria-label="Adicionar"`, offline hint and in-flow padding are pinned by plan Task 4 VALIDATE; focus, Enter and the failed-save invariant are pane checks (script step 3) |
+| AC-13 | MANUAL + STATIC | The pencil's accessible name and the `commit()` rule are pinned by plan Task 5 VALIDATE; Enter / blur / Esc behaviour is a pane check (script step 5) |
+| AC-14 | MANUAL | Offline banner, disabled deck, reconnect and visibility refetch simulated in DevTools (script step 6); `visibilitychange` pinned by plan Task 6 VALIDATE and the Level 3 gate; the reducer behind the banner is already covered by `test/connectivity.test.ts` (phase 1, PRD AC-7) |
+| AC-16 | MANUAL | Empty state, skeleton and the load-error retry simulated in the pane (script steps 7 and 8); the copy literals are pinned by plan Task 3 / Task 4 / Task 6 VALIDATE |
+| AC-17 | MANUAL + STATIC | The shell grid, `overflow: clip`, the `[data-shell]:has` rule and the in-flow deck are pinned by plan Task 6 / Task 7 VALIDATE; the keyboard behaviour itself is a phone check (Phase 4) |
+| AC-20 | MANUAL + STATIC | The *Tela Hoje* section is pinned by plan Task 9 VALIDATE; its absence from the bundle by the Level 3 grep; rendering is a pane check |
+| AC-22 | MANUAL / STATIC (gate) | `npm run check`, `npm test`, `npm run build` (plan Task 11) plus the filed Tier A / Tier B record |
+| AC-1, AC-4, AC-5, AC-6, AC-7, AC-18, AC-19 | OUT_OF_PHASE_SCOPE | (delivered in Phase 1 — AC-4..AC-7 are covered by `test/request-failure.test.ts`, `test/token-store.test.ts`, `test/format.test.ts`, `test/connectivity.test.ts`) |
+| AC-11, AC-12, AC-21 | OUT_OF_PHASE_SCOPE | (Phase 3 and Phase 4) |
+
+## The split, stated before the test list
+
+The PRD tags every phase-2 criterion [manual] or [static]; the plan's TDD
+routing says so and names the single decidable slice this phase adds — the
+toast rules, extracted to `src/shared/toast.ts` exactly so they could be
+tested without a DOM (`docs/context/methodology.md`, "split the logic out,
+then the glue is exempt"). The 4 s timer, the `useSyncExternalStore` store,
+the connectivity hook and every component are React glue, verified by the
+plan's own VALIDATE probes and by the browser pane. The date phrases, the
+header count and the connectivity transitions the screen renders were already
+pinned in phase 1 and are not duplicated here.
+
+## Test files written this session
+
+- `test/toast.test.ts` — 21 cases in six `describe` blocks against the new
+  pure `src/shared/toast.ts` (plan Task 1, AC-A13):
+  - **constants and shape** — `TOAST_AUTO_DISMISS_MS === 4000`;
+    `INITIAL_TOAST_STATE` is `{ current: null, suppressed: [] }`.
+  - **`autoDismisses`** — true without an action (also with only a
+    secondary button, and for an error toast), false with *Desfazer* /
+    *Atualizar*.
+  - **`show`** — shows on empty; replaces the current toast (a queueing
+    reducer fails); replaces even a persistent toast; a remembered key is
+    ignored and the state object is returned unchanged; remembered keys
+    survive a show.
+  - **`expire`** — clears an action-less toast on the matching key; is a
+    no-op for a toast with an action (the case a "clear on any expire"
+    reducer fails), for a stale key, and when nothing is showing.
+  - **`dismiss`** — clears on the matching key, leaves another toast alone,
+    remembers the key when asked (and a later `show` of it is ignored),
+    remembers at most once, remembers even when the toast is not current,
+    and never remembers on a plain dismiss.
+  - **sequences** — the *Desfazer* toast survives the timer and clears on
+    use; the *Depois* toast is suppressed for the session while other toasts
+    still show; the reducer never mutates a frozen state or toast.
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no update/delete this session) | — | — | — |
+
+## Why this suite is legitimately RED before implementation
+
+`test/toast.test.ts` fails to load — `Cannot find module '../src/shared/toast'`
+— because the module is created by plan Task 1. For a brand-new pure module
+that is the only red available; what carries the discrimination once it
+exists is the content of the assertions above (expire ignored for a toast
+with an action, suppressed keys, replace-not-queue, stale-key no-ops). The
+other 267 cases of the corpus stay green.
+
+No test asserts on an invented internal, a private field or a call count. No
+mock and no fake timer: the reducer is pure, so the tests hand it the events
+the store would dispatch.
+
+## Status
+
+*Approved: 2026-08-21*
+*Status: APPROVED*

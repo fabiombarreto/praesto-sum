@@ -1,0 +1,1255 @@
+diff --git a/PRPs/reports/ui-design-pass/phase-3/build-report.md b/PRPs/reports/ui-design-pass/phase-3/build-report.md
+new file mode 100644
+index 0000000..a5c2985
+--- /dev/null
++++ b/PRPs/reports/ui-design-pass/phase-3/build-report.md
+@@ -0,0 +1,149 @@
++# Build report — ui-design-pass phase 3 (Detail sheet, delete confirmation and token gate)
++
++Source plan: `PRPs/plans/ui-design-pass-phase-3-sheet-confirmation-and-token-gate.plan.md`
++(Task 8 — gates + budget probe; plan AC-A6, AC-A9, PRD AC-18, AC-22).
++
++## Gates (Task 8 / Validation Level 1–2)
++
++All three green, no test weakened or skipped:
++
++- `npm run check` (`wrangler types --check && tsc -b && eslint . && prettier --check .`) — **PASS**
++- `npm test` (`vitest run`, both the `worker` and `docs` projects) — **PASS**, 14 test
++  files / 313 tests, including the test pair's new `test/task-sheet.test.ts` (24 cases,
++  `src/shared/task-sheet.ts`'s `reduceTaskSheet` / `draftFromTask` / `currentDraft`) — RED
++  for module-not-found before Task 1, GREEN after it, exactly as the TDD routing predicted;
++  every phase-1 and phase-2 suite (`test/task-edit.test.ts` — which keeps pinning the diff
++  the sheet's *Salvar* sends — `test/toast.test.ts`, `test/connectivity.test.ts`, and the
++  rest) stayed untouched and green:
++  - `worker` project — 13 test files / 251 tests
++  - `docs` project — 1 test file / 62 tests
++- `npm run build` (`tsc -b && vite build`, then the PWA service-worker inject pass) — **PASS**
++
++## `vite build` size table
++
++```
++dist/praesto/.dev.vars              0.15 kB
++dist/praesto/.vite/manifest.json    0.15 kB │ gzip:  0.11 kB
++dist/praesto/wrangler.json          1.53 kB │ gzip:  0.79 kB
++dist/praesto/index.js             216.97 kB │ gzip: 50.75 kB
++
++dist/client/.assetsignore                                 0.02 kB
++dist/client/index.html                                    3.96 kB │ gzip:  1.46 kB
++dist/client/assets/index--IN80dHQ.css                    39.29 kB │ gzip:  7.80 kB
++dist/client/assets/workbox-window.prod.es5-Bd17z0YL.js    5.65 kB │ gzip:  2.20 kB
++dist/client/assets/index-DvviBeg7.js                    285.08 kB │ gzip: 91.61 kB
++
++dist/client/sw.mjs  17.37 kB │ gzip: 5.86 kB
++
++PWA v1.3.0
++mode      injectManifest
++format:   es
++precache  25 entries (415.24 KiB)
++files generated
++  dist/client/sw.js
++```
++
++Baseline before this phase (phase 2's report, build of the same branch on
++2026-08-21): JS 87,589 B gzip, CSS 7,447 B gzip. After this phase — the native
++`<dialog>` sheet (`Sheet.tsx` rewritten, the transition CSS added to
++`styles.css`), the new `TaskSheet.tsx` and `ConfirmView.tsx` components, the
++`src/shared/task-sheet.ts` reducer, the `TokenGate.tsx` rebuild (adds the
++`KeyRound` icon) and the `Trash2` icon on the delete controls, and the
++`/design` playground's new *Sheet de tarefa* section — the precise gzip probe
++(below) reads **JS 92,820 B gzip (+5,231 B, +6.0%)** and **CSS 7,756 B gzip
++(+309 B, +4.1%)**. The Base UI `Dialog` import is confirmed gone from `src/`
++(structural gate below), which the plan expected to show as a reduction; the
++new sheet/confirmation/gate markup, the two new icons and the transition CSS
++this phase adds outweigh what removing `Dialog` saved, so the net figure is a
++small increase — recorded honestly, as the plan's Task 8 asks either way. Both
++totals stay well inside budget: JS at 53% and CSS at 25% (phase 2 was 50% /
++24%). The `/design` route stays tree-shaken out of this bundle entirely
++(verified below); the PWA precache grows from 25 entries / 395.82 KiB to 25
++entries / 415.24 KiB (the same 25 precached assets, larger because the JS and
++CSS bundles themselves grew) — still far inside the guidelines §11 ≤ 1 MB
++precache ceiling.
++
++## §11 budget probe (Task 8 / Validation Level 3)
++
++```
++JS 92820 B gzip (budget 174080) · CSS 7756 B gzip (budget 30720)
++PASS: inside the §11 budget
++```
++
++## Structural gate (Level 3)
++
++- No inline `style={}` prop, `CSSProperties` import or `const styles` object
++  survives anywhere under `src/app/` except `DesignPlayground.tsx`'s dynamic
++  `var(--token)` swatches — `TaskDetail.tsx` (the last one) is deleted and
++  `TokenGate.tsx` is rebuilt on the tokens; **PRD AC-2 completes this phase**.
++- `grep -rnF "@base-ui/react/dialog" src` finds nothing — the Base UI `Dialog`
++  import is gone from the whole `src/` tree; `Button`, `Checkbox` and `Toggle`
++  stay on `@base-ui/react` (ADR-0011 unchanged for those three).
++- No `window.confirm`, no `textTransform` / CSS `uppercase`, and none of the
++  retired English strings (`"Save"`, `"Cancel"`, `"Delete"`, `"Edit Task"`,
++  `"API token"`, `"No date"`, `"Complete by"`, `"Do on"`, `"Not set"`) survive
++  anywhere under `src/app` — the token gate and the old detail screen were the
++  last carriers of all of them.
++- `test ! -f src/app/components/TaskDetail.tsx` — confirmed absent; `grep -rn
++  'TaskDetail' src/app` finds no reference outside historical provenance
++  comments citing the deleted file's old line numbers (`task-sheet.ts`'s
++  header, outside `src/app`, and two comments inside `src/app` that cite the
++  file by name without triggering the plan's own literal-string check —
++  verified directly).
++- `Sheet.tsx` contains `showModal()`; `styles.css` contains
++  `html:has(dialog[open]) { overflow: hidden; }`; `TaskSheet.tsx` contains the
++  confirmation's exact title `Excluir esta tarefa?`; `TokenGate.tsx` contains
++  the 401 reason `Este dispositivo precisa do token de novo.`; `TodayScreen.tsx`
++  contains the delete toast key `"task-deleted"` — all five present.
++- No `outline-none` on any field in `TaskSheet.tsx`, `TokenGate.tsx` or
++  `ConfirmView.tsx` — every field keeps the base `:focus-visible` ring from
++  `styles.css` (the phase-2 pane finding this plan's Decision Gate names).
++- `grep -rlF 'tokens e estados' dist/client` finds nothing — the `/design`
++  playground (now carrying the *Sheet de tarefa* section) is still absent
++  from the production bundle after the dynamic-import + `import.meta.env.DEV`
++  tree-shake.
++
++## Not part of this report — placeholder for the main session
++
++**The behaviour of the sheet and the gate is NOT covered by any command run
++above.** Per the plan's `## Notes` "Manual verification script" and the source
++PRD's AC-11 / AC-12 (`[manual]` / `[manual, device]`), the following are owed
++by the main session after this Implementer run — the Implementer has no
++browser and Levels 1–3 are its whole contract (D6):
++
++### Browser-pane Tier A / Tier B check — OWED, not yet run
++
++- [ ] `/design` → *Sheet de tarefa* → *Abrir sheet de tarefa*: `dialog[data-sheet].open`,
++      `:modal` match, `html` scroll-lock, focus on the dialog, page inertness.
++- [ ] Every control ≥ 48 × 48 px (chips, date input, *Cancelar / Salvar / Excluir*,
++      *Fechar*, the confirmation's two buttons, the token field and *Salvar*).
++- [ ] Edit a chip + the title, close via *Fechar*, reopen — draft restored; Esc closes,
++      focus returns to the opener.
++- [ ] *Excluir* → confirmation replaces the content, focus on *Cancelar*, *Cancelar*
++      returns with the draft intact, Esc on the confirmation closes the whole sheet.
++- [ ] Standalone `ConfirmView` measurements and contrast.
++- [ ] `/` without a stored token: mark + `praesto` `<h1>`, visible label, 48 px field
++      and button, `<title>` *Praesto Sum*, no `autofocus`.
++- [ ] The 401 reason round-trip (save an invalid token, a 401 sends the owner back with
++      *Este dispositivo precisa do token de novo.* and `<title>` back to *Praesto Sum*).
++- [ ] Contrast of the sheet's text on `surface-1` and the chips' pressed state.
++- [ ] Screenshots, or the written reason none exist.
++
++Steps that need a real token (save → *Tarefa salva*, delete → *Tarefa excluída*, a
++failed save with the sentence under *Salvar*, the board refetch after both) are
++owed in the pane or on the phone, as in phase 2.
++
++### Owner's device check — OWED, not yet run
++
++- [ ] PRD Open Question 1 / risk row 400: on the phone, open a Task, press the
++      Android back gesture — the sheet must close and the app must stay; then
++      open *Excluir* and press back — the sheet closes without deleting.
++- [ ] If the gesture leaves the app instead of closing the sheet: switch on the
++      `history.pushState` fallback documented in the plan's `## Notes` (inside
++      `Sheet.tsx` only, same API), then re-verify.
++
++Both checklists are filed here, unticked, for the main session to complete and
++record (screenshots, measurements, the phone verdict) — this Implementer run
++did not perform them and makes no claim about their outcome.
++
++*Generated by the Implementer agent, attempt 1, 2026-08-22.*
+diff --git a/src/app/App.tsx b/src/app/App.tsx
+index 608a7e3..3bfed85 100644
+--- a/src/app/App.tsx
++++ b/src/app/App.tsx
+@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
+ import type { ShareTarget } from "../shared/share-target";
+ import { readToken } from "./api";
+ import { TodayScreen } from "./components/TodayScreen";
+-import { TokenGate } from "./components/TokenGate";
++import { TokenGate, type TokenGateReason } from "./components/TokenGate";
+ import { Skeleton } from "./components/ui/Skeleton";
+ 
+ /**
+- * The token-gate switch — everything else lives in `TodayScreen` (A5) and,
+- * transitionally, in `TokenGate` and `TaskDetail`.
++ * The token-gate switch — everything else lives in `TodayScreen` (A5),
++ * `TokenGate` (A5 phase 3) and their shared `src/app/components/ui/`.
+  *
+  * It exists to prove the whole stack end to end (PWA → Worker → D1) and to be
+  * the surface the remaining Phase 1 requirements grow into — recurrence
+@@ -18,6 +18,9 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
+   // async (the token now lives behind src/shared/token-store.ts), so this
+   // starts as "unknown" rather than assuming unauthorized.
+   const [authorized, setAuthorized] = useState<boolean | null>(null);
++  // Why the gate is showing again — set on a 401 route from `TodayScreen`,
++  // cleared once a fresh token is saved.
++  const [gateReason, setGateReason] = useState<TokenGateReason>(null);
+ 
+   useEffect(() => {
+     let cancelled = false;
+@@ -48,7 +51,23 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
+   }
+ 
+   if (!authorized) {
+-    return <TokenGate onAuthorized={() => setAuthorized(true)} />;
++    return (
++      <TokenGate
++        reason={gateReason}
++        onAuthorized={() => {
++          setGateReason(null);
++          setAuthorized(true);
++        }}
++      />
++    );
+   }
+-  return <TodayScreen onUnauthorized={() => setAuthorized(false)} initialShare={initialShare} />;
++  return (
++    <TodayScreen
++      onUnauthorized={() => {
++        setGateReason("unauthorized");
++        setAuthorized(false);
++      }}
++      initialShare={initialShare}
++    />
++  );
+ }
+diff --git a/src/app/components/DesignPlayground.tsx b/src/app/components/DesignPlayground.tsx
+index b889c18..2fb9a67 100644
+--- a/src/app/components/DesignPlayground.tsx
++++ b/src/app/components/DesignPlayground.tsx
+@@ -8,16 +8,19 @@
+ // registered here still never reaches the production bundle either.
+ 
+ import type { ReactNode } from "react";
+-import { useRef, useState } from "react";
++import { useReducer, useRef, useState } from "react";
+ import type { TaskDto } from "../../shared/api";
++import { currentDraft, INITIAL_TASK_SHEET_STATE, reduceTaskSheet } from "../../shared/task-sheet";
+ import { CaptureDeck } from "./CaptureDeck";
+ import { EmptyState } from "./EmptyState";
+ import { TaskRow } from "./TaskRow";
++import { TaskSheet } from "./TaskSheet";
+ import { Banner } from "./ui/Banner";
+ import { Button } from "./ui/Button";
+ import { Chip, ChipGroup } from "./ui/Chip";
+ import { cn } from "./ui/cn";
+ import { CompleteControl } from "./ui/CompleteControl";
++import { ConfirmView } from "./ui/ConfirmView";
+ import { Sheet } from "./ui/Sheet";
+ import { Skeleton } from "./ui/Skeleton";
+ import { Toast } from "./ui/Toast";
+@@ -123,6 +126,8 @@ export function DesignPlayground() {
+   const [checkedDone, setCheckedDone] = useState(true);
+   const [chips, setChips] = useState<string[]>(["alta"]);
+   const [sheetOpen, setSheetOpen] = useState(false);
++  const [sheetState, dispatchSheet] = useReducer(reduceTaskSheet, INITIAL_TASK_SHEET_STATE);
++  const sheetTask = PLAYGROUND_TASKS.find((task) => task.id === sheetState.taskId) ?? null;
+   const [playgroundTitle, setPlaygroundTitle] = useState("");
+   const playgroundCaptureRef = useRef<HTMLInputElement>(null);
+ 
+@@ -276,7 +281,8 @@ export function DesignPlayground() {
+           </Button>
+           <Sheet open={sheetOpen} onOpenChange={setSheetOpen} title="Sheet de exemplo">
+             <p className="font-text text-t2 text-ink">
+-              Um corpo curto para mostrar a folha, ainda sobre o Base UI Dialog nesta fase.
++              Um corpo curto para mostrar a folha — agora um {"<dialog>"} nativo aberto com
++              showModal().
+             </p>
+           </Sheet>
+         </div>
+@@ -343,6 +349,48 @@ export function DesignPlayground() {
+         </div>
+       </Section>
+ 
++      <Section title="Sheet de tarefa">
++        <div className="flex flex-col gap-4">
++          <Button
++            variant="secondary"
++            onClick={() => dispatchSheet({ type: "open", task: PLAYGROUND_TASKS[0]! })}
++          >
++            Abrir sheet de tarefa
++          </Button>
++          <TaskSheet
++            task={sheetTask}
++            open={sheetState.taskId !== null}
++            view={sheetState.view}
++            draft={sheetTask === null ? null : currentDraft(sheetState, sheetTask)}
++            busy={false}
++            error={null}
++            toastSlot={null}
++            onDraftChange={(changes) => dispatchSheet({ type: "edit", changes })}
++            onClose={() => dispatchSheet({ type: "close" })}
++            onSave={() => {
++              if (sheetTask !== null) dispatchSheet({ type: "saved", taskId: sheetTask.id });
++            }}
++            onDeleteRequest={() => dispatchSheet({ type: "request-delete" })}
++            onDeleteCancel={() => dispatchSheet({ type: "cancel-delete" })}
++            onDeleteConfirm={() => {
++              if (sheetTask !== null) dispatchSheet({ type: "deleted", taskId: sheetTask.id });
++            }}
++          />
++          <div className="rounded-card border border-line bg-surface-1 px-4">
++            <ConfirmView
++              title="Excluir esta tarefa?"
++              body="Não dá para desfazer."
++              cancelLabel="Cancelar"
++              confirmLabel="Excluir"
++              busy={false}
++              error={null}
++              onCancel={() => {}}
++              onConfirm={() => {}}
++            />
++          </div>
++        </div>
++      </Section>
++
+       <Section title="Foco">
+         <p className="font-text text-t2 text-muted">
+           Pressione Tab para navegar pelos controles acima e ver o anel de foco em duas cores.
+diff --git a/src/app/components/TaskSheet.tsx b/src/app/components/TaskSheet.tsx
+new file mode 100644
+index 0000000..bd91057
+--- /dev/null
++++ b/src/app/components/TaskSheet.tsx
+@@ -0,0 +1,188 @@
++// The detail editor inside `Sheet` (A5 phase 3, replacing the old full-screen editor):
++// title / description fields, the date chips + native date input, the
++// priority chips, *Cancelar / Salvar*, the distant *Excluir*, and the
++// in-place delete confirmation, in the layout standard §3 field order. The
++// parent (`TodayScreen.tsx` / `DesignPlayground.tsx`) owns the draft and the
++// requests — this component is glue: it renders the current draft and calls
++// back on every change, it never holds state of its own beyond which Task it
++// last saw. While the sheet's exit transition plays, `task` becomes `null`
++// (the reducer already closed) before the animation finishes, so the last
++// Task is kept in a ref and rendered through the fade instead of popping
++// empty for ~300 ms.
++
++import { Trash2 } from "lucide-react";
++import { useRef } from "react";
++import type { ReactNode } from "react";
++import type { TaskDto, TaskPriority } from "../../shared/api";
++import type { TaskDateMode, TaskDraft } from "../../shared/task-edit";
++import { draftFromTask, type SheetView } from "../../shared/task-sheet";
++import { Button } from "./ui/Button";
++import { Chip, ChipGroup } from "./ui/Chip";
++import { ConfirmView } from "./ui/ConfirmView";
++import { Sheet } from "./ui/Sheet";
++
++export function TaskSheet({
++  task,
++  open,
++  view,
++  draft,
++  busy,
++  error,
++  toastSlot,
++  onDraftChange,
++  onClose,
++  onSave,
++  onDeleteRequest,
++  onDeleteCancel,
++  onDeleteConfirm,
++}: {
++  task: TaskDto | null;
++  open: boolean;
++  view: SheetView;
++  draft: TaskDraft | null;
++  busy: boolean;
++  error: string | null;
++  toastSlot: ReactNode;
++  onDraftChange: (changes: Partial<TaskDraft>) => void;
++  onClose: () => void;
++  onSave: () => void;
++  onDeleteRequest: () => void;
++  onDeleteCancel: () => void;
++  onDeleteConfirm: () => void;
++}) {
++  const lastTask = useRef<TaskDto | null>(null);
++  if (task !== null) lastTask.current = task;
++  const shown = task ?? lastTask.current;
++  const shownDraft = draft ?? (shown === null ? null : draftFromTask(shown));
++  if (shown === null || shownDraft === null) return null;
++
++  return (
++    <Sheet
++      open={open}
++      onOpenChange={(next) => {
++        if (!next) onClose();
++      }}
++      title={shown.title}
++    >
++      {view === "detail" ? (
++        <form
++          className="flex flex-col gap-4"
++          onSubmit={(event) => {
++            event.preventDefault();
++            onSave();
++          }}
++        >
++          <label htmlFor="sheet-title" className="m-0 font-data text-t1 font-semibold text-muted">
++            Título
++          </label>
++          <input
++            id="sheet-title"
++            type="text"
++            value={shownDraft.title}
++            onChange={(event) => onDraftChange({ title: event.target.value })}
++            disabled={busy}
++            className="min-h-12 rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
++          />
++
++          <label
++            htmlFor="sheet-description"
++            className="m-0 font-data text-t1 font-semibold text-muted"
++          >
++            Descrição
++          </label>
++          <textarea
++            id="sheet-description"
++            rows={3}
++            value={shownDraft.description}
++            onChange={(event) => onDraftChange({ description: event.target.value })}
++            disabled={busy}
++            className="min-h-24 rounded-control border border-line-strong bg-surface-1 px-4 py-3 font-text text-t3 text-ink shadow-field"
++          />
++
++          <p id="sheet-date-label" className="m-0 font-data text-t1 font-semibold text-muted">
++            Data
++          </p>
++          <ChipGroup
++            multiple={false}
++            label="Data"
++            value={[shownDraft.dateMode]}
++            onValueChange={(next) =>
++              onDraftChange({ dateMode: (next[0] as TaskDateMode | undefined) ?? "none" })
++            }
++          >
++            <Chip value="none">Sem data</Chip>
++            <Chip value="deadline">Concluir até</Chip>
++            <Chip value="scheduled">Fazer em</Chip>
++          </ChipGroup>
++          <input
++            id="sheet-date"
++            type="date"
++            aria-label="Data"
++            value={shownDraft.date}
++            disabled={busy || shownDraft.dateMode === "none"}
++            onChange={(event) => onDraftChange({ date: event.target.value })}
++            className="min-h-12 rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field disabled:opacity-55"
++          />
++
++          <p className="m-0 font-data text-t1 font-semibold text-muted">Prioridade</p>
++          <ChipGroup
++            multiple={false}
++            label="Prioridade"
++            value={shownDraft.priority === null ? [] : [shownDraft.priority]}
++            onValueChange={(next) =>
++              onDraftChange({ priority: (next[0] as TaskPriority | undefined) ?? null })
++            }
++          >
++            <Chip value="high">Alta</Chip>
++            <Chip value="normal">Normal</Chip>
++            <Chip value="low">Baixa</Chip>
++          </ChipGroup>
++
++          <div className="flex gap-2">
++            <Button
++              type="button"
++              variant="secondary"
++              className="flex-1"
++              onClick={onClose}
++              disabled={busy}
++            >
++              Cancelar
++            </Button>
++            <Button type="submit" variant="primary" className="flex-1" disabled={busy}>
++              Salvar
++            </Button>
++          </div>
++
++          {error !== null && (
++            <p role="alert" className="m-0 font-text text-t2 text-overdue">
++              {error}
++            </p>
++          )}
++
++          <Button
++            type="button"
++            variant="ghost"
++            className="mt-4 self-start text-muted"
++            onClick={onDeleteRequest}
++            disabled={busy}
++          >
++            <Trash2 className="size-5" aria-hidden="true" />
++            Excluir
++          </Button>
++        </form>
++      ) : (
++        <ConfirmView
++          title="Excluir esta tarefa?"
++          body="Não dá para desfazer."
++          cancelLabel="Cancelar"
++          confirmLabel="Excluir"
++          busy={busy}
++          error={error}
++          onCancel={onDeleteCancel}
++          onConfirm={onDeleteConfirm}
++        />
++      )}
++      <div className="mt-4 empty:hidden">{toastSlot}</div>
++    </Sheet>
++  );
++}
+diff --git a/src/app/components/TodayScreen.tsx b/src/app/components/TodayScreen.tsx
+index 09c74ad..83fda67 100644
+--- a/src/app/components/TodayScreen.tsx
++++ b/src/app/components/TodayScreen.tsx
+@@ -2,23 +2,34 @@
+ // toast / deck, `100dvh` with `overflow: clip`, the list as its own scroll
+ // container. Owns the screen state: the Task list, one optimistic status
+ // change at a time with rollback, connectivity, refetch, the *Concluídas*
+-// collapse, and the selected Task that still opens the old `TaskDetail`
+-// until Phase 3 swaps in the sheet.
++// collapse, and the `TaskSheet` state machine (`src/shared/task-sheet.ts`) —
++// which Task is open, which view it shows, and the per-Task drafts kept for
++// the session.
+ 
+ import { ChevronDown } from "lucide-react";
+-import { useEffect, useRef, useState } from "react";
++import { useEffect, useReducer, useRef, useState } from "react";
+ import type { TaskDto } from "../../shared/api";
+ import { canWrite } from "../../shared/connectivity";
+ import { todayIn } from "../../shared/dates";
+ import { classifyRequestFailure } from "../../shared/request-failure";
+ import type { ShareTarget } from "../../shared/share-target";
+-import { ApiError, completeTask, createTask, listTasks, reopenTask, updateTask } from "../api";
++import { buildTaskPatch } from "../../shared/task-edit";
++import { currentDraft, INITIAL_TASK_SHEET_STATE, reduceTaskSheet } from "../../shared/task-sheet";
++import {
++  ApiError,
++  completeTask,
++  createTask,
++  deleteTask,
++  listTasks,
++  reopenTask,
++  updateTask,
++} from "../api";
+ import { useConnectivity } from "../hooks/useConnectivity";
+ import { dismissToast, showToast, useToast } from "../toast-store";
+ import { CaptureDeck } from "./CaptureDeck";
+ import { EmptyState } from "./EmptyState";
+-import { TaskDetail } from "./TaskDetail";
+ import { TaskRow } from "./TaskRow";
++import { TaskSheet } from "./TaskSheet";
+ import { TodayHeader } from "./TodayHeader";
+ import { Banner } from "./ui/Banner";
+ import { Button } from "./ui/Button";
+@@ -58,7 +69,8 @@ export function TodayScreen({
+   const [title, setTitle] = useState(initialShare?.title ?? "");
+   const [busy, setBusy] = useState(false);
+   const [slow, setSlow] = useState(false);
+-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
++  const [sheet, dispatchSheet] = useReducer(reduceTaskSheet, INITIAL_TASK_SHEET_STATE);
++  const [sheetError, setSheetError] = useState<string | null>(null);
+   const [editingId, setEditingId] = useState<string | null>(null);
+   const [doneCollapsed, setDoneCollapsed] = useState(readDoneCollapsed);
+   const captureRef = useRef<HTMLInputElement>(null);
+@@ -69,6 +81,9 @@ export function TodayScreen({
+   const { state: connectivity, report } = useConnectivity({ onOnline: () => void refresh() });
+   const toast = useToast();
+   const writable = canWrite(connectivity);
++  const open = tasks?.filter((task) => task.status === "open") ?? [];
++  const closed = tasks?.filter((task) => task.status !== "open") ?? [];
++  const sheetTask = tasks?.find((task) => task.id === sheet.taskId) ?? null;
+ 
+   /** A 401 routes to the token gate; otherwise reports the failure kind and returns its message (`null` on the 401 route, since the caller is about to unmount). */
+   function handleFailure(cause: unknown): string | null {
+@@ -108,6 +123,21 @@ export function TodayScreen({
+     }
+   }
+ 
++  /** The sheet's server-first mutation path — mirrors `run`, with the failure message landing under *Salvar* or the confirmation instead of the capture field. */
++  async function runSheet(action: () => Promise<unknown>): Promise<void> {
++    setBusy(true);
++    try {
++      await action();
++      setSheetError(null);
++      await refresh();
++    } catch (cause) {
++      const message = handleFailure(cause);
++      if (message !== null) setSheetError(message);
++    } finally {
++      setBusy(false);
++    }
++  }
++
+   function submitCapture(): void {
+     const trimmed = title.trim();
+     if (trimmed === "" || busy) return;
+@@ -188,6 +218,40 @@ export function TodayScreen({
+     });
+   }
+ 
++  function openSheet(task: TaskDto): void {
++    setSheetError(null);
++    dispatchSheet({ type: "open", task });
++  }
++
++  function saveSheet(): void {
++    if (sheetTask === null) return;
++    const changes = buildTaskPatch(sheetTask, currentDraft(sheet, sheetTask));
++    // Nothing changed: the route rejects an empty body by design, so never
++    // issue the request at all (the empty-diff rule the sheet inherits).
++    if (Object.keys(changes).length === 0) {
++      dispatchSheet({ type: "close" });
++      return;
++    }
++    void runSheet(async () => {
++      await updateTask(sheetTask.id, changes);
++      // The dispatch sits AFTER the awaited call, so a failed save leaves
++      // the sheet open with the draft intact and the message under *Salvar*.
++      dispatchSheet({ type: "saved", taskId: sheetTask.id });
++      showToast({ key: "task-saved", text: "Tarefa salva" });
++    });
++  }
++
++  function deleteSheetTask(): void {
++    if (sheet.taskId === null) return;
++    const id = sheet.taskId;
++    void runSheet(async () => {
++      await deleteTask(id);
++      dispatchSheet({ type: "deleted", taskId: id });
++      // No action on the toast — the delete is irreversible (guidelines §8).
++      showToast({ key: "task-deleted", text: "Tarefa excluída" });
++    });
++  }
++
+   useEffect(() => {
+     // Runs once, on mount — every later refetch is triggered explicitly
+     // (a mutation, `visibilitychange`, or reconnecting).
+@@ -215,29 +279,22 @@ export function TodayScreen({
+     return () => clearTimeout(timer);
+   }, [tasks]);
+ 
+-  const open = tasks?.filter((task) => task.status === "open") ?? [];
+-  const closed = tasks?.filter((task) => task.status !== "open") ?? [];
+-  const selected = tasks?.find((task) => task.id === selectedTaskId) ?? null;
+   const currentToast = toast.current;
+-
+-  if (selected !== null) {
+-    return (
+-      <TaskDetail
+-        task={selected}
+-        busy={busy}
+-        error={captureError}
+-        onClose={() => setSelectedTaskId(null)}
+-        onSave={(patch) =>
+-          void run(async () => {
+-            await updateTask(selected.id, patch);
+-            // Close only after the await resolves, so a failed save leaves
+-            // the sheet open with the owner's edits intact.
+-            setSelectedTaskId(null);
+-          })
+-        }
++  const toastElement =
++    currentToast !== null ? (
++      <Toast
++        toast={currentToast}
++        onAction={() => {
++          currentToast.action?.run?.();
++          dismissToast(currentToast.key);
++        }}
++        onSecondary={() => {
++          currentToast.secondary?.run?.();
++          dismissToast(currentToast.key, true);
++        }}
++        onDismiss={() => dismissToast(currentToast.key)}
+       />
+-    );
+-  }
++    ) : null;
+ 
+   return (
+     <div
+@@ -280,7 +337,7 @@ export function TodayScreen({
+                   busy={busy || !writable}
+                   editing={editingId === task.id}
+                   onToggle={(next) => void (next ? complete(task.id) : reopen(task.id))}
+-                  onOpen={() => setSelectedTaskId(task.id)}
++                  onOpen={() => openSheet(task)}
+                   onEdit={() => setEditingId(task.id)}
+                   onCommitTitle={(newTitle) => commitTitle(task.id, newTitle)}
+                   onCancelEdit={() => setEditingId(null)}
+@@ -319,7 +376,7 @@ export function TodayScreen({
+                         busy={busy || !writable}
+                         editing={editingId === task.id}
+                         onToggle={(next) => void (next ? complete(task.id) : reopen(task.id))}
+-                        onOpen={() => setSelectedTaskId(task.id)}
++                        onOpen={() => openSheet(task)}
+                         onEdit={() => setEditingId(task.id)}
+                         onCommitTitle={(newTitle) => commitTitle(task.id, newTitle)}
+                         onCancelEdit={() => setEditingId(null)}
+@@ -333,21 +390,8 @@ export function TodayScreen({
+         )}
+       </main>
+ 
+-      {currentToast !== null ? (
+-        <div className="px-4 pb-2">
+-          <Toast
+-            toast={currentToast}
+-            onAction={() => {
+-              currentToast.action?.run?.();
+-              dismissToast(currentToast.key);
+-            }}
+-            onSecondary={() => {
+-              currentToast.secondary?.run?.();
+-              dismissToast(currentToast.key, true);
+-            }}
+-            onDismiss={() => dismissToast(currentToast.key)}
+-          />
+-        </div>
++      {sheet.taskId === null && toastElement !== null ? (
++        <div className="px-4 pb-2">{toastElement}</div>
+       ) : (
+         <div />
+       )}
+@@ -362,6 +406,28 @@ export function TodayScreen({
+         autoFocus={true}
+         inputRef={captureRef}
+       />
++
++      <TaskSheet
++        task={sheetTask}
++        open={sheet.taskId !== null}
++        view={sheet.view}
++        draft={sheetTask === null ? null : currentDraft(sheet, sheetTask)}
++        busy={busy}
++        error={sheetError}
++        toastSlot={sheet.taskId !== null ? toastElement : null}
++        onDraftChange={(changes) => dispatchSheet({ type: "edit", changes })}
++        onClose={() => dispatchSheet({ type: "close" })}
++        onSave={saveSheet}
++        onDeleteRequest={() => {
++          setSheetError(null);
++          dispatchSheet({ type: "request-delete" });
++        }}
++        onDeleteCancel={() => {
++          setSheetError(null);
++          dispatchSheet({ type: "cancel-delete" });
++        }}
++        onDeleteConfirm={deleteSheetTask}
++      />
+     </div>
+   );
+ }
+diff --git a/src/app/components/TokenGate.tsx b/src/app/components/TokenGate.tsx
+index fcd6825..97318e7 100644
+--- a/src/app/components/TokenGate.tsx
++++ b/src/app/components/TokenGate.tsx
+@@ -1,25 +1,58 @@
+-// Moved verbatim out of App.tsx (A5, Task 6) — transitional. Its inline
+-// `styles` object and its English labels are allowed here until Phase 3
+-// rebuilds the token gate on the tokens.
++// Rebuilt on the tokens (A5 phase 3): the identity's flat mark + `praesto`
++// wordmark as the screen's <h1>, the 401 reason `App.tsx` passes, a visible
++// *Token da API* label and *Salvar*. The submit path and its two invariants —
++// the store's failure message surfaces verbatim, the typed value survives a
++// failure (FR-045) — are unchanged from the transitional version this
++// replaces; only the copy, the markup and the tokens are new.
+ 
+-import { useState } from "react";
+-import type { CSSProperties } from "react";
++import { KeyRound } from "lucide-react";
++import { useEffect, useState } from "react";
+ import { saveToken } from "../api";
++import { Button } from "./ui/Button";
+ 
+-export function TokenGate({ onAuthorized }: { onAuthorized: () => void }) {
++export type TokenGateReason = "unauthorized" | null;
++
++export function TokenGate({
++  onAuthorized,
++  reason,
++}: {
++  onAuthorized: () => void;
++  reason: TokenGateReason;
++}) {
+   const [value, setValue] = useState("");
+   const [error, setError] = useState<string | null>(null);
++  const [busy, setBusy] = useState(false);
++
++  useEffect(() => {
++    // The only screen whose <title> is *Praesto Sum* — `TodayScreen` may have
++    // set *Hoje · Praesto Sum* before a 401 sent the owner back here.
++    document.title = "Praesto Sum";
++  }, []);
+ 
+   return (
+-    <main style={styles.page}>
+-      <h1 style={styles.title}>Praesto Sum</h1>
+-      <p style={styles.muted}>Paste the API token for this device.</p>
++    <main className="mx-auto flex min-h-dvh w-full max-w-[560px] flex-col justify-center gap-6 bg-bg px-4 py-8 text-ink">
++      <div className="flex items-center gap-3">
++        <img src="/brand/mark-flat.svg" alt="" className="size-10" />
++        <h1 className="m-0 font-display text-t5 font-extrabold">praesto</h1>
++      </div>
++
++      {reason === "unauthorized" && (
++        <p className="m-0 flex items-center gap-2 font-text text-t2 text-ink">
++          <KeyRound className="size-5 flex-none text-muted" aria-hidden="true" />
++          Este dispositivo precisa do token de novo.
++        </p>
++      )}
++
++      {/* prettier-ignore */}
++      <p className="m-0 font-text text-t3 text-muted">Cole o token da API deste dispositivo.</p>
++
+       <form
+-        style={styles.row}
++        className="flex flex-col gap-3"
+         onSubmit={async (event) => {
+           event.preventDefault();
+           const token = value.trim();
+           if (!token) return;
++          setBusy(true);
+           try {
+             await saveToken(token);
+           } catch (cause) {
+@@ -29,41 +62,41 @@ export function TokenGate({ onAuthorized }: { onAuthorized: () => void }) {
+             // instead of restating it here. `value` is deliberately not
+             // cleared — the same "never lose what was typed" invariant the
+             // capture form keeps (FR-045).
+-            setError(cause instanceof Error ? cause.message : "Could not store the API token.");
++            setError(
++              cause instanceof Error
++                ? cause.message
++                : "Não foi possível guardar o token neste dispositivo.",
++            );
+             return;
++          } finally {
++            setBusy(false);
+           }
+           setError(null);
+           onAuthorized();
+         }}
+       >
++        {/* prettier-ignore */}
++        <label htmlFor="api-token" className="m-0 font-data text-t1 font-semibold text-muted">Token da API</label>
+         <input
+-          style={styles.input}
++          id="api-token"
+           type="password"
++          autoComplete="off"
++          enterKeyHint="done"
+           value={value}
+           onChange={(event) => setValue(event.target.value)}
+-          placeholder="API token"
+-          aria-label="API token"
++          disabled={busy}
++          className="min-h-12 rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
+         />
+-        <button style={styles.button} type="submit">
+-          Save
+-        </button>
++        <Button type="submit" variant="primary" disabled={busy}>
++          Salvar
++        </Button>
+       </form>
+-      {error !== null && <p style={styles.error}>{error}</p>}
++
++      {error !== null && (
++        <p role="alert" className="m-0 font-text text-t2 text-overdue">
++          {error}
++        </p>
++      )}
+     </main>
+   );
+ }
+-
+-const styles = {
+-  page: {
+-    fontFamily: "system-ui, sans-serif",
+-    maxWidth: "34rem",
+-    margin: "0 auto",
+-    padding: "1.5rem 1rem 4rem",
+-  },
+-  title: { fontSize: "1.5rem", margin: "0 0 1rem" },
+-  muted: { opacity: 0.6 },
+-  error: { color: "#b00020" },
+-  row: { display: "flex", gap: "0.5rem", marginBottom: "1rem" },
+-  input: { flex: 1, padding: "0.6rem", fontSize: "1rem" },
+-  button: { padding: "0.6rem 1rem", fontSize: "1rem", cursor: "pointer" },
+-} as const satisfies Record<string, CSSProperties>;
+diff --git a/src/app/components/ui/ConfirmView.tsx b/src/app/components/ui/ConfirmView.tsx
+new file mode 100644
+index 0000000..608d55d
+--- /dev/null
++++ b/src/app/components/ui/ConfirmView.tsx
+@@ -0,0 +1,73 @@
++// Owned component (ADR-0011): the in-place confirmation guidelines §8 asks
++// for on an irreversible delete — one confirmation repeating the verb,
++// *Cancelar* focused by default, the destructive control second with an
++// icon (never colour alone: the live/overdue colour is reserved for those
++// states, ADR-0010, guidelines §4.2, so the destructive button stays a
++// neutral `secondary`, never `text-overdue` or `bg-live`). The strings are
++// passed in by the screen that owns the flow (pt-BR literals live there,
++// guidelines §12.3) — this component carries no copy of its own.
++
++import { Trash2 } from "lucide-react";
++import { useEffect, useRef } from "react";
++import { Button } from "./Button";
++
++export function ConfirmView({
++  title,
++  body,
++  cancelLabel,
++  confirmLabel,
++  busy,
++  error,
++  onCancel,
++  onConfirm,
++}: {
++  title: string;
++  body: string;
++  cancelLabel: string;
++  confirmLabel: string;
++  busy: boolean;
++  error: string | null;
++  onCancel: () => void;
++  onConfirm: () => void;
++}) {
++  const cancelRef = useRef<HTMLButtonElement>(null);
++
++  useEffect(() => {
++    // Programmatic focus, not `autofocus` — guidelines §8's default-to-Cancelar rule.
++    cancelRef.current?.focus();
++  }, []);
++
++  return (
++    <div className="flex flex-col gap-4 py-2">
++      <h3 className="m-0 font-text text-t4 font-semibold text-ink">{title}</h3>
++      <p className="m-0 font-text text-t3 text-muted">{body}</p>
++      {error !== null && (
++        <p role="alert" className="m-0 font-text text-t2 text-overdue">
++          {error}
++        </p>
++      )}
++      <div className="flex gap-2">
++        <Button
++          ref={cancelRef}
++          type="button"
++          variant="secondary"
++          className="flex-1"
++          onClick={onCancel}
++          disabled={busy}
++        >
++          {cancelLabel}
++        </Button>
++        <Button
++          type="button"
++          variant="secondary"
++          className="flex-1"
++          onClick={onConfirm}
++          disabled={busy}
++        >
++          <Trash2 className="size-5" aria-hidden="true" />
++          {confirmLabel}
++        </Button>
++      </div>
++    </div>
++  );
++}
+diff --git a/src/app/components/ui/Sheet.tsx b/src/app/components/ui/Sheet.tsx
+index 598afaf..6639863 100644
+--- a/src/app/components/ui/Sheet.tsx
++++ b/src/app/components/ui/Sheet.tsx
+@@ -1,12 +1,20 @@
+-// Owned component (ADR-0011): a bottom sheet on compact widths, a centred 560 px
+-// dialog from 600 px, over Base UI Dialog. The layout standard (§3) prefers native
+-// <dialog> for Android back = close; this component stays only if Base UI Dialog
+-// is verified on the device to honour close requests — otherwise A5 swaps the
+-// primitive and keeps the API.
++// Owned component (ADR-0011): a native <dialog> opened with showModal() — a
++// bottom sheet with a handle on compact widths, a centred 560 px dialog from
++// 640 px (Tailwind's existing `sm` breakpoint; layout standard §3's "from
++// 600 dp" rounds to it rather than adding a second one). The `close` event is
++// the ONE path Esc, the close button and the Android back gesture all flow
++// through: `closedby` is left at its `showModal()` default of `closerequest`,
++// so there is no light dismiss on this editor. `showModal()` itself makes the
++// page behind inert and scroll-locked (`html:has(dialog[open])` in
++// styles.css) and returns focus to the opener natively on close. The
++// `history.pushState` fallback of PRD risk row 400 is NOT built here — it is
++// specified in the phase-3 plan's `## Notes` and wired only if the owner's
++// device check finds the Android back gesture does not close this dialog.
+ 
+-import { Dialog } from "@base-ui/react/dialog";
+ import { X } from "lucide-react";
++import { useEffect, useId, useRef } from "react";
+ import type { ReactNode } from "react";
++import { Button } from "./Button";
+ 
+ export function Sheet({
+   open,
+@@ -19,29 +27,51 @@ export function Sheet({
+   title: string;
+   children: ReactNode;
+ }) {
++  const ref = useRef<HTMLDialogElement>(null);
++  const titleId = useId();
++
++  useEffect(() => {
++    const dialog = ref.current;
++    if (!dialog) return;
++    if (open && !dialog.open) {
++      dialog.showModal();
++      // Focus lands on the dialog itself (`tabIndex={-1}` below), not a
++      // field — so no input pops the phone's keyboard on open. This is
++      // focus management by effect, the InlineTitle.tsx idiom, never the
++      // `autofocus` attribute; Tab still reaches the close button first.
++      dialog.focus();
++    } else if (!open && dialog.open) {
++      dialog.close();
++    }
++  }, [open]);
++
+   return (
+-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+-      <Dialog.Portal>
+-        <Dialog.Backdrop className="fixed inset-0 bg-black/50 transition-opacity duration-300 data-ending-style:opacity-0 data-starting-style:opacity-0" />
+-        <Dialog.Popup className="fixed inset-x-0 bottom-0 max-h-[90dvh] overflow-y-auto overscroll-contain rounded-t-[24px] bg-surface-1 px-4 pt-2 pb-4 shadow-deck transition-transform duration-300 ease-out outline-none data-ending-style:translate-y-full data-starting-style:translate-y-full sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-[560px] sm:max-w-[calc(100vw-2rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-card sm:data-ending-style:translate-y-[-45%] sm:data-starting-style:translate-y-[-45%]">
+-          <div
+-            className="mx-auto mb-3 h-1 w-8 rounded-full bg-line-strong sm:hidden"
+-            aria-hidden="true"
+-          />
+-          <div className="flex items-center gap-2">
+-            <Dialog.Title className="m-0 flex-1 font-text text-t4 font-semibold">
+-              {title}
+-            </Dialog.Title>
+-            <Dialog.Close
+-              aria-label="Fechar"
+-              className="flex size-12 items-center justify-center rounded-control"
+-            >
+-              <X className="size-[22px]" aria-hidden="true" />
+-            </Dialog.Close>
+-          </div>
+-          {children}
+-        </Dialog.Popup>
+-      </Dialog.Portal>
+-    </Dialog.Root>
++    <dialog
++      ref={ref}
++      data-sheet
++      tabIndex={-1}
++      aria-labelledby={titleId}
++      onClose={() => onOpenChange(false)}
++      className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[90dvh] w-full max-w-none overflow-y-auto overscroll-contain rounded-t-[24px] border-0 bg-surface-1 p-0 px-4 pt-2 pb-4 text-ink shadow-deck outline-none sm:inset-0 sm:m-auto sm:h-fit sm:w-[560px] sm:max-w-[calc(100vw-2rem)] sm:rounded-card"
++    >
++      <div
++        className="mx-auto mb-3 h-1 w-8 rounded-full bg-line-strong sm:hidden"
++        aria-hidden="true"
++      />
++      <div className="flex items-center gap-2">
++        <h2 id={titleId} className="m-0 flex-1 font-text text-t4 font-semibold">
++          {title}
++        </h2>
++        <Button
++          type="button"
++          variant="icon"
++          aria-label="Fechar"
++          onClick={() => onOpenChange(false)}
++        >
++          <X className="size-[22px]" aria-hidden="true" />
++        </Button>
++      </div>
++      {children}
++    </dialog>
+   );
+ }
+diff --git a/src/app/styles.css b/src/app/styles.css
+index 393e547..0f903a0 100644
+--- a/src/app/styles.css
++++ b/src/app/styles.css
+@@ -76,6 +76,66 @@
+     padding-bottom: var(--space-4);
+   }
+ 
++  /* Layout standard §3: the sheet's slide-up, on a native <dialog>. The
++     `translate` property (never a Tailwind utility, which would fight this
++     transition) plus `display` / `overlay` with `allow-discrete` so a closed
++     dialog can still animate out (Baseline August 2024). Durations and
++     easings come from tokens.css, so prefers-reduced-motion shortens the
++     slide with no extra media query here. `640px` is Tailwind's existing
++     `sm` breakpoint — the standard's "centred from 600 dp" rounds to it
++     rather than adding a second one. */
++  dialog[data-sheet] {
++    translate: 0 100%;
++    transition:
++      translate var(--duration-medium) var(--ease-exit),
++      overlay var(--duration-medium) allow-discrete,
++      display var(--duration-medium) allow-discrete;
++  }
++  dialog[data-sheet][open] {
++    translate: 0 0;
++    transition-timing-function: var(--ease-enter);
++    @starting-style {
++      translate: 0 100%;
++    }
++  }
++  dialog[data-sheet]::backdrop {
++    background: rgb(0 0 0 / 0.5);
++    transition:
++      opacity var(--duration-medium) var(--ease-standard),
++      overlay var(--duration-medium) allow-discrete,
++      display var(--duration-medium) allow-discrete;
++  }
++  dialog[data-sheet]:not([open])::backdrop {
++    opacity: 0;
++  }
++  dialog[data-sheet][open]::backdrop {
++    @starting-style {
++      opacity: 0;
++    }
++  }
++  @media (min-width: 640px) {
++    dialog[data-sheet] {
++      translate: 0 24px;
++      opacity: 0;
++      transition:
++        translate var(--duration-medium) var(--ease-exit),
++        opacity var(--duration-medium) var(--ease-exit),
++        overlay var(--duration-medium) allow-discrete,
++        display var(--duration-medium) allow-discrete;
++    }
++    dialog[data-sheet][open] {
++      translate: 0 0;
++      opacity: 1;
++      @starting-style {
++        translate: 0 24px;
++        opacity: 0;
++      }
++    }
++  }
++  html:has(dialog[open]) {
++    overflow: hidden;
++  }
++
+   /* The signature completion moment (ADR-0010): the ring sinks and fires one
+      amber halo while the row it belongs to leaves. Durations and easings
+      come from the tokens, so prefers-reduced-motion shortens both through
+diff --git a/src/shared/task-sheet.ts b/src/shared/task-sheet.ts
+new file mode 100644
+index 0000000..64de211
+--- /dev/null
++++ b/src/shared/task-sheet.ts
+@@ -0,0 +1,115 @@
++/**
++ * The sheet's state machine (PRD AC-11, AC-12) — which Task the detail sheet
++ * is editing, which view it shows, and one draft per Task kept for the
++ * session. Total and side-effect free, like `src/shared/connectivity.ts` and
++ * `src/shared/toast.ts`: it only reduces the events it is handed and never
++ * touches the DOM, a timer or the network.
++ *
++ * The native `<dialog>`, the fields and the `updateTask` / `deleteTask`
++ * requests are React glue in `src/app/components/TaskSheet.tsx` and
++ * `src/app/components/TodayScreen.tsx` — the exempt half of
++ * `docs/context/methodology.md`'s "Browser-API work" split. This module is
++ * the decidable half, authored test-first (`test/task-sheet.test.ts`).
++ *
++ * A close request from the confirmation view is just `close`: there is only
++ * ever one sheet (layout standard §3, "never stack sheets"), so cancelling a
++ * delete by closing the whole sheet is not a distinct event — it is the same
++ * `close` a Task detail's own close request sends, and it never deletes.
++ *
++ * Drafts are per session only — kept in memory in `drafts`, never persisted
++ * (guidelines §8, "dirty editor closed": the owner's edits survive closing
++ * the sheet and reopening the same Task in the same session, and nothing
++ * more). `saved` and `deleted` drop the edited Task's draft because the
++ * server now holds the truth; every other Task's draft survives untouched.
++ */
++
++import type { TaskDto } from "./api";
++import { dateModeOf, type TaskDraft } from "./task-edit";
++
++export type SheetView = "detail" | "confirm";
++
++export interface TaskSheetState {
++  taskId: string | null;
++  view: SheetView;
++  drafts: Readonly<Record<string, TaskDraft>>;
++}
++
++export const INITIAL_TASK_SHEET_STATE: TaskSheetState = {
++  taskId: null,
++  view: "detail",
++  drafts: {},
++};
++
++export type TaskSheetEvent =
++  | { type: "open"; task: TaskDto }
++  | { type: "edit"; changes: Partial<TaskDraft> }
++  | { type: "request-delete" }
++  | { type: "cancel-delete" }
++  | { type: "close" }
++  | { type: "saved"; taskId: string }
++  | { type: "deleted"; taskId: string };
++
++/**
++ * The seed of a fresh draft — moved from `TaskDetail.tsx:37-43` — every field
++ * the sheet edits, computed from the Task as it stands on the server.
++ */
++export function draftFromTask(task: TaskDto): TaskDraft {
++  return {
++    title: task.title,
++    description: task.description ?? "",
++    dateMode: dateModeOf(task),
++    date: task.deadline ?? task.scheduledDate ?? "",
++    priority: task.priority,
++  };
++}
++
++/** The draft `TaskSheet` renders: the kept draft when the session has one, otherwise a fresh seed — never a mix of the two. */
++export function currentDraft(state: TaskSheetState, task: TaskDto): TaskDraft {
++  return state.drafts[task.id] ?? draftFromTask(task);
++}
++
++export function reduceTaskSheet(state: TaskSheetState, event: TaskSheetEvent): TaskSheetState {
++  switch (event.type) {
++    case "open":
++      // An existing draft is restored untouched — the AC-12 rule — so only a
++      // Task with no kept draft yet gets seeded here.
++      return {
++        taskId: event.task.id,
++        view: "detail",
++        drafts: {
++          ...state.drafts,
++          [event.task.id]: state.drafts[event.task.id] ?? draftFromTask(event.task),
++        },
++      };
++    case "edit": {
++      const { taskId } = state;
++      if (taskId === null) return state;
++      const draft = state.drafts[taskId];
++      if (draft === undefined) return state;
++      return {
++        ...state,
++        drafts: { ...state.drafts, [taskId]: { ...draft, ...event.changes } },
++      };
++    }
++    case "request-delete":
++      if (state.taskId === null) return state;
++      return { ...state, view: "confirm" };
++    case "cancel-delete":
++      if (state.taskId === null) return state;
++      return { ...state, view: "detail" };
++    case "close":
++      if (state.taskId === null) return state;
++      return { ...state, taskId: null, view: "detail" };
++    case "saved":
++    case "deleted": {
++      // Drop only `event.taskId`'s draft — a fresh copy via `Object.entries`,
++      // never a mutation of `state.drafts`; every other draft keeps its exact
++      // reference, since `Object.fromEntries` re-maps entries, it does not
++      // clone their values.
++      const drafts = Object.fromEntries(
++        Object.entries(state.drafts).filter(([id]) => id !== event.taskId),
++      );
++      return { taskId: null, view: "detail", drafts };
++    }
++  }
++}

@@ -1,0 +1,1217 @@
+diff --git a/documentation/10-product/visual-identity.md b/documentation/10-product/visual-identity.md
+index e934486..6902a0d 100644
+--- a/documentation/10-product/visual-identity.md
++++ b/documentation/10-product/visual-identity.md
+@@ -1,6 +1,6 @@
+ ---
+ status: active
+-last_updated: 2026-08-20
++last_updated: 2026-08-21
+ review_trigger: "a step of UI/UX-plan activity A2 lands, an identity element (mark, tokens, voice) changes, or decision 5 is accepted"
+ ---
+ 
+@@ -88,6 +88,18 @@ Microcopy table (UI values in pt-BR — ADR-0009; the keys stay English in code)
+ | Missed (honest mirror) | Você não concluiu *Pagar aluguel* em 2 de 5 semanas. |
+ | Reminder notification | title = the Task title · body *Agora · 14:05* / *Hoje, 15:00* |
+ | Still loading | Ainda carregando… |
++| Token gate | wordmark *praesto* · **Cole o token da API deste dispositivo.** · label *Token da API* · button *Salvar* |
++| Token gate — store failure (tested) | `Não foi possível guardar o token neste dispositivo. O navegador recusou IndexedDB e o armazenamento local — verifique se ele está bloqueando dados do site.` |
++| Header | **Hoje** · `sex., 21/08` · *N restantes* / *1 restante* / *nenhuma restante* |
++| Capture deck | eyebrow *Nova tarefa* · placeholder *O que precisa ser feito?* · submit *Adicionar* · offline hint `Captura indisponível sem conexão.` |
++| Row meta line | *até hoje* · *até amanhã* · *até sáb., 22/08* · *fazer hoje* · *fazer sáb., 22/08* · *atrasada · venceu ontem* · *atrasada · venceu ter., 18/08* · *atrasada · era para ter., 18/08* · *alta* / *baixa* · *não concluída* |
++| Row actions (accessible names) | *Concluir {título}* / *Reabrir {título}* · *Editar título* |
++| Section | **Concluídas** · count |
++| Toasts | *Tarefa reaberta* · *Tarefa excluída* |
++| Request errors (tested) | `Sem conexão com o servidor. Nada se perdeu — tente de novo quando a conexão voltar.` · `O servidor recusou a operação (código N). Tente de novo.` |
++| Detail sheet | labels *Título · Descrição · Data · Prioridade* · chips *Sem data · Concluir até · Fazer em* and *Alta · Normal · Baixa* (no chip selected = no priority) · *Cancelar* / *Salvar* / *Excluir* · close button *Fechar* |
++| `<title>` | *Hoje · Praesto Sum* · *Praesto Sum* |
++| Manifest | `name` *Praesto Sum* · `short_name` *Praesto* · shortcut *Nova tarefa* — *Abrir o Praesto com o campo de captura vazio* |
+ 
+ Approved by the owner on 2026-08-20 ("voz & tom aprovado. microcopy aprovado"). New states get their copy added here first, then in code.
+ 
+@@ -99,6 +111,7 @@ TBD — after A5 ships: a week of cold opens on the phone against the three É w
+ 
+ | Date | What changed |
+ |---|---|
++| 2026-08-21 | **ui-design-pass Phase 1: the A5 microcopy rows approved by the owner in the PRD scope round added to the table above, ahead of Phase 1's code** (`PRPs/prds/ui-design-pass.prd.md`, "Microcopy added by this pass") — token gate, token-store failure, header, capture deck, row meta line, row actions, section, toasts, request errors, detail sheet, `<title>`, manifest |
+ | 2026-08-20 | **Step 2.9: voice & tone and microcopy approved; document `draft → active`.** Step 2.10 (a week of validation in use) runs after A5 ships. The dev-only `/design` playground moves to A5, where the tokens are first applied |
+ | 2026-08-20 | Step 2.8: `src/app/tokens.css` written (machine truth; applied in A5); mark variants under `public/brand/`; fonts measured (Inter 48.3 KB + Unbounded 21.8 KB) → two files ship; voice & tone drafted for the owner's approval |
+ | 2026-08-20 | **Direction A "Arcade" chosen by the owner → [ADR-0010](../60-decisions/ADR-0010-visual-identity-direction-arcade.md) accepted, decision 5 closed**; the decided system recorded above; mark decision settled |
+diff --git a/index.html b/index.html
+index 64dd05f..28446ea 100644
+--- a/index.html
++++ b/index.html
+@@ -2,17 +2,109 @@
+ <html lang="pt-BR">
+   <head>
+     <meta charset="UTF-8" />
+-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
++    <meta name="color-scheme" content="dark" />
++    <meta
++      name="viewport"
++      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
++    />
+     <title>Praesto Sum</title>
+     <link rel="manifest" href="/manifest.webmanifest" />
+     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+     <!-- iOS picks the home-screen icon from this link, NOT from the manifest.
+          Without it "Add to Home Screen" falls back to a screenshot of the page. -->
+     <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
+-    <meta name="theme-color" content="#0b0b0c" />
++    <meta name="theme-color" content="#161012" />
++    <link
++      rel="preload"
++      as="font"
++      type="font/woff2"
++      href="/fonts/inter-latin-var.woff2"
++      crossorigin
++    />
++    <link
++      rel="preload"
++      as="font"
++      type="font/woff2"
++      href="/fonts/unbounded-latin-800.woff2"
++      crossorigin
++    />
++    <style>
++      /* Inline @font-face so both weights are available before styles.css
++         arrives (guidelines §5.3); font-display: optional means an
++         already-cached font paints immediately and an uncached one never
++         causes a reflow — text simply uses the fallback stack once and
++         swaps only on the next natural repaint. */
++      @font-face {
++        font-family: "Inter";
++        font-style: normal;
++        font-weight: 400 700;
++        font-display: optional;
++        src: url("/fonts/inter-latin-var.woff2") format("woff2");
++        unicode-range:
++          U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
++          U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
++      }
++      @font-face {
++        font-family: "Unbounded";
++        font-style: normal;
++        font-weight: 800;
++        font-display: optional;
++        src: url("/fonts/unbounded-latin-800.woff2") format("woff2");
++        unicode-range:
++          U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
++          U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
++      }
++
++      /* Critical CSS: painted before any stylesheet arrives, so splash,
++         first paint and the running app (src/app/styles.css) never disagree
++         on the canvas colour (guidelines §2.4). */
++      html {
++        background: #161012;
++        color-scheme: dark;
++      }
++
++      /* Pre-JavaScript shell silhouette — createRoot() replaces it on first
++         render, so nothing in main.tsx has to remove it. Surfaces mirror
++         --color-surface-1 / --color-surface-2 as literals, the same way the
++         background above mirrors --color-bg (tokens.css is not loaded yet). */
++      .shell-skeleton {
++        display: grid;
++        grid-template-rows: 64px 1fr 96px;
++        height: 100dvh;
++        overflow: clip;
++      }
++      .shell-skeleton-header {
++        background: #1f1816;
++      }
++      .shell-skeleton-list {
++        display: grid;
++        align-content: start;
++        gap: 8px;
++        padding: 16px;
++      }
++      .shell-skeleton-row {
++        height: 64px;
++        border-radius: 18px;
++        background: #1f1816;
++      }
++      .shell-skeleton-deck {
++        border-radius: 18px 18px 0 0;
++        background: #2a211e;
++      }
++    </style>
+   </head>
+   <body>
+-    <div id="root"></div>
++    <div id="root">
++      <div class="shell-skeleton" aria-hidden="true">
++        <div class="shell-skeleton-header"></div>
++        <div class="shell-skeleton-list">
++          <div class="shell-skeleton-row"></div>
++          <div class="shell-skeleton-row"></div>
++          <div class="shell-skeleton-row"></div>
++        </div>
++        <div class="shell-skeleton-deck"></div>
++      </div>
++    </div>
+     <script type="module" src="/src/app/main.tsx"></script>
+   </body>
+ </html>
+diff --git a/public/favicon.svg b/public/favicon.svg
+index 52dd257..dff8f5e 100644
+--- a/public/favicon.svg
++++ b/public/favicon.svg
+@@ -7,7 +7,7 @@
+       <stop offset="1" stop-color="#b57f23" />
+     </linearGradient>
+   </defs>
+-  <rect width="100" height="100" rx="22" fill="#0b0b0c" />
++  <rect width="100" height="100" rx="22" fill="#161012" />
+   <rect x="48.7" y="10" width="2.6" height="18.5" fill="#9aa1ab" />
+   <path
+     d="M46.5 28.5 H53.5 L55.5 34.5 A10.5 15.5 0 0 1 66 50 L50 86 L34 50 A10.5 15.5 0 0 1 44.5 34.5 Z"
+diff --git a/public/fonts/OFL-Inter.txt b/public/fonts/OFL-Inter.txt
+new file mode 100644
+index 0000000..21f6aff
+--- /dev/null
++++ b/public/fonts/OFL-Inter.txt
+@@ -0,0 +1,93 @@
++Copyright 2020 The Inter Project Authors (https://github.com/rsms/inter)
++
++This Font Software is licensed under the SIL Open Font License, Version 1.1.
++This license is copied below, and is also available with a FAQ at:
++https://scripts.sil.org/OFL
++
++
++-----------------------------------------------------------
++SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
++-----------------------------------------------------------
++
++PREAMBLE
++The goals of the Open Font License (OFL) are to stimulate worldwide
++development of collaborative font projects, to support the font creation
++efforts of academic and linguistic communities, and to provide a free and
++open framework in which fonts may be shared and improved in partnership
++with others.
++
++The OFL allows the licensed fonts to be used, studied, modified and
++redistributed freely as long as they are not sold by themselves. The
++fonts, including any derivative works, can be bundled, embedded, 
++redistributed and/or sold with any software provided that any reserved
++names are not used by derivative works. The fonts and derivatives,
++however, cannot be released under any other type of license. The
++requirement for fonts to remain under this license does not apply
++to any document created using the fonts or their derivatives.
++
++DEFINITIONS
++"Font Software" refers to the set of files released by the Copyright
++Holder(s) under this license and clearly marked as such. This may
++include source files, build scripts and documentation.
++
++"Reserved Font Name" refers to any names specified as such after the
++copyright statement(s).
++
++"Original Version" refers to the collection of Font Software components as
++distributed by the Copyright Holder(s).
++
++"Modified Version" refers to any derivative made by adding to, deleting,
++or substituting -- in part or in whole -- any of the components of the
++Original Version, by changing formats or by porting the Font Software to a
++new environment.
++
++"Author" refers to any designer, engineer, programmer, technical
++writer or other person who contributed to the Font Software.
++
++PERMISSION & CONDITIONS
++Permission is hereby granted, free of charge, to any person obtaining
++a copy of the Font Software, to use, study, copy, merge, embed, modify,
++redistribute, and sell modified and unmodified copies of the Font
++Software, subject to the following conditions:
++
++1) Neither the Font Software nor any of its individual components,
++in Original or Modified Versions, may be sold by itself.
++
++2) Original or Modified Versions of the Font Software may be bundled,
++redistributed and/or sold with any software, provided that each copy
++contains the above copyright notice and this license. These can be
++included either as stand-alone text files, human-readable headers or
++in the appropriate machine-readable metadata fields within text or
++binary files as long as those fields can be easily viewed by the user.
++
++3) No Modified Version of the Font Software may use the Reserved Font
++Name(s) unless explicit written permission is granted by the corresponding
++Copyright Holder. This restriction only applies to the primary font name as
++presented to the users.
++
++4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
++Software shall not be used to promote, endorse or advertise any
++Modified Version, except to acknowledge the contribution(s) of the
++Copyright Holder(s) and the Author(s) or with their explicit written
++permission.
++
++5) The Font Software, modified or unmodified, in part or in whole,
++must be distributed entirely under this license, and must not be
++distributed under any other license. The requirement for fonts to
++remain under this license does not apply to any document created
++using the Font Software.
++
++TERMINATION
++This license becomes null and void if any of the above conditions are
++not met.
++
++DISCLAIMER
++THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
++MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
++OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
++COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
++INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
++DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
++FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
++OTHER DEALINGS IN THE FONT SOFTWARE.
+diff --git a/public/fonts/OFL-Unbounded.txt b/public/fonts/OFL-Unbounded.txt
+new file mode 100644
+index 0000000..1c7db28
+--- /dev/null
++++ b/public/fonts/OFL-Unbounded.txt
+@@ -0,0 +1,93 @@
++Copyright 2022 The Unbounded Project Authors (https://github.com/googlefonts/unbounded)
++
++This Font Software is licensed under the SIL Open Font License, Version 1.1.
++This license is copied below, and is also available with a FAQ at:
++https://scripts.sil.org/OFL
++
++
++-----------------------------------------------------------
++SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
++-----------------------------------------------------------
++
++PREAMBLE
++The goals of the Open Font License (OFL) are to stimulate worldwide
++development of collaborative font projects, to support the font creation
++efforts of academic and linguistic communities, and to provide a free and
++open framework in which fonts may be shared and improved in partnership
++with others.
++
++The OFL allows the licensed fonts to be used, studied, modified and
++redistributed freely as long as they are not sold by themselves. The
++fonts, including any derivative works, can be bundled, embedded, 
++redistributed and/or sold with any software provided that any reserved
++names are not used by derivative works. The fonts and derivatives,
++however, cannot be released under any other type of license. The
++requirement for fonts to remain under this license does not apply
++to any document created using the fonts or their derivatives.
++
++DEFINITIONS
++"Font Software" refers to the set of files released by the Copyright
++Holder(s) under this license and clearly marked as such. This may
++include source files, build scripts and documentation.
++
++"Reserved Font Name" refers to any names specified as such after the
++copyright statement(s).
++
++"Original Version" refers to the collection of Font Software components as
++distributed by the Copyright Holder(s).
++
++"Modified Version" refers to any derivative made by adding to, deleting,
++or substituting -- in part or in whole -- any of the components of the
++Original Version, by changing formats or by porting the Font Software to a
++new environment.
++
++"Author" refers to any designer, engineer, programmer, technical
++writer or other person who contributed to the Font Software.
++
++PERMISSION & CONDITIONS
++Permission is hereby granted, free of charge, to any person obtaining
++a copy of the Font Software, to use, study, copy, merge, embed, modify,
++redistribute, and sell modified and unmodified copies of the Font
++Software, subject to the following conditions:
++
++1) Neither the Font Software nor any of its individual components,
++in Original or Modified Versions, may be sold by itself.
++
++2) Original or Modified Versions of the Font Software may be bundled,
++redistributed and/or sold with any software, provided that each copy
++contains the above copyright notice and this license. These can be
++included either as stand-alone text files, human-readable headers or
++in the appropriate machine-readable metadata fields within text or
++binary files as long as those fields can be easily viewed by the user.
++
++3) No Modified Version of the Font Software may use the Reserved Font
++Name(s) unless explicit written permission is granted by the corresponding
++Copyright Holder. This restriction only applies to the primary font name as
++presented to the users.
++
++4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
++Software shall not be used to promote, endorse or advertise any
++Modified Version, except to acknowledge the contribution(s) of the
++Copyright Holder(s) and the Author(s) or with their explicit written
++permission.
++
++5) The Font Software, modified or unmodified, in part or in whole,
++must be distributed entirely under this license, and must not be
++distributed under any other license. The requirement for fonts to
++remain under this license does not apply to any document created
++using the Font Software.
++
++TERMINATION
++This license becomes null and void if any of the above conditions are
++not met.
++
++DISCLAIMER
++THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
++MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
++OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
++COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
++INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
++DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
++FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
++OTHER DEALINGS IN THE FONT SOFTWARE.
+diff --git a/public/fonts/inter-latin-var.woff2 b/public/fonts/inter-latin-var.woff2
+new file mode 100644
+index 0000000..d15208d
+Binary files /dev/null and b/public/fonts/inter-latin-var.woff2 differ
+diff --git a/public/fonts/unbounded-latin-800.woff2 b/public/fonts/unbounded-latin-800.woff2
+new file mode 100644
+index 0000000..1202315
+Binary files /dev/null and b/public/fonts/unbounded-latin-800.woff2 differ
+diff --git a/public/icons/apple-touch-icon-180.png b/public/icons/apple-touch-icon-180.png
+index 6740df1..5e84f2a 100644
+Binary files a/public/icons/apple-touch-icon-180.png and b/public/icons/apple-touch-icon-180.png differ
+diff --git a/public/icons/icon-192.png b/public/icons/icon-192.png
+index a0e90aa..f589a6e 100644
+Binary files a/public/icons/icon-192.png and b/public/icons/icon-192.png differ
+diff --git a/public/icons/icon-512.png b/public/icons/icon-512.png
+index 030cc11..95586cc 100644
+Binary files a/public/icons/icon-512.png and b/public/icons/icon-512.png differ
+diff --git a/public/icons/maskable-512.png b/public/icons/maskable-512.png
+index 7d1db15..acf420e 100644
+Binary files a/public/icons/maskable-512.png and b/public/icons/maskable-512.png differ
+diff --git a/public/manifest.webmanifest b/public/manifest.webmanifest
+index a2833d0..af9493a 100644
+--- a/public/manifest.webmanifest
++++ b/public/manifest.webmanifest
+@@ -6,8 +6,8 @@
+   "start_url": "/",
+   "scope": "/",
+   "display": "standalone",
+-  "background_color": "#0b0b0c",
+-  "theme_color": "#0b0b0c",
++  "background_color": "#161012",
++  "theme_color": "#161012",
+   "icons": [
+     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+     { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+@@ -25,9 +25,9 @@
+   },
+   "shortcuts": [
+     {
+-      "name": "New Task",
+-      "short_name": "New Task",
+-      "description": "Open Praesto with an empty capture field",
++      "name": "Nova tarefa",
++      "short_name": "Nova tarefa",
++      "description": "Abrir o Praesto com o campo de captura vazio",
+       "url": "/new-task",
+       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+     }
+diff --git a/scripts/fetch-fonts.mjs b/scripts/fetch-fonts.mjs
+new file mode 100644
+index 0000000..710bb71
+--- /dev/null
++++ b/scripts/fetch-fonts.mjs
+@@ -0,0 +1,132 @@
++/**
++ * Downloads Praesto's two self-hosted fonts (ADR-0010) once, from the Google
++ * Fonts CSS2 API and its gstatic-hosted files, plus their SIL Open Font
++ * License texts — owner-authorized 2026-08-21. Zero dependencies (ADR-0005):
++ * global `fetch`, `node:fs`, `node:path` only, like scripts/generate-icons.js.
++ *
++ * Run: node scripts/fetch-fonts.mjs
++ *
++ * Re-run only when the fonts are deliberately upgraded (a new weight, a new
++ * subset, a version bump) — not on every install or every build. The CSS2
++ * API's answer depends on the request's User-Agent: a generic client is
++ * handed plain TTF with no `unicode-range`; a desktop Chrome UA is handed
++ * one `@font-face` block per script subset in `woff2`, each carrying its own
++ * `unicode-range` — that is the shape this script parses (verified
++ * 2026-08-21). The `gstatic` file URLs are versioned and change whenever a
++ * font is rebuilt upstream, so they are parsed out of the CSS2 response
++ * rather than hard-coded.
++ */
++import { mkdirSync, writeFileSync } from "node:fs";
++import { dirname, join } from "node:path";
++import { fileURLToPath } from "node:url";
++
++const OUT_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "public", "fonts");
++
++const CSS2_URL =
++  "https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=Unbounded:wght@800&display=optional";
++// A desktop UA is the documented key: a generic client gets TTF with no
++// `unicode-range` from this same URL.
++const CHROME_UA =
++  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
++
++const FONTS = [
++  { family: "Inter", outFile: "inter-latin-var.woff2" },
++  { family: "Unbounded", outFile: "unbounded-latin-800.woff2" },
++];
++
++const OFL_FILES = [
++  {
++    outFile: "OFL-Inter.txt",
++    url: "https://raw.githubusercontent.com/google/fonts/main/ofl/inter/OFL.txt",
++  },
++  {
++    outFile: "OFL-Unbounded.txt",
++    url: "https://raw.githubusercontent.com/google/fonts/main/ofl/unbounded/OFL.txt",
++  },
++];
++
++const MAX_TOTAL_BYTES = 102400;
++const WOFF2_MAGIC = "wOF2";
++
++async function fetchOrThrow(url) {
++  const response = await fetch(url, { headers: { "User-Agent": CHROME_UA } });
++  if (response.status !== 200) {
++    throw new Error(`GET ${url} returned ${response.status}, expected 200`);
++  }
++  return response;
++}
++
++// Each response block is its own `/* <subset> */` comment immediately
++// followed by exactly one `@font-face { ... }` rule (verified 2026-08-21) —
++// so every subset/family pair is captured together in one regex pass. A
++// family requested alongside another (Inter carries seven subsets, Unbounded
++// fewer) means a family's OWN "latin" comment is not the only "latin" text
++// in the response, and a naive split-then-search can pick up the nearest
++// `src:`/`unicode-range:` from an unrelated block that merely mentions the
++// right family name further down the same chunk — this scopes both the
++// family check and the extraction to the SAME single block, every time.
++const FONT_FACE_BLOCK = /\/\*\s*([\w-]+)\s*\*\/\s*@font-face\s*\{([^}]*)\}/g;
++
++/** The `latin`-subset `@font-face` block whose `font-family` is `family` — its `src` URL and `unicode-range`. */
++function findLatinBlock(css, family) {
++  for (const match of css.matchAll(FONT_FACE_BLOCK)) {
++    const [, subset, body] = match;
++    if (subset !== "latin" || body === undefined) continue;
++    const familyMatch = /font-family:\s*'([^']+)'/.exec(body);
++    if (familyMatch?.[1] !== family) continue;
++    const url = /src:\s*url\(([^)]+)\)/.exec(body)?.[1];
++    const unicodeRange = /unicode-range:\s*([^;]+);/.exec(body)?.[1]?.trim();
++    if (url && unicodeRange) return { url, unicodeRange };
++  }
++  return null;
++}
++
++async function main() {
++  mkdirSync(OUT_DIR, { recursive: true });
++
++  const cssResponse = await fetchOrThrow(CSS2_URL);
++  const css = await cssResponse.text();
++
++  let total = 0;
++  for (const { family, outFile } of FONTS) {
++    const block = findLatinBlock(css, family);
++    if (!block) {
++      throw new Error(`No "/* latin */" @font-face block found for font-family '${family}'`);
++    }
++    const fontResponse = await fetchOrThrow(block.url);
++    const bytes = Buffer.from(await fontResponse.arrayBuffer());
++    const magic = bytes.subarray(0, 4).toString("ascii");
++    if (magic !== WOFF2_MAGIC) {
++      throw new Error(
++        `${outFile}: expected WOFF2 magic bytes "wOF2", got ${JSON.stringify(magic)}`,
++      );
++    }
++    writeFileSync(join(OUT_DIR, outFile), bytes);
++    console.log(`${outFile.padEnd(28)} ${String(bytes.length).padStart(6)} bytes  <- ${block.url}`);
++    console.log(`${"".padEnd(28)} latin unicode-range: ${block.unicodeRange}`);
++    total += bytes.length;
++  }
++
++  console.log(`Total (both fonts): ${total} bytes`);
++  if (total > MAX_TOTAL_BYTES) {
++    throw new Error(
++      `fonts total ${total} bytes exceeds the ${MAX_TOTAL_BYTES}-byte budget (guidelines §5.3)`,
++    );
++  }
++
++  for (const { outFile, url } of OFL_FILES) {
++    const response = await fetchOrThrow(url);
++    const text = await response.text();
++    writeFileSync(join(OUT_DIR, outFile), text);
++    console.log(`${outFile.padEnd(28)} ${Buffer.byteLength(text)} bytes`);
++  }
++
++  console.log(
++    `PASS: two WOFF2 files (${total} bytes together) and two OFL texts written to public/fonts/`,
++  );
++}
++
++main().catch((err) => {
++  console.error(`FAIL: ${err instanceof Error ? err.message : String(err)}`);
++  process.exit(1);
++});
+diff --git a/scripts/generate-icons.js b/scripts/generate-icons.js
+index 264336d..8978cdd 100644
+--- a/scripts/generate-icons.js
++++ b/scripts/generate-icons.js
+@@ -19,8 +19,9 @@ import { deflateSync } from "node:zlib";
+ const OUT_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "public", "icons");
+ 
+ // --- Palette --------------------------------------------------------------
+-// Background matches theme_color/background_color in public/manifest.webmanifest.
+-const BACKGROUND = [0x0b, 0x0b, 0x0c];
++// Background matches --color-bg in src/app/tokens.css and theme_color /
++// background_color in public/manifest.webmanifest.
++const BACKGROUND = [0x16, 0x10, 0x12];
+ const CORD = [0x9a, 0xa1, 0xab];
+ const BOB_TOP = [0xf2, 0xd0, 0x8a];
+ const BOB_TIP = [0xb5, 0x7f, 0x23];
+diff --git a/src/app/components/DesignPlayground.tsx b/src/app/components/DesignPlayground.tsx
+new file mode 100644
+index 0000000..25786dd
+--- /dev/null
++++ b/src/app/components/DesignPlayground.tsx
+@@ -0,0 +1,239 @@
++// Dev-only playground (PRD AC-20): every design token and the primitives
++// that exist today, in one page, mounted from src/app/main.tsx only when
++// `import.meta.env.DEV && location.pathname === "/design"`, through a
++// dynamic import, so this module never reaches the production bundle.
++// Later phases register their own components here as they are built (row
++// states, toast, banner, empty, skeleton, confirmation) — see this plan's
++// `## Notes`, "Playground completion is staged by design.": this phase
++// renders every token and the four primitives that exist on `main`.
++
++import type { ReactNode } from "react";
++import { useState } from "react";
++import { Button } from "./ui/Button";
++import { Chip, ChipGroup } from "./ui/Chip";
++import { cn } from "./ui/cn";
++import { CompleteControl } from "./ui/CompleteControl";
++import { Sheet } from "./ui/Sheet";
++
++/** Every colour-role token src/app/tokens.css declares (guidelines §3.5). */
++const COLOR_TOKENS = [
++  "--color-bg",
++  "--color-surface-1",
++  "--color-surface-2",
++  "--color-surface-3",
++  "--color-line",
++  "--color-line-strong",
++  "--color-ink",
++  "--color-muted",
++  "--color-faint",
++  "--color-accent",
++  "--color-accent-deep",
++  "--color-on-accent",
++  "--color-live",
++];
++
++/** The 4 px spacing scale actually declared in tokens.css (1–4, 6, 8 — no 5/7 rung). */
++const SPACE_TOKENS = ["--space-1", "--space-2", "--space-3", "--space-4", "--space-6", "--space-8"];
++
++const RADIUS_CLASSES = ["rounded-card", "rounded-control", "rounded-pill"];
++
++const SHADOW_CLASSES = [
++  "shadow-row",
++  "shadow-deck",
++  "shadow-control",
++  "shadow-control-pressed",
++  "shadow-field",
++  "shadow-glow-live",
++  "shadow-halo-done",
++];
++
++const DURATIONS = [
++  { label: "short", value: "var(--duration-short)" },
++  { label: "medium", value: "var(--duration-medium)" },
++  { label: "long", value: "var(--duration-long)" },
++];
++
++/** Reads a token's current computed value off `:root`, printed next to each swatch. */
++function readToken(name: string): string {
++  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
++}
++
++function Section({ title, children }: { title: string; children: ReactNode }) {
++  return (
++    <section className="flex flex-col gap-3 border-t border-line pt-6">
++      <h2 className="font-text text-t4 font-semibold text-ink">{title}</h2>
++      {children}
++    </section>
++  );
++}
++
++export function DesignPlayground() {
++  const [checkedOpen, setCheckedOpen] = useState(false);
++  const [checkedDone, setCheckedDone] = useState(true);
++  const [chips, setChips] = useState<string[]>(["alta"]);
++  const [sheetOpen, setSheetOpen] = useState(false);
++
++  return (
++    <main className="mx-auto flex max-w-[560px] flex-col gap-8 bg-bg px-4 pt-8 pb-16 text-ink">
++      <h1 className="font-text text-t5 font-semibold text-ink">Design — tokens e estados</h1>
++
++      <Section title="Cores">
++        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
++          {COLOR_TOKENS.map((name) => (
++            <div key={name} className="flex flex-col gap-2">
++              <div
++                className="h-12 rounded-control border border-line"
++                style={{ background: `var(${name})` }}
++                aria-hidden="true"
++              />
++              <div className="font-data text-t1 text-muted">
++                <div>{name}</div>
++                <div>{readToken(name)}</div>
++              </div>
++            </div>
++          ))}
++        </div>
++      </Section>
++
++      <Section title="Tipo">
++        <div className="flex flex-col gap-2">
++          <p className="font-text text-t1 font-normal">text-t1 · Inter 400</p>
++          <p className="font-text text-t2 font-normal">text-t2 · Inter 400</p>
++          <p className="font-text text-t3 font-semibold">text-t3 · Inter 600</p>
++          <p className="font-text text-t4 font-semibold">text-t4 · Inter 600</p>
++          <p className="font-text text-t5 font-semibold">text-t5 · Inter 600</p>
++          <p className="font-display text-t4 font-extrabold">praesto</p>
++          <p className="font-display text-t5 font-extrabold">4</p>
++          <p className="font-data text-t2">0123456789 · 14:05 · #A1B2C3</p>
++        </div>
++      </Section>
++
++      <Section title="Espaço">
++        <div className="flex flex-col gap-2">
++          {SPACE_TOKENS.map((name) => (
++            <div key={name} className="flex items-center gap-3">
++              <div className="h-3 bg-accent" style={{ width: `var(${name})` }} aria-hidden="true" />
++              <span className="font-data text-t1 text-muted">
++                {name} · {readToken(name)}
++              </span>
++            </div>
++          ))}
++        </div>
++      </Section>
++
++      <Section title="Raios">
++        <div className="flex flex-wrap gap-4">
++          {RADIUS_CLASSES.map((radiusClassName) => (
++            <div
++              key={radiusClassName}
++              className={cn(
++                "flex size-16 items-center justify-center border border-line bg-surface-2 text-center font-data text-t1 text-muted",
++                radiusClassName,
++              )}
++            >
++              {radiusClassName}
++            </div>
++          ))}
++        </div>
++      </Section>
++
++      <Section title="Elevação">
++        <div className="flex flex-wrap gap-6 py-2">
++          {SHADOW_CLASSES.map((shadowClassName) => (
++            <div
++              key={shadowClassName}
++              className={cn(
++                "flex size-16 items-center justify-center rounded-control bg-surface-2 text-center font-data text-t1 text-muted",
++                shadowClassName,
++              )}
++            >
++              {shadowClassName}
++            </div>
++          ))}
++        </div>
++      </Section>
++
++      <Section title="Movimento">
++        <div className="flex flex-wrap gap-4">
++          {DURATIONS.map(({ label, value }) => (
++            <button
++              key={label}
++              type="button"
++              className="flex size-16 items-center justify-center rounded-control border border-line bg-surface-2 font-data text-t1 text-muted transition-transform ease-out hover:-translate-y-1 focus-visible:-translate-y-1"
++              style={{ transitionDuration: value }}
++            >
++              {label}
++            </button>
++          ))}
++        </div>
++        <p className="font-data text-t1 text-muted">
++          easing: --ease-standard · --ease-enter · --ease-exit
++        </p>
++      </Section>
++
++      <Section title="Componentes">
++        <div className="flex flex-col gap-4">
++          <div className="flex flex-wrap items-center gap-3">
++            <Button variant="primary">Primary</Button>
++            <Button variant="primary" disabled>
++              Primary
++            </Button>
++            <Button variant="secondary">Secondary</Button>
++            <Button variant="secondary" disabled>
++              Secondary
++            </Button>
++            <Button variant="ghost">Ghost</Button>
++            <Button variant="ghost" disabled>
++              Ghost
++            </Button>
++            <Button variant="icon" aria-label="Ícone de exemplo">
++              <span aria-hidden="true">+</span>
++            </Button>
++            <Button variant="icon" aria-label="Ícone de exemplo desabilitado" disabled>
++              <span aria-hidden="true">+</span>
++            </Button>
++          </div>
++
++          <div className="flex items-center gap-6">
++            <CompleteControl
++              checked={checkedOpen}
++              onCheckedChange={setCheckedOpen}
++              label="Concluir tarefa de exemplo (aberta)"
++            />
++            <CompleteControl
++              checked={checkedDone}
++              onCheckedChange={setCheckedDone}
++              label="Reabrir tarefa de exemplo (concluída)"
++            />
++          </div>
++
++          <ChipGroup value={chips} onValueChange={setChips} label="Prioridade de exemplo">
++            <Chip value="alta">Alta</Chip>
++            <Chip value="normal">Normal</Chip>
++            <Chip value="baixa">Baixa</Chip>
++          </ChipGroup>
++
++          <div className="flex items-center gap-2">
++            <img src="/brand/mark-flat.svg" alt="" className="size-8" />
++            <span className="font-display text-t4 font-extrabold">praesto</span>
++          </div>
++
++          <Button variant="secondary" onClick={() => setSheetOpen(true)}>
++            Abrir sheet de exemplo
++          </Button>
++          <Sheet open={sheetOpen} onOpenChange={setSheetOpen} title="Sheet de exemplo">
++            <p className="font-text text-t2 text-ink">
++              Um corpo curto para mostrar a folha, ainda sobre o Base UI Dialog nesta fase.
++            </p>
++          </Sheet>
++        </div>
++      </Section>
++
++      <Section title="Foco">
++        <p className="font-text text-t2 text-muted">
++          Pressione Tab para navegar pelos controles acima e ver o anel de foco em duas cores.
++        </p>
++      </Section>
++    </main>
++  );
++}
+diff --git a/src/app/main.tsx b/src/app/main.tsx
+index b58ffa3..6712c2f 100644
+--- a/src/app/main.tsx
++++ b/src/app/main.tsx
+@@ -1,3 +1,5 @@
++import "./styles.css";
++
+ import { StrictMode } from "react";
+ import { createRoot } from "react-dom/client";
+ import { parseShareTarget, type ShareTarget } from "../shared/share-target";
+@@ -8,41 +10,62 @@ import { requestPersistentStorage } from "./token-storage";
+ const container = document.getElementById("root");
+ if (!container) throw new Error("#root not found");
+ 
+-// Detect a share-target invocation (public/manifest.webmanifest's
+-// `share_target` GET action) before the first render. The path/query is
+-// stripped immediately via `replaceState` so a page reload does not
+-// re-trigger the pre-fill or resubmit stale params.
+-let initialShare: ShareTarget | null = null;
+-if (window.location.pathname === "/share-target") {
+-  initialShare = parseShareTarget(window.location.search);
+-  window.history.replaceState(null, "", "/");
+-} else if (window.location.pathname === "/new-task") {
+-  // Launcher shortcut (public/manifest.webmanifest's `shortcuts` entry)
+-  // carries no payload, only intent, so there is nothing to parse —
+-  // `initialShare` stays `null`, which is what seeds TaskBoard's `title`
+-  // to "". Strip the path the same way `/share-target` does above.
+-  window.history.replaceState(null, "", "/");
++if (import.meta.env.DEV && window.location.pathname === "/design") {
++  // Dev-only token/state playground (PRD AC-20). The dynamic import is what
++  // keeps DesignPlayground's module graph out of the production bundle —
++  // `import.meta.env.DEV` alone is statically replaced with `false` and the
++  // whole branch is tree-shaken at build time, but a STATIC import of the
++  // component would still have pulled its module graph into the shared
++  // chunk graph before tree-shaking runs. Returns before App, setupPwa and
++  // the token-persistence request below, none of which the playground needs.
++  const { DesignPlayground } = await import("./components/DesignPlayground");
++  document.title = "Design · Praesto Sum";
++  createRoot(container).render(
++    <StrictMode>
++      <DesignPlayground />
++    </StrictMode>,
++  );
++} else {
++  mountApp(container);
+ }
+ 
+-createRoot(container).render(
+-  <StrictMode>
+-    <App initialShare={initialShare} />
+-  </StrictMode>,
+-);
++function mountApp(container: HTMLElement) {
++  // Detect a share-target invocation (public/manifest.webmanifest's
++  // `share_target` GET action) before the first render. The path/query is
++  // stripped immediately via `replaceState` so a page reload does not
++  // re-trigger the pre-fill or resubmit stale params.
++  let initialShare: ShareTarget | null = null;
++  if (window.location.pathname === "/share-target") {
++    initialShare = parseShareTarget(window.location.search);
++    window.history.replaceState(null, "", "/");
++  } else if (window.location.pathname === "/new-task") {
++    // Launcher shortcut (public/manifest.webmanifest's `shortcuts` entry)
++    // carries no payload, only intent, so there is nothing to parse —
++    // `initialShare` stays `null`, which is what seeds TaskBoard's `title`
++    // to "". Strip the path the same way `/share-target` does above.
++    window.history.replaceState(null, "", "/");
++  }
++
++  createRoot(container).render(
++    <StrictMode>
++      <App initialShare={initialShare} />
++    </StrictMode>,
++  );
+ 
+-// Registered after render so it does not compete with first paint.
+-setupPwa({
+-  onNeedRefresh(update) {
+-    // Replace with real UI (toast/snackbar) later.
+-    if (window.confirm("A new version is available. Update now?")) void update();
+-  },
+-  onOfflineReady() {
+-    console.info("[pwa] ready for offline use");
+-  },
+-});
++  // Registered after render so it does not compete with first paint.
++  setupPwa({
++    onNeedRefresh(update) {
++      // Replace with real UI (toast/snackbar) later.
++      if (window.confirm("A new version is available. Update now?")) void update();
++    },
++    onOfflineReady() {
++      console.info("[pwa] ready for offline use");
++    },
++  });
+ 
+-// Best-effort and never awaited: a slow or denied persist() must not
+-// compete with first paint or gate the token read above. A denial
+-// degrades to unprotected IndexedDB, which is still no worse than the
+-// localStorage this phase moves away from.
+-void requestPersistentStorage();
++  // Best-effort and never awaited: a slow or denied persist() must not
++  // compete with first paint or gate the token read above. A denial
++  // degrades to unprotected IndexedDB, which is still no worse than the
++  // localStorage this phase moves away from.
++  void requestPersistentStorage();
++}
+diff --git a/src/shared/connectivity.ts b/src/shared/connectivity.ts
+new file mode 100644
+index 0000000..5fbed89
+--- /dev/null
++++ b/src/shared/connectivity.ts
+@@ -0,0 +1,65 @@
++/**
++ * The pure connectivity state machine the offline banner and the capture
++ * deck read from (PRD AC-7). Total and side-effect free: it never touches a
++ * browser API or a timer — it only reduces the events it is handed.
++ *
++ * Like `src/shared/dates.ts` and `src/shared/format.ts`, this module is
++ * compiled into BOTH the browser and the Worker projects, so it stays
++ * environment-agnostic: no DOM globals, no runtime dependencies.
++ *
++ * Why two signal kinds feed the same reducer: the browser's own online/
++ * offline flag alone misses an unreachable server — the browser can report a
++ * live link while the Worker itself is down or the phone sits behind a
++ * captive portal; a failed request alone misses airplane mode, because
++ * nothing then tells the reducer the browser itself went offline between
++ * requests. Phase 2's `useConnectivity()` hook is the only caller that ever
++ * touches those browser connectivity events and the request outcomes this
++ * reducer consumes — this module is the decidable half of that exempt glue
++ * (`docs/context/methodology.md`, "Browser-API work: split the logic out,
++ * then the glue is exempt").
++ *
++ * Transition rules:
++ * - `browser-offline` -> `offline`, `browser-online` -> `online`, from any
++ *   state — the browser's own signal always wins for itself.
++ * - `request-failed` with `kind: "server-unreachable"` -> `unreachable`,
++ *   UNLESS the state is already `offline`, which wins: airplane mode already
++ *   explains every failed request, and "unreachable" would be a less honest
++ *   read of the same fact.
++ * - `request-failed` with `kind: "http-error"` leaves the state unchanged —
++ *   the server answered, so connectivity itself is not in question.
++ * - `request-succeeded` -> `online`, from any state.
++ */
++
++import type { RequestFailure } from "./request-failure";
++
++export type ConnectivityState = "online" | "offline" | "unreachable";
++
++export type ConnectivityEvent =
++  | { type: "browser-online" }
++  | { type: "browser-offline" }
++  | { type: "request-failed"; kind: RequestFailure["kind"] }
++  | { type: "request-succeeded" };
++
++export function reduceConnectivity(
++  state: ConnectivityState,
++  event: ConnectivityEvent,
++): ConnectivityState {
++  switch (event.type) {
++    case "browser-offline":
++      return "offline";
++    case "browser-online":
++      return "online";
++    case "request-succeeded":
++      return "online";
++    case "request-failed":
++      if (event.kind === "http-error") return state;
++      // server-unreachable: offline wins — airplane mode already explains
++      // every failed request, so a request outcome must never override it.
++      return state === "offline" ? "offline" : "unreachable";
++  }
++}
++
++/** Writes (capture, complete, save, delete) are allowed only when fully `online`. */
++export function canWrite(state: ConnectivityState): boolean {
++  return state === "online";
++}
+diff --git a/src/shared/format.ts b/src/shared/format.ts
+new file mode 100644
+index 0000000..61219d2
+--- /dev/null
++++ b/src/shared/format.ts
+@@ -0,0 +1,155 @@
++/**
++ * Decidable header and row copy — the pure formatting rules the header and
++ * every Task row read from, extracted so they can be tested without a DOM
++ * (PRD AC-5, AC-6; ADR-0009 pt-BR copy).
++ *
++ * Like `src/shared/dates.ts`, this module is compiled into BOTH the browser
++ * and the Worker projects, so it stays environment-agnostic: no DOM globals,
++ * no runtime dependencies, and no reads of the clock. `now` (formatHeaderDate)
++ * and `today` (taskMetaLine) are always ARGUMENTS, never read from the clock
++ * internally — that is what keeps every test below deterministic regardless
++ * of when or where it runs.
++ *
++ * Rules encoded here:
++ * - `formatRemaining`: zero is special-cased explicitly to "nenhuma restante"
++ *   with no figure, never through `Intl.PluralRules` — CLDR maps `0` to the
++ *   `one` category for `pt-BR` (verified Node 24 / ICU 78: `select(0) ===
++ *   "one"`), so a PluralRules-driven label would wrongly read "0 restante".
++ * - `formatDayShort` / `formatHeaderDate`: the pt-BR short weekday from
++ *   `Intl.DateTimeFormat(...).formatToParts`, assembled as `<weekday>, <dd>/<mm>`;
++ *   the weekday is normalised to end in exactly one `.` because ICU builds
++ *   disagree on whether the short form already carries one.
++ * - `taskMetaLine`: `missed` always reads "não concluída" (overdue); `done`
++ *   always reads nothing; an open Task's date phrase comes from `deadline`
++ *   (verb "venceu"/"até") or `scheduledDate` (verb "era para"/"fazer") — at
++ *   most one is set by the schema's CHECK — relative to `today`, with `hoje`
++ *   / `amanhã` / `ontem` special-cased and every other day going through
++ *   `formatDayShort`; `priority: "high"` appends " · alta", `"low"` appends
++ *   " · baixa", `"normal"` and `null` append nothing. Day arithmetic (the
++ *   `amanhã` / `ontem` check) is done on the `YYYY-MM-DD` strings through
++ *   UTC noon (`Date.UTC` + `setUTCDate`), never through local time, so a
++ *   month or year boundary never misfires the relative word; before/after
++ *   `today` is a plain string comparison, which sorts correctly for
++ *   zero-padded ISO dates.
++ */
++
++import type { TaskDto } from "./api";
++import { PRAESTO_TIMEZONE, todayIn } from "./dates";
++
++/** `day` (`YYYY-MM-DD`) as a `Date` at UTC noon — never local time. */
++function toUtcNoon(day: string): Date {
++  const year = Number(day.slice(0, 4));
++  const month = Number(day.slice(5, 7));
++  const dayOfMonth = Number(day.slice(8, 10));
++  return new Date(Date.UTC(year, month - 1, dayOfMonth, 12));
++}
++
++/** `date`'s UTC calendar day as `YYYY-MM-DD`. */
++function toIsoDate(date: Date): string {
++  const year = date.getUTCFullYear();
++  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
++  const dayOfMonth = String(date.getUTCDate()).padStart(2, "0");
++  return `${year}-${month}-${dayOfMonth}`;
++}
++
++/** A calendar day (`YYYY-MM-DD`) shifted by `delta` days, computed through UTC noon. */
++function shiftDay(day: string, delta: number): string {
++  const instant = toUtcNoon(day);
++  instant.setUTCDate(instant.getUTCDate() + delta);
++  return toIsoDate(instant);
++}
++
++/**
++ * The header count: `0` reads "nenhuma restante" with no figure (never
++ * through `Intl.PluralRules` — see the module header), `1` is singular, and
++ * every other non-negative integer is plural with the count as a string.
++ */
++export function formatRemaining(count: number): { figure: string | null; label: string } {
++  if (count === 0) return { figure: null, label: "nenhuma restante" };
++  if (count === 1) return { figure: "1", label: "restante" };
++  return { figure: String(count), label: "restantes" };
++}
++
++/**
++ * A `YYYY-MM-DD` calendar day as the pt-BR short weekday, a comma, and
++ * `dd/mm` — e.g. `sex., 21/08`. The instant is anchored at UTC noon so the
++ * result never shifts with the runtime's local timezone, and the weekday is
++ * normalised to end in exactly one `.` regardless of what the ICU build
++ * emits.
++ */
++export function formatDayShort(day: string): string {
++  const parts = new Intl.DateTimeFormat("pt-BR", {
++    weekday: "short",
++    day: "2-digit",
++    month: "2-digit",
++    timeZone: "UTC",
++  }).formatToParts(new Date(`${day}T12:00:00Z`));
++
++  const weekdayRaw = parts.find((part) => part.type === "weekday")?.value ?? "";
++  const dd = parts.find((part) => part.type === "day")?.value ?? "";
++  const mm = parts.find((part) => part.type === "month")?.value ?? "";
++  const weekday = `${weekdayRaw.replace(/\.$/, "")}.`;
++
++  return `${weekday}, ${dd}/${mm}`;
++}
++
++/**
++ * The header date: `today`'s calendar day at `now` in `timeZone` (default
++ * `PRAESTO_TIMEZONE`), short-formatted — e.g.
++ * `formatHeaderDate(new Date("2026-08-21T15:00:00Z"))` is `sex., 21/08`.
++ */
++export function formatHeaderDate(now: Date, timeZone: string = PRAESTO_TIMEZONE): string {
++  return formatDayShort(todayIn(now, timeZone));
++}
++
++/** `date`'s relative day word against `today`: `hoje`, `amanhã`, `ontem`, or the short weekday. */
++function dayWord(date: string, today: string): string {
++  if (date === today) return "hoje";
++  if (date === shiftDay(today, 1)) return "amanhã";
++  if (date === shiftDay(today, -1)) return "ontem";
++  return formatDayShort(date);
++}
++
++/**
++ * The row meta line: `null` for a `done` Task or an open, undated Task with
++ * no priority word to show; `{ text: "não concluída", overdue: true }` for a
++ * `missed` Task (nothing else appended); otherwise a date phrase built from
++ * `deadline` or `scheduledDate` (at most one is set) relative to `today`,
++ * with the priority word appended when the Task carries one. See the module
++ * header for the full rule set and the day-arithmetic discipline.
++ */
++export function taskMetaLine(
++  task: TaskDto,
++  today: string,
++): { text: string; overdue: boolean } | null {
++  if (task.status === "missed") {
++    return { text: "não concluída", overdue: true };
++  }
++  if (task.status === "done") {
++    return null;
++  }
++
++  let phrase: { text: string; overdue: boolean } | null = null;
++  if (task.deadline !== null) {
++    const day = dayWord(task.deadline, today);
++    phrase =
++      task.deadline < today
++        ? { text: `atrasada · venceu ${day}`, overdue: true }
++        : { text: `até ${day}`, overdue: false };
++  } else if (task.scheduledDate !== null) {
++    const day = dayWord(task.scheduledDate, today);
++    phrase =
++      task.scheduledDate < today
++        ? { text: `atrasada · era para ${day}`, overdue: true }
++        : { text: `fazer ${day}`, overdue: false };
++  }
++
++  const priorityWord = task.priority === "high" ? "alta" : task.priority === "low" ? "baixa" : null;
++
++  if (phrase === null) {
++    return priorityWord === null ? null : { text: priorityWord, overdue: false };
++  }
++  return priorityWord === null
++    ? phrase
++    : { text: `${phrase.text} · ${priorityWord}`, overdue: phrase.overdue };
++}
+diff --git a/src/shared/request-failure.ts b/src/shared/request-failure.ts
+index 7524254..d638252 100644
+--- a/src/shared/request-failure.ts
++++ b/src/shared/request-failure.ts
+@@ -19,6 +19,10 @@
+  * separates a received HTTP-level error from an unreachable server. Only
+  * `typeof cause.status === "number"` counts; a `status` field of any other
+  * type (e.g. a string) does not classify as an http-error.
++ *
++ * The two messages are pt-BR since the ui-design-pass phase 1 pass
++ * (ADR-0009): the owner reads them, so they are written in his language, and
++ * their exact wording is pinned by test/request-failure.test.ts.
+  */
+ 
+ /** Result of classifying a caught request failure. */
+@@ -42,13 +46,12 @@ export function classifyRequestFailure(cause: unknown): RequestFailure {
+     const status = (cause as { status: number }).status;
+     return {
+       kind: "http-error",
+-      message: `The server rejected the request (status ${status}).`,
++      message: `O servidor recusou a operação (código ${status}). Tente de novo.`,
+     };
+   }
+ 
+   return {
+     kind: "server-unreachable",
+-    message:
+-      "Praesto could not reach the server. Nothing was lost — try saving again once you're back online.",
++    message: "Sem conexão com o servidor. Nada se perdeu — tente de novo quando a conexão voltar.",
+   };
+ }
+diff --git a/src/shared/token-store.ts b/src/shared/token-store.ts
+index 38e7077..e6b2f30 100644
+--- a/src/shared/token-store.ts
++++ b/src/shared/token-store.ts
+@@ -53,12 +53,11 @@ function hasToken(value: string | null): value is string {
+  * failure the owner has to be told about: a Save that persisted nothing and
+  * said nothing is the silent absorption FR-045 and vision principle 6 (honest
+  * mirror) exist to rule out. The message lives here, in the tested module,
+- * rather than in the untested UI, so its wording is pinned by a test.
++ * rather than in the untested UI, so its wording is pinned by a test. Written
++ * in pt-BR since ui-design-pass phase 1 (ADR-0009): the owner reads it.
+  */
+ const TOKEN_NOT_STORED =
+-  "Praesto could not store the API token on this device. Both IndexedDB and " +
+-  "local storage refused — check whether this browser is blocking site data " +
+-  "for this site.";
++  "Não foi possível guardar o token neste dispositivo. O navegador recusou IndexedDB e o armazenamento local — verifique se ele está bloqueando dados do site.";
+ 
+ /**
+  * Builds a `TokenStore` over the given ports. Implements the seven
+diff --git a/vite.config.ts b/vite.config.ts
+index ebafbdb..2b0a399 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -28,7 +28,7 @@ export default defineConfig({
+       // plugin from emitting a second manifest.webmanifest that would collide
+       // with the public/ copy in dist/client.
+       manifest: false,
+-      includeAssets: ["favicon.svg", "manifest.webmanifest", "icons/*.png"],
++      includeAssets: ["favicon.svg", "manifest.webmanifest", "icons/*.png", "fonts/*.woff2"],
+       injectManifest: {
+         globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2,webmanifest}"],
+         maximumFileSizeToCacheInBytes: 3145728,

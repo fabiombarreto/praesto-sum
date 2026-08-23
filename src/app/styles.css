@@ -66,3 +66,102 @@
     box-shadow: 0 0 0 4px var(--color-bg);
   }
 }
+
+@layer components {
+  /* Layout standard §4: the deck's safe-area inset does not update under the
+     keyboard, so it is dropped while a field has focus. Anchored on the
+     shell element rather than :root — MDN advises against anchoring :has()
+     on the root, since every DOM mutation then re-evaluates it. */
+  [data-shell]:has(input:focus-visible, textarea:focus-visible) [data-deck] {
+    padding-bottom: var(--space-4);
+  }
+
+  /* Layout standard §3: the sheet's slide-up, on a native <dialog>. The
+     `translate` property (never a Tailwind utility, which would fight this
+     transition) plus `display` / `overlay` with `allow-discrete` so a closed
+     dialog can still animate out (Baseline August 2024). Durations and
+     easings come from tokens.css, so prefers-reduced-motion shortens the
+     slide with no extra media query here. `640px` is Tailwind's existing
+     `sm` breakpoint — the standard's "centred from 600 dp" rounds to it
+     rather than adding a second one. */
+  dialog[data-sheet] {
+    translate: 0 100%;
+    transition:
+      translate var(--duration-medium) var(--ease-exit),
+      overlay var(--duration-medium) allow-discrete,
+      display var(--duration-medium) allow-discrete;
+  }
+  dialog[data-sheet][open] {
+    translate: 0 0;
+    transition-timing-function: var(--ease-enter);
+    @starting-style {
+      translate: 0 100%;
+    }
+  }
+  dialog[data-sheet]::backdrop {
+    background: rgb(0 0 0 / 0.5);
+    transition:
+      opacity var(--duration-medium) var(--ease-standard),
+      overlay var(--duration-medium) allow-discrete,
+      display var(--duration-medium) allow-discrete;
+  }
+  dialog[data-sheet]:not([open])::backdrop {
+    opacity: 0;
+  }
+  dialog[data-sheet][open]::backdrop {
+    @starting-style {
+      opacity: 0;
+    }
+  }
+  @media (min-width: 640px) {
+    dialog[data-sheet] {
+      translate: 0 24px;
+      opacity: 0;
+      transition:
+        translate var(--duration-medium) var(--ease-exit),
+        opacity var(--duration-medium) var(--ease-exit),
+        overlay var(--duration-medium) allow-discrete,
+        display var(--duration-medium) allow-discrete;
+    }
+    dialog[data-sheet][open] {
+      translate: 0 0;
+      opacity: 1;
+      @starting-style {
+        translate: 0 24px;
+        opacity: 0;
+      }
+    }
+  }
+  html:has(dialog[open]) {
+    overflow: hidden;
+  }
+
+  /* The signature completion moment (ADR-0010): the ring sinks and fires one
+     amber halo while the row it belongs to leaves. Durations and easings
+     come from the tokens, so prefers-reduced-motion shortens both through
+     tokens.css with no extra media query here. */
+  [data-completing] .praesto-ring {
+    animation: praesto-complete var(--duration-complete) var(--ease-standard);
+  }
+  [data-completing] {
+    animation: praesto-leave var(--duration-medium) var(--ease-exit) forwards;
+  }
+
+  @keyframes praesto-complete {
+    from {
+      transform: translateY(2px) scale(0.92);
+      box-shadow: 0 0 0 0 rgb(var(--color-accent-rgb) / 0.45);
+    }
+    to {
+      transform: translateY(0) scale(1);
+      box-shadow: var(--halo-done);
+    }
+  }
+
+  @keyframes praesto-leave {
+    to {
+      opacity: 0;
+      transform: translateX(24px);
+    }
+  }
+}

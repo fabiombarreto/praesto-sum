@@ -1,0 +1,111 @@
+# TDD initial suite — phase 1
+# Source PRD: PRPs/prds/ui-design-pass.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/ui-design-pass-phase-1-chrome-fonts-and-foundation.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Mode: test-first (tdd: true, test_frameworks: ["vitest"])
+# Generated: 2026-08-21
+
+> **Path note.** Scoped under `phase-1/` following the convention unit 2 settled
+> on (`PRPs/reports/task-detail-and-dates/phase-<N>/test-suite.diff`): one
+> manifest per phase, never overwritten by the next phase's suite.
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-4 | EXISTING_TEST_UPDATED | `test/request-failure.test.ts` (new `describe` "pt-BR wording" pinning both sentences; structural cases untouched) · `test/token-store.test.ts:443-455` (the `rejects.toThrow` regex re-pinned to the full Portuguese sentence) |
+| AC-5 | NEW_TEST_REQUIRED | `test/format.test.ts` — `formatRemaining`, `formatDayShort`, `formatHeaderDate` |
+| AC-6 | NEW_TEST_REQUIRED | `test/format.test.ts` — `taskMetaLine` (deadlines, scheduled dates, priority words, closed Tasks) |
+| AC-7 | NEW_TEST_REQUIRED | `test/connectivity.test.ts` — `reduceConnectivity`, `canWrite`, the three sequences the banner will see |
+| AC-1 | MANUAL / STATIC (plan VALIDATE) | Chrome continuity: the plan's Task 6 and Task 7 VALIDATE blocks and the Level 3 gate assert the `#161012` literals, the `color-scheme` meta and the manifest JSON; the device observation is Phase 4's (PRD tags the AC [manual]) |
+| AC-3 | MANUAL (docs half in this phase) | The new microcopy rows enter `documentation/10-product/visual-identity.md` (plan Task 1, validated by `npx vitest run --project docs` + literal greps); the on-screen copy is Phase 2 / Phase 3 |
+| AC-18 | STATIC (plan VALIDATE) | Fonts: magic bytes, ≤ 102,400 bytes, precache entries and the gzip budget are asserted by the plan's Task 5, Task 9, Task 10 probes and the Level 3 gate against the real build artifacts |
+| AC-19 | STATIC (plan VALIDATE) | Manifest JSON fields, `favicon.svg` fill and the decoded icon pixels are asserted by the plan's Task 7 and Task 8 probes |
+| AC-20 | MANUAL + STATIC | `/design` rendering is the main session's browser-pane check (plan `## Notes` script); its absence from the production bundle is the plan's Task 9 / Level 3 grep |
+| AC-22 | MANUAL / STATIC (gate) | `npm run check`, `npm test`, `npm run build` (plan Task 10) plus the filed Tier A record |
+| AC-2, AC-8, AC-9, AC-10, AC-11, AC-12, AC-13, AC-14, AC-15, AC-16, AC-17, AC-21 | OUT_OF_PHASE_SCOPE | (delivered in Phase 2, Phase 3 and Phase 4) |
+
+## The split, stated before the test list
+
+The PRD tags every criterion [auto], [static] or [manual], and the plan's TDD
+routing names the four automated ones — AC-4 to AC-7 — as the pure `src/shared`
+contracts this suite encodes. `documentation/40-engineering/testing-strategy.md`
+keeps UI and chrome verification manual, and `docs/context/methodology.md` turns
+that into an obligation rather than an exemption: the decidable part is
+extracted and tested first; the glue and the assets are verified by the plan's
+own VALIDATE probes (JSON parsed, pixels decoded, font bytes and gzip weights
+measured) and, for the playground, by the browser pane. That is why the
+[static]/[manual] rows above map to plan commands rather than to test files —
+the same shape unit 2's phase-4 manifest used for its DOM half, approved then.
+
+## Test files written this session
+
+- `test/format.test.ts` — 27 cases in six `describe` blocks against the new
+  pure `src/shared/format.ts` (plan Task 2, AC-A2 / AC-A3):
+  - **`formatRemaining`** — zero special-cased to `{ figure: null, label:
+    "nenhuma restante" }` (the case a `PluralRules`-driven label fails, because
+    CLDR maps 0 to `one` for pt-BR); `1` singular; `2`, `4`, `12` plural with
+    the figure as a string.
+  - **`formatDayShort`** — `sex., 21/08`, `ter., 18/08`, the diacritic in
+    `sáb., 22/08`, zero-padding in `dom., 04/01`, a regex pinning "three
+    letters, exactly one period, comma, dd/mm" over four more days, and a
+    year-end day (`qui., 31/12`).
+  - **`formatHeaderDate`** — the default zone (`15:00Z` on the 21st →
+    `sex., 21/08`), the timezone case that discriminates a UTC implementation
+    (`01:00Z` on the 22nd is still `sex., 21/08` in São Paulo) and an explicit
+    `"UTC"` argument giving `sáb., 22/08`.
+  - **`taskMetaLine` — deadlines** — overdue with the short day, `ontem`,
+    `até hoje` (not overdue), `até amanhã`, a later day, and `amanhã` / `ontem`
+    computed across a month boundary (`2026-08-31` → `2026-09-01`).
+  - **`taskMetaLine` — scheduled dates** — `atrasada · era para …`, `ontem`,
+    `fazer hoje`, `fazer amanhã`, `fazer sáb., 29/08`, and `amanhã` across a
+    year boundary.
+  - **`taskMetaLine` — priority and closed Tasks** — ` · alta` / ` · baixa`
+    appended, nothing for `normal`, the overdue flag preserved under a priority
+    word, the bare word for an undated Task, `null` for an open undated Task
+    with `null`/`normal` priority, `null` for any `done` Task (even an overdue
+    high-priority one), and `{ text: "não concluída", overdue: true }` for a
+    `missed` Task with nothing appended.
+- `test/connectivity.test.ts` — 16 cases in four `describe` blocks against
+  the new pure `src/shared/connectivity.ts` (plan Task 3, AC-A4): every
+  browser event from every state (`it.each` over the three states), the
+  request outcomes (`server-unreachable` from `online` and from
+  `unreachable`; **`offline` winning over a `server-unreachable` failure** —
+  the case a "last event wins" reducer fails; `http-error` leaving every
+  state unchanged; `request-succeeded` from every state), three sequences the
+  banner will see (airplane mode → failed refetch → reconnect → success;
+  server down and back; a 4xx after reconnecting not faking an outage), and
+  `canWrite` true for `online` only.
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| UPDATE | EXISTING_TEST_UPDATED | `test/request-failure.test.ts:classifyRequestFailure — pt-BR wording (ui-design-pass PRD AC-4 pt-br-shared-messages)` (new `describe` appended; header comment extended) | PRD AC-4: the two owner-facing sentences are now pinned verbatim in Portuguese (`O servidor recusou a operação (código 500). Tente de novo.`, `Sem conexão com o servidor. Nada se perdeu — tente de novo quando a conexão voltar.`). Nothing was removed or loosened: the eleven structural cases (status inside the message, distinct messages, `kind` discrimination, malformed causes) stay byte-identical, and the new block only ADDS the wording assertions ADR-0009 requires from A5 on |
+| UPDATE | EXISTING_TEST_UPDATED | `test/token-store.test.ts:rejects with an actionable message when neither store could take the token` | PRD AC-4: the `rejects.toThrow(/could not store the API token/i)` regex became `rejects.toThrow("Não foi possível guardar o token neste dispositivo. O navegador recusou IndexedDB e o armazenamento local — verifique se ele está bloqueando dados do site.")` — a STRICTER assertion (the full sentence instead of a case-insensitive fragment); the two `peek()` assertions that prove nothing was persisted are untouched, as is every other case in the file |
+
+## Why this suite is legitimately RED before implementation
+
+Two different reds, both for the right reason:
+
+- `test/format.test.ts` and `test/connectivity.test.ts` fail to load —
+  `Cannot find module '../src/shared/format'` /
+  `'../src/shared/connectivity'` — because the modules are created by plan
+  Task 2 and Task 3. For brand-new pure modules that is the only red
+  available; what carries the discrimination once they exist is the content
+  of the assertions named above (zero-in-singular, the São Paulo timezone
+  case, the month/year boundaries, `offline` winning, `http-error` being
+  inert, `done` → `null`).
+- The two updated cases are a **behavioural** red: `src/shared/request-failure.ts`
+  and `src/shared/token-store.ts` still carry the English sentences, so the
+  Portuguese `toBe` / `toThrow` assertions fail against real code until plan
+  Task 4 translates them. The other 219 cases of the corpus stay green.
+
+No test asserts on an invented internal, a private field or a call count. No
+mock is used: the modules are pure, so the tests call them directly with plain
+values; `now` and `today` are arguments, so no clock is faked.
+
+## Status
+
+*Approved: 2026-08-21*
+*Status: APPROVED*
