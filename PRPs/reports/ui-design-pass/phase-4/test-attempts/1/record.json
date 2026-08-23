@@ -1,0 +1,27 @@
+{
+  "run_id": "e8c3d5b1-47a2-4f96-b0e7-1c9a4d2f8b63",
+  "attempt": 1,
+  "feature": "ui-design-pass",
+  "phase": 4,
+  "framework": "vitest",
+  "command": "npm test",
+  "verdict": "GREEN",
+  "outcome": "GREEN",
+  "started_at": "2026-08-23T04:43:18Z",
+  "ended_at": "2026-08-23T04:43:29Z",
+  "elapsed_ms": 10685,
+  "totals": {
+    "files": 14,
+    "passed": 313,
+    "failed": 0,
+    "skipped": 0
+  },
+  "projects": {
+    "worker": "251 passed (13 files, inside workerd against an ephemeral D1)",
+    "docs": "62 passed (1 file, plain Node)"
+  },
+  "stdout_log": "PRPs/reports/ui-design-pass/phase-4/test-attempts/1/stdout.log",
+  "classification": "no failures to classify",
+  "runner": "executed by the main session (no .claude/settings.json, so the test-runner agent would abort with ABORT_INFRA — the same deviation as phases 1-3 and unit 2)",
+  "note": "Filed 2026-08-23, after the phase's code-review APPROVED and after the owner's verdict: the phase-4 record was the only one of the four missing its run.json and post-green review, because this phase's plan folded the suite into its Task 5 gate instead of running the /relay-test pair. Closing the gap so all four phases carry the same evidence. The corpus is unchanged from phase 3 by design (this phase added no test — its manifest records EXISTING_COVERAGE_SUFFICIENT)."
+}

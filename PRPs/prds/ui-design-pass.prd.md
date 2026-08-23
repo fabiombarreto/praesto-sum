@@ -410,10 +410,27 @@ path, stated here so the test pair never reads a visual criterion as ambiguous.
 
 | # | Phase | Description | Status | Parallel | Depends | PRP Plan |
 |---|-------|-------------|--------|----------|---------|----------|
-| 1 | Chrome, fonts and foundation | `index.html`, manifest, icons and favicon on `#161012`; two self-hosted WOFF2 + `@font-face` + precache; `styles.css` imported; global base; the `/design` route; Portuguese shared messages, header/row formatters and the connectivity reducer authored test-first | implemented | - | - | PRPs/plans/ui-design-pass-phase-1-chrome-fonts-and-foundation.plan.md |
-| 2 | Today screen | The `100dvh` shell, header, capture deck, 64 px rows with `CompleteControl` and the meta line, pencil inline edit, *Concluídas*, empty and loading states, toasts (*Desfazer*, update), the offline banner, refetch on focus/reconnect, the signature completion moment | implemented | no | 1 | PRPs/plans/ui-design-pass-phase-2-today-screen.plan.md |
-| 3 | Detail sheet, delete confirmation and token gate | `Sheet` on a native `<dialog>` with chips for date and priority, *Cancelar / Salvar*, *Excluir* → in-place confirmation, the draft kept in memory, back/Esc verified on the device; the token gate restyled with the 401 reason | implemented | no | 2 | PRPs/plans/ui-design-pass-phase-3-sheet-confirmation-and-token-gate.plan.md |
-| 4 | Device verification pass | Tier B per screen (contrast, simulated states, 375 px and 1280 px, build report, Lighthouse), the Level A pass, screenshots and measurements filed, fixes, deploy and the owner's check on the phone and the PC | implemented | no | 3 | PRPs/plans/ui-design-pass-phase-4-device-verification-pass.plan.md |
+| 1 | Chrome, fonts and foundation | `index.html`, manifest, icons and favicon on `#161012`; two self-hosted WOFF2 + `@font-face` + precache; `styles.css` imported; global base; the `/design` route; Portuguese shared messages, header/row formatters and the connectivity reducer authored test-first | tested | - | - | PRPs/plans/ui-design-pass-phase-1-chrome-fonts-and-foundation.plan.md |
+| 2 | Today screen | The `100dvh` shell, header, capture deck, 64 px rows with `CompleteControl` and the meta line, pencil inline edit, *Concluídas*, empty and loading states, toasts (*Desfazer*, update), the offline banner, refetch on focus/reconnect, the signature completion moment | tested | no | 1 | PRPs/plans/ui-design-pass-phase-2-today-screen.plan.md |
+| 3 | Detail sheet, delete confirmation and token gate | `Sheet` on a native `<dialog>` with chips for date and priority, *Cancelar / Salvar*, *Excluir* → in-place confirmation, the draft kept in memory, back/Esc verified on the device; the token gate restyled with the 401 reason | tested | no | 2 | PRPs/plans/ui-design-pass-phase-3-sheet-confirmation-and-token-gate.plan.md |
+| 4 | Device verification pass | Tier B per screen (contrast, simulated states, 375 px and 1280 px, build report, Lighthouse), the Level A pass, screenshots and measurements filed, fixes, deploy and the owner's check on the phone and the PC | tested | no | 3 | PRPs/plans/ui-design-pass-phase-4-device-verification-pass.plan.md |
+
+#### Where this PRD stands (2026-08-23)
+
+All four rows are `tested`: each phase's suite ran GREEN and a `post-green-reviewer`
+pass confirmed the green was not obtained by weakening tests
+(`PRPs/reports/ui-design-pass/phase-{1,2,3,4}/run.json` + `test-review.json`). The
+work is committed (`b28e15b..d8e9a36`), merged into `main` and **deployed to
+production** (Version `a312fa7c`), and the owner verified it on the Android phone and
+the Windows PC on 2026-08-23 — the exit signal of UI/UX-plan activity A5, which is
+now `done`, with A6 closed out after it.
+
+**No row will read `complete`, and that is correct.** `complete` means "the
+orchestrator drove the phase end to end", and `/relay-execute` never ran here: every
+phase was driven by hand precisely because the browser-pane verification has to sit
+*between* implement and test, which the orchestrator has no step for. A hand-invoked
+run legitimately stops before `complete` — `relay-implement.md` says so in as many
+words. The evidence `complete` would have stood for is filed per phase instead.
 
 #### Phase-status lifecycle
 
