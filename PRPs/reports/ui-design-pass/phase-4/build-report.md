@@ -146,6 +146,24 @@ The last line of the smoke test has no `curl` equivalent by design — *install
 the PWA and actually use it* — and that is exactly steps 4 and 5 of the
 owner's runbook, now against the deployed build.
 
+### Smoke test, second pass (2026-08-23, after the merge into `main`)
+
+Re-run in full once the work was committed (`b28e15b`) and fast-forwarded onto
+`main`, to prove that what is deployed is that commit and nothing else:
+
+| Check | Result |
+|---|---|
+| **The live bundle is this commit** | ✔ rebuilding `main` produces `index-d6dSAhoY.js` and `index-GY9pM1LF.css`, and those are exactly the filenames `GET /` references in production — same content hashes, so the deployed bytes are `b28e15b` |
+| The dev-only playground did not leak | ✔ `grep 'tokens e estados'` over the **served** JS bundle → 0 occurrences; `/design` returns the SPA shell (200) and mounts nothing, because the route is behind `import.meta.env.DEV` |
+| Every API route is closed without a token | ✔ `/api/health`, `/api/tasks`, `/api/tasks?status=open` and `POST /api/tasks` all `401`; an unknown route (`/api/nope`) also answers `401 {"error":"Unauthorized"}` rather than `404`, because the bearer gate runs before routing and does not leak which routes exist |
+| SPA fallback | ✔ `/share-target`, `/new-task` and an arbitrary path all return `200 text/html` — the manifest's shortcut and share target resolve |
+| Service-worker precache | ✔ 25 entries, including both WOFF2 files and all five icons |
+| Content types | ✔ `text/html`, `text/javascript`, `text/css`, `font/woff2`, `application/manifest+json` |
+| No cross-origin reference | ✔ the served HTML contains no absolute URL to another host (guidelines §5.3) |
+| Deployment identity | ✔ `wrangler deployments list` shows the newest deployment as Version `decae1a2-75f9-46e9-a05a-77992243b222`, created 2026-08-23T01:46:29Z by the owner's account, at 100 % |
+| **Authenticated round trip** | **still owed to the owner.** The token in `.dev.vars` is the local one (`dev-…`, 15 chars) and production correctly answers `401` to it. `POST /api/tasks` → `GET /api/tasks` with the production secret is step 3 of `owner-runbook.md` — the main session neither holds that secret nor should |
+
+
 ## Browser-pane Tier B check — main session
 
 Run on 2026-08-22 (23:55–00:10 UTC) by the main session against the running
