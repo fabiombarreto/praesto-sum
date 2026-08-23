@@ -50,8 +50,19 @@ export function CaptureDeck({
       >
         Nova tarefa
       </label>
+      {/*
+        The focus ring frames THIS box, because the box is what reads as "the
+        field" — the input inside it is transparent and borderless. Hence
+        `outline-offset-0`: the amber lands exactly on the box's own border
+        instead of floating 2 px outside it, which drew a second amber contour
+        7 px from the submit button's own amber and read as a misframed
+        outline (owner, 2026-08-23). `--inset-field` is repeated inside the
+        focus shadow because an arbitrary `box-shadow` replaces the whole
+        property — without it the field lost its recess at the very moment it
+        gained focus.
+      */}
       <form
-        className="flex min-h-14 items-center rounded-control border border-line-strong bg-surface-1 pr-1 pl-4 shadow-field has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-accent has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:[box-shadow:0_0_0_4px_var(--color-bg)]"
+        className="flex min-h-14 items-center rounded-control border border-line-strong bg-surface-1 pr-1 pl-4 shadow-field has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-accent has-[input:focus-visible]:outline-offset-0 has-[input:focus-visible]:[box-shadow:var(--inset-field),0_0_0_4px_var(--color-bg)]"
         onSubmit={(event) => {
           event.preventDefault();
           if (value.trim() === "" || busy) return;

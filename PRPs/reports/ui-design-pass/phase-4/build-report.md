@@ -164,6 +164,45 @@ Re-run in full once the work was committed (`b28e15b`) and fast-forwarded onto
 | **Authenticated round trip** | **still owed to the owner.** The token in `.dev.vars` is the local one (`dev-…`, 15 chars) and production correctly answers `401` to it. `POST /api/tasks` → `GET /api/tasks` with the production secret is step 3 of `owner-runbook.md` — the main session neither holds that secret nor should |
 
 
+### Owner-reported defect, fixed 2026-08-23 — the capture field's focus ring was misframed
+
+The owner opened the deployed app and reported, with a screenshot, that the
+text field's outline sits wrong when it takes focus. Reproduced in the pane and
+measured; it was **two** defects in the phase-2 focus fix, both in the deck's
+`<form>` box:
+
+1. **The ring floated 2 px outside the box.** `outline-offset-2` put the amber
+   contour 2 px beyond the border, leaving only 7 px between it and the submit
+   button's own amber fill — two concentric amber rounded corners, which reads
+   as a misaligned frame rather than a focus ring. Fixed with
+   `outline-offset-0`, so the amber lands exactly on the box's own border
+   (measured: `outlineOffset: 0`, ring flush with the border box).
+2. **The field lost its recess exactly when focused.** The focus style set an
+   arbitrary `box-shadow`, and `box-shadow` is a single property — so the
+   focus halo *replaced* `shadow-field` (`--inset-field`) instead of adding to
+   it. Measured before: `rgb(22,16,18) 0 0 0 4px` alone, no `inset`. Fixed by
+   repeating the token in the focus value; measured after:
+   `rgba(0,0,0,0.35) 0 2px 4px inset, rgb(22,16,18) 0 0 0 4px` — recess kept,
+   dark outer halo kept, so guidelines §4.5's two-tone requirement still holds.
+
+Blur restores the resting state exactly (`outline: none`, inset shadow present).
+Gates green after the fix (313 tests, `npm run check` clean); JS 92,958 B and
+CSS 7,881 B gzip, still 53 % / 26 % of the §11 budget.
+
+**Why the pane never caught it:** every check in phases 2–4 asserted the ring's
+*presence and colour* (`outline-style`, `outline-color`, the halo) — never its
+*offset relative to a neighbouring control of the same colour*. A measurement
+can only fail a question it asks. The owner's eye asked the better question;
+the A6 retro should add "the ring is framed on the element that reads as the
+field, and no same-coloured control sits within ~8 px of it" to the Tier A
+focus item.
+
+**Note on the other fields:** the token gate, the sheet's title/description and
+the inline editor keep `outline-offset: 2px`, which is the conventional
+standalone-field look the guidelines bless. Only the deck frames a *container*
+with a control inside it, which is why only it needed offset 0.
+
+
 ## Browser-pane Tier B check — main session
 
 Run on 2026-08-22 (23:55–00:10 UTC) by the main session against the running
