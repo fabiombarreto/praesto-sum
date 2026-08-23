@@ -203,6 +203,35 @@ standalone-field look the guidelines bless. Only the deck frames a *container*
 with a control inside it, which is why only it needed offset 0.
 
 
+### Second finding from the same investigation — Tailwind was scanning the pipeline's own prose
+
+Auditing the CSS that shipped with the focus fix turned up something worse than
+the fix itself: **144 of the 329 class rules in the production bundle matched
+nothing in `src/` or `index.html`.** Tailwind v4 scans the whole repository by
+default, and this project keeps its records — plans, build reports, review
+`jsonl`, implementer patches — under `PRPs/`, where class strings are quoted in
+prose. Those quotes were being compiled into real CSS. Two of them are worth
+naming, because they show the failure mode is not only size:
+
+- `has-[input:focus-visible]:[box-shadow:0_0_0_4px_var(--color-bg)]` — the
+  **superseded** focus rule, still in the bundle because the phase-2 patch file
+  quotes it.
+- `[box-shadow:...]` — a **nonsense** utility with a literal ellipsis, lifted
+  from a code-review log that had abbreviated the class.
+
+Fixed in `src/app/styles.css` with `@import "tailwindcss" source(none)` plus
+explicit `@source "../"` and `@source "../../index.html"`, so only shipping code
+is scanned. Measured: **CSS 39,750 → 25,030 B raw, 7,836 → 5,944 B gzip (−24 %)**,
+with every authored rule intact (`@keyframes praesto-complete` / `praesto-leave`,
+the `[data-shell]:has` inset rule, the five `dialog[data-sheet][open]` transition
+rules and `html:has(dialog[open])` all verified present in the built file), and
+313 tests plus `npm run check` still green.
+
+Worth carrying to A6: a record of a bug can create the bug. Any project that
+keeps patch text inside the repo needs its CSS toolchain scoped to the source
+tree, and this one now does.
+
+
 ## Browser-pane Tier B check — main session
 
 Run on 2026-08-22 (23:55–00:10 UTC) by the main session against the running

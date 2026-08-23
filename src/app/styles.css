@@ -1,4 +1,17 @@
-@import "tailwindcss";
+/*
+ * `source(none)` + explicit `@source` lines: Tailwind v4 otherwise scans the
+ * whole repository, and this project keeps its pipeline records (plans,
+ * build reports, review jsonl, implementer patches) under PRPs/ — prose that
+ * quotes class strings. Left automatic, that prose becomes real CSS: the
+ * production bundle of 2026-08-23 carried 144 rules absent from src/,
+ * including a superseded focus rule and a nonsense `[box-shadow:...]` class
+ * lifted from a code-review log. Scanning only the code that ships keeps the
+ * bundle honest — and keeps a sentence in a report from ever colliding with a
+ * real utility.
+ */
+@import "tailwindcss" source(none);
+@source "../";
+@source "../../index.html";
 @import "./tokens.css";
 
 /*
