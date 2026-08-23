@@ -6,7 +6,7 @@ Tier 2 index: one entry per doc, 1-2 lines each. Details live in the target file
 
 **Project documentation (authoritative)** — vision, requirements (FR/QA/CON), architecture, ADRs, roadmap; owner-validated source of truth for the whole project. → documentation/README.md
 
-**UI/UX plan (roadmap units ON HOLD since 2026-08-18)** — the track that gives the app its visual foundation before any further unit: PWA UI/UX guidelines, layout standard, visual direction (minimalist + gamer-community ambience), one consolidated UI library, design pass over existing screens; opened pending decisions 5–7. → documentation/50-planning/ui-ux-plan.md
+**UI/UX plan (closed `deprecated` 2026-08-23; the hold on delivery units is lifted)** — the track that gave the app its visual foundation: guidelines, layout standard, visual identity (ADR-0010), one owned UI library (ADR-0011) and a design pass over every screen, deployed and verified by the owner on both devices. Read it only for *why* a UI rule exists; the rules themselves are in the guidelines, the layout standard and the identity doc. → documentation/50-planning/ui-ux-plan.md
 
 ## Governance (AI control)
 

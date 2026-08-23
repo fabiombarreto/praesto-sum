@@ -1,6 +1,6 @@
 ---
 status: draft
-last_updated: 2026-08-15
+last_updated: 2026-08-23
 review_trigger: "a pending technical decision is resolved (new ADR accepted), or stack/component/data/integration changes"
 ---
 
@@ -68,6 +68,30 @@ flowchart TB
 ```
 
 There is deliberately no merge, sync, or offline-write logic anywhere in the system (ADR-0003, safeguard 3).
+
+### Inside the PWA client (2026-08-23, after the UI/UX plan's design pass)
+
+The container above stayed one box while its inside grew a shape worth naming, because
+every later unit plugs into it:
+
+- **One screen plus sheets** ([layout standard §1](../40-engineering/ui-layout-standard.md)):
+  `App.tsx` is only the token-gate switch; `TodayScreen` is a `100dvh` grid (header / banner /
+  list / toast / deck) and the detail is a native `<dialog>` sheet over it. There is no router
+  and no second page — unit 3's groups and filters land inside this anatomy, not beside it.
+- **Two component tiers:** `src/app/components/ui/` for the primitives owned in the shadcn style
+  over Base UI ([ADR-0011](../60-decisions/ADR-0011-ui-library-shadcn-style-base-ui-tailwind.md)),
+  `src/app/components/` for the screens. Styling reads `src/app/tokens.css` and nothing else
+  ([ADR-0010](../60-decisions/ADR-0010-visual-identity-direction-arcade.md)).
+- **Decidable logic sits in `src/shared/`, not in components** — the wire contract, the edit diff
+  (`buildTaskPatch`), the Portuguese failure messages, the date phrases, the connectivity state
+  machine, the toast rules and the sheet's draft state. That module set is the reason a UI this
+  size carries 313 tests without a browser tier: the components are glue, and the glue is
+  verified by hand ([testing strategy](../40-engineering/testing-strategy.md)).
+- **State is local and explicit.** No store library: `useState`/`useReducer` in the screen, one
+  module-level `useSyncExternalStore` source for toasts so `main.tsx` can raise the
+  service-worker update prompt without owning React state. Reads refetch on `visibilitychange`
+  and on reconnect; writes are server-first except complete/reopen, which are optimistic with
+  rollback (ADR-0003 forbids an offline write queue, so nothing is ever queued).
 
 ## Data and persistence
 

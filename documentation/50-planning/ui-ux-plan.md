@@ -1,12 +1,24 @@
 ---
-status: active
-last_updated: 2026-08-21
+status: deprecated
+last_updated: 2026-08-23
 review_trigger: "an activity changes state, an open question is answered, a decision lands as an ADR, or the hold on delivery units lifts"
 ---
 
 # UI/UX Plan
 
-> **Purpose:** The plan that gives Praesto its visual and interaction foundation — UI/UX guidelines, a layout standard, a visual identity, one UI library and a design pass over the existing screens — deliberately kept apart from the [roadmap](roadmap.md), whose delivery units are on hold until this plan closes.
+> **CLOSED 2026-08-23 — `deprecated`, kept for the record.** All six activities are `done`; the
+> [roadmap](roadmap.md)'s hold of 2026-08-18 is lifted and unit 3 is `next`. Nothing here is a live
+> instruction any more: what this plan produced lives in
+> [ui-ux-guidelines](../40-engineering/ui-ux-guidelines.md) (mandatory on every interface change),
+> [ui-layout-standard](../40-engineering/ui-layout-standard.md), [visual-identity](../10-product/visual-identity.md),
+> [ADR-0009](../60-decisions/ADR-0009-ui-copy-in-brazilian-portuguese.md) /
+> [ADR-0010](../60-decisions/ADR-0010-visual-identity-direction-arcade.md) /
+> [ADR-0011](../60-decisions/ADR-0011-ui-library-shadcn-style-base-ui-tailwind.md), and in the shipped
+> screens themselves. Read it for *why* a rule exists; read those for *what the rule is*. The design
+> pass's own records (four phases, the WCAG Level A walk, the build reports) are under
+> `PRPs/reports/ui-design-pass/`.
+>
+> **Purpose:** The plan that gave Praesto its visual and interaction foundation — UI/UX guidelines, a layout standard, a visual identity, one UI library and a design pass over the existing screens — deliberately kept apart from the [roadmap](roadmap.md), whose delivery units were on hold until this plan closed.
 > **Update when:** An activity changes state, an open question below is answered, a decision lands as an ADR, or the hold lifts. Status flips `draft → active` when the owner has answered the open questions in [Decisions to make](#decisions-to-make); it flips `deprecated` when the exit criterion is met and the roadmap resumes (its outputs live on in `10-product/` and `40-engineering/`).
 
 ## The brief (owner, 2026-08-18)
@@ -54,7 +66,7 @@ Sized like roadmap units — days of ~1 h (CON-003), a floor. Order is deliberat
 | A3 | `layout-standard` | The skeleton every screen shares | `40-engineering/ui-layout-standard.md`: navigation model; screen anatomy (header, content, primary action, secondary actions); anchor screens — Today/home (anticipating unit 3), capture, detail, settings/diagnostics, token gate; state patterns (loading, empty, error, offline, update available, permission priming); desktop adaptation | A0, Q4–Q5 | 2 | **done 2026-08-20** | Met by construction: the standard's per-unit table (§6) places units 3–13 without a new region; verified on the Today sketches (header, chip row, agenda stack, groups, sheets, deck, desktop list-detail) |
 | A4 | `ui-library` | One library, chosen against this project's constraints, installed and pinned | Evaluation matrix vs CON/QA + brief; ≤3 finalists each spiked for ≤1 h on the capture + list screen in a throwaway branch; **ADR — decision 6**; install + exact pins; `tech-stack.md` row; styling pipeline (if any) wired into `npm run check` | A2, A3, Q6 | 2 | **done 2026-08-21** | Met: [ADR-0011](../60-decisions/ADR-0011-ui-library-shadcn-style-base-ui-tailwind.md) accepted; the seven pins installed on `main` with the Tailwind pipeline and the first owned components (`src/app/components/ui/`) passing `npm run check`; the spike rendered the Arcade direction directly (`PRPs/reports/ui-library/02-spike-shadcn.md`) |
 | A5 | `design-pass` | The existing app looks and feels like the plan says | Restyled token gate, capture + list, inline edit, detail; PWA chrome (theme/background colours, splash, safe areas, update toast replacing `window.confirm`); self-hosted font(s) and icon set; verified on the Android phone and the Windows PC with screenshots kept | A1, A2, A3, A4 | 3–4 | **done 2026-08-23** | Met: the owner deployed (Version `a312fa7c`), tested on the Android phone and the Windows PC, and reported "testei, tudo funcionando" — no change wanted before unit 3; `npm test` (313) and `npm run check` green |
-| A6 | `close-out` | Docs synced, hold lifted | `tech-stack`, `architecture-overview` (if a component changed), `engineering-conventions` (UI conventions section), `testing-strategy` (only if the UI split changed), README, `docs/` derived files; roadmap hold lifted + delivery-history line; this plan `deprecated`; retro: guideline rules that proved useless removed | A5 | 1 | planned | Unit 3 is `next` again and every affected doc carries `last_updated` of that session |
+| A6 | `close-out` | Docs synced, hold lifted | `tech-stack`, `architecture-overview` (if a component changed), `engineering-conventions` (UI conventions section), `testing-strategy` (only if the UI split changed), README, `docs/` derived files; roadmap hold lifted + delivery-history line; this plan `deprecated`; retro: guideline rules that proved useless removed | A5 | 1 | **done 2026-08-23** | Met: unit 3 is `next` in the [roadmap](roadmap.md), the hold of 2026-08-18 is lifted, and every affected doc carries `last_updated: 2026-08-23` |
 
 Total ≈ 16–18 days of ~1 h — three and a half weeks. A2 is the largest activity and is deliberately *not* split: an identity built in halves is two identities. Any other activity whose estimate grows past 4 days is split, never inflated, and History below records the split. A1 (research + a document) and A2 steps 2.1–2.2 (the owner's homework) run in the same week; A2 and A3 can be worked in parallel from step 2.5 on.
 
