@@ -186,8 +186,8 @@ measured; it was **two** defects in the phase-2 focus fix, both in the deck's
    dark outer halo kept, so guidelines §4.5's two-tone requirement still holds.
 
 Blur restores the resting state exactly (`outline: none`, inset shadow present).
-Gates green after the fix (313 tests, `npm run check` clean); JS 92,958 B and
-CSS 7,881 B gzip, still 53 % / 26 % of the §11 budget.
+Gates green after the fix (313 tests, `npm run check` clean); JS 92,964 B and
+CSS 7,836 B gzip, still 53 % / 26 % of the §11 budget.
 
 **Why the pane never caught it:** every check in phases 2–4 asserted the ring's
 *presence and colour* (`outline-style`, `outline-color`, the halo) — never its
