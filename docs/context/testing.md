@@ -67,6 +67,25 @@ Notes that bite:
 - Storage isolation is per test **file**, not per test. `reset()` from
   `cloudflare:test` wipes the schema too — any test calling it must re-run
   `applyD1Migrations(env.DB, env.TEST_MIGRATIONS)` immediately.
+- Because isolation is per file, every suite that writes to D1 shares one table
+  across its own tests and has to clean up between them. Do **not** hand-roll
+  that cleanup. Import `it` and `resetTaskTables` from `test/isolation.ts` and
+  write `beforeEach(resetTaskTables, DRAIN_BUDGET_MS)`. The hand-rolled
+  `beforeEach(async () => db.delete(tasks))` this project shipped until
+  2026-08-24 is unsound: when a test exceeds its Vitest timeout, Vitest
+  abandons the TEST but nothing cancels the WORK its body started, so a row it
+  is still writing can land AFTER the next test's cleanup — and the next test
+  then reads rows it never created. Reproduced under CPU contention as a bare
+  `Test timed out in 5000ms` followed immediately by the next test in the same
+  file receiving 5 ids where it expected 3. It is not merely noisy: a leaked
+  row can hide a real regression as easily as invent one.
+- `resetTaskTables()` drains every abandoned test body before it wipes, and
+  `isolatedIt` (imported as `it`) is what registers those bodies — a test
+  written with Vitest's own `it` silently opts out of the barrier. A
+  `Hook timed out` from that `beforeEach` means the machine never finished the
+  abandoned work within `DRAIN_BUDGET_MS`; it says the machine was starved, never
+  that a contract moved. Raising the *test* timeout is not the fix — it moves
+  the threshold the race has to cross, it does not remove the race.
 - The API token used by tests is the miniflare binding `API_BEARER_TOKEN` in
   `vitest.config.ts`; read it in tests via `env.API_BEARER_TOKEN` rather than
   hardcoding it.

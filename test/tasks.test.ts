@@ -1,9 +1,10 @@
 import { env, exports } from "cloudflare:workers";
 import { eq } from "drizzle-orm";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect } from "vitest";
 import type { TaskDto } from "../src/shared/api";
 import { createDb } from "../src/worker/db/client";
 import { recurrenceSeries, tasks } from "../src/worker/db/schema";
+import { DRAIN_BUDGET_MS, isolatedIt as it, resetTaskTables } from "./isolation";
 
 const BASE = "https://example.com/api/tasks";
 
@@ -28,13 +29,18 @@ async function listOpen(): Promise<TaskDto[]> {
   return body.tasks;
 }
 
-// Storage isolation is per test FILE, so wipe the table between tests instead
-// of reset() (which would also drop the schema).
-beforeEach(async () => {
-  const db = createDb(env);
-  await db.delete(tasks);
-  await db.delete(recurrenceSeries);
-});
+// Storage isolation is per test FILE, so wipe the tables between tests instead
+// of reset() (which would also drop the schema). The wipe first waits for work
+// an abandoned — timed-out — test left in flight, so a row it is still writing
+// cannot land after the cleanup and be read by the test after it. Why that
+// barrier and not a bigger timeout: test/isolation.ts.
+//
+// The explicit hook budget is the barrier's, not the wipe's: draining means
+// waiting out the REST of an abandoned body — every request it had still to
+// make — so on a machine already slow enough to blow a 5 s test budget the
+// default 10 s hook budget is too tight. Blowing this one means the machine
+// gave up, never that the contract moved.
+beforeEach(resetTaskTables, DRAIN_BUDGET_MS);
 
 describe("Task lifecycle (FR-001..FR-004, FR-007)", () => {
   it("creates a Task and lists it", async () => {
