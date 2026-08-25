@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-21
+last_updated: 2026-08-24
 review_trigger: "a step of UI/UX-plan activity A2 lands, an identity element (mark, tokens, voice) changes, or decision 5 is accepted"
 ---
 
@@ -95,6 +95,10 @@ Microcopy table (UI values in pt-BR — ADR-0009; the keys stay English in code)
 | Row meta line | *até hoje* · *até amanhã* · *até sáb., 22/08* · *fazer hoje* · *fazer sáb., 22/08* · *atrasada · venceu ontem* · *atrasada · venceu ter., 18/08* · *atrasada · era para ter., 18/08* · *alta* / *baixa* · *não concluída* |
 | Row actions (accessible names) | *Concluir {título}* / *Reabrir {título}* · *Editar título* |
 | Section | **Concluídas** · count |
+| Group headers | **Atrasadas** · **Hoje** · **Próximas** · **Sem data** — each followed by its count |
+| Quick-filter chips | *Abertas* · *Para hoje* · *Alta prioridade* — *(the trailing* Filtros… *chip was cut on 2026-08-24; the header's filter button is the only way into the sheet)* |
+| Filter icon (accessible name) | *Filtros* · with filters active, *Filtros (1 ativo)* / *Filtros (N ativos)* — singular at one, like *1 restante* |
+| Filter sheet | title *Filtros* · labels *Status · Prioridade · Período* · status chips *Abertas · Concluídas · Não concluídas* · priority chips *Alta · Normal · Baixa* · date labels *De* / *Até* · *Limpar filtros* · close button *Fechar* |
 | Toasts | *Tarefa reaberta* · *Tarefa excluída* |
 | List load error | the approved request-error sentence · *Tentar de novo* |
 | Request errors (tested) | `Sem conexão com o servidor. Nada se perdeu — tente de novo quando a conexão voltar.` · `O servidor recusou a operação (código N). Tente de novo.` |
@@ -112,6 +116,8 @@ TBD — after A5 ships: a week of cold opens on the phone against the three É w
 
 | Date | What changed |
 |---|---|
+| 2026-08-24 | **today-view-and-filters Phase 3 (Task 2): the quick-filter chip, filter-icon and filter-sheet strings added ahead of the code that renders them** (`PRPs/plans/today-view-and-filters-phase-3-quick-filters-and-the-filter-sheet.plan.md`) — chip row *Abertas · Para hoje · Alta prioridade · Filtros…*, the filter icon's accessible name (plain and with an active count), and the filter sheet's title, labels, chip vocabulary and *Limpar filtros* action |
+| 2026-08-23 | **today-view-and-filters Phase 2 (Task 2): the four group-header names added ahead of the code that uses them** (`PRPs/plans/today-view-and-filters-phase-2-grouping-and-the-grouped-list.plan.md`) — *Atrasadas*, *Hoje*, *Próximas* and *Sem data*, the group headers layout standard §2.5 specifies, each rendered with its count by the new `TaskGroup` component |
 | 2026-08-21 | **ui-design-pass Phase 2 (Task 10): one microcopy row added ahead of the code that uses it** (`PRPs/plans/ui-design-pass-phase-2-today-screen.plan.md`) — *List load error*, the retry copy the *Hoje* screen shows under a failed first load, pairing the existing request-error sentence with the infinitive button *Tentar de novo* |
 | 2026-08-21 | **ui-design-pass Phase 1: the A5 microcopy rows approved by the owner in the PRD scope round added to the table above, ahead of Phase 1's code** (`PRPs/prds/ui-design-pass.prd.md`, "Microcopy added by this pass") — token gate, token-store failure, header, capture deck, row meta line, row actions, section, toasts, request errors, detail sheet, `<title>`, manifest |
 | 2026-08-20 | **Step 2.9: voice & tone and microcopy approved; document `draft → active`.** Step 2.10 (a week of validation in use) runs after A5 ships. The dev-only `/design` playground moves to A5, where the tokens are first applied |

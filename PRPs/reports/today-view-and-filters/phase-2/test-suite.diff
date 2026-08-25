@@ -1,0 +1,128 @@
+# TDD initial suite — phase 2
+# Source PRD: PRPs/prds/today-view-and-filters.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/today-view-and-filters-phase-2-grouping-and-the-grouped-list.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Mode: test-first (tdd: true, test_frameworks: ["vitest"])
+# Generated: 2026-08-23
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-7 | NEW_TEST_REQUIRED | `test/task-groups.test.ts` — 16 cases across four `describe` blocks: bucket membership (including the scheduled-date fallback and a month boundary crossed on the string comparison alone), status-before-dates precedence, the never-re-orders property, and purity |
+| AC-8 | MANUAL | Group order in DOM order, the ≥ 40 px header, the name and the count, and the untouched row anatomy are read in the browser pane against layout standard §2.5/§2.6 and recorded in the phase's build report |
+| AC-9 | MANUAL + STATIC | The collapse defaults, `aria-expanded`, the count surviving the collapsed state and the per-group persistence are pane checks; the key names (`praesto.today.doneCollapsed` kept, `praesto.today.collapsed.*` added) are pinned by the plan's Task 4 VALIDATE and the Level 3 gate |
+| AC-10 | MANUAL | An empty group rendering no header at all, and the whole-list empty state still reading *Nada para hoje.* with its CTA, are simulated in the pane |
+| AC-17 | STATIC / ARTIFACT (gate) | `npm test` + `npm run check` + `npm run build` green with the count at or above 333 and `git diff --quiet -- test/` clean; the Tier A / Tier B record filed under `PRPs/reports/today-view-and-filters/phase-2/` |
+| AC-1..AC-6 | OUT_OF_PHASE_SCOPE | (phase 1 — `complete`; covered by `test/task-list-filters.test.ts`) |
+| AC-11..AC-16 | OUT_OF_PHASE_SCOPE | (phase 3 — chip row, filter sheet, badge, filtered empty, cold-start reset) |
+
+## The RED is the weak shape, and saying so is the point
+
+`npx vitest run --project worker test/task-groups.test.ts` before any production
+change fails with **`Cannot find module '../src/shared/task-groups'`** — one
+failed suite, zero executed cases. That is a module-resolution RED, not the
+assertion RED phase 1 produced, and the two are not equally strong: a
+module-not-found proves only that the file is absent. It cannot distinguish a
+suite whose assertions are discriminative from one whose assertions are
+nonsense, and it would look identical if the import path were simply mistyped.
+
+It is recorded rather than dressed up because it is also the only honest RED
+available here: the phase's whole deliverable is the module, and a test-first
+suite for a module that does not exist yet cannot import it. Writing a stub to
+get an assertion RED would be the implementer's work leaking into the test
+stage. The precedent is this project's own — `src/shared/format.ts`,
+`src/shared/connectivity.ts` and `src/shared/toast.ts` were each authored
+test-first as brand-new modules during `ui-design-pass`.
+
+Two things carry the weight the RED cannot:
+
+1. **The import path is verified, not assumed.** The suite imports
+   `../src/shared/task-groups`, which resolves to `src/shared/task-groups.ts` —
+   byte-identical to the path the APPROVED plan's Task 1 and its `## Files to
+   Change` row name. A mistyped path would produce this same error, so it was
+   checked directly rather than inferred from the error message.
+2. **The real proof is the GREEN, and it must arrive with zero test edits.**
+   After the implementer runs, all 16 cases must pass against a suite whose
+   `git diff` is empty. The plan's Level 3 gate is `git diff --quiet -- test/`,
+   which fails if any test file was touched at all — so "the tests were bent to
+   fit the implementation" is machine-checkable here rather than a matter of
+   trust.
+
+The load-bearing property of `groupTasks` is not membership — it is that the
+function **partitions and never sorts**. The frozen read contract makes ordering
+the API's guarantee and forbids re-deriving it in a client, so an implementation
+with perfect bucket membership that sorted inside a bucket would be wrong while
+looking right.
+
+## Revision 1 — the defect B8 caught, and why it mattered
+
+The first DRAFT was rejected on **R-RED-LEGITIMATE**, correctly, and the reason
+was not the RED's shape — it was an assertion no correct implementation could
+ever satisfy. Two different properties had been collapsed into one fixture:
+
+- *the order inside each bucket is preserved* — true of `scrambled`, which
+  interleaves buckets at the top level (O, O, T, U, O, T, N, U, N) precisely so
+  that a sort inside a bucket would show;
+- *concatenating the buckets reproduces the input* — true only when the input
+  already arrives in bucket order, which is what the API always returns and what
+  `scrambled` deliberately is not.
+
+Asserted against `scrambled`, the second is false for every correct
+implementation: `[O-mid, O-oldest, O-newest, T-second, T-first, …]` can never
+equal `[O-mid, O-oldest, T-second, U-far, O-newest, …]`. The two tests ran the
+same call and demanded mutually exclusive outcomes, so the manifest's own promise
+that "all 16 cases must pass" was false as drafted — the implementer would have
+been stuck at a correct implementation.
+
+The fix keeps both properties and gives each its own fixture: `scrambled` still
+carries the arrival-order, no-loss and object-identity cases, and a new
+`inApiOrder` fixture — overdue ascending, then today, then future ascending, then
+undated, exactly what `urgencyBucket` produces — carries the identity case, now
+stated as *"is the identity function on a list already in the API's urgency
+order"*. The comment in that test names the trap so it is not re-introduced.
+
+**Both properties were then hand-verified against Task 1's literal algorithm
+before the module existed** — a single pass, status first, `deadline ??
+scheduledDate` compared as strings — confirming that `scrambled` yields
+`overdue = [O-mid, O-oldest, O-newest]` (so a sorting implementation fails) and
+that concatenating `inApiOrder`'s buckets reproduces the input exactly. That
+simulation is deliberate compensation for the weak RED below: it is the only way
+to know, before any code exists, that the assertions are satisfiable AND
+discriminative rather than merely unrunnable.
+
+## What the suite is built to catch
+
+The `scrambled` fixture is deliberately NOT in date order inside any
+bucket: three overdue Tasks arrive mid / oldest / newest, two "today" Tasks
+arrive second / first, two upcoming arrive far / near. A sort would rewrite
+every one of those sequences. Three cases pin the module from different angles —
+the per-bucket arrival order over `scrambled`, the identity property over
+`inApiOrder` (the shape the route actually returns), and object identity
+(`toBe`, not `toEqual`) so a `.map()`-based implementation that returns copies is
+caught too, which matters because the screen keys rows by object.
+
+The purity block pins the other half of the module's contract: the same input
+yields different buckets for three different `today` values (so no clock is
+read), the input array is not mutated, and an empty list yields five empty
+buckets rather than a partially-built object.
+
+## Test files written this session
+
+- `test/task-groups.test.ts` (16 tests across 4 `describe` blocks; revision 1 replaced one assertion and added the `inApiOrder` fixture, leaving the count unchanged)
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no update/delete this session) | — | — | — |
+
+No existing test was updated, removed or weakened. Phase 1's
+`test/task-list-filters.test.ts` and unit 2's `test/task-list-contract.test.ts`
+are untouched, and the plan's Level 3 gate fails if any file under `test/`
+changes at all.
+
+## Status
+
+*Approved: 2026-08-23*
+*Status: APPROVED*

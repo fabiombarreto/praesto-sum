@@ -14,7 +14,7 @@
 | Method | Route | Behavior |
 |---|---|---|
 | GET | `/api/health` | `{ ok: true }` |
-| GET | `/api/tasks?status=open\|done\|missed&limit=N` | `{ tasks: TaskDto[] }` in urgency order (see the frozen read contract below), max `MAX_TASK_LIMIT` (500). Unknown status → 400; invalid `limit` → 400 |
+| GET | `/api/tasks?status=open\|done\|missed&from=YYYY-MM-DD&to=YYYY-MM-DD&priority=high\|normal\|low&limit=N` | `{ tasks: TaskDto[] }` in urgency order (see the frozen read contract below), max `MAX_TASK_LIMIT` (500). `from`/`to` are inclusive and compare against `coalesce(deadline, scheduledDate)`, so a Task with neither date is outside any range; an inverted range (`from` after `to`) answers `200` with an empty list. `priority=normal` also matches an unset priority. Unknown status, an invalid date, an unknown priority, or an invalid `limit` → 400 |
 | POST | `/api/tasks` | Create. `title` required; `deadline` XOR `scheduledDate` (both must be valid calendar dates); `priority` is `high\|normal\|low` or absent → 201 `{ task }` |
 | PATCH | `/api/tasks/:id` | Edit. Editable keys are exactly `title`, `description`, `deadline`, `scheduledDate`, `priority` (`EDITABLE_TASK_FIELDS`); any other key — `id`, `status`, `createdAt`, `completedAt`, `seriesId`, `occurrenceDate`, `detached`, `lifeAreaId`, or a typo — → 400. An empty body → 400. Setting one date clears the other in the same write; editing a Task with a `seriesId` sets `detached` (ADR-0006, never exposed on the wire). → 200 `{ task }`, or 404 when absent |
 | POST | `/api/tasks/:id/complete` | Open → done, stamps `completedAt`. Not open → 404 |
@@ -35,10 +35,10 @@ calendar day in `PRAESTO_TIMEZONE` (`src/shared/dates.ts`), the same zone
 **must not be re-derived in a client**: it is the one guarantee every consumer
 has to agree on, and the client is the one place they cannot share.
 
-**Filter vocabulary.** `status` is implemented. Unit 3 will add `from`, `to` and
-`priority` — those names are reserved here so unit 3 extends this vocabulary
-rather than inventing a competing one. Adding a filter is backward-compatible;
-renaming one is not.
+**Filter vocabulary.** `status`, `from`, `to` and `priority` are all
+implemented. Unit 3 added `from`, `to` and `priority` on 2026-08-23, extending
+this vocabulary rather than inventing a competing one. Adding a filter is
+backward-compatible; renaming one is not.
 
 **Paging.** No cursor. `limit` is accepted and honoured, capped at
 `MAX_TASK_LIMIT` (500), which is also the implicit cap when `limit` is absent.
@@ -63,7 +63,7 @@ Ordered by the delivery units in `documentation/50-planning/roadmap.md` — that
 | Delivery unit | Surface to add | Requirement |
 |---|---|---|
 | 2 `task-detail-and-dates` | Remaining: urgency ordering + `?limit=N` on the list query (phase 3), then the detail screen (phase 4). `PATCH /api/tasks/:id` and the `priority` enum have shipped — see Implemented above | FR-005, FR-006 |
-| 3 `today-view-and-filters` | Date/priority filters and day grouping on the list query | FR-007 |
+| 3 `today-view-and-filters` | `from`, `to` and `priority` filters on the list query. **Grouping is NOT an API concern** — the today/overdue/upcoming/undated groups are a client-side stable partition over the order this contract already produces (`PRPs/prds/today-view-and-filters.prd.md`, 2026-08-23) | FR-007 |
 | 4 `data-export` | `GET /api/export` — full JSON dump + `.ics` | FR-042, FR-043 |
 | 5 `push-channel-proven` | Subscription registration, a test-push route, cron diagnostics | FR-041 |
 | 6 `reminders` | Reminder CRUD (standalone and attached), due-scan job | FR-044, FR-025 |

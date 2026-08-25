@@ -1,0 +1,64 @@
+{
+  "run_id": "d5e81c39-7a24-4f60-b1a8-3c62e90df417",
+  "feature": "today-view-and-filters",
+  "phase": 3,
+  "plan": "PRPs/plans/completed/today-view-and-filters-phase-3-quick-filters-and-the-filter-sheet.plan.md",
+  "worktree": "C:/repos/assistente-pessoal (branch main, uncommitted)",
+  "started_at": "2026-08-24T15:20:00Z",
+  "ended_at": "2026-08-24T16:05:00Z",
+  "max_test_retries": 3,
+  "max_test_minutes": 30,
+  "attempts": [
+    {
+      "n": 1,
+      "verdict": "GREEN",
+      "record": "phase-3/test-attempts/1/record.json",
+      "implementer_diff": "attempts/3/diff.implementer.patch"
+    }
+  ],
+  "outcome": "GREEN",
+  "framework": "vitest",
+  "command": "npm test",
+  "totals": {
+    "files": 17,
+    "passed": 369,
+    "failed": 0,
+    "skipped": 0
+  },
+  "baseline": {
+    "before_phase": 349,
+    "after_phase": 369,
+    "added": 20,
+    "note": "19 from test/task-filter.test.ts plus 1 from the docs project, whose per-file citation test is parametrized over derived docs that cite paths - phase 2's edit made docs/context/architecture.md start citing one. No test was weakened."
+  },
+  "build": "client JS ~93 KB gzip, CSS ~6 KB gzip, precache 408 KiB - inside guidelines 11",
+  "tdd_mode": true,
+  "preconditions": {
+    "settings_json": "absent - same deviation as phases 1 and 2 and every ui-design-pass phase",
+    "uncommitted_changes": "yes - the whole unit is uncommitted by design"
+  },
+  "code_review": {
+    "attempts": 3,
+    "verdicts": [
+      "CHANGES_REQUESTED",
+      "CHANGES_REQUESTED",
+      "APPROVED"
+    ],
+    "note": "Attempt 1 failed on a cross-document chip-order disagreement; attempt 2 failed because the fix for it invalidated a positional claim in the same file's History row. Both were defects in documentation the pipeline itself authored, both found by the reviewer, neither in shipped code."
+  },
+  "known_flake": {
+    "file": "test/task-list-contract.test.ts",
+    "mechanism": "beforeEach deletes all rows, but a test that exceeds the 5000 ms timeout is abandoned without its in-flight create() calls being cancelled; those rows can land after the NEXT test's cleanup and inflate its list() read",
+    "observed": "2 failures under machine load, 369/369 clean on an idle machine, across several runs by both the reviewer and this session",
+    "disposition": "out of scope for this unit (the file is unit 2's frozen-contract evidence and R-X forbids touching it here); spawned as its own task"
+  },
+  "post_approval_change": {
+    "file": "src/app/components/TodayHeader.tsx",
+    "what": "Singular/plural agreement in the filter button's accessible name - 'Filtros (1 ativo)' rather than 'Filtros (1 ativos)' - plus the matching correction to the approved microcopy row",
+    "why": "Found by the browser pass AFTER the code-reviewer's attempt-3 APPROVED. The defect originated in the approved microcopy table, so fixing only the component would have left the table telling the next person to reintroduce it",
+    "verification": "Re-verified live over HMR: 'Filtros (1 ativo)' at one active filter, 'Filtros (2 ativos)' at two",
+    "disclosure": "Recorded rather than folded silently into the approved diff: the tree and the reviewed attempt-3 state differ by exactly this change"
+  },
+  "concurrency_note": "Two background sessions began writing to this same working tree while this phase was closing - a Docker Compose task (Dockerfile, .dockerignore, CLAUDE.md) and the test-isolation task this phase's own finding spawned (test/isolation.ts plus five test files). Phase 3's own ten files were verified byte-identical to the reviewed state afterwards. A fresh npm test now would measure all three sessions, which is why the reviewer's pre-concurrency run is the one recorded above.",
+  "notes": "Green. The 19 new cases are test/task-filter.test.ts, authored test-first; the RED was the weak module-not-found shape, compensated by verifying the import path against the plan and hand-simulating the module's spec before any code existed."
+}

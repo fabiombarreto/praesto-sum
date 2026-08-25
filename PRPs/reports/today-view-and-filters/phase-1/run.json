@@ -1,0 +1,44 @@
+{
+  "run_id": "b7f1c204-9d3e-4a85-8c61-2f0ab9d7e344",
+  "feature": "today-view-and-filters",
+  "phase": 1,
+  "plan": "PRPs/plans/completed/today-view-and-filters-phase-1-list-filters-on-the-api.plan.md",
+  "worktree": "C:/repos/assistente-pessoal (branch main, uncommitted)",
+  "started_at": "2026-08-23T17:42:12Z",
+  "ended_at": "2026-08-23T17:42:23Z",
+  "max_test_retries": 3,
+  "max_test_minutes": 30,
+  "attempts": [
+    {
+      "n": 1,
+      "verdict": "GREEN",
+      "record": "phase-1/test-attempts/1/record.json",
+      "implementer_diff": null
+    }
+  ],
+  "outcome": "GREEN",
+  "framework": "vitest",
+  "command": "npm test",
+  "totals": {
+    "files": 15,
+    "passed": 333,
+    "failed": 0,
+    "skipped": 0
+  },
+  "baseline": {
+    "before_phase": 313,
+    "after_phase": 333,
+    "added": 20
+  },
+  "tdd_mode": true,
+  "preconditions": {
+    "settings_json": "absent — same deviation as every ui-design-pass phase; /relay-test's test-runner agent would ABORT_INFRA/missing_settings_json, so the suite was run by hand and normalized into this file",
+    "uncommitted_changes": "yes — the whole unit is uncommitted by design; Pillar 2 never commits (docs/decisions.md 2026-05-18)"
+  },
+  "gates": {
+    "npm_run_check": "clean (wrangler types, tsc -b, eslint, prettier)",
+    "contract_suite_unedited": "git diff --quiet -- test/task-list-contract.test.ts exits 0",
+    "frozen_ordering_tail": "grep for orderBy(urgencyBucket, dueDate, desc(tasks.createdAt)) exits 0"
+  },
+  "notes": "Green on the first attempt. The 20 new cases are test/task-list-filters.test.ts, authored test-first and RED (19 failed / 1 passed) before the implementer ran; the single pre-green pass was the deliberate limit-validation composition guard."
+}

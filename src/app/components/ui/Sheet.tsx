@@ -11,14 +11,21 @@
 // verification browser even on a bare, React-free <dialog>; without the
 // guard that leaves `open` stuck at `true` in React state forever, since no
 // event would call `onOpenChange(false)` again and the sheet could never be
-// reopened short of a reload. `closedby` is left at its `showModal()` default
-// of `closerequest`, so there is no light dismiss on this editor. `showModal()`
-// itself makes the page behind inert and scroll-locked
-// (`html:has(dialog[open])` in styles.css) and returns focus to the opener
-// natively on close. The `history.pushState` fallback of PRD risk row 400 is
-// NOT built here — it is specified in the phase-3 plan's `## Notes` and wired
-// only if the owner's device check finds the Android back gesture does not
-// close this dialog.
+// reopened short of a reload. `showModal()` itself makes the page behind
+// inert and scroll-locked (`html:has(dialog[open])` in styles.css) and
+// returns focus to the opener natively on close. The `history.pushState`
+// fallback of PRD risk row 400 is NOT built here — it is specified in the
+// phase-3 plan's `## Notes` and wired only if the owner's device check finds
+// the Android back gesture does not close this dialog.
+//
+// `lightDismiss` (phase 3, today-view-and-filters): opt-in, defaults to
+// `false`. Layout standard §3 allows light dismiss (`closedby="any"`) on the
+// filter sheet ONLY, and forbids it on an editor with unsaved changes — so
+// `TaskSheet` never passes this prop, and `closedby` stays absent from its
+// `<dialog>`, leaving `showModal()`'s own default of `closerequest` exactly
+// as before this phase (Esc, the close button and the back gesture still
+// close it; only the tap-outside shortcut is unavailable). Only the new
+// `FilterSheet` passes `lightDismiss`.
 
 import { X } from "lucide-react";
 import { useEffect, useId, useRef } from "react";
@@ -30,11 +37,13 @@ export function Sheet({
   onOpenChange,
   title,
   children,
+  lightDismiss = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
   children: ReactNode;
+  lightDismiss?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -87,6 +96,7 @@ export function Sheet({
       data-sheet
       tabIndex={-1}
       aria-labelledby={titleId}
+      closedby={lightDismiss ? "any" : undefined}
       className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[90dvh] w-full max-w-none overflow-y-auto overscroll-contain rounded-t-[24px] border-0 bg-surface-1 p-0 px-4 pt-2 pb-4 text-ink shadow-deck outline-none sm:inset-0 sm:m-auto sm:h-fit sm:w-[560px] sm:max-w-[calc(100vw-2rem)] sm:rounded-card"
     >
       <div

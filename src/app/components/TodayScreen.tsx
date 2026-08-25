@@ -6,14 +6,22 @@
 // which Task is open, which view it shows, and the per-Task drafts kept for
 // the session.
 
-import { ChevronDown } from "lucide-react";
 import { useEffect, useReducer, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import type { TaskDto } from "../../shared/api";
 import { canWrite } from "../../shared/connectivity";
 import { todayIn } from "../../shared/dates";
 import { classifyRequestFailure } from "../../shared/request-failure";
 import type { ShareTarget } from "../../shared/share-target";
 import { buildTaskPatch } from "../../shared/task-edit";
+import {
+  activeCount,
+  EMPTY_FILTER,
+  toggleChip,
+  type QuickChip,
+  type TaskFilter,
+} from "../../shared/task-filter";
+import { groupTasks } from "../../shared/task-groups";
 import { currentDraft, INITIAL_TASK_SHEET_STATE, reduceTaskSheet } from "../../shared/task-sheet";
 import {
   ApiError,
@@ -28,29 +36,37 @@ import { useConnectivity } from "../hooks/useConnectivity";
 import { dismissToast, showToast, useToast } from "../toast-store";
 import { CaptureDeck } from "./CaptureDeck";
 import { EmptyState } from "./EmptyState";
+import { FilterChips } from "./FilterChips";
+import { FilterSheet } from "./FilterSheet";
+import { TaskGroup } from "./TaskGroup";
 import { TaskRow } from "./TaskRow";
 import { TaskSheet } from "./TaskSheet";
 import { TodayHeader } from "./TodayHeader";
 import { Banner } from "./ui/Banner";
 import { Button } from "./ui/Button";
-import { cn } from "./ui/cn";
 import { Skeleton } from "./ui/Skeleton";
 import { Toast } from "./ui/Toast";
 
-const DONE_COLLAPSED_KEY = "praesto.today.doneCollapsed";
+const OVERDUE_COLLAPSED_KEY = "praesto.today.collapsed.overdue";
+const UPCOMING_COLLAPSED_KEY = "praesto.today.collapsed.upcoming";
+const UNDATED_COLLAPSED_KEY = "praesto.today.collapsed.undated";
+// Kept exactly as shipped — renaming this literal would migrate (silently
+// lose) the owner's existing *Concluídas* preference.
+const CLOSED_COLLAPSED_KEY = "praesto.today.doneCollapsed";
 
-/** Guarded like the legacy token storage (`src/app/token-storage.ts`): a denial or a missing API degrades to the default, never throws. */
-function readDoneCollapsed(): boolean {
+/** Guarded like the legacy token storage (`src/app/token-storage.ts`): a denial or a missing API degrades to `fallback`, never throws. */
+function readCollapsed(key: string, fallback: boolean): boolean {
   try {
-    return window.localStorage.getItem(DONE_COLLAPSED_KEY) === "1";
+    const stored = window.localStorage.getItem(key);
+    return stored === null ? fallback : stored === "1";
   } catch {
-    return false;
+    return fallback;
   }
 }
 
-function writeDoneCollapsed(value: boolean): void {
+function writeCollapsed(key: string, value: boolean): void {
   try {
-    window.localStorage.setItem(DONE_COLLAPSED_KEY, value ? "1" : "0");
+    window.localStorage.setItem(key, value ? "1" : "0");
   } catch {
     // Best-effort — a denial or a missing API must never break the toggle.
   }
@@ -72,7 +88,24 @@ export function TodayScreen({
   const [sheet, dispatchSheet] = useReducer(reduceTaskSheet, INITIAL_TASK_SHEET_STATE);
   const [sheetError, setSheetError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [doneCollapsed, setDoneCollapsed] = useState(readDoneCollapsed);
+  const [overdueCollapsed, setOverdueCollapsed] = useState(() =>
+    readCollapsed(OVERDUE_COLLAPSED_KEY, false),
+  );
+  const [upcomingCollapsed, setUpcomingCollapsed] = useState(() =>
+    readCollapsed(UPCOMING_COLLAPSED_KEY, true),
+  );
+  const [undatedCollapsed, setUndatedCollapsed] = useState(() =>
+    readCollapsed(UNDATED_COLLAPSED_KEY, true),
+  );
+  const [doneCollapsed, setDoneCollapsed] = useState(() =>
+    readCollapsed(CLOSED_COLLAPSED_KEY, false),
+  );
+  // Seeded from the constant and never from storage, and never written to
+  // storage — the deliberate asymmetry against the collapse state above,
+  // which layout standard §2.3 requires: a narrowing filter must never
+  // survive a cold start.
+  const [filter, setFilter] = useState<TaskFilter>(EMPTY_FILTER);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const captureRef = useRef<HTMLInputElement>(null);
 
   const today = todayIn(new Date());
@@ -81,8 +114,7 @@ export function TodayScreen({
   const { state: connectivity, report } = useConnectivity({ onOnline: () => void refresh() });
   const toast = useToast();
   const writable = canWrite(connectivity);
-  const open = tasks?.filter((task) => task.status === "open") ?? [];
-  const closed = tasks?.filter((task) => task.status !== "open") ?? [];
+  const groups = groupTasks(tasks ?? [], today);
   const sheetTask = tasks?.find((task) => task.id === sheet.taskId) ?? null;
 
   /** A 401 routes to the token gate; otherwise reports the failure kind and returns its message (`null` on the 401 route, since the caller is about to unmount). */
@@ -98,7 +130,7 @@ export function TodayScreen({
 
   async function refresh(): Promise<void> {
     try {
-      const next = await listTasks();
+      const next = await listTasks(filter);
       setTasks(next);
       setLoadError(null);
       report({ type: "request-succeeded" });
@@ -210,12 +242,44 @@ export function TodayScreen({
     }
   }
 
+  function toggleOverdueCollapsed(): void {
+    setOverdueCollapsed((current) => {
+      const next = !current;
+      writeCollapsed(OVERDUE_COLLAPSED_KEY, next);
+      return next;
+    });
+  }
+
+  function toggleUpcomingCollapsed(): void {
+    setUpcomingCollapsed((current) => {
+      const next = !current;
+      writeCollapsed(UPCOMING_COLLAPSED_KEY, next);
+      return next;
+    });
+  }
+
+  function toggleUndatedCollapsed(): void {
+    setUndatedCollapsed((current) => {
+      const next = !current;
+      writeCollapsed(UNDATED_COLLAPSED_KEY, next);
+      return next;
+    });
+  }
+
   function toggleDoneCollapsed(): void {
     setDoneCollapsed((current) => {
       const next = !current;
-      writeDoneCollapsed(next);
+      writeCollapsed(CLOSED_COLLAPSED_KEY, next);
       return next;
     });
+  }
+
+  // The chip row's own handler: flips exactly `chip`'s own dimension via
+  // `toggleChip` (`src/shared/task-filter.ts`) — the functional update reads
+  // the latest filter regardless of render timing, so this never races the
+  // `[filter]` effect below that re-reads on every change.
+  function handleToggleChip(chip: QuickChip): void {
+    setFilter((current) => toggleChip(current, chip, today));
   }
 
   function openSheet(task: TaskDto): void {
@@ -253,10 +317,13 @@ export function TodayScreen({
   }
 
   useEffect(() => {
-    // Runs once, on mount — every later refetch is triggered explicitly
-    // (a mutation, `visibilitychange`, or reconnecting).
+    // Runs on mount AND on every filter change (the chip row, the sheet and
+    // *Limpar filtros* all only call `setFilter` — this is the one place
+    // that turns a new filter into the read, so a chip tap issues exactly
+    // one `GET /api/tasks`). Every OTHER refetch is triggered explicitly (a
+    // mutation, `visibilitychange`, or reconnecting).
     void refresh();
-  }, []);
+  }, [filter]);
 
   useEffect(() => {
     function handleVisibilityChange(): void {
@@ -296,18 +363,52 @@ export function TodayScreen({
       />
     ) : null;
 
+  /** The `<ul>` of `TaskRow`s shared by every group — five callers, one prop shape, unchanged from what the screen rendered before grouping. */
+  function renderTaskRows(rows: TaskDto[]): ReactNode {
+    return (
+      <ul className="m-0 flex list-none flex-col gap-2 p-0">
+        {rows.map((task) => (
+          <TaskRow
+            key={task.id}
+            task={task}
+            today={today}
+            busy={busy || !writable}
+            editing={editingId === task.id}
+            onToggle={(next) => void (next ? complete(task.id) : reopen(task.id))}
+            onOpen={() => openSheet(task)}
+            onEdit={() => setEditingId(task.id)}
+            onCommitTitle={(newTitle) => commitTitle(task.id, newTitle)}
+            onCancelEdit={() => setEditingId(null)}
+          />
+        ))}
+      </ul>
+    );
+  }
+
   return (
     <div
       data-shell
-      className="mx-auto grid h-dvh w-full max-w-[640px] grid-rows-[auto_auto_1fr_auto_auto] overflow-clip bg-bg"
+      className="mx-auto grid h-dvh w-full max-w-[640px] grid-rows-[auto_auto_auto_1fr_auto_auto] overflow-clip bg-bg"
     >
-      <TodayHeader now={now} remaining={open.length} />
+      <TodayHeader
+        now={now}
+        remaining={
+          groups.today.length +
+          groups.overdue.length +
+          groups.upcoming.length +
+          groups.undated.length
+        }
+        activeFilterCount={activeCount(filter)}
+        onOpenFilters={() => setFiltersOpen(true)}
+      />
 
       {connectivity !== "online" ? (
         <Banner lead="Sem conexão." body="Dá para ler, mas não para salvar por enquanto." />
       ) : (
         <div />
       )}
+
+      <FilterChips filter={filter} today={today} onToggleChip={handleToggleChip} />
 
       <main className="flex flex-col gap-2 overflow-y-auto overscroll-contain px-4 pb-2">
         {tasks === null && loadError === null && <Skeleton slow={slow} />}
@@ -323,69 +424,55 @@ export function TodayScreen({
         )}
 
         {tasks !== null && tasks.length === 0 && (
-          <EmptyState onCapture={() => captureRef.current?.focus()} />
+          <EmptyState
+            onCapture={() => captureRef.current?.focus()}
+            filtered={activeCount(filter) > 0}
+            onClearFilters={() => setFilter(EMPTY_FILTER)}
+          />
         )}
 
         {tasks !== null && tasks.length > 0 && (
           <>
-            <ul className="m-0 flex list-none flex-col gap-2 p-0">
-              {open.map((task) => (
-                <TaskRow
-                  key={task.id}
-                  task={task}
-                  today={today}
-                  busy={busy || !writable}
-                  editing={editingId === task.id}
-                  onToggle={(next) => void (next ? complete(task.id) : reopen(task.id))}
-                  onOpen={() => openSheet(task)}
-                  onEdit={() => setEditingId(task.id)}
-                  onCommitTitle={(newTitle) => commitTitle(task.id, newTitle)}
-                  onCancelEdit={() => setEditingId(null)}
-                />
-              ))}
-            </ul>
+            <TaskGroup
+              name="Atrasadas"
+              count={groups.overdue.length}
+              collapsed={overdueCollapsed}
+              onToggle={toggleOverdueCollapsed}
+            >
+              {renderTaskRows(groups.overdue)}
+            </TaskGroup>
 
-            {closed.length > 0 && (
-              <section aria-label="Concluídas">
-                <button
-                  type="button"
-                  aria-expanded={!doneCollapsed}
-                  onClick={toggleDoneCollapsed}
-                  className="flex min-h-12 w-full items-center gap-2 rounded-control text-left"
-                >
-                  {/* prettier-ignore */}
-                  <h2 className="m-0 font-text text-t2 font-semibold text-ink">Concluídas</h2>
-                  <span className="font-data text-t1 font-semibold text-muted tabular-nums">
-                    {closed.length}
-                  </span>
-                  <ChevronDown
-                    className={cn(
-                      "ml-auto size-4 transition-transform",
-                      !doneCollapsed && "rotate-180",
-                    )}
-                    aria-hidden="true"
-                  />
-                </button>
-                {!doneCollapsed && (
-                  <ul className="m-0 flex list-none flex-col gap-2 p-0">
-                    {closed.map((task) => (
-                      <TaskRow
-                        key={task.id}
-                        task={task}
-                        today={today}
-                        busy={busy || !writable}
-                        editing={editingId === task.id}
-                        onToggle={(next) => void (next ? complete(task.id) : reopen(task.id))}
-                        onOpen={() => openSheet(task)}
-                        onEdit={() => setEditingId(task.id)}
-                        onCommitTitle={(newTitle) => commitTitle(task.id, newTitle)}
-                        onCancelEdit={() => setEditingId(null)}
-                      />
-                    ))}
-                  </ul>
-                )}
-              </section>
-            )}
+            {/* Never collapsible (layout standard §2.5): no `onToggle`, so `TaskGroup` renders no control at all. */}
+            <TaskGroup name="Hoje" count={groups.today.length}>
+              {renderTaskRows(groups.today)}
+            </TaskGroup>
+
+            <TaskGroup
+              name="Próximas"
+              count={groups.upcoming.length}
+              collapsed={upcomingCollapsed}
+              onToggle={toggleUpcomingCollapsed}
+            >
+              {renderTaskRows(groups.upcoming)}
+            </TaskGroup>
+
+            <TaskGroup
+              name="Sem data"
+              count={groups.undated.length}
+              collapsed={undatedCollapsed}
+              onToggle={toggleUndatedCollapsed}
+            >
+              {renderTaskRows(groups.undated)}
+            </TaskGroup>
+
+            <TaskGroup
+              name="Concluídas"
+              count={groups.closed.length}
+              collapsed={doneCollapsed}
+              onToggle={toggleDoneCollapsed}
+            >
+              {renderTaskRows(groups.closed)}
+            </TaskGroup>
           </>
         )}
       </main>
@@ -427,6 +514,15 @@ export function TodayScreen({
           dispatchSheet({ type: "cancel-delete" });
         }}
         onDeleteConfirm={deleteSheetTask}
+      />
+
+      {/* Never stack sheets (layout standard §3): gated on the same
+          condition the toast slot above already uses. */}
+      <FilterSheet
+        open={filtersOpen && sheet.taskId === null}
+        onOpenChange={setFiltersOpen}
+        filter={filter}
+        onChange={setFilter}
       />
     </div>
   );

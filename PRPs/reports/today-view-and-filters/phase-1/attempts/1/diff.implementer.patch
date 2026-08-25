@@ -1,0 +1,131 @@
+diff --git a/PRPs/reports/today-view-and-filters/phase-1/attempts/1/pre-state.txt b/PRPs/reports/today-view-and-filters/phase-1/attempts/1/pre-state.txt
+new file mode 100644
+index 0000000..532f52c
+--- /dev/null
++++ b/PRPs/reports/today-view-and-filters/phase-1/attempts/1/pre-state.txt
+@@ -0,0 +1 @@
++a68e34c3356155880a6f7cffb83f62181885f02b
+diff --git a/docs/api-reference.md b/docs/api-reference.md
+index 45daa94..1444120 100644
+--- a/docs/api-reference.md
++++ b/docs/api-reference.md
+@@ -14,7 +14,7 @@
+ | Method | Route | Behavior |
+ |---|---|---|
+ | GET | `/api/health` | `{ ok: true }` |
+-| GET | `/api/tasks?status=open\|done\|missed&limit=N` | `{ tasks: TaskDto[] }` in urgency order (see the frozen read contract below), max `MAX_TASK_LIMIT` (500). Unknown status → 400; invalid `limit` → 400 |
++| GET | `/api/tasks?status=open\|done\|missed&from=YYYY-MM-DD&to=YYYY-MM-DD&priority=high\|normal\|low&limit=N` | `{ tasks: TaskDto[] }` in urgency order (see the frozen read contract below), max `MAX_TASK_LIMIT` (500). `from`/`to` are inclusive and compare against `coalesce(deadline, scheduledDate)`, so a Task with neither date is outside any range; an inverted range (`from` after `to`) answers `200` with an empty list. `priority=normal` also matches an unset priority. Unknown status, an invalid date, an unknown priority, or an invalid `limit` → 400 |
+ | POST | `/api/tasks` | Create. `title` required; `deadline` XOR `scheduledDate` (both must be valid calendar dates); `priority` is `high\|normal\|low` or absent → 201 `{ task }` |
+ | PATCH | `/api/tasks/:id` | Edit. Editable keys are exactly `title`, `description`, `deadline`, `scheduledDate`, `priority` (`EDITABLE_TASK_FIELDS`); any other key — `id`, `status`, `createdAt`, `completedAt`, `seriesId`, `occurrenceDate`, `detached`, `lifeAreaId`, or a typo — → 400. An empty body → 400. Setting one date clears the other in the same write; editing a Task with a `seriesId` sets `detached` (ADR-0006, never exposed on the wire). → 200 `{ task }`, or 404 when absent |
+ | POST | `/api/tasks/:id/complete` | Open → done, stamps `completedAt`. Not open → 404 |
+@@ -35,10 +35,10 @@ calendar day in `PRAESTO_TIMEZONE` (`src/shared/dates.ts`), the same zone
+ **must not be re-derived in a client**: it is the one guarantee every consumer
+ has to agree on, and the client is the one place they cannot share.
+ 
+-**Filter vocabulary.** `status` is implemented. Unit 3 will add `from`, `to` and
+-`priority` — those names are reserved here so unit 3 extends this vocabulary
+-rather than inventing a competing one. Adding a filter is backward-compatible;
+-renaming one is not.
++**Filter vocabulary.** `status`, `from`, `to` and `priority` are all
++implemented. Unit 3 added `from`, `to` and `priority` on 2026-08-23, extending
++this vocabulary rather than inventing a competing one. Adding a filter is
++backward-compatible; renaming one is not.
+ 
+ **Paging.** No cursor. `limit` is accepted and honoured, capped at
+ `MAX_TASK_LIMIT` (500), which is also the implicit cap when `limit` is absent.
+diff --git a/documentation/30-architecture/architecture-overview.md b/documentation/30-architecture/architecture-overview.md
+index 667be6c..ceb59aa 100644
+--- a/documentation/30-architecture/architecture-overview.md
++++ b/documentation/30-architecture/architecture-overview.md
+@@ -116,8 +116,8 @@ renaming, removing or retyping one does not** — that asymmetry is what the
+ freeze actually protects, and it is why `updatedAt` and `detached` are
+ deliberately absent from the wire.
+ 
+-The full contract — the ordering key, the filter vocabulary reserved for unit 3,
+-and the paging revisit trigger — is recorded in
++The full contract — the ordering key, the filter vocabulary unit 3 implemented
++on 2026-08-23, and the paging revisit trigger — is recorded in
+ [`docs/api-reference.md`](../../docs/api-reference.md), which is the document
+ the PWA and every later unit code against.
+ 
+diff --git a/src/worker/routes/tasks.ts b/src/worker/routes/tasks.ts
+index ac3602b..d0f46a1 100644
+--- a/src/worker/routes/tasks.ts
++++ b/src/worker/routes/tasks.ts
+@@ -23,7 +23,8 @@ import { toTaskDto } from "../dto";
+ export const taskRoutes = new Hono<{ Bindings: Env }>();
+ 
+ /**
+- * FR-007 — list, optionally filtered by status, in urgency order.
++ * FR-007 — list, optionally filtered by status, a date range and priority, in
++ * urgency order.
+  *
+  * The order is the frozen read contract's most load-bearing guarantee, and it
+  * is produced HERE rather than in any client: unit 3's today view, the export
+@@ -37,6 +38,17 @@ export const taskRoutes = new Hono<{ Bindings: Env }>();
+  * The ordering is applied IN the query, before `limit`, so `?limit=N` returns
+  * the first N *of the ordered set*. Sorting after the limit would return the
+  * first N of an arbitrary set, which is exactly what AC-10 forbids.
++ *
++ * `from`/`to` compare against the same `coalesce(deadline, scheduled_date)`
++ * expression the ordering already uses, so a Task with neither date is never
++ * inside a range: a `NULL` comparison is never true, and that is the wanted
++ * behaviour, not an accident. An inverted range (`from` after `to`) needs no
++ * special case — the two clauses simply select nothing, the right answer to a
++ * well-formed request describing an empty interval.
++ *
++ * `priority=normal` also matches a `NULL` priority, because an unset priority
++ * means "not set" and sorts as normal (`docs/domain/areas/tasks.md`) — a plain
++ * equality would hide most of the real table.
+  */
+ taskRoutes.get("/", async (c) => {
+   const status = c.req.query("status");
+@@ -56,6 +68,21 @@ taskRoutes.get("/", async (c) => {
+     limit = parsed;
+   }
+ 
++  const from = c.req.query("from");
++  if (from !== undefined && !isCalendarDate(from)) {
++    return c.json({ error: "from must be a calendar date (YYYY-MM-DD)" }, 400);
++  }
++
++  const to = c.req.query("to");
++  if (to !== undefined && !isCalendarDate(to)) {
++    return c.json({ error: "to must be a calendar date (YYYY-MM-DD)" }, 400);
++  }
++
++  const priority = c.req.query("priority");
++  if (priority !== undefined && !isTaskPriority(priority)) {
++    return c.json({ error: `Unknown priority: ${priority}` }, 400);
++  }
++
+   const today = todayIn(new Date());
+   const dueDate = sql`coalesce(${tasks.deadline}, ${tasks.scheduledDate})`;
+   const urgencyBucket = sql`case
+@@ -65,11 +92,25 @@ taskRoutes.get("/", async (c) => {
+       else 2
+     end`;
+ 
++  // The clauses that apply, composed beside the ordering rather than after
++  // it: an empty array preserves today's no-filter query byte-for-byte, and
++  // `and(...)` composes whichever subset is present.
++  const clauses = [
++    status === undefined ? undefined : eq(tasks.status, status),
++    from === undefined ? undefined : sql`${dueDate} >= ${from}`,
++    to === undefined ? undefined : sql`${dueDate} <= ${to}`,
++    priority === undefined
++      ? undefined
++      : priority === "normal"
++        ? sql`(${tasks.priority} = 'normal' or ${tasks.priority} is null)`
++        : eq(tasks.priority, priority),
++  ].filter((clause) => clause !== undefined);
++
+   const db = createDb(c.env);
+   const rows = await db
+     .select()
+     .from(tasks)
+-    .where(status === undefined ? undefined : eq(tasks.status, status))
++    .where(clauses.length === 0 ? undefined : and(...clauses))
+     .orderBy(urgencyBucket, dueDate, desc(tasks.createdAt))
+     .limit(limit);
+ 

@@ -1,0 +1,95 @@
+# TDD initial suite — phase 3
+# Source PRD: PRPs/prds/today-view-and-filters.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/today-view-and-filters-phase-3-quick-filters-and-the-filter-sheet.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Mode: test-first (tdd: true, test_frameworks: ["vitest"])
+# Generated: 2026-08-24
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-12 | NEW_TEST_REQUIRED | `test/task-filter.test.ts` — 19 cases across five `describe` blocks: `toQuery` (empty string, single dimension, fixed order, encoding), `activeCount` (a range counts as ONE period), `isChipActive` (including sheet-set values that must leave a chip unpressed), `toggleChip` (own dimension only, no mutation, three-chip composition), and purity |
+| AC-11 | MANUAL | The header's 48 px *Filtros* button, its accessible name naming the active count, and the numeric badge appearing at 1 and absent at 0 are read in the browser pass |
+| AC-13 | MANUAL | The round trip — press *Alta prioridade*, open the sheet and see *Alta* selected; choose *Baixa* there and watch the chip release — is the one claim that proves the two surfaces are views of one state rather than two states |
+| AC-14 | MANUAL | The filtered empty state (*Nenhuma tarefa com esse filtro.* + *Limpar filtros*) and the restore-on-clear are simulated against real rows |
+| AC-15 | MANUAL + STATIC | The sheet's `showModal()`, its three labelled dimensions, the two native date inputs and the absence of an *Aplicar* button are pinned by the plan's Task 6 VALIDATE; `Esc`, light dismiss and focus return are pane checks; the Android back gesture is a device check |
+| AC-16 | MANUAL + STATIC | The cold-start reset is pinned statically by Task 8's grep (the filter is never written to storage) and behaviourally by a reload in the pane |
+| AC-17 | STATIC / ARTIFACT (gate) | `npm test` + `npm run check` + `npm run build` green with the count at or above 349 and `git diff --quiet -- test/` clean; the Tier A / Tier B record filed under `PRPs/reports/today-view-and-filters/phase-3/` |
+| AC-1..AC-6 | OUT_OF_PHASE_SCOPE | (phase 1 — `complete`) |
+| AC-7..AC-10 | OUT_OF_PHASE_SCOPE | (phase 2 — `complete`) |
+
+## The RED, and the compensation it needs
+
+`npx vitest run --project worker test/task-filter.test.ts` before any production
+change fails with **`Cannot find module '../src/shared/task-filter'`** — the same
+weak module-resolution shape phase 2 recorded, for the same reason: the module IS
+this phase's deliverable, so a test-first suite cannot import it yet. A
+module-not-found proves only that a file is absent; it cannot tell a
+discriminative suite from a nonsensical one, and it would look identical if the
+import path were mistyped.
+
+Two things carry the weight the RED cannot, both applied as phase 2 established:
+
+1. **The import path is verified, not assumed** — `../src/shared/task-filter`
+   resolves to `src/shared/task-filter.ts`, byte-identical to the path the
+   APPROVED plan's Task 1 and its `## Files to Change` row name.
+2. **Every assertion was hand-checked against the plan's literal spec before any
+   code existed.** A reference implementation of Task 1 — the four-field record,
+   the fixed `status, from, to, priority` order, dimension counting, own-dimension
+   toggling — was run against the suite's eight load-bearing expectations, and all
+   eight hold. This is what phase 2's review made non-negotiable: without it a
+   suite can be simultaneously unrunnable and unsatisfiable, which is exactly the
+   defect B8 caught there (two assertions demanding mutually exclusive outcomes
+   from the same call).
+
+The real proof remains the GREEN, and it must arrive with `git diff --quiet -- test/`
+clean — the plan's Level 3 gate, which fails if any test file changed at all.
+
+## What the suite is built to catch
+
+The module exists to stop one specific class of bug: **the chip row and the
+filter sheet drifting into two states.** Three cases attack it from different
+angles.
+
+- *"touches no dimension but its own"* starts from a filter where all four fields
+  are set — the state only the sheet can produce — and asserts that toggling a
+  chip changes exactly one field. A chip that also reset the status, or cleared
+  the range, would pass every simpler test and still make the two surfaces
+  disagree from that tap onwards.
+- *"clears only `to` when the today chip is switched off, leaving `from` alone"*
+  pins the asymmetry that makes *Para hoje* composable with a sheet-set range.
+- *"is false when the dimension holds a different value"* covers the reverse
+  direction: the sheet can select `status: done` or `priority: low`, values no
+  chip represents, and the chip must read unpressed rather than pressed-but-wrong.
+
+`toQuery(EMPTY_FILTER) === ""` is the other load-bearing case, and it is not
+cosmetic: it is what keeps an unfiltered screen load issuing byte-identically the
+request the app makes today, so phase 1's contract tests stay meaningful.
+
+The purity block pins that no function reads the clock — `today` is an argument,
+proved by passing two different days and getting two different answers.
+
+## Test files written this session
+
+- `test/task-filter.test.ts` (19 tests across 5 `describe` blocks)
+
+**Count corrected after review.** The first draft of this manifest said 18; B8
+counted 19 `it()` blocks and was right. Recorded rather than quietly fixed,
+because a manifest that miscounts its own suite is the kind of small inaccuracy
+that makes the rest of it less trustworthy.
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no update/delete this session) | — | — | — |
+
+No existing test was updated, removed or weakened. Phase 1's
+`test/task-list-filters.test.ts`, phase 2's `test/task-groups.test.ts` and unit
+2's `test/task-list-contract.test.ts` are all untouched.
+
+## Status
+
+*Approved: 2026-08-24*
+*Status: APPROVED*

@@ -1,0 +1,14 @@
+{
+  "attempt": 1,
+  "verdict": "GREEN",
+  "framework": "vitest",
+  "command": "npm test",
+  "totals": {
+    "files": 15,
+    "passed": 333,
+    "failed": 0,
+    "skipped": 0
+  },
+  "failures": [],
+  "note": "Run by hand from the main session. The test-runner agent could not be dispatched: it requires .claude/settings.json (test-runner.md:70, ABORT_INFRA/missing_settings_json) and this repository has never had one — the same deviation recorded for every phase of ui-design-pass. The suite itself is unaffected; the agent's precondition is about permission prompts, not about the tests."
+}

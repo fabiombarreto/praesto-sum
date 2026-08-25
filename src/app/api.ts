@@ -1,4 +1,5 @@
-import type { CreateTaskInput, TaskDto, TaskStatus, UpdateTaskInput } from "../shared/api";
+import type { CreateTaskInput, TaskDto, UpdateTaskInput } from "../shared/api";
+import { EMPTY_FILTER, toQuery, type TaskFilter } from "../shared/task-filter";
 import { createTokenStore } from "../shared/token-store";
 import { durableTokenStorage, legacyTokenStorage } from "./token-storage";
 
@@ -87,11 +88,13 @@ export async function checkHealth(): Promise<void> {
  * the one thing every consumer must agree on in the one place they cannot
  * share (`docs/api-reference.md`, "Task read contract").
  */
-export async function listTasks(status?: TaskStatus, limit?: number): Promise<TaskDto[]> {
-  const params = new URLSearchParams();
-  if (status !== undefined) params.set("status", status);
-  if (limit !== undefined) params.set("limit", String(limit));
-  const query = params.size === 0 ? "" : `?${params.toString()}`;
+export async function listTasks(
+  filter: TaskFilter = EMPTY_FILTER,
+  limit?: number,
+): Promise<TaskDto[]> {
+  const base = toQuery(filter);
+  const query =
+    limit === undefined ? base : `${base}${base === "" ? "?" : "&"}limit=${String(limit)}`;
 
   const body = await request<{ tasks: TaskDto[] }>(`/api/tasks${query}`);
   return body.tasks;

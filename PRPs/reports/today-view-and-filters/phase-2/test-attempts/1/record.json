@@ -1,0 +1,14 @@
+{
+  "attempt": 1,
+  "verdict": "GREEN",
+  "framework": "vitest",
+  "command": "npm test",
+  "totals": {
+    "files": 16,
+    "passed": 349,
+    "failed": 0,
+    "skipped": 0
+  },
+  "failures": [],
+  "note": "Run by hand from the main session; the test-runner agent needs .claude/settings.json (test-runner.md:70) which this repository has never had - the same deviation recorded for every ui-design-pass phase and for phase 1."
+}

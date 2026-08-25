@@ -23,7 +23,8 @@ import { toTaskDto } from "../dto";
 export const taskRoutes = new Hono<{ Bindings: Env }>();
 
 /**
- * FR-007 — list, optionally filtered by status, in urgency order.
+ * FR-007 — list, optionally filtered by status, a date range and priority, in
+ * urgency order.
  *
  * The order is the frozen read contract's most load-bearing guarantee, and it
  * is produced HERE rather than in any client: unit 3's today view, the export
@@ -37,6 +38,17 @@ export const taskRoutes = new Hono<{ Bindings: Env }>();
  * The ordering is applied IN the query, before `limit`, so `?limit=N` returns
  * the first N *of the ordered set*. Sorting after the limit would return the
  * first N of an arbitrary set, which is exactly what AC-10 forbids.
+ *
+ * `from`/`to` compare against the same `coalesce(deadline, scheduled_date)`
+ * expression the ordering already uses, so a Task with neither date is never
+ * inside a range: a `NULL` comparison is never true, and that is the wanted
+ * behaviour, not an accident. An inverted range (`from` after `to`) needs no
+ * special case — the two clauses simply select nothing, the right answer to a
+ * well-formed request describing an empty interval.
+ *
+ * `priority=normal` also matches a `NULL` priority, because an unset priority
+ * means "not set" and sorts as normal (`docs/domain/areas/tasks.md`) — a plain
+ * equality would hide most of the real table.
  */
 taskRoutes.get("/", async (c) => {
   const status = c.req.query("status");
@@ -56,6 +68,21 @@ taskRoutes.get("/", async (c) => {
     limit = parsed;
   }
 
+  const from = c.req.query("from");
+  if (from !== undefined && !isCalendarDate(from)) {
+    return c.json({ error: "from must be a calendar date (YYYY-MM-DD)" }, 400);
+  }
+
+  const to = c.req.query("to");
+  if (to !== undefined && !isCalendarDate(to)) {
+    return c.json({ error: "to must be a calendar date (YYYY-MM-DD)" }, 400);
+  }
+
+  const priority = c.req.query("priority");
+  if (priority !== undefined && !isTaskPriority(priority)) {
+    return c.json({ error: `Unknown priority: ${priority}` }, 400);
+  }
+
   const today = todayIn(new Date());
   const dueDate = sql`coalesce(${tasks.deadline}, ${tasks.scheduledDate})`;
   const urgencyBucket = sql`case
@@ -65,11 +92,25 @@ taskRoutes.get("/", async (c) => {
       else 2
     end`;
 
+  // The clauses that apply, composed beside the ordering rather than after
+  // it: an empty array preserves today's no-filter query byte-for-byte, and
+  // `and(...)` composes whichever subset is present.
+  const clauses = [
+    status === undefined ? undefined : eq(tasks.status, status),
+    from === undefined ? undefined : sql`${dueDate} >= ${from}`,
+    to === undefined ? undefined : sql`${dueDate} <= ${to}`,
+    priority === undefined
+      ? undefined
+      : priority === "normal"
+        ? sql`(${tasks.priority} = 'normal' or ${tasks.priority} is null)`
+        : eq(tasks.priority, priority),
+  ].filter((clause) => clause !== undefined);
+
   const db = createDb(c.env);
   const rows = await db
     .select()
     .from(tasks)
-    .where(status === undefined ? undefined : eq(tasks.status, status))
+    .where(clauses.length === 0 ? undefined : and(...clauses))
     .orderBy(urgencyBucket, dueDate, desc(tasks.createdAt))
     .limit(limit);
 

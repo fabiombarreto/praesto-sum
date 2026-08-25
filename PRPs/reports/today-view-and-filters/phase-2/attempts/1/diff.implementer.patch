@@ -1,0 +1,461 @@
+diff --git a/PRPs/reports/today-view-and-filters/phase-2/attempts/1/pre-state.txt b/PRPs/reports/today-view-and-filters/phase-2/attempts/1/pre-state.txt
+new file mode 100644
+index 0000000..a08f224
+--- /dev/null
++++ b/PRPs/reports/today-view-and-filters/phase-2/attempts/1/pre-state.txt
+@@ -0,0 +1 @@
++785d86761b85b4fa8c59a420462a8c18dc38616e
+diff --git a/documentation/10-product/visual-identity.md b/documentation/10-product/visual-identity.md
+index 010cd0c..a156d2d 100644
+--- a/documentation/10-product/visual-identity.md
++++ b/documentation/10-product/visual-identity.md
+@@ -1,6 +1,6 @@
+ ---
+ status: active
+-last_updated: 2026-08-21
++last_updated: 2026-08-23
+ review_trigger: "a step of UI/UX-plan activity A2 lands, an identity element (mark, tokens, voice) changes, or decision 5 is accepted"
+ ---
+ 
+@@ -95,6 +95,7 @@ Microcopy table (UI values in pt-BR — ADR-0009; the keys stay English in code)
+ | Row meta line | *até hoje* · *até amanhã* · *até sáb., 22/08* · *fazer hoje* · *fazer sáb., 22/08* · *atrasada · venceu ontem* · *atrasada · venceu ter., 18/08* · *atrasada · era para ter., 18/08* · *alta* / *baixa* · *não concluída* |
+ | Row actions (accessible names) | *Concluir {título}* / *Reabrir {título}* · *Editar título* |
+ | Section | **Concluídas** · count |
++| Group headers | **Atrasadas** · **Hoje** · **Próximas** · **Sem data** — each followed by its count |
+ | Toasts | *Tarefa reaberta* · *Tarefa excluída* |
+ | List load error | the approved request-error sentence · *Tentar de novo* |
+ | Request errors (tested) | `Sem conexão com o servidor. Nada se perdeu — tente de novo quando a conexão voltar.` · `O servidor recusou a operação (código N). Tente de novo.` |
+@@ -112,6 +113,7 @@ TBD — after A5 ships: a week of cold opens on the phone against the three É w
+ 
+ | Date | What changed |
+ |---|---|
++| 2026-08-23 | **today-view-and-filters Phase 2 (Task 2): the four group-header names added ahead of the code that uses them** (`PRPs/plans/today-view-and-filters-phase-2-grouping-and-the-grouped-list.plan.md`) — *Atrasadas*, *Hoje*, *Próximas* and *Sem data*, the group headers layout standard §2.5 specifies, each rendered with its count by the new `TaskGroup` component |
+ | 2026-08-21 | **ui-design-pass Phase 2 (Task 10): one microcopy row added ahead of the code that uses it** (`PRPs/plans/ui-design-pass-phase-2-today-screen.plan.md`) — *List load error*, the retry copy the *Hoje* screen shows under a failed first load, pairing the existing request-error sentence with the infinitive button *Tentar de novo* |
+ | 2026-08-21 | **ui-design-pass Phase 1: the A5 microcopy rows approved by the owner in the PRD scope round added to the table above, ahead of Phase 1's code** (`PRPs/prds/ui-design-pass.prd.md`, "Microcopy added by this pass") — token gate, token-store failure, header, capture deck, row meta line, row actions, section, toasts, request errors, detail sheet, `<title>`, manifest |
+ | 2026-08-20 | **Step 2.9: voice & tone and microcopy approved; document `draft → active`.** Step 2.10 (a week of validation in use) runs after A5 ships. The dev-only `/design` playground moves to A5, where the tokens are first applied |
+diff --git a/src/app/components/TaskGroup.tsx b/src/app/components/TaskGroup.tsx
+new file mode 100644
+index 0000000..ef15012
+--- /dev/null
++++ b/src/app/components/TaskGroup.tsx
+@@ -0,0 +1,68 @@
++// One group section — the 40 px header (name + count + an optional collapse
++// toggle) plus the row list, generalized from the shipped *Concluídas*
++// markup (layout standard §2.5) so the section shape exists once and is
++// reused four times for the groups plus a fifth time for *Concluídas*.
++
++import type { ReactNode } from "react";
++import { ChevronDown } from "lucide-react";
++import { cn } from "./ui/cn";
++
++const HEADER_CLASSNAME = "flex min-h-12 w-full items-center gap-2 rounded-control text-left";
++
++export function TaskGroup({
++  name,
++  count,
++  collapsed,
++  onToggle,
++  children,
++}: {
++  name: string;
++  count: number;
++  collapsed?: boolean;
++  onToggle?: () => void;
++  children: ReactNode;
++}) {
++  // A defensive early return: the caller decides which groups to render, but
++  // an empty section must never reach the DOM (layout standard §2.7).
++  if (count === 0) return null;
++
++  // The count renders in BOTH branches below, whether or not the group is
++  // collapsed — the "my tasks vanished" trap §2.5 names, and the single
++  // most load-bearing detail of this component.
++  const headerContent = (
++    <>
++      {/* prettier-ignore */}
++      <h2 className="m-0 font-text text-t2 font-semibold text-ink">{name}</h2>
++      <span className="font-data text-t1 font-semibold text-muted tabular-nums">{count}</span>
++      {onToggle !== undefined && (
++        <ChevronDown
++          className={cn("ml-auto size-4 transition-transform", !collapsed && "rotate-180")}
++          aria-hidden="true"
++        />
++      )}
++    </>
++  );
++
++  // *Hoje* is never collapsible (layout standard §2.5): with no `onToggle`
++  // supplied, the header presents no control that would do nothing — no
++  // button, no chevron, no `aria-expanded` — and its rows always show.
++  const showChildren = onToggle === undefined || !collapsed;
++
++  return (
++    <section aria-label={name}>
++      {onToggle === undefined ? (
++        <div className={HEADER_CLASSNAME}>{headerContent}</div>
++      ) : (
++        <button
++          type="button"
++          aria-expanded={!collapsed}
++          onClick={onToggle}
++          className={HEADER_CLASSNAME}
++        >
++          {headerContent}
++        </button>
++      )}
++      {showChildren && children}
++    </section>
++  );
++}
+diff --git a/src/app/components/TodayScreen.tsx b/src/app/components/TodayScreen.tsx
+index 83fda67..ad884b8 100644
+--- a/src/app/components/TodayScreen.tsx
++++ b/src/app/components/TodayScreen.tsx
+@@ -6,14 +6,15 @@
+ // which Task is open, which view it shows, and the per-Task drafts kept for
+ // the session.
+ 
+-import { ChevronDown } from "lucide-react";
+ import { useEffect, useReducer, useRef, useState } from "react";
++import type { ReactNode } from "react";
+ import type { TaskDto } from "../../shared/api";
+ import { canWrite } from "../../shared/connectivity";
+ import { todayIn } from "../../shared/dates";
+ import { classifyRequestFailure } from "../../shared/request-failure";
+ import type { ShareTarget } from "../../shared/share-target";
+ import { buildTaskPatch } from "../../shared/task-edit";
++import { groupTasks } from "../../shared/task-groups";
+ import { currentDraft, INITIAL_TASK_SHEET_STATE, reduceTaskSheet } from "../../shared/task-sheet";
+ import {
+   ApiError,
+@@ -28,29 +29,35 @@ import { useConnectivity } from "../hooks/useConnectivity";
+ import { dismissToast, showToast, useToast } from "../toast-store";
+ import { CaptureDeck } from "./CaptureDeck";
+ import { EmptyState } from "./EmptyState";
++import { TaskGroup } from "./TaskGroup";
+ import { TaskRow } from "./TaskRow";
+ import { TaskSheet } from "./TaskSheet";
+ import { TodayHeader } from "./TodayHeader";
+ import { Banner } from "./ui/Banner";
+ import { Button } from "./ui/Button";
+-import { cn } from "./ui/cn";
+ import { Skeleton } from "./ui/Skeleton";
+ import { Toast } from "./ui/Toast";
+ 
+-const DONE_COLLAPSED_KEY = "praesto.today.doneCollapsed";
++const OVERDUE_COLLAPSED_KEY = "praesto.today.collapsed.overdue";
++const UPCOMING_COLLAPSED_KEY = "praesto.today.collapsed.upcoming";
++const UNDATED_COLLAPSED_KEY = "praesto.today.collapsed.undated";
++// Kept exactly as shipped — renaming this literal would migrate (silently
++// lose) the owner's existing *Concluídas* preference.
++const CLOSED_COLLAPSED_KEY = "praesto.today.doneCollapsed";
+ 
+-/** Guarded like the legacy token storage (`src/app/token-storage.ts`): a denial or a missing API degrades to the default, never throws. */
+-function readDoneCollapsed(): boolean {
++/** Guarded like the legacy token storage (`src/app/token-storage.ts`): a denial or a missing API degrades to `fallback`, never throws. */
++function readCollapsed(key: string, fallback: boolean): boolean {
+   try {
+-    return window.localStorage.getItem(DONE_COLLAPSED_KEY) === "1";
++    const stored = window.localStorage.getItem(key);
++    return stored === null ? fallback : stored === "1";
+   } catch {
+-    return false;
++    return fallback;
+   }
+ }
+ 
+-function writeDoneCollapsed(value: boolean): void {
++function writeCollapsed(key: string, value: boolean): void {
+   try {
+-    window.localStorage.setItem(DONE_COLLAPSED_KEY, value ? "1" : "0");
++    window.localStorage.setItem(key, value ? "1" : "0");
+   } catch {
+     // Best-effort — a denial or a missing API must never break the toggle.
+   }
+@@ -72,7 +79,18 @@ export function TodayScreen({
+   const [sheet, dispatchSheet] = useReducer(reduceTaskSheet, INITIAL_TASK_SHEET_STATE);
+   const [sheetError, setSheetError] = useState<string | null>(null);
+   const [editingId, setEditingId] = useState<string | null>(null);
+-  const [doneCollapsed, setDoneCollapsed] = useState(readDoneCollapsed);
++  const [overdueCollapsed, setOverdueCollapsed] = useState(() =>
++    readCollapsed(OVERDUE_COLLAPSED_KEY, false),
++  );
++  const [upcomingCollapsed, setUpcomingCollapsed] = useState(() =>
++    readCollapsed(UPCOMING_COLLAPSED_KEY, true),
++  );
++  const [undatedCollapsed, setUndatedCollapsed] = useState(() =>
++    readCollapsed(UNDATED_COLLAPSED_KEY, true),
++  );
++  const [doneCollapsed, setDoneCollapsed] = useState(() =>
++    readCollapsed(CLOSED_COLLAPSED_KEY, false),
++  );
+   const captureRef = useRef<HTMLInputElement>(null);
+ 
+   const today = todayIn(new Date());
+@@ -81,8 +99,7 @@ export function TodayScreen({
+   const { state: connectivity, report } = useConnectivity({ onOnline: () => void refresh() });
+   const toast = useToast();
+   const writable = canWrite(connectivity);
+-  const open = tasks?.filter((task) => task.status === "open") ?? [];
+-  const closed = tasks?.filter((task) => task.status !== "open") ?? [];
++  const groups = groupTasks(tasks ?? [], today);
+   const sheetTask = tasks?.find((task) => task.id === sheet.taskId) ?? null;
+ 
+   /** A 401 routes to the token gate; otherwise reports the failure kind and returns its message (`null` on the 401 route, since the caller is about to unmount). */
+@@ -210,10 +227,34 @@ export function TodayScreen({
+     }
+   }
+ 
++  function toggleOverdueCollapsed(): void {
++    setOverdueCollapsed((current) => {
++      const next = !current;
++      writeCollapsed(OVERDUE_COLLAPSED_KEY, next);
++      return next;
++    });
++  }
++
++  function toggleUpcomingCollapsed(): void {
++    setUpcomingCollapsed((current) => {
++      const next = !current;
++      writeCollapsed(UPCOMING_COLLAPSED_KEY, next);
++      return next;
++    });
++  }
++
++  function toggleUndatedCollapsed(): void {
++    setUndatedCollapsed((current) => {
++      const next = !current;
++      writeCollapsed(UNDATED_COLLAPSED_KEY, next);
++      return next;
++    });
++  }
++
+   function toggleDoneCollapsed(): void {
+     setDoneCollapsed((current) => {
+       const next = !current;
+-      writeDoneCollapsed(next);
++      writeCollapsed(CLOSED_COLLAPSED_KEY, next);
+       return next;
+     });
+   }
+@@ -296,12 +337,42 @@ export function TodayScreen({
+       />
+     ) : null;
+ 
++  /** The `<ul>` of `TaskRow`s shared by every group — five callers, one prop shape, unchanged from what the screen rendered before grouping. */
++  function renderTaskRows(rows: TaskDto[]): ReactNode {
++    return (
++      <ul className="m-0 flex list-none flex-col gap-2 p-0">
++        {rows.map((task) => (
++          <TaskRow
++            key={task.id}
++            task={task}
++            today={today}
++            busy={busy || !writable}
++            editing={editingId === task.id}
++            onToggle={(next) => void (next ? complete(task.id) : reopen(task.id))}
++            onOpen={() => openSheet(task)}
++            onEdit={() => setEditingId(task.id)}
++            onCommitTitle={(newTitle) => commitTitle(task.id, newTitle)}
++            onCancelEdit={() => setEditingId(null)}
++          />
++        ))}
++      </ul>
++    );
++  }
++
+   return (
+     <div
+       data-shell
+       className="mx-auto grid h-dvh w-full max-w-[640px] grid-rows-[auto_auto_1fr_auto_auto] overflow-clip bg-bg"
+     >
+-      <TodayHeader now={now} remaining={open.length} />
++      <TodayHeader
++        now={now}
++        remaining={
++          groups.today.length +
++          groups.overdue.length +
++          groups.upcoming.length +
++          groups.undated.length
++        }
++      />
+ 
+       {connectivity !== "online" ? (
+         <Banner lead="Sem conexão." body="Dá para ler, mas não para salvar por enquanto." />
+@@ -328,64 +399,46 @@ export function TodayScreen({
+ 
+         {tasks !== null && tasks.length > 0 && (
+           <>
+-            <ul className="m-0 flex list-none flex-col gap-2 p-0">
+-              {open.map((task) => (
+-                <TaskRow
+-                  key={task.id}
+-                  task={task}
+-                  today={today}
+-                  busy={busy || !writable}
+-                  editing={editingId === task.id}
+-                  onToggle={(next) => void (next ? complete(task.id) : reopen(task.id))}
+-                  onOpen={() => openSheet(task)}
+-                  onEdit={() => setEditingId(task.id)}
+-                  onCommitTitle={(newTitle) => commitTitle(task.id, newTitle)}
+-                  onCancelEdit={() => setEditingId(null)}
+-                />
+-              ))}
+-            </ul>
+-
+-            {closed.length > 0 && (
+-              <section aria-label="Concluídas">
+-                <button
+-                  type="button"
+-                  aria-expanded={!doneCollapsed}
+-                  onClick={toggleDoneCollapsed}
+-                  className="flex min-h-12 w-full items-center gap-2 rounded-control text-left"
+-                >
+-                  {/* prettier-ignore */}
+-                  <h2 className="m-0 font-text text-t2 font-semibold text-ink">Concluídas</h2>
+-                  <span className="font-data text-t1 font-semibold text-muted tabular-nums">
+-                    {closed.length}
+-                  </span>
+-                  <ChevronDown
+-                    className={cn(
+-                      "ml-auto size-4 transition-transform",
+-                      !doneCollapsed && "rotate-180",
+-                    )}
+-                    aria-hidden="true"
+-                  />
+-                </button>
+-                {!doneCollapsed && (
+-                  <ul className="m-0 flex list-none flex-col gap-2 p-0">
+-                    {closed.map((task) => (
+-                      <TaskRow
+-                        key={task.id}
+-                        task={task}
+-                        today={today}
+-                        busy={busy || !writable}
+-                        editing={editingId === task.id}
+-                        onToggle={(next) => void (next ? complete(task.id) : reopen(task.id))}
+-                        onOpen={() => openSheet(task)}
+-                        onEdit={() => setEditingId(task.id)}
+-                        onCommitTitle={(newTitle) => commitTitle(task.id, newTitle)}
+-                        onCancelEdit={() => setEditingId(null)}
+-                      />
+-                    ))}
+-                  </ul>
+-                )}
+-              </section>
+-            )}
++            <TaskGroup
++              name="Atrasadas"
++              count={groups.overdue.length}
++              collapsed={overdueCollapsed}
++              onToggle={toggleOverdueCollapsed}
++            >
++              {renderTaskRows(groups.overdue)}
++            </TaskGroup>
++
++            {/* Never collapsible (layout standard §2.5): no `onToggle`, so `TaskGroup` renders no control at all. */}
++            <TaskGroup name="Hoje" count={groups.today.length}>
++              {renderTaskRows(groups.today)}
++            </TaskGroup>
++
++            <TaskGroup
++              name="Próximas"
++              count={groups.upcoming.length}
++              collapsed={upcomingCollapsed}
++              onToggle={toggleUpcomingCollapsed}
++            >
++              {renderTaskRows(groups.upcoming)}
++            </TaskGroup>
++
++            <TaskGroup
++              name="Sem data"
++              count={groups.undated.length}
++              collapsed={undatedCollapsed}
++              onToggle={toggleUndatedCollapsed}
++            >
++              {renderTaskRows(groups.undated)}
++            </TaskGroup>
++
++            <TaskGroup
++              name="Concluídas"
++              count={groups.closed.length}
++              collapsed={doneCollapsed}
++              onToggle={toggleDoneCollapsed}
++            >
++              {renderTaskRows(groups.closed)}
++            </TaskGroup>
+           </>
+         )}
+       </main>
+diff --git a/src/shared/task-groups.ts b/src/shared/task-groups.ts
+new file mode 100644
+index 0000000..6cf87f1
+--- /dev/null
++++ b/src/shared/task-groups.ts
+@@ -0,0 +1,66 @@
++/**
++ * The client half of the frozen Task read contract (unit 2, 2026-08-15):
++ * `groupTasks` PARTITIONS the array the API already ordered into the buckets
++ * layout standard §2.5 specifies. It never sorts — the ordering is produced
++ * by the API and is its guarantee to keep (`docs/api-reference.md`), so
++ * re-deriving it here would put the one thing every consumer must agree on
++ * in the one place they cannot share.
++ *
++ * Like `src/shared/format.ts` and `src/shared/dates.ts`, this module is
++ * compiled into BOTH the browser and the Worker projects, so it stays
++ * environment-agnostic: no DOM globals, no runtime dependencies, and no
++ * reads of the clock. `today` is always an ARGUMENT, never read from the
++ * clock internally — that is what keeps every test deterministic regardless
++ * of when or where it runs.
++ */
++
++import type { TaskDto } from "./api";
++
++/** The five buckets a Task can belong to. Keys are English; the pt-BR group names live in `TaskGroup`. */
++export interface TaskGroups {
++  overdue: TaskDto[];
++  today: TaskDto[];
++  upcoming: TaskDto[];
++  undated: TaskDto[];
++  closed: TaskDto[];
++}
++
++/**
++ * Partitions `tasks` into the five buckets above in a single pass, pushing
++ * each Task into exactly one array in the order it was encountered — never
++ * sorted, never reversed, so the concatenation `[...overdue, ...today,
++ * ...upcoming, ...undated]` reproduces the input's open Tasks in exactly the
++ * same relative order the API returned them in.
++ *
++ * Status is read BEFORE the dates, mirroring `taskMetaLine`: any Task whose
++ * `status !== "open"` lands in `closed` regardless of its dates, so a `done`
++ * Task with an overdue deadline never reappears under `overdue`. An open
++ * Task's bucket then follows `deadline ?? scheduledDate` (at most one is
++ * set) compared against `today` as `YYYY-MM-DD` strings — zero-padded, so
++ * lexicographic order is chronological order — mirroring the server's own
++ * `urgencyBucket` CASE (`src/worker/routes/tasks.ts`): undated last, then
++ * `< today` (overdue), `= today`, `> today` (upcoming).
++ */
++export function groupTasks(tasks: readonly TaskDto[], today: string): TaskGroups {
++  const groups: TaskGroups = { overdue: [], today: [], upcoming: [], undated: [], closed: [] };
++
++  for (const task of tasks) {
++    if (task.status !== "open") {
++      groups.closed.push(task);
++      continue;
++    }
++
++    const due = task.deadline ?? task.scheduledDate;
++    if (due === null) {
++      groups.undated.push(task);
++    } else if (due < today) {
++      groups.overdue.push(task);
++    } else if (due === today) {
++      groups.today.push(task);
++    } else {
++      groups.upcoming.push(task);
++    }
++  }
++
++  return groups;
++}

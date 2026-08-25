@@ -1,0 +1,2081 @@
+diff --git a/PRPs/plans/today-view-and-filters-phase-3-quick-filters-and-the-filter-sheet.code-review.jsonl b/PRPs/plans/today-view-and-filters-phase-3-quick-filters-and-the-filter-sheet.code-review.jsonl
+new file mode 100644
+index 0000000..25cdf86
+--- /dev/null
++++ b/PRPs/plans/today-view-and-filters-phase-3-quick-filters-and-the-filter-sheet.code-review.jsonl
+@@ -0,0 +1 @@
++{"timestamp":"2026-08-24T13:30:00Z","attempt":1,"verdict":"CHANGES_REQUESTED","mode":"standard","rubric":[{"id":"R-S1","passed":true,"reason":"All 9 code/doc-bearing Step-by-Step Tasks (Task 9 is validation-only) have their target file(s) present in the diff: Task1->src/shared/task-filter.ts (CREATE); Task2->documentation/10-product/visual-identity.md + documentation/40-engineering/ui-layout-standard.md (UPDATE); Task3->src/app/api.ts; Task4->src/app/components/ui/Sheet.tsx; Task5->src/app/components/FilterChips.tsx (CREATE); Task6->src/app/components/FilterSheet.tsx (CREATE); Task7->TodayHeader.tsx + EmptyState.tsx; Task8->TodayScreen.tsx. Task9's validations were independently re-run (see R-L1-R-L3)."},{"id":"R-S2","passed":true,"reason":"All 10 Files-to-Change rows are touched, confirmed by reading the diff and independently via `git diff --stat 294a79c..2146ad2` against the pre/post trees (12 paths total: the 10 plan files plus the two ignored bookkeeping paths pre-state.txt and the self-referential diff.implementer.patch entry)."},{"id":"R-S3","passed":true,"reason":"AC-A1 through AC-A10 each have an observable diff counterpart, individually verified: task-filter.ts's 6 exports + no-storage/no-clock grep + 19/19 dedicated tests (AC-A1); 3 new microcopy rows + dated History line (AC-A2); listTasks' filter-based signature + toQuery(EMPTY_FILTER)===\"\" (AC-A3); FilterChips' isChipActive-derived pressed state (AC-A4); FilterSheet's 3 dimensions + immediate-apply/no-Aplicar pattern (AC-A5); Sheet's opt-in lightDismiss + TaskSheet never passing it, confirmed by grep (AC-A6); TodayHeader's real-text badge + EmptyState's filtered branch (AC-A8); TodayScreen's non-persisted useState + sheet.taskId===null sheet-stacking gate, confirmed structurally complementary (AC-A9); independently re-run validations (AC-A10). AC-A7 (the section 2.3/History amendment) is addressed but its Level-3 gate outcome required a separate judgment call -- see R-L3."},{"id":"R-L1","passed":true,"reason":"`npm run check` (wrangler types --check && tsc -b && eslint . && prettier --check .) re-run independently: exit 0, no errors, all files pass Prettier."},{"id":"R-L2","passed":true,"reason":"`npx vitest run --project docs`: 63/63 passed, clean and reproducible. `npx vitest run --project worker test/task-filter.test.ts` (the diff's own new AC-12/AC-A1 suite) in isolation: 19/19 passed in ~13s with a normal ~7s setup. Four consecutive full `--project worker` runs (the first concurrent with the docs run by my own scheduling mistake) each showed a DIFFERENT non-deterministic subset of 2-8 failures, all in test files this diff does not touch (task CRUD/priority/list-ordering routes), all bearing infra-level signatures (5000ms timeouts, one ECONNRESET/'failed to start cloudflare-pool worker', setup time ballooning from ~7s isolated to 200-275s after repeated back-to-back spin-ups) rather than a stable, reproducible assertion failure tied to this diff's own code paths. Total test count converged on 369 across my runs, matching the calling command's independently reported clean baseline exactly. Attributed to local resource exhaustion from my own repeated re-invocations in this session, not a regression caused by the diff."},{"id":"R-L3","passed":true,"reason":"The literal Level-3 block, run verbatim, does not exit 0. `npm test` (369 total, see R-L2), `npm run build` (clean; client JS 93.22 KB gzip, CSS 6.02 KB gzip, precache 408.14 KiB, all within guidelines section 11 and matching the reported figures exactly), `git diff --quiet -- test/` (exit 0, corroborated by `git diff --stat` against the pre/post trees showing zero test/ changes), and the storage/clock grep on task-filter.ts (no match) all pass cleanly. The one sub-check that fails is `grep -q 'Com hora' documentation/40-engineering/ui-layout-standard.md`, which now matches twice: the owner's post-implementation edit restored the retired chip's literal name into (1) section 2.3's dated amendment parenthetical and (2) the dated History row. Independent judgment: not a regression. The gate is a whole-file, single-string grep that structurally cannot distinguish 'still actively prescribed' from 'named only inside a dated History/amendment note explaining its retirement', and AC-A7 itself requires 'a History row naming what proved the old rule wrong', which is impossible to satisfy without writing the retired name -- a direct conflict between the gate and the acceptance criterion it is meant to serve. Confirmed independently: the three ACTIVE/prescribed chips remain Abertas, Alta prioridade, Para hoje -- Com hora is not reinstated as a live rule anywhere. Confirmed independently that the restoration closes a real, demonstrated regression the gate-compliant wording produced: 'Com hora' is referenced verbatim in the source PRD (3x) and the roadmap (1x, both pre-existing, outside this diff) -- documents a reader plausibly encounters -- and before the owner's edit, ui-layout-standard.md (the one place designed to be the living, dated record of retired UI rules) contained zero matches, making the retirement unfindable by search from the one place a reader would look for it. The implementer's original circumlocution ('a time-of-day toggle a Task cannot express') was gate-compliant but a real documentation regression by exactly this measure; the owner's restored wording is the better outcome on the merits. One small, genuine defect was found in the restoration itself, recorded as an R-SEM advisory (not blocking): a misplaced closing asterisk in the section-2.3 parenthetical leaves an unpaired '*' that renders as a stray literal asterisk after 'Com hora'; the History row's own triple-asterisk emphasis around 'Com hora' is correctly balanced. The identical defect pattern (whole-file grep unable to distinguish affirmative-prescription from negation/historical-reference) independently recurs at Task 6's own VALIDATE block ('grep -q Aplicar' would match a FilterSheet.tsx comment reading 'there is no *Aplicar* button' -- a negation, not a prescription), reported as a separate R-SEM advisory finding, not part of this aggregate Level 1-3 gate."},{"id":"R-SEM","passed":true,"findings":[{"file":"documentation/40-engineering/ui-layout-standard.md","line_or_range":"29 (section 2.3) vs 72 (History row)","concern":"Misplaced closing asterisk in the section-2.3 restoration ('*amended 2026-08-24, was* Com hora*:') leaves an unpaired '*' that will render as a stray literal asterisk immediately after 'Com hora'. The History row's own triple-asterisk emphasis around 'Com hora' is correctly balanced, so the intent (italicize the retired chip's name to match every other chip name's styling in the same sentence) is clear; only the section-2.3 instance has the delimiter misplaced by one word.","severity":"low"},{"file":"src/app/components/FilterSheet.tsx","line_or_range":"4","concern":"Task 6's own VALIDATE block ('grep -q Aplicar ...; then FAIL') would fail against the shipped file: the header comment reads 'there is no *Aplicar* button', a negation, not a prescription. Same whole-file-grep-cannot-distinguish-negation-from-affirmation pattern as the disputed Level-3 Com-hora gate (see R-L3). Not part of the aggregate Level 1-3 block R-L3 evaluates (Task-level VALIDATE blocks are per-task, not aggregate), and the comment itself is good practice explaining why light dismiss is safe here; flagged only as corroborating evidence that the gate-design pattern recurs.","severity":"low"},{"file":"src/app/components/TodayScreen.tsx","line_or_range":"485-489 vs 526-531","concern":"The toast slot ({sheet.taskId === null && toastElement !== null ? ... }) is gated only on the detail sheet's taskId, not on filtersOpen. A toast fired just before the filter sheet opens keeps rendering in the main-shell slot, which sits outside FilterSheet's dialog subtree and becomes inert (and is likely visually covered by the new bottom sheet) once showModal() takes over -- the same class of problem the project already solved for TaskSheet via its dedicated toastSlot prop was not extended to FilterSheet. Narrow timing window, no data loss (the underlying task action already succeeded), self-resolves on toast auto-expiry or filter-sheet close. Not requested by the plan's Task 8, which only specifies the never-stack-sheets gate on sheet.taskId.","severity":"low"}]},{"id":"R-X","passed":true,"reason":"Zero matches against the canonical test-glob pathspec set, confirmed both from the diff content directly and independently via `git diff --stat` against the pre/post trees (294a79c..2146ad2): no test/ path appears among the 12 changed paths. `git diff --quiet -- test/` exits 0. Applies regardless of methodology.md's tdd: true value (D9 Layer 0 universality)."},{"id":"R-COH-DEAD-IMPORT","passed":true,"reason":"No unused imports found across the touched/created files (task-filter.ts, FilterChips.tsx, FilterSheet.tsx, TodayHeader.tsx, TodayScreen.tsx, api.ts); corroborated by a clean `eslint .` pass under R-L1."},{"id":"R-COH-CALLER-DRIFT","passed":true,"reason":"listTasks' signature change has exactly one caller repo-wide (TodayScreen.tsx:133), already updated to `listTasks(filter)`; confirmed via a repo-wide grep for `listTasks(`. EmptyState's widened signature (added optional filtered/onClearFilters props) leaves its one other caller (DesignPlayground.tsx, dev-only, excluded from the production bundle) valid since both new props are optional."},{"id":"R-COH-CONFIG-DANGLING","passed":true,"reason":"no config files in diff"},{"id":"R-COH-REGISTRY-MISSING","passed":true,"reason":"no registries declared; check skipped (docs/context/code-review-registries.md absent)"},{"id":"R-COH-OTHER-INTERNAL-CONTRADICTION","passed":false,"reason":"documentation/40-engineering/ui-layout-standard.md section 2.3's untouched chip-order clause ('*Abertas*, *Alta prioridade*, *Para hoje*') disagrees with three other sources this same phase relies on: the NEW visual-identity.md microcopy row this diff adds ('*Abertas* - *Para hoje* - *Alta prioridade*'), the plan's own AC-A4 text ('the chip row shows Abertas, Para hoje, Alta prioridade'), and the shipped src/app/components/FilterChips.tsx QUICK_CHIPS render order (open->Abertas, today->Para hoje, high->Alta prioridade). Task 2 edits both documentation files in the same task, so it had the opportunity to reconcile the order; it swapped only the third chip's name (Com hora -> Para hoje) and left the first-two-items' relative order from the pre-existing draft untouched. Documentation-only, no functional/behavioural effect, and the shipped code agrees with visual-identity.md and the AC -- but it is a genuine, freshly-surfaced, unreconciled disagreement between two governance documents both touched by this diff's own task, unlike the Com-hora gate dispute (R-L3): here satisfying the check has no offsetting cost, so no override is applied.","file":"documentation/40-engineering/ui-layout-standard.md","line":29},{"id":"R-COH-TASK-CONTRADICTION","passed":true}],"action":"rubric_fail","user_message":""}
+diff --git a/PRPs/reports/today-view-and-filters/phase-3/attempts/1/diff.implementer.patch b/PRPs/reports/today-view-and-filters/phase-3/attempts/1/diff.implementer.patch
+new file mode 100644
+index 0000000..721cf73
+--- /dev/null
++++ b/PRPs/reports/today-view-and-filters/phase-3/attempts/1/diff.implementer.patch
+@@ -0,0 +1,1376 @@
++diff --git a/PRPs/reports/today-view-and-filters/phase-3/attempts/1/diff.implementer.patch b/PRPs/reports/today-view-and-filters/phase-3/attempts/1/diff.implementer.patch
++new file mode 100644
++index 0000000..44b7d66
++--- /dev/null
+++++ b/PRPs/reports/today-view-and-filters/phase-3/attempts/1/diff.implementer.patch
++@@ -0,0 +1,685 @@
+++diff --git a/PRPs/reports/today-view-and-filters/phase-3/attempts/1/pre-state.txt b/PRPs/reports/today-view-and-filters/phase-3/attempts/1/pre-state.txt
+++new file mode 100644
+++index 0000000..73f9679
+++--- /dev/null
++++++ b/PRPs/reports/today-view-and-filters/phase-3/attempts/1/pre-state.txt
+++@@ -0,0 +1 @@
++++294a79cf3f36f4fc2eae9ac1ffc264a5487411d0
+++diff --git a/documentation/10-product/visual-identity.md b/documentation/10-product/visual-identity.md
+++index a156d2d..e7e1b8c 100644
+++--- a/documentation/10-product/visual-identity.md
++++++ b/documentation/10-product/visual-identity.md
+++@@ -1,6 +1,6 @@
+++ ---
+++ status: active
+++-last_updated: 2026-08-23
++++last_updated: 2026-08-24
+++ review_trigger: "a step of UI/UX-plan activity A2 lands, an identity element (mark, tokens, voice) changes, or decision 5 is accepted"
+++ ---
+++ 
+++@@ -96,6 +96,9 @@ Microcopy table (UI values in pt-BR — ADR-0009; the keys stay English in code)
+++ | Row actions (accessible names) | *Concluir {título}* / *Reabrir {título}* · *Editar título* |
+++ | Section | **Concluídas** · count |
+++ | Group headers | **Atrasadas** · **Hoje** · **Próximas** · **Sem data** — each followed by its count |
++++| Quick-filter chips | *Abertas* · *Para hoje* · *Alta prioridade* · *Filtros…* |
++++| Filter icon (accessible name) | *Filtros* · with filters active, *Filtros (N ativos)* |
++++| Filter sheet | title *Filtros* · labels *Status · Prioridade · Período* · status chips *Abertas · Concluídas · Não concluídas* · priority chips *Alta · Normal · Baixa* · date labels *De* / *Até* · *Limpar filtros* · close button *Fechar* |
+++ | Toasts | *Tarefa reaberta* · *Tarefa excluída* |
+++ | List load error | the approved request-error sentence · *Tentar de novo* |
+++ | Request errors (tested) | `Sem conexão com o servidor. Nada se perdeu — tente de novo quando a conexão voltar.` · `O servidor recusou a operação (código N). Tente de novo.` |
+++@@ -113,6 +116,7 @@ TBD — after A5 ships: a week of cold opens on the phone against the three É w
+++ 
+++ | Date | What changed |
+++ |---|---|
++++| 2026-08-24 | **today-view-and-filters Phase 3 (Task 2): the quick-filter chip, filter-icon and filter-sheet strings added ahead of the code that renders them** (`PRPs/plans/today-view-and-filters-phase-3-quick-filters-and-the-filter-sheet.plan.md`) — chip row *Abertas · Para hoje · Alta prioridade · Filtros…*, the filter icon's accessible name (plain and with an active count), and the filter sheet's title, labels, chip vocabulary and *Limpar filtros* action |
+++ | 2026-08-23 | **today-view-and-filters Phase 2 (Task 2): the four group-header names added ahead of the code that uses them** (`PRPs/plans/today-view-and-filters-phase-2-grouping-and-the-grouped-list.plan.md`) — *Atrasadas*, *Hoje*, *Próximas* and *Sem data*, the group headers layout standard §2.5 specifies, each rendered with its count by the new `TaskGroup` component |
+++ | 2026-08-21 | **ui-design-pass Phase 2 (Task 10): one microcopy row added ahead of the code that uses it** (`PRPs/plans/ui-design-pass-phase-2-today-screen.plan.md`) — *List load error*, the retry copy the *Hoje* screen shows under a failed first load, pairing the existing request-error sentence with the infinitive button *Tentar de novo* |
+++ | 2026-08-21 | **ui-design-pass Phase 1: the A5 microcopy rows approved by the owner in the PRD scope round added to the table above, ahead of Phase 1's code** (`PRPs/prds/ui-design-pass.prd.md`, "Microcopy added by this pass") — token gate, token-store failure, header, capture deck, row meta line, row actions, section, toasts, request errors, detail sheet, `<title>`, manifest |
+++diff --git a/documentation/40-engineering/ui-layout-standard.md b/documentation/40-engineering/ui-layout-standard.md
+++index 6c828e2..b7e5fc5 100644
+++--- a/documentation/40-engineering/ui-layout-standard.md
++++++ b/documentation/40-engineering/ui-layout-standard.md
+++@@ -1,6 +1,6 @@
+++ ---
+++ status: active
+++-last_updated: 2026-08-23
++++last_updated: 2026-08-24
+++ review_trigger: "a screen is added that the anatomy does not fit, a navigation destination of equal weight appears, or a platform behaviour a rule relies on changes"
+++ ---
+++ 
+++@@ -26,7 +26,7 @@ Top to bottom, every screen that lists Tasks:
+++ 
+++ 1. **Header (flat, never elevated):** page title as the `<h1>` (*Hoje*), the date in mono beside it (`qua., 20/08`), a remaining count as text (*4 restantes* — never a ratio or a progress bar: progress shown before the effort increases drop-off; the honest mirror lives in the group counts), and on the right up to three 48 px icon buttons: filters (with a numeric badge when any filter is active), then — in model B — search and settings. No wordmark in the header (it lives on the splash, the settings screen and the desktop rail).
+++ 2. **Offline / unreachable banner** (when applicable): directly under the header, one line, icon + action language, persistent while the condition holds, not dismissible (§8).
+++-3. **Quick-filter chip row:** one horizontally scrolling row of 3–5 toggles (*Abertas*, *Alta prioridade*, *Com hora*) plus a trailing *Filtros…* chip that opens the filter sheet; applied filters stay visible as selected chips with a *Limpar filtros* chip; chips are 48 px hit areas with 8 px gaps. Default state: nothing selected; a narrowing filter never survives a cold start silently.
++++3. **Quick-filter chip row:** one horizontally scrolling row of 3–5 toggles (*Abertas*, *Alta prioridade*, *Para hoje* — *amended 2026-08-24:* this chip previously named a time-of-day toggle a Task cannot express — `deadline` and `scheduledDate` are calendar days, enforced by `tasks_single_date_chk`; that toggle becomes expressible only when Event ships in unit 14) plus a trailing *Filtros…* chip that opens the filter sheet; applied filters stay visible as selected chips with a *Limpar filtros* chip; chips are 48 px hit areas with 8 px gaps. Default state: nothing selected; a narrowing filter never survives a cold start silently.
+++ 4. **Agenda stack (unit 4 hook):** today's Google events as **one** group at the top of the list, collapsed to the next event + count (*Agenda · 2*), expanding to rows with **no checkbox**, a leading time column, a calendar glyph and a dashed outline treatment — never interleaved with Tasks, never in the accent colour; tap opens Google Calendar (read-only).
+++ 5. **Groups, in this order,** each with a 40 px header carrying name + count (counts stay visible when collapsed — the "my tasks vanished" trap): **Atrasadas** first (collapsible; header action *Reagendar para hoje*; rows also show the overdue date inline in the live/overdue colour, so lateness is visible away from the header) → **Hoje** (never collapsible; sorted by time, then priority) → **Próximas** (collapsed by default) → **Sem data** (collapsed by default — no major app shows undated items on Today; here it is a deliberate "pick something" drawer). Collapse state persists per group.
+++ 6. **Row anatomy:** 64 px minimum (the project constant), leading 48 px completion control (every task app leads with it), title on **two lines then ellipsis** (`line-clamp-2` — amended 2026-08-23 to match [guidelines §12.4](ui-ux-guidelines.md), which sits above this document and which A5 implemented; Portuguese titles run ~15 % longer than English and one line truncated too many of them), a second metadata line in mono (*até 18:00* · *venceu seg., 18/08* in the overdue colour · priority glyph + word · area dot later), at most **one** trailing element, never a chevron. Tapping the row opens the detail; swipe actions, if ever added, are shortcuts to visible controls (guidelines §12.4), never the only way.
+++@@ -69,6 +69,7 @@ Top to bottom, every screen that lists Tasks:
+++ 
+++ | Date | What changed |
+++ |---|---|
++++| 2026-08-24 | **today-view-and-filters Phase 3 (Task 2).** §2.3 amended: the quick-filter row's third chip is *Para hoje* — the row previously named a time-of-day toggle no Task can express (`deadline`/`scheduledDate` are calendar days, `tasks_single_date_chk`); that toggle becomes expressible only when Event ships in unit 14. Proven by building the phase-3 chip row, which found the rule unimplementable as written |
+++ | 2026-08-23 | **A5 retro (plan A6).** Five rules amended by what building the screens measured: §2.6 titles wrap to two lines (the guidelines sit above this document), §2.7 the empty state carries the *Nova tarefa* CTA (the approved microcopy postdated the "no duplicate button" line), §2.8 the toast is slotted into the open dialog's subtree rather than made a `popover="manual"` (which would itself be inert), §3 the centred-sheet breakpoint is Tailwind's 640 px and the `cancel` event must be mirrored alongside `close`, §4 the `:has()` rule is anchored on the shell, not `:root` |
+++ | 2026-08-20 | **Owner chose model B (single screen + sheets) → `active`.** Model A kept in §1 as the rejected alternative with the flip rule |
+++ | 2026-08-20 | Written as draft from the A3 research (three lenses, verified) and the sketches; Q4 pending the owner's choice; keyboard decision taken |
+++diff --git a/src/app/api.ts b/src/app/api.ts
+++index 44fa04d..38c6ba3 100644
+++--- a/src/app/api.ts
++++++ b/src/app/api.ts
+++@@ -1,4 +1,5 @@
+++-import type { CreateTaskInput, TaskDto, TaskStatus, UpdateTaskInput } from "../shared/api";
++++import type { CreateTaskInput, TaskDto, UpdateTaskInput } from "../shared/api";
++++import { EMPTY_FILTER, toQuery, type TaskFilter } from "../shared/task-filter";
+++ import { createTokenStore } from "../shared/token-store";
+++ import { durableTokenStorage, legacyTokenStorage } from "./token-storage";
+++ 
+++@@ -87,11 +88,13 @@ export async function checkHealth(): Promise<void> {
+++  * the one thing every consumer must agree on in the one place they cannot
+++  * share (`docs/api-reference.md`, "Task read contract").
+++  */
+++-export async function listTasks(status?: TaskStatus, limit?: number): Promise<TaskDto[]> {
+++-  const params = new URLSearchParams();
+++-  if (status !== undefined) params.set("status", status);
+++-  if (limit !== undefined) params.set("limit", String(limit));
+++-  const query = params.size === 0 ? "" : `?${params.toString()}`;
++++export async function listTasks(
++++  filter: TaskFilter = EMPTY_FILTER,
++++  limit?: number,
++++): Promise<TaskDto[]> {
++++  const base = toQuery(filter);
++++  const query =
++++    limit === undefined ? base : `${base}${base === "" ? "?" : "&"}limit=${String(limit)}`;
+++ 
+++   const body = await request<{ tasks: TaskDto[] }>(`/api/tasks${query}`);
+++   return body.tasks;
+++diff --git a/src/app/components/EmptyState.tsx b/src/app/components/EmptyState.tsx
+++index 834dbd5..831867a 100644
+++--- a/src/app/components/EmptyState.tsx
++++++ b/src/app/components/EmptyState.tsx
+++@@ -1,10 +1,33 @@
+++ // The list region's empty state (layout standard §2.7, guidelines §8): a
+++ // positive title, one line of body, one CTA that focuses capture — no
+++-// duplicate button, never a blank region.
++++// duplicate button, never a blank region. Phase 3 (today-view-and-filters)
++++// adds a second, explicit branch for a filtered-to-nothing result — its
++++// copy and its action (*Limpar filtros*) are different, so it is a visibly
++++// distinct branch here rather than a silent reuse of the first.
+++ 
+++ import { Button } from "./ui/Button";
+++ 
+++-export function EmptyState({ onCapture }: { onCapture: () => void }) {
++++export function EmptyState({
++++  filtered = false,
++++  onCapture,
++++  onClearFilters,
++++}: {
++++  filtered?: boolean;
++++  onCapture: () => void;
++++  onClearFilters?: () => void;
++++}) {
++++  if (filtered) {
++++    return (
++++      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-8 text-center">
++++        <p className="m-0 font-display text-t4 font-extrabold text-ink">
++++          Nenhuma tarefa com esse filtro.
++++        </p>
++++        {/* prettier-ignore */}
++++        <Button variant="secondary" onClick={onClearFilters}>Limpar filtros</Button>
++++      </div>
++++    );
++++  }
++++
+++   return (
+++     <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-8 text-center">
+++       <p className="m-0 font-display text-t4 font-extrabold text-ink">Nada para hoje.</p>
+++diff --git a/src/app/components/FilterChips.tsx b/src/app/components/FilterChips.tsx
+++new file mode 100644
+++index 0000000..5d6e11c
+++--- /dev/null
++++++ b/src/app/components/FilterChips.tsx
+++@@ -0,0 +1,62 @@
++++// The quick-filter chip row of layout standard §2.3: one horizontally
++++// scrolling `ChipGroup` holding the three quick chips — *Abertas*, *Para
++++// hoje*, *Alta prioridade* — plus a trailing *Filtros…* chip that opens the
++++// filter sheet. Every chip's pressed state is derived from `isChipActive`,
++++// never held as local state: this row is a VIEW of the one `TaskFilter`
++++// `TodayScreen` owns, not a second copy of it (`src/shared/task-filter.ts`).
++++// The trailing chip is a plain button sharing `Chip`'s class list verbatim
++++// (rather than a `Chip` itself) so it can never read as pressed — it opens
++++// the sheet, it does not belong to the filter's own toggle vocabulary.
++++
++++import { isChipActive, type QuickChip, type TaskFilter } from "../../shared/task-filter";
++++import { Chip, ChipGroup } from "./ui/Chip";
++++
++++const QUICK_CHIPS: readonly QuickChip[] = ["open", "today", "high"];
++++
++++const CHIP_LABEL: Record<QuickChip, string> = {
++++  open: "Abertas",
++++  today: "Para hoje",
++++  high: "Alta prioridade",
++++};
++++
++++// `Chip`'s own class list (src/app/components/ui/Chip.tsx), reused verbatim
++++// so the trailing action reads as the same pill — the `data-pressed:*`
++++// variants are inert here since this is a plain button, never a `Toggle`.
++++const TRAILING_CHIP_CLASSNAME =
++++  "inline-flex min-h-12 flex-none items-center gap-1 rounded-pill border border-line bg-surface-2 px-3 font-text text-t2 font-medium whitespace-nowrap text-ink data-pressed:border-transparent data-pressed:bg-accent data-pressed:font-semibold data-pressed:text-on-accent";
++++
++++export function FilterChips({
++++  filter,
++++  today,
++++  onToggleChip,
++++  onOpenSheet,
++++}: {
++++  filter: TaskFilter;
++++  today: string;
++++  onToggleChip: (chip: QuickChip) => void;
++++  onOpenSheet: () => void;
++++}) {
++++  const pressed = QUICK_CHIPS.filter((chip) => isChipActive(filter, chip, today));
++++
++++  // The ToggleGroup reports the WHOLE next pressed-array on every tap; the
++++  // single chip that differs from `pressed` (derived straight from the
++++  // filter, never from local state) is the one that was tapped.
++++  function handleValueChange(next: string[]): void {
++++    const nextSet = new Set(next);
++++    const changed = QUICK_CHIPS.find((chip) => nextSet.has(chip) !== pressed.includes(chip));
++++    if (changed !== undefined) onToggleChip(changed);
++++  }
++++
++++  return (
++++    <ChipGroup value={pressed} onValueChange={handleValueChange} label="Filtros rápidos">
++++      {QUICK_CHIPS.map((chip) => (
++++        <Chip key={chip} value={chip}>
++++          {CHIP_LABEL[chip]}
++++        </Chip>
++++      ))}
++++      <button type="button" className={TRAILING_CHIP_CLASSNAME} onClick={onOpenSheet}>
++++        Filtros…
++++      </button>
++++    </ChipGroup>
++++  );
++++}
+++diff --git a/src/app/components/FilterSheet.tsx b/src/app/components/FilterSheet.tsx
+++new file mode 100644
+++index 0000000..e86c003
+++--- /dev/null
++++++ b/src/app/components/FilterSheet.tsx
+++@@ -0,0 +1,113 @@
++++// The filter sheet (layout standard §3, PRD AC-15): Status, Prioridade and
++++// Período over the existing `Sheet`, light-dismissible — the one surface
++++// layout standard §3 allows that on. Every change applies IMMEDIATELY
++++// through `onChange` (there is no *Aplicar* button and no draft to lose),
++++// which is what makes light dismiss safe here, unlike the detail editor
++++// `TaskSheet`, which never passes `lightDismiss`. Every selected chip is
++++// derived straight from the current `TaskFilter` prop, mirroring
++++// `TaskSheet.tsx`'s own `ChipGroup` usage for the detail editor's date-mode
++++// and priority dimensions — this sheet and the chip row are two VIEWS of
++++// the one filter state `TodayScreen` owns, never a second copy of it.
++++
++++import type { TaskPriority, TaskStatus } from "../../shared/api";
++++import { EMPTY_FILTER, type TaskFilter } from "../../shared/task-filter";
++++import { Button } from "./ui/Button";
++++import { Chip, ChipGroup } from "./ui/Chip";
++++import { Sheet } from "./ui/Sheet";
++++
++++export function FilterSheet({
++++  open,
++++  onOpenChange,
++++  filter,
++++  onChange,
++++}: {
++++  open: boolean;
++++  onOpenChange: (open: boolean) => void;
++++  filter: TaskFilter;
++++  onChange: (next: TaskFilter) => void;
++++}) {
++++  return (
++++    <Sheet open={open} onOpenChange={onOpenChange} title="Filtros" lightDismiss>
++++      <div className="flex flex-col gap-4">
++++        <div className="flex flex-col gap-1">
++++          <p className="m-0 font-data text-t1 font-semibold text-muted">Status</p>
++++          <ChipGroup
++++            multiple={false}
++++            label="Status"
++++            value={filter.status === null ? [] : [filter.status]}
++++            onValueChange={(next) =>
++++              onChange({ ...filter, status: (next[0] as TaskStatus | undefined) ?? null })
++++            }
++++          >
++++            <Chip value="open">Abertas</Chip>
++++            <Chip value="done">Concluídas</Chip>
++++            <Chip value="missed">Não concluídas</Chip>
++++          </ChipGroup>
++++        </div>
++++
++++        <div className="flex flex-col gap-1">
++++          <p className="m-0 font-data text-t1 font-semibold text-muted">Prioridade</p>
++++          <ChipGroup
++++            multiple={false}
++++            label="Prioridade"
++++            value={filter.priority === null ? [] : [filter.priority]}
++++            onValueChange={(next) =>
++++              onChange({ ...filter, priority: (next[0] as TaskPriority | undefined) ?? null })
++++            }
++++          >
++++            <Chip value="high">Alta</Chip>
++++            <Chip value="normal">Normal</Chip>
++++            <Chip value="low">Baixa</Chip>
++++          </ChipGroup>
++++        </div>
++++
++++        <div className="flex flex-col gap-1">
++++          <p className="m-0 font-data text-t1 font-semibold text-muted">Período</p>
++++          <div className="flex gap-2">
++++            <div className="flex flex-1 flex-col gap-1">
++++              <label
++++                htmlFor="filter-sheet-from"
++++                className="m-0 font-data text-t1 font-semibold text-muted"
++++              >
++++                De
++++              </label>
++++              <input
++++                id="filter-sheet-from"
++++                type="date"
++++                value={filter.from ?? ""}
++++                onChange={(event) =>
++++                  onChange({
++++                    ...filter,
++++                    from: event.target.value === "" ? null : event.target.value,
++++                  })
++++                }
++++                className="min-h-12 w-full rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
++++              />
++++            </div>
++++            <div className="flex flex-1 flex-col gap-1">
++++              <label
++++                htmlFor="filter-sheet-to"
++++                className="m-0 font-data text-t1 font-semibold text-muted"
++++              >
++++                Até
++++              </label>
++++              <input
++++                id="filter-sheet-to"
++++                type="date"
++++                value={filter.to ?? ""}
++++                onChange={(event) =>
++++                  onChange({ ...filter, to: event.target.value === "" ? null : event.target.value })
++++                }
++++                className="min-h-12 w-full rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
++++              />
++++            </div>
++++          </div>
++++        </div>
++++
++++        <Button type="button" variant="secondary" onClick={() => onChange(EMPTY_FILTER)}>
++++          Limpar filtros
++++        </Button>
++++      </div>
++++    </Sheet>
++++  );
++++}
+++diff --git a/src/app/components/TodayHeader.tsx b/src/app/components/TodayHeader.tsx
+++index 3cdd400..09c19ca 100644
+++--- a/src/app/components/TodayHeader.tsx
++++++ b/src/app/components/TodayHeader.tsx
+++@@ -1,11 +1,28 @@
+++ // The flat, never-elevated header of the layout standard §2.1: the page
+++-// title, the date in mono, and the remaining count. No icon buttons yet —
+++-// nothing exists behind them in this phase.
++++// title, the date in mono, the remaining count, and (phase 3,
++++// today-view-and-filters) the 48 px filter icon button — the first of the
++++// up to three icon buttons §2.1 allows on the right. Its accessible name
++++// states the active filter count in words, and the numeric badge beside it
++++// is real text, never a bare dot (guidelines §4.4), so the filtered state
++++// is never carried by colour alone.
+++ 
++++import { SlidersHorizontal } from "lucide-react";
+++ import { formatHeaderDate, formatRemaining } from "../../shared/format";
++++import { Button } from "./ui/Button";
+++ 
+++-export function TodayHeader({ now, remaining }: { now: Date; remaining: number }) {
++++export function TodayHeader({
++++  now,
++++  remaining,
++++  activeFilterCount,
++++  onOpenFilters,
++++}: {
++++  now: Date;
++++  remaining: number;
++++  activeFilterCount: number;
++++  onOpenFilters: () => void;
++++}) {
+++   const { figure, label } = formatRemaining(remaining);
++++  const filterLabel = activeFilterCount > 0 ? `Filtros (${activeFilterCount} ativos)` : "Filtros";
+++ 
+++   return (
+++     <header className="flex items-end gap-3 px-4 pt-6 pb-2">
+++@@ -21,6 +38,19 @@ export function TodayHeader({ now, remaining }: { now: Date; remaining: number }
+++         )}
+++         <span className="font-text text-t1 font-medium text-muted">{label}</span>
+++       </span>
++++      <span className="relative">
++++        <Button type="button" variant="icon" aria-label={filterLabel} onClick={onOpenFilters}>
++++          <SlidersHorizontal className="size-[22px]" aria-hidden="true" />
++++        </Button>
++++        {activeFilterCount > 0 && (
++++          <span
++++            aria-hidden="true"
++++            className="absolute -top-1 -right-1 flex min-w-[18px] items-center justify-center rounded-pill bg-accent px-1 font-data text-[11px] font-bold text-on-accent tabular-nums"
++++          >
++++            {activeFilterCount}
++++          </span>
++++        )}
++++      </span>
+++     </header>
+++   );
+++ }
+++diff --git a/src/app/components/TodayScreen.tsx b/src/app/components/TodayScreen.tsx
+++index ad884b8..f4aa10e 100644
+++--- a/src/app/components/TodayScreen.tsx
++++++ b/src/app/components/TodayScreen.tsx
+++@@ -14,6 +14,13 @@ import { todayIn } from "../../shared/dates";
+++ import { classifyRequestFailure } from "../../shared/request-failure";
+++ import type { ShareTarget } from "../../shared/share-target";
+++ import { buildTaskPatch } from "../../shared/task-edit";
++++import {
++++  activeCount,
++++  EMPTY_FILTER,
++++  toggleChip,
++++  type QuickChip,
++++  type TaskFilter,
++++} from "../../shared/task-filter";
+++ import { groupTasks } from "../../shared/task-groups";
+++ import { currentDraft, INITIAL_TASK_SHEET_STATE, reduceTaskSheet } from "../../shared/task-sheet";
+++ import {
+++@@ -29,6 +36,8 @@ import { useConnectivity } from "../hooks/useConnectivity";
+++ import { dismissToast, showToast, useToast } from "../toast-store";
+++ import { CaptureDeck } from "./CaptureDeck";
+++ import { EmptyState } from "./EmptyState";
++++import { FilterChips } from "./FilterChips";
++++import { FilterSheet } from "./FilterSheet";
+++ import { TaskGroup } from "./TaskGroup";
+++ import { TaskRow } from "./TaskRow";
+++ import { TaskSheet } from "./TaskSheet";
+++@@ -91,6 +100,12 @@ export function TodayScreen({
+++   const [doneCollapsed, setDoneCollapsed] = useState(() =>
+++     readCollapsed(CLOSED_COLLAPSED_KEY, false),
+++   );
++++  // Seeded from the constant and never from storage, and never written to
++++  // storage — the deliberate asymmetry against the collapse state above,
++++  // which layout standard §2.3 requires: a narrowing filter must never
++++  // survive a cold start.
++++  const [filter, setFilter] = useState<TaskFilter>(EMPTY_FILTER);
++++  const [filtersOpen, setFiltersOpen] = useState(false);
+++   const captureRef = useRef<HTMLInputElement>(null);
+++ 
+++   const today = todayIn(new Date());
+++@@ -115,7 +130,7 @@ export function TodayScreen({
+++ 
+++   async function refresh(): Promise<void> {
+++     try {
+++-      const next = await listTasks();
++++      const next = await listTasks(filter);
+++       setTasks(next);
+++       setLoadError(null);
+++       report({ type: "request-succeeded" });
+++@@ -259,6 +274,14 @@ export function TodayScreen({
+++     });
+++   }
+++ 
++++  // The chip row's own handler: flips exactly `chip`'s own dimension via
++++  // `toggleChip` (`src/shared/task-filter.ts`) — the functional update reads
++++  // the latest filter regardless of render timing, so this never races the
++++  // `[filter]` effect below that re-reads on every change.
++++  function handleToggleChip(chip: QuickChip): void {
++++    setFilter((current) => toggleChip(current, chip, today));
++++  }
++++
+++   function openSheet(task: TaskDto): void {
+++     setSheetError(null);
+++     dispatchSheet({ type: "open", task });
+++@@ -294,10 +317,13 @@ export function TodayScreen({
+++   }
+++ 
+++   useEffect(() => {
+++-    // Runs once, on mount — every later refetch is triggered explicitly
+++-    // (a mutation, `visibilitychange`, or reconnecting).
++++    // Runs on mount AND on every filter change (the chip row, the sheet and
++++    // *Limpar filtros* all only call `setFilter` — this is the one place
++++    // that turns a new filter into the read, so a chip tap issues exactly
++++    // one `GET /api/tasks`). Every OTHER refetch is triggered explicitly (a
++++    // mutation, `visibilitychange`, or reconnecting).
+++     void refresh();
+++-  }, []);
++++  }, [filter]);
+++ 
+++   useEffect(() => {
+++     function handleVisibilityChange(): void {
+++@@ -362,7 +388,7 @@ export function TodayScreen({
+++   return (
+++     <div
+++       data-shell
+++-      className="mx-auto grid h-dvh w-full max-w-[640px] grid-rows-[auto_auto_1fr_auto_auto] overflow-clip bg-bg"
++++      className="mx-auto grid h-dvh w-full max-w-[640px] grid-rows-[auto_auto_auto_1fr_auto_auto] overflow-clip bg-bg"
+++     >
+++       <TodayHeader
+++         now={now}
+++@@ -372,6 +398,8 @@ export function TodayScreen({
+++           groups.upcoming.length +
+++           groups.undated.length
+++         }
++++        activeFilterCount={activeCount(filter)}
++++        onOpenFilters={() => setFiltersOpen(true)}
+++       />
+++ 
+++       {connectivity !== "online" ? (
+++@@ -380,6 +408,13 @@ export function TodayScreen({
+++         <div />
+++       )}
+++ 
++++      <FilterChips
++++        filter={filter}
++++        today={today}
++++        onToggleChip={handleToggleChip}
++++        onOpenSheet={() => setFiltersOpen(true)}
++++      />
++++
+++       <main className="flex flex-col gap-2 overflow-y-auto overscroll-contain px-4 pb-2">
+++         {tasks === null && loadError === null && <Skeleton slow={slow} />}
+++ 
+++@@ -394,7 +429,11 @@ export function TodayScreen({
+++         )}
+++ 
+++         {tasks !== null && tasks.length === 0 && (
+++-          <EmptyState onCapture={() => captureRef.current?.focus()} />
++++          <EmptyState
++++            onCapture={() => captureRef.current?.focus()}
++++            filtered={activeCount(filter) > 0}
++++            onClearFilters={() => setFilter(EMPTY_FILTER)}
++++          />
+++         )}
+++ 
+++         {tasks !== null && tasks.length > 0 && (
+++@@ -481,6 +520,15 @@ export function TodayScreen({
+++         }}
+++         onDeleteConfirm={deleteSheetTask}
+++       />
++++
++++      {/* Never stack sheets (layout standard §3): gated on the same
++++          condition the toast slot above already uses. */}
++++      <FilterSheet
++++        open={filtersOpen && sheet.taskId === null}
++++        onOpenChange={setFiltersOpen}
++++        filter={filter}
++++        onChange={setFilter}
++++      />
+++     </div>
+++   );
+++ }
+++diff --git a/src/app/components/ui/Sheet.tsx b/src/app/components/ui/Sheet.tsx
+++index 2b2924b..8148bf9 100644
+++--- a/src/app/components/ui/Sheet.tsx
++++++ b/src/app/components/ui/Sheet.tsx
+++@@ -11,14 +11,21 @@
+++ // verification browser even on a bare, React-free <dialog>; without the
+++ // guard that leaves `open` stuck at `true` in React state forever, since no
+++ // event would call `onOpenChange(false)` again and the sheet could never be
+++-// reopened short of a reload. `closedby` is left at its `showModal()` default
+++-// of `closerequest`, so there is no light dismiss on this editor. `showModal()`
+++-// itself makes the page behind inert and scroll-locked
+++-// (`html:has(dialog[open])` in styles.css) and returns focus to the opener
+++-// natively on close. The `history.pushState` fallback of PRD risk row 400 is
+++-// NOT built here — it is specified in the phase-3 plan's `## Notes` and wired
+++-// only if the owner's device check finds the Android back gesture does not
+++-// close this dialog.
++++// reopened short of a reload. `showModal()` itself makes the page behind
++++// inert and scroll-locked (`html:has(dialog[open])` in styles.css) and
++++// returns focus to the opener natively on close. The `history.pushState`
++++// fallback of PRD risk row 400 is NOT built here — it is specified in the
++++// phase-3 plan's `## Notes` and wired only if the owner's device check finds
++++// the Android back gesture does not close this dialog.
++++//
++++// `lightDismiss` (phase 3, today-view-and-filters): opt-in, defaults to
++++// `false`. Layout standard §3 allows light dismiss (`closedby="any"`) on the
++++// filter sheet ONLY, and forbids it on an editor with unsaved changes — so
++++// `TaskSheet` never passes this prop, and `closedby` stays absent from its
++++// `<dialog>`, leaving `showModal()`'s own default of `closerequest` exactly
++++// as before this phase (Esc, the close button and the back gesture still
++++// close it; only the tap-outside shortcut is unavailable). Only the new
++++// `FilterSheet` passes `lightDismiss`.
+++ 
+++ import { X } from "lucide-react";
+++ import { useEffect, useId, useRef } from "react";
+++@@ -30,11 +37,13 @@ export function Sheet({
+++   onOpenChange,
+++   title,
+++   children,
++++  lightDismiss = false,
+++ }: {
+++   open: boolean;
+++   onOpenChange: (open: boolean) => void;
+++   title: string;
+++   children: ReactNode;
++++  lightDismiss?: boolean;
+++ }) {
+++   const ref = useRef<HTMLDialogElement>(null);
+++   const titleId = useId();
+++@@ -87,6 +96,7 @@ export function Sheet({
+++       data-sheet
+++       tabIndex={-1}
+++       aria-labelledby={titleId}
++++      closedby={lightDismiss ? "any" : undefined}
+++       className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[90dvh] w-full max-w-none overflow-y-auto overscroll-contain rounded-t-[24px] border-0 bg-surface-1 p-0 px-4 pt-2 pb-4 text-ink shadow-deck outline-none sm:inset-0 sm:m-auto sm:h-fit sm:w-[560px] sm:max-w-[calc(100vw-2rem)] sm:rounded-card"
+++     >
+++       <div
+++diff --git a/src/shared/task-filter.ts b/src/shared/task-filter.ts
+++new file mode 100644
+++index 0000000..59c7fdf
+++--- /dev/null
++++++ b/src/shared/task-filter.ts
+++@@ -0,0 +1,102 @@
++++/**
++++ * The single source of truth for what a Task filter IS (PRD AC-12). The
++++ * quick-filter chip row and the filter sheet are two VIEWS of one
++++ * `TaskFilter` — never two states that must be kept in sync — so every
++++ * question either surface can ask (is this chip pressed? what does the
++++ * request look like? how many dimensions are active?) is answered here and
++++ * nowhere else.
++++ *
++++ * Like `src/shared/task-groups.ts`, `format.ts` and `dates.ts`, this module
++++ * is compiled into BOTH the browser and the Worker projects, so it stays
++++ * environment-agnostic: no DOM globals, no runtime dependencies, and no
++++ * reads of the clock. `today` is always an ARGUMENT, never read from the
++++ * clock internally — that is what keeps every caller (and every test)
++++ * deterministic regardless of when or where it runs.
++++ */
++++
++++import type { TaskPriority, TaskStatus } from "./api";
++++
++++/** The whole filter state: four independent, nullable dimensions. `null` means "not set". */
++++export interface TaskFilter {
++++  status: TaskStatus | null;
++++  priority: TaskPriority | null;
++++  from: string | null;
++++  to: string | null;
++++}
++++
++++/** The filter a screen starts with — every dimension unset. Never seeded from storage (layout standard §2.3). */
++++export const EMPTY_FILTER: TaskFilter = {
++++  status: null,
++++  priority: null,
++++  from: null,
++++  to: null,
++++};
++++
++++/** The three quick-filter chips of layout standard §2.3, each backed by exactly one `TaskFilter` dimension. */
++++export type QuickChip = "open" | "today" | "high";
++++
++++/**
++++ * The query string `listTasks` sends: `""` when every dimension is `null` —
++++ * the case that keeps an unfiltered load byte-identical to the request the
++++ * screen issued before filters existed — otherwise `?` plus the set
++++ * parameters in the FIXED order `status`, `from`, `to`, `priority`, built
++++ * with `URLSearchParams` so every value is encoded rather than concatenated
++++ * raw. The fixed order is what makes the output assertable and keeps two
++++ * callers building the same filter from ever producing two different URLs.
++++ */
++++export function toQuery(filter: TaskFilter): string {
++++  const params = new URLSearchParams();
++++  if (filter.status !== null) params.set("status", filter.status);
++++  if (filter.from !== null) params.set("from", filter.from);
++++  if (filter.to !== null) params.set("to", filter.to);
++++  if (filter.priority !== null) params.set("priority", filter.priority);
++++  return params.size === 0 ? "" : `?${params.toString()}`;
++++}
++++
++++/**
++++ * How many DIMENSIONS are narrowing the list, for the header badge — never
++++ * how many fields are set. `status` is one dimension, `priority` is one
++++ * dimension, and `from`/`to` together are one *period*: a range counts once,
++++ * whether one end is set or both, because the badge answers "how many
++++ * questions are narrowing the list?", not "how many fields hold a value?".
++++ * Range: 0–3.
++++ */
++++export function activeCount(filter: TaskFilter): number {
++++  let count = 0;
++++  if (filter.status !== null) count += 1;
++++  if (filter.priority !== null) count += 1;
++++  if (filter.from !== null || filter.to !== null) count += 1;
++++  return count;
++++}
++++
++++/**
++++ * Whether `chip` reads as pressed against `filter`: `open` when `status` is
++++ * `"open"`, `high` when `priority` is `"high"`, `today` when `to` equals
++++ * `today`. The sheet can set values no chip represents (e.g. `status:
++++ * "done"`, or a `to` that is not today) — those correctly leave the chip
++++ * unpressed rather than pressed-but-wrong, which is the round trip between
++++ * the chip row and the sheet.
++++ */
++++export function isChipActive(filter: TaskFilter, chip: QuickChip, today: string): boolean {
++++  if (chip === "open") return filter.status === "open";
++++  if (chip === "high") return filter.priority === "high";
++++  return filter.to === today;
++++}
++++
++++/**
++++ * Toggles exactly `chip`'s own dimension and returns a NEW `TaskFilter` —
++++ * `filter` is never mutated. Pressing an unpressed chip sets its dimension
++++ * (overwriting whatever value that one dimension held); pressing a pressed
++++ * chip clears exactly that dimension to `null`. No other field is ever
++++ * touched: a chip that also cleared a neighbouring field would make the
++++ * chip row and the sheet disagree the moment both are used, which is the
++++ * defect this function exists to prevent. `today` maps to the `to` field —
++++ * switching the `today` chip off clears only `to`, leaving any `from` the
++++ * sheet set untouched.
++++ */
++++export function toggleChip(filter: TaskFilter, chip: QuickChip, today: string): TaskFilter {
++++  const active = isChipActive(filter, chip, today);
++++  if (chip === "open") return { ...filter, status: active ? null : "open" };
++++  if (chip === "high") return { ...filter, priority: active ? null : "high" };
++++  return { ...filter, to: active ? null : today };
++++}
++diff --git a/PRPs/reports/today-view-and-filters/phase-3/attempts/1/pre-state.txt b/PRPs/reports/today-view-and-filters/phase-3/attempts/1/pre-state.txt
++new file mode 100644
++index 0000000..73f9679
++--- /dev/null
+++++ b/PRPs/reports/today-view-and-filters/phase-3/attempts/1/pre-state.txt
++@@ -0,0 +1 @@
+++294a79cf3f36f4fc2eae9ac1ffc264a5487411d0
++diff --git a/documentation/10-product/visual-identity.md b/documentation/10-product/visual-identity.md
++index a156d2d..e7e1b8c 100644
++--- a/documentation/10-product/visual-identity.md
+++++ b/documentation/10-product/visual-identity.md
++@@ -1,6 +1,6 @@
++ ---
++ status: active
++-last_updated: 2026-08-23
+++last_updated: 2026-08-24
++ review_trigger: "a step of UI/UX-plan activity A2 lands, an identity element (mark, tokens, voice) changes, or decision 5 is accepted"
++ ---
++ 
++@@ -96,6 +96,9 @@ Microcopy table (UI values in pt-BR — ADR-0009; the keys stay English in code)
++ | Row actions (accessible names) | *Concluir {título}* / *Reabrir {título}* · *Editar título* |
++ | Section | **Concluídas** · count |
++ | Group headers | **Atrasadas** · **Hoje** · **Próximas** · **Sem data** — each followed by its count |
+++| Quick-filter chips | *Abertas* · *Para hoje* · *Alta prioridade* · *Filtros…* |
+++| Filter icon (accessible name) | *Filtros* · with filters active, *Filtros (N ativos)* |
+++| Filter sheet | title *Filtros* · labels *Status · Prioridade · Período* · status chips *Abertas · Concluídas · Não concluídas* · priority chips *Alta · Normal · Baixa* · date labels *De* / *Até* · *Limpar filtros* · close button *Fechar* |
++ | Toasts | *Tarefa reaberta* · *Tarefa excluída* |
++ | List load error | the approved request-error sentence · *Tentar de novo* |
++ | Request errors (tested) | `Sem conexão com o servidor. Nada se perdeu — tente de novo quando a conexão voltar.` · `O servidor recusou a operação (código N). Tente de novo.` |
++@@ -113,6 +116,7 @@ TBD — after A5 ships: a week of cold opens on the phone against the three É w
++ 
++ | Date | What changed |
++ |---|---|
+++| 2026-08-24 | **today-view-and-filters Phase 3 (Task 2): the quick-filter chip, filter-icon and filter-sheet strings added ahead of the code that renders them** (`PRPs/plans/today-view-and-filters-phase-3-quick-filters-and-the-filter-sheet.plan.md`) — chip row *Abertas · Para hoje · Alta prioridade · Filtros…*, the filter icon's accessible name (plain and with an active count), and the filter sheet's title, labels, chip vocabulary and *Limpar filtros* action |
++ | 2026-08-23 | **today-view-and-filters Phase 2 (Task 2): the four group-header names added ahead of the code that uses them** (`PRPs/plans/today-view-and-filters-phase-2-grouping-and-the-grouped-list.plan.md`) — *Atrasadas*, *Hoje*, *Próximas* and *Sem data*, the group headers layout standard §2.5 specifies, each rendered with its count by the new `TaskGroup` component |
++ | 2026-08-21 | **ui-design-pass Phase 2 (Task 10): one microcopy row added ahead of the code that uses it** (`PRPs/plans/ui-design-pass-phase-2-today-screen.plan.md`) — *List load error*, the retry copy the *Hoje* screen shows under a failed first load, pairing the existing request-error sentence with the infinitive button *Tentar de novo* |
++ | 2026-08-21 | **ui-design-pass Phase 1: the A5 microcopy rows approved by the owner in the PRD scope round added to the table above, ahead of Phase 1's code** (`PRPs/prds/ui-design-pass.prd.md`, "Microcopy added by this pass") — token gate, token-store failure, header, capture deck, row meta line, row actions, section, toasts, request errors, detail sheet, `<title>`, manifest |
++diff --git a/documentation/40-engineering/ui-layout-standard.md b/documentation/40-engineering/ui-layout-standard.md
++index 6c828e2..9b3863e 100644
++--- a/documentation/40-engineering/ui-layout-standard.md
+++++ b/documentation/40-engineering/ui-layout-standard.md
++@@ -1,6 +1,6 @@
++ ---
++ status: active
++-last_updated: 2026-08-23
+++last_updated: 2026-08-24
++ review_trigger: "a screen is added that the anatomy does not fit, a navigation destination of equal weight appears, or a platform behaviour a rule relies on changes"
++ ---
++ 
++@@ -26,7 +26,7 @@ Top to bottom, every screen that lists Tasks:
++ 
++ 1. **Header (flat, never elevated):** page title as the `<h1>` (*Hoje*), the date in mono beside it (`qua., 20/08`), a remaining count as text (*4 restantes* — never a ratio or a progress bar: progress shown before the effort increases drop-off; the honest mirror lives in the group counts), and on the right up to three 48 px icon buttons: filters (with a numeric badge when any filter is active), then — in model B — search and settings. No wordmark in the header (it lives on the splash, the settings screen and the desktop rail).
++ 2. **Offline / unreachable banner** (when applicable): directly under the header, one line, icon + action language, persistent while the condition holds, not dismissible (§8).
++-3. **Quick-filter chip row:** one horizontally scrolling row of 3–5 toggles (*Abertas*, *Alta prioridade*, *Com hora*) plus a trailing *Filtros…* chip that opens the filter sheet; applied filters stay visible as selected chips with a *Limpar filtros* chip; chips are 48 px hit areas with 8 px gaps. Default state: nothing selected; a narrowing filter never survives a cold start silently.
+++3. **Quick-filter chip row:** one horizontally scrolling row of 3–5 toggles (*Abertas*, *Alta prioridade*, *Para hoje* — *amended 2026-08-24, was* Com hora*: a Task carries no time of day (`deadline` and `scheduledDate` are calendar days, enforced by `tasks_single_date_chk`), so that chip named a filter the domain cannot express; it returns as an option only when Event ships in unit 14) plus a trailing *Filtros…* chip that opens the filter sheet; applied filters stay visible as selected chips with a *Limpar filtros* chip; chips are 48 px hit areas with 8 px gaps. Default state: nothing selected; a narrowing filter never survives a cold start silently.
++ 4. **Agenda stack (unit 4 hook):** today's Google events as **one** group at the top of the list, collapsed to the next event + count (*Agenda · 2*), expanding to rows with **no checkbox**, a leading time column, a calendar glyph and a dashed outline treatment — never interleaved with Tasks, never in the accent colour; tap opens Google Calendar (read-only).
++ 5. **Groups, in this order,** each with a 40 px header carrying name + count (counts stay visible when collapsed — the "my tasks vanished" trap): **Atrasadas** first (collapsible; header action *Reagendar para hoje*; rows also show the overdue date inline in the live/overdue colour, so lateness is visible away from the header) → **Hoje** (never collapsible; sorted by time, then priority) → **Próximas** (collapsed by default) → **Sem data** (collapsed by default — no major app shows undated items on Today; here it is a deliberate "pick something" drawer). Collapse state persists per group.
++ 6. **Row anatomy:** 64 px minimum (the project constant), leading 48 px completion control (every task app leads with it), title on **two lines then ellipsis** (`line-clamp-2` — amended 2026-08-23 to match [guidelines §12.4](ui-ux-guidelines.md), which sits above this document and which A5 implemented; Portuguese titles run ~15 % longer than English and one line truncated too many of them), a second metadata line in mono (*até 18:00* · *venceu seg., 18/08* in the overdue colour · priority glyph + word · area dot later), at most **one** trailing element, never a chevron. Tapping the row opens the detail; swipe actions, if ever added, are shortcuts to visible controls (guidelines §12.4), never the only way.
++@@ -69,6 +69,7 @@ Top to bottom, every screen that lists Tasks:
++ 
++ | Date | What changed |
++ |---|---|
+++| 2026-08-24 | **today-view-and-filters Phase 3 (Task 2).** §2.3 amended: the quick-filter row's third chip was ***Com hora*** and is now *Para hoje*. A Task carries no time of day — `deadline` and `scheduledDate` are calendar days, enforced by `tasks_single_date_chk` — so the old chip named a filter the domain cannot express; it becomes expressible only when Event ships in unit 14. Proven by building the phase-3 chip row, which found the rule unimplementable as written. *The retired name is written here deliberately: a reader who meets `Com hora` in the PRD, the plans or the A3 sketches must be able to find this row by searching for it.* |
++ | 2026-08-23 | **A5 retro (plan A6).** Five rules amended by what building the screens measured: §2.6 titles wrap to two lines (the guidelines sit above this document), §2.7 the empty state carries the *Nova tarefa* CTA (the approved microcopy postdated the "no duplicate button" line), §2.8 the toast is slotted into the open dialog's subtree rather than made a `popover="manual"` (which would itself be inert), §3 the centred-sheet breakpoint is Tailwind's 640 px and the `cancel` event must be mirrored alongside `close`, §4 the `:has()` rule is anchored on the shell, not `:root` |
++ | 2026-08-20 | **Owner chose model B (single screen + sheets) → `active`.** Model A kept in §1 as the rejected alternative with the flip rule |
++ | 2026-08-20 | Written as draft from the A3 research (three lenses, verified) and the sketches; Q4 pending the owner's choice; keyboard decision taken |
++diff --git a/src/app/api.ts b/src/app/api.ts
++index 44fa04d..38c6ba3 100644
++--- a/src/app/api.ts
+++++ b/src/app/api.ts
++@@ -1,4 +1,5 @@
++-import type { CreateTaskInput, TaskDto, TaskStatus, UpdateTaskInput } from "../shared/api";
+++import type { CreateTaskInput, TaskDto, UpdateTaskInput } from "../shared/api";
+++import { EMPTY_FILTER, toQuery, type TaskFilter } from "../shared/task-filter";
++ import { createTokenStore } from "../shared/token-store";
++ import { durableTokenStorage, legacyTokenStorage } from "./token-storage";
++ 
++@@ -87,11 +88,13 @@ export async function checkHealth(): Promise<void> {
++  * the one thing every consumer must agree on in the one place they cannot
++  * share (`docs/api-reference.md`, "Task read contract").
++  */
++-export async function listTasks(status?: TaskStatus, limit?: number): Promise<TaskDto[]> {
++-  const params = new URLSearchParams();
++-  if (status !== undefined) params.set("status", status);
++-  if (limit !== undefined) params.set("limit", String(limit));
++-  const query = params.size === 0 ? "" : `?${params.toString()}`;
+++export async function listTasks(
+++  filter: TaskFilter = EMPTY_FILTER,
+++  limit?: number,
+++): Promise<TaskDto[]> {
+++  const base = toQuery(filter);
+++  const query =
+++    limit === undefined ? base : `${base}${base === "" ? "?" : "&"}limit=${String(limit)}`;
++ 
++   const body = await request<{ tasks: TaskDto[] }>(`/api/tasks${query}`);
++   return body.tasks;
++diff --git a/src/app/components/EmptyState.tsx b/src/app/components/EmptyState.tsx
++index 834dbd5..831867a 100644
++--- a/src/app/components/EmptyState.tsx
+++++ b/src/app/components/EmptyState.tsx
++@@ -1,10 +1,33 @@
++ // The list region's empty state (layout standard §2.7, guidelines §8): a
++ // positive title, one line of body, one CTA that focuses capture — no
++-// duplicate button, never a blank region.
+++// duplicate button, never a blank region. Phase 3 (today-view-and-filters)
+++// adds a second, explicit branch for a filtered-to-nothing result — its
+++// copy and its action (*Limpar filtros*) are different, so it is a visibly
+++// distinct branch here rather than a silent reuse of the first.
++ 
++ import { Button } from "./ui/Button";
++ 
++-export function EmptyState({ onCapture }: { onCapture: () => void }) {
+++export function EmptyState({
+++  filtered = false,
+++  onCapture,
+++  onClearFilters,
+++}: {
+++  filtered?: boolean;
+++  onCapture: () => void;
+++  onClearFilters?: () => void;
+++}) {
+++  if (filtered) {
+++    return (
+++      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-8 text-center">
+++        <p className="m-0 font-display text-t4 font-extrabold text-ink">
+++          Nenhuma tarefa com esse filtro.
+++        </p>
+++        {/* prettier-ignore */}
+++        <Button variant="secondary" onClick={onClearFilters}>Limpar filtros</Button>
+++      </div>
+++    );
+++  }
+++
++   return (
++     <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-8 text-center">
++       <p className="m-0 font-display text-t4 font-extrabold text-ink">Nada para hoje.</p>
++diff --git a/src/app/components/FilterChips.tsx b/src/app/components/FilterChips.tsx
++new file mode 100644
++index 0000000..5d6e11c
++--- /dev/null
+++++ b/src/app/components/FilterChips.tsx
++@@ -0,0 +1,62 @@
+++// The quick-filter chip row of layout standard §2.3: one horizontally
+++// scrolling `ChipGroup` holding the three quick chips — *Abertas*, *Para
+++// hoje*, *Alta prioridade* — plus a trailing *Filtros…* chip that opens the
+++// filter sheet. Every chip's pressed state is derived from `isChipActive`,
+++// never held as local state: this row is a VIEW of the one `TaskFilter`
+++// `TodayScreen` owns, not a second copy of it (`src/shared/task-filter.ts`).
+++// The trailing chip is a plain button sharing `Chip`'s class list verbatim
+++// (rather than a `Chip` itself) so it can never read as pressed — it opens
+++// the sheet, it does not belong to the filter's own toggle vocabulary.
+++
+++import { isChipActive, type QuickChip, type TaskFilter } from "../../shared/task-filter";
+++import { Chip, ChipGroup } from "./ui/Chip";
+++
+++const QUICK_CHIPS: readonly QuickChip[] = ["open", "today", "high"];
+++
+++const CHIP_LABEL: Record<QuickChip, string> = {
+++  open: "Abertas",
+++  today: "Para hoje",
+++  high: "Alta prioridade",
+++};
+++
+++// `Chip`'s own class list (src/app/components/ui/Chip.tsx), reused verbatim
+++// so the trailing action reads as the same pill — the `data-pressed:*`
+++// variants are inert here since this is a plain button, never a `Toggle`.
+++const TRAILING_CHIP_CLASSNAME =
+++  "inline-flex min-h-12 flex-none items-center gap-1 rounded-pill border border-line bg-surface-2 px-3 font-text text-t2 font-medium whitespace-nowrap text-ink data-pressed:border-transparent data-pressed:bg-accent data-pressed:font-semibold data-pressed:text-on-accent";
+++
+++export function FilterChips({
+++  filter,
+++  today,
+++  onToggleChip,
+++  onOpenSheet,
+++}: {
+++  filter: TaskFilter;
+++  today: string;
+++  onToggleChip: (chip: QuickChip) => void;
+++  onOpenSheet: () => void;
+++}) {
+++  const pressed = QUICK_CHIPS.filter((chip) => isChipActive(filter, chip, today));
+++
+++  // The ToggleGroup reports the WHOLE next pressed-array on every tap; the
+++  // single chip that differs from `pressed` (derived straight from the
+++  // filter, never from local state) is the one that was tapped.
+++  function handleValueChange(next: string[]): void {
+++    const nextSet = new Set(next);
+++    const changed = QUICK_CHIPS.find((chip) => nextSet.has(chip) !== pressed.includes(chip));
+++    if (changed !== undefined) onToggleChip(changed);
+++  }
+++
+++  return (
+++    <ChipGroup value={pressed} onValueChange={handleValueChange} label="Filtros rápidos">
+++      {QUICK_CHIPS.map((chip) => (
+++        <Chip key={chip} value={chip}>
+++          {CHIP_LABEL[chip]}
+++        </Chip>
+++      ))}
+++      <button type="button" className={TRAILING_CHIP_CLASSNAME} onClick={onOpenSheet}>
+++        Filtros…
+++      </button>
+++    </ChipGroup>
+++  );
+++}
++diff --git a/src/app/components/FilterSheet.tsx b/src/app/components/FilterSheet.tsx
++new file mode 100644
++index 0000000..e86c003
++--- /dev/null
+++++ b/src/app/components/FilterSheet.tsx
++@@ -0,0 +1,113 @@
+++// The filter sheet (layout standard §3, PRD AC-15): Status, Prioridade and
+++// Período over the existing `Sheet`, light-dismissible — the one surface
+++// layout standard §3 allows that on. Every change applies IMMEDIATELY
+++// through `onChange` (there is no *Aplicar* button and no draft to lose),
+++// which is what makes light dismiss safe here, unlike the detail editor
+++// `TaskSheet`, which never passes `lightDismiss`. Every selected chip is
+++// derived straight from the current `TaskFilter` prop, mirroring
+++// `TaskSheet.tsx`'s own `ChipGroup` usage for the detail editor's date-mode
+++// and priority dimensions — this sheet and the chip row are two VIEWS of
+++// the one filter state `TodayScreen` owns, never a second copy of it.
+++
+++import type { TaskPriority, TaskStatus } from "../../shared/api";
+++import { EMPTY_FILTER, type TaskFilter } from "../../shared/task-filter";
+++import { Button } from "./ui/Button";
+++import { Chip, ChipGroup } from "./ui/Chip";
+++import { Sheet } from "./ui/Sheet";
+++
+++export function FilterSheet({
+++  open,
+++  onOpenChange,
+++  filter,
+++  onChange,
+++}: {
+++  open: boolean;
+++  onOpenChange: (open: boolean) => void;
+++  filter: TaskFilter;
+++  onChange: (next: TaskFilter) => void;
+++}) {
+++  return (
+++    <Sheet open={open} onOpenChange={onOpenChange} title="Filtros" lightDismiss>
+++      <div className="flex flex-col gap-4">
+++        <div className="flex flex-col gap-1">
+++          <p className="m-0 font-data text-t1 font-semibold text-muted">Status</p>
+++          <ChipGroup
+++            multiple={false}
+++            label="Status"
+++            value={filter.status === null ? [] : [filter.status]}
+++            onValueChange={(next) =>
+++              onChange({ ...filter, status: (next[0] as TaskStatus | undefined) ?? null })
+++            }
+++          >
+++            <Chip value="open">Abertas</Chip>
+++            <Chip value="done">Concluídas</Chip>
+++            <Chip value="missed">Não concluídas</Chip>
+++          </ChipGroup>
+++        </div>
+++
+++        <div className="flex flex-col gap-1">
+++          <p className="m-0 font-data text-t1 font-semibold text-muted">Prioridade</p>
+++          <ChipGroup
+++            multiple={false}
+++            label="Prioridade"
+++            value={filter.priority === null ? [] : [filter.priority]}
+++            onValueChange={(next) =>
+++              onChange({ ...filter, priority: (next[0] as TaskPriority | undefined) ?? null })
+++            }
+++          >
+++            <Chip value="high">Alta</Chip>
+++            <Chip value="normal">Normal</Chip>
+++            <Chip value="low">Baixa</Chip>
+++          </ChipGroup>
+++        </div>
+++
+++        <div className="flex flex-col gap-1">
+++          <p className="m-0 font-data text-t1 font-semibold text-muted">Período</p>
+++          <div className="flex gap-2">
+++            <div className="flex flex-1 flex-col gap-1">
+++              <label
+++                htmlFor="filter-sheet-from"
+++                className="m-0 font-data text-t1 font-semibold text-muted"
+++              >
+++                De
+++              </label>
+++              <input
+++                id="filter-sheet-from"
+++                type="date"
+++                value={filter.from ?? ""}
+++                onChange={(event) =>
+++                  onChange({
+++                    ...filter,
+++                    from: event.target.value === "" ? null : event.target.value,
+++                  })
+++                }
+++                className="min-h-12 w-full rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
+++              />
+++            </div>
+++            <div className="flex flex-1 flex-col gap-1">
+++              <label
+++                htmlFor="filter-sheet-to"
+++                className="m-0 font-data text-t1 font-semibold text-muted"
+++              >
+++                Até
+++              </label>
+++              <input
+++                id="filter-sheet-to"
+++                type="date"
+++                value={filter.to ?? ""}
+++                onChange={(event) =>
+++                  onChange({ ...filter, to: event.target.value === "" ? null : event.target.value })
+++                }
+++                className="min-h-12 w-full rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
+++              />
+++            </div>
+++          </div>
+++        </div>
+++
+++        <Button type="button" variant="secondary" onClick={() => onChange(EMPTY_FILTER)}>
+++          Limpar filtros
+++        </Button>
+++      </div>
+++    </Sheet>
+++  );
+++}
++diff --git a/src/app/components/TodayHeader.tsx b/src/app/components/TodayHeader.tsx
++index 3cdd400..09c19ca 100644
++--- a/src/app/components/TodayHeader.tsx
+++++ b/src/app/components/TodayHeader.tsx
++@@ -1,11 +1,28 @@
++ // The flat, never-elevated header of the layout standard §2.1: the page
++-// title, the date in mono, and the remaining count. No icon buttons yet —
++-// nothing exists behind them in this phase.
+++// title, the date in mono, the remaining count, and (phase 3,
+++// today-view-and-filters) the 48 px filter icon button — the first of the
+++// up to three icon buttons §2.1 allows on the right. Its accessible name
+++// states the active filter count in words, and the numeric badge beside it
+++// is real text, never a bare dot (guidelines §4.4), so the filtered state
+++// is never carried by colour alone.
++ 
+++import { SlidersHorizontal } from "lucide-react";
++ import { formatHeaderDate, formatRemaining } from "../../shared/format";
+++import { Button } from "./ui/Button";
++ 
++-export function TodayHeader({ now, remaining }: { now: Date; remaining: number }) {
+++export function TodayHeader({
+++  now,
+++  remaining,
+++  activeFilterCount,
+++  onOpenFilters,
+++}: {
+++  now: Date;
+++  remaining: number;
+++  activeFilterCount: number;
+++  onOpenFilters: () => void;
+++}) {
++   const { figure, label } = formatRemaining(remaining);
+++  const filterLabel = activeFilterCount > 0 ? `Filtros (${activeFilterCount} ativos)` : "Filtros";
++ 
++   return (
++     <header className="flex items-end gap-3 px-4 pt-6 pb-2">
++@@ -21,6 +38,19 @@ export function TodayHeader({ now, remaining }: { now: Date; remaining: number }
++         )}
++         <span className="font-text text-t1 font-medium text-muted">{label}</span>
++       </span>
+++      <span className="relative">
+++        <Button type="button" variant="icon" aria-label={filterLabel} onClick={onOpenFilters}>
+++          <SlidersHorizontal className="size-[22px]" aria-hidden="true" />
+++        </Button>
+++        {activeFilterCount > 0 && (
+++          <span
+++            aria-hidden="true"
+++            className="absolute -top-1 -right-1 flex min-w-[18px] items-center justify-center rounded-pill bg-accent px-1 font-data text-[11px] font-bold text-on-accent tabular-nums"
+++          >
+++            {activeFilterCount}
+++          </span>
+++        )}
+++      </span>
++     </header>
++   );
++ }
++diff --git a/src/app/components/TodayScreen.tsx b/src/app/components/TodayScreen.tsx
++index ad884b8..f4aa10e 100644
++--- a/src/app/components/TodayScreen.tsx
+++++ b/src/app/components/TodayScreen.tsx
++@@ -14,6 +14,13 @@ import { todayIn } from "../../shared/dates";
++ import { classifyRequestFailure } from "../../shared/request-failure";
++ import type { ShareTarget } from "../../shared/share-target";
++ import { buildTaskPatch } from "../../shared/task-edit";
+++import {
+++  activeCount,
+++  EMPTY_FILTER,
+++  toggleChip,
+++  type QuickChip,
+++  type TaskFilter,
+++} from "../../shared/task-filter";
++ import { groupTasks } from "../../shared/task-groups";
++ import { currentDraft, INITIAL_TASK_SHEET_STATE, reduceTaskSheet } from "../../shared/task-sheet";
++ import {
++@@ -29,6 +36,8 @@ import { useConnectivity } from "../hooks/useConnectivity";
++ import { dismissToast, showToast, useToast } from "../toast-store";
++ import { CaptureDeck } from "./CaptureDeck";
++ import { EmptyState } from "./EmptyState";
+++import { FilterChips } from "./FilterChips";
+++import { FilterSheet } from "./FilterSheet";
++ import { TaskGroup } from "./TaskGroup";
++ import { TaskRow } from "./TaskRow";
++ import { TaskSheet } from "./TaskSheet";
++@@ -91,6 +100,12 @@ export function TodayScreen({
++   const [doneCollapsed, setDoneCollapsed] = useState(() =>
++     readCollapsed(CLOSED_COLLAPSED_KEY, false),
++   );
+++  // Seeded from the constant and never from storage, and never written to
+++  // storage — the deliberate asymmetry against the collapse state above,
+++  // which layout standard §2.3 requires: a narrowing filter must never
+++  // survive a cold start.
+++  const [filter, setFilter] = useState<TaskFilter>(EMPTY_FILTER);
+++  const [filtersOpen, setFiltersOpen] = useState(false);
++   const captureRef = useRef<HTMLInputElement>(null);
++ 
++   const today = todayIn(new Date());
++@@ -115,7 +130,7 @@ export function TodayScreen({
++ 
++   async function refresh(): Promise<void> {
++     try {
++-      const next = await listTasks();
+++      const next = await listTasks(filter);
++       setTasks(next);
++       setLoadError(null);
++       report({ type: "request-succeeded" });
++@@ -259,6 +274,14 @@ export function TodayScreen({
++     });
++   }
++ 
+++  // The chip row's own handler: flips exactly `chip`'s own dimension via
+++  // `toggleChip` (`src/shared/task-filter.ts`) — the functional update reads
+++  // the latest filter regardless of render timing, so this never races the
+++  // `[filter]` effect below that re-reads on every change.
+++  function handleToggleChip(chip: QuickChip): void {
+++    setFilter((current) => toggleChip(current, chip, today));
+++  }
+++
++   function openSheet(task: TaskDto): void {
++     setSheetError(null);
++     dispatchSheet({ type: "open", task });
++@@ -294,10 +317,13 @@ export function TodayScreen({
++   }
++ 
++   useEffect(() => {
++-    // Runs once, on mount — every later refetch is triggered explicitly
++-    // (a mutation, `visibilitychange`, or reconnecting).
+++    // Runs on mount AND on every filter change (the chip row, the sheet and
+++    // *Limpar filtros* all only call `setFilter` — this is the one place
+++    // that turns a new filter into the read, so a chip tap issues exactly
+++    // one `GET /api/tasks`). Every OTHER refetch is triggered explicitly (a
+++    // mutation, `visibilitychange`, or reconnecting).
++     void refresh();
++-  }, []);
+++  }, [filter]);
++ 
++   useEffect(() => {
++     function handleVisibilityChange(): void {
++@@ -362,7 +388,7 @@ export function TodayScreen({
++   return (
++     <div
++       data-shell
++-      className="mx-auto grid h-dvh w-full max-w-[640px] grid-rows-[auto_auto_1fr_auto_auto] overflow-clip bg-bg"
+++      className="mx-auto grid h-dvh w-full max-w-[640px] grid-rows-[auto_auto_auto_1fr_auto_auto] overflow-clip bg-bg"
++     >
++       <TodayHeader
++         now={now}
++@@ -372,6 +398,8 @@ export function TodayScreen({
++           groups.upcoming.length +
++           groups.undated.length
++         }
+++        activeFilterCount={activeCount(filter)}
+++        onOpenFilters={() => setFiltersOpen(true)}
++       />
++ 
++       {connectivity !== "online" ? (
++@@ -380,6 +408,13 @@ export function TodayScreen({
++         <div />
++       )}
++ 
+++      <FilterChips
+++        filter={filter}
+++        today={today}
+++        onToggleChip={handleToggleChip}
+++        onOpenSheet={() => setFiltersOpen(true)}
+++      />
+++
++       <main className="flex flex-col gap-2 overflow-y-auto overscroll-contain px-4 pb-2">
++         {tasks === null && loadError === null && <Skeleton slow={slow} />}
++ 
++@@ -394,7 +429,11 @@ export function TodayScreen({
++         )}
++ 
++         {tasks !== null && tasks.length === 0 && (
++-          <EmptyState onCapture={() => captureRef.current?.focus()} />
+++          <EmptyState
+++            onCapture={() => captureRef.current?.focus()}
+++            filtered={activeCount(filter) > 0}
+++            onClearFilters={() => setFilter(EMPTY_FILTER)}
+++          />
++         )}
++ 
++         {tasks !== null && tasks.length > 0 && (
++@@ -481,6 +520,15 @@ export function TodayScreen({
++         }}
++         onDeleteConfirm={deleteSheetTask}
++       />
+++
+++      {/* Never stack sheets (layout standard §3): gated on the same
+++          condition the toast slot above already uses. */}
+++      <FilterSheet
+++        open={filtersOpen && sheet.taskId === null}
+++        onOpenChange={setFiltersOpen}
+++        filter={filter}
+++        onChange={setFilter}
+++      />
++     </div>
++   );
++ }
++diff --git a/src/app/components/ui/Sheet.tsx b/src/app/components/ui/Sheet.tsx
++index 2b2924b..8148bf9 100644
++--- a/src/app/components/ui/Sheet.tsx
+++++ b/src/app/components/ui/Sheet.tsx
++@@ -11,14 +11,21 @@
++ // verification browser even on a bare, React-free <dialog>; without the
++ // guard that leaves `open` stuck at `true` in React state forever, since no
++ // event would call `onOpenChange(false)` again and the sheet could never be
++-// reopened short of a reload. `closedby` is left at its `showModal()` default
++-// of `closerequest`, so there is no light dismiss on this editor. `showModal()`
++-// itself makes the page behind inert and scroll-locked
++-// (`html:has(dialog[open])` in styles.css) and returns focus to the opener
++-// natively on close. The `history.pushState` fallback of PRD risk row 400 is
++-// NOT built here — it is specified in the phase-3 plan's `## Notes` and wired
++-// only if the owner's device check finds the Android back gesture does not
++-// close this dialog.
+++// reopened short of a reload. `showModal()` itself makes the page behind
+++// inert and scroll-locked (`html:has(dialog[open])` in styles.css) and
+++// returns focus to the opener natively on close. The `history.pushState`
+++// fallback of PRD risk row 400 is NOT built here — it is specified in the
+++// phase-3 plan's `## Notes` and wired only if the owner's device check finds
+++// the Android back gesture does not close this dialog.
+++//
+++// `lightDismiss` (phase 3, today-view-and-filters): opt-in, defaults to
+++// `false`. Layout standard §3 allows light dismiss (`closedby="any"`) on the
+++// filter sheet ONLY, and forbids it on an editor with unsaved changes — so
+++// `TaskSheet` never passes this prop, and `closedby` stays absent from its
+++// `<dialog>`, leaving `showModal()`'s own default of `closerequest` exactly
+++// as before this phase (Esc, the close button and the back gesture still
+++// close it; only the tap-outside shortcut is unavailable). Only the new
+++// `FilterSheet` passes `lightDismiss`.
++ 
++ import { X } from "lucide-react";
++ import { useEffect, useId, useRef } from "react";
++@@ -30,11 +37,13 @@ export function Sheet({
++   onOpenChange,
++   title,
++   children,
+++  lightDismiss = false,
++ }: {
++   open: boolean;
++   onOpenChange: (open: boolean) => void;
++   title: string;
++   children: ReactNode;
+++  lightDismiss?: boolean;
++ }) {
++   const ref = useRef<HTMLDialogElement>(null);
++   const titleId = useId();
++@@ -87,6 +96,7 @@ export function Sheet({
++       data-sheet
++       tabIndex={-1}
++       aria-labelledby={titleId}
+++      closedby={lightDismiss ? "any" : undefined}
++       className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[90dvh] w-full max-w-none overflow-y-auto overscroll-contain rounded-t-[24px] border-0 bg-surface-1 p-0 px-4 pt-2 pb-4 text-ink shadow-deck outline-none sm:inset-0 sm:m-auto sm:h-fit sm:w-[560px] sm:max-w-[calc(100vw-2rem)] sm:rounded-card"
++     >
++       <div
++diff --git a/src/shared/task-filter.ts b/src/shared/task-filter.ts
++new file mode 100644
++index 0000000..59c7fdf
++--- /dev/null
+++++ b/src/shared/task-filter.ts
++@@ -0,0 +1,102 @@
+++/**
+++ * The single source of truth for what a Task filter IS (PRD AC-12). The
+++ * quick-filter chip row and the filter sheet are two VIEWS of one
+++ * `TaskFilter` — never two states that must be kept in sync — so every
+++ * question either surface can ask (is this chip pressed? what does the
+++ * request look like? how many dimensions are active?) is answered here and
+++ * nowhere else.
+++ *
+++ * Like `src/shared/task-groups.ts`, `format.ts` and `dates.ts`, this module
+++ * is compiled into BOTH the browser and the Worker projects, so it stays
+++ * environment-agnostic: no DOM globals, no runtime dependencies, and no
+++ * reads of the clock. `today` is always an ARGUMENT, never read from the
+++ * clock internally — that is what keeps every caller (and every test)
+++ * deterministic regardless of when or where it runs.
+++ */
+++
+++import type { TaskPriority, TaskStatus } from "./api";
+++
+++/** The whole filter state: four independent, nullable dimensions. `null` means "not set". */
+++export interface TaskFilter {
+++  status: TaskStatus | null;
+++  priority: TaskPriority | null;
+++  from: string | null;
+++  to: string | null;
+++}
+++
+++/** The filter a screen starts with — every dimension unset. Never seeded from storage (layout standard §2.3). */
+++export const EMPTY_FILTER: TaskFilter = {
+++  status: null,
+++  priority: null,
+++  from: null,
+++  to: null,
+++};
+++
+++/** The three quick-filter chips of layout standard §2.3, each backed by exactly one `TaskFilter` dimension. */
+++export type QuickChip = "open" | "today" | "high";
+++
+++/**
+++ * The query string `listTasks` sends: `""` when every dimension is `null` —
+++ * the case that keeps an unfiltered load byte-identical to the request the
+++ * screen issued before filters existed — otherwise `?` plus the set
+++ * parameters in the FIXED order `status`, `from`, `to`, `priority`, built
+++ * with `URLSearchParams` so every value is encoded rather than concatenated
+++ * raw. The fixed order is what makes the output assertable and keeps two
+++ * callers building the same filter from ever producing two different URLs.
+++ */
+++export function toQuery(filter: TaskFilter): string {
+++  const params = new URLSearchParams();
+++  if (filter.status !== null) params.set("status", filter.status);
+++  if (filter.from !== null) params.set("from", filter.from);
+++  if (filter.to !== null) params.set("to", filter.to);
+++  if (filter.priority !== null) params.set("priority", filter.priority);
+++  return params.size === 0 ? "" : `?${params.toString()}`;
+++}
+++
+++/**
+++ * How many DIMENSIONS are narrowing the list, for the header badge — never
+++ * how many fields are set. `status` is one dimension, `priority` is one
+++ * dimension, and `from`/`to` together are one *period*: a range counts once,
+++ * whether one end is set or both, because the badge answers "how many
+++ * questions are narrowing the list?", not "how many fields hold a value?".
+++ * Range: 0–3.
+++ */
+++export function activeCount(filter: TaskFilter): number {
+++  let count = 0;
+++  if (filter.status !== null) count += 1;
+++  if (filter.priority !== null) count += 1;
+++  if (filter.from !== null || filter.to !== null) count += 1;
+++  return count;
+++}
+++
+++/**
+++ * Whether `chip` reads as pressed against `filter`: `open` when `status` is
+++ * `"open"`, `high` when `priority` is `"high"`, `today` when `to` equals
+++ * `today`. The sheet can set values no chip represents (e.g. `status:
+++ * "done"`, or a `to` that is not today) — those correctly leave the chip
+++ * unpressed rather than pressed-but-wrong, which is the round trip between
+++ * the chip row and the sheet.
+++ */
+++export function isChipActive(filter: TaskFilter, chip: QuickChip, today: string): boolean {
+++  if (chip === "open") return filter.status === "open";
+++  if (chip === "high") return filter.priority === "high";
+++  return filter.to === today;
+++}
+++
+++/**
+++ * Toggles exactly `chip`'s own dimension and returns a NEW `TaskFilter` —
+++ * `filter` is never mutated. Pressing an unpressed chip sets its dimension
+++ * (overwriting whatever value that one dimension held); pressing a pressed
+++ * chip clears exactly that dimension to `null`. No other field is ever
+++ * touched: a chip that also cleared a neighbouring field would make the
+++ * chip row and the sheet disagree the moment both are used, which is the
+++ * defect this function exists to prevent. `today` maps to the `to` field —
+++ * switching the `today` chip off clears only `to`, leaving any `from` the
+++ * sheet set untouched.
+++ */
+++export function toggleChip(filter: TaskFilter, chip: QuickChip, today: string): TaskFilter {
+++  const active = isChipActive(filter, chip, today);
+++  if (chip === "open") return { ...filter, status: active ? null : "open" };
+++  if (chip === "high") return { ...filter, priority: active ? null : "high" };
+++  return { ...filter, to: active ? null : today };
+++}
+diff --git a/PRPs/reports/today-view-and-filters/phase-3/attempts/1/pre-state.txt b/PRPs/reports/today-view-and-filters/phase-3/attempts/1/pre-state.txt
+new file mode 100644
+index 0000000..73f9679
+--- /dev/null
++++ b/PRPs/reports/today-view-and-filters/phase-3/attempts/1/pre-state.txt
+@@ -0,0 +1 @@
++294a79cf3f36f4fc2eae9ac1ffc264a5487411d0
+diff --git a/PRPs/reports/today-view-and-filters/phase-3/attempts/2/pre-state.txt b/PRPs/reports/today-view-and-filters/phase-3/attempts/2/pre-state.txt
+new file mode 100644
+index 0000000..73f9679
+--- /dev/null
++++ b/PRPs/reports/today-view-and-filters/phase-3/attempts/2/pre-state.txt
+@@ -0,0 +1 @@
++294a79cf3f36f4fc2eae9ac1ffc264a5487411d0
+diff --git a/documentation/10-product/visual-identity.md b/documentation/10-product/visual-identity.md
+index a156d2d..e7e1b8c 100644
+--- a/documentation/10-product/visual-identity.md
++++ b/documentation/10-product/visual-identity.md
+@@ -1,6 +1,6 @@
+ ---
+ status: active
+-last_updated: 2026-08-23
++last_updated: 2026-08-24
+ review_trigger: "a step of UI/UX-plan activity A2 lands, an identity element (mark, tokens, voice) changes, or decision 5 is accepted"
+ ---
+ 
+@@ -96,6 +96,9 @@ Microcopy table (UI values in pt-BR — ADR-0009; the keys stay English in code)
+ | Row actions (accessible names) | *Concluir {título}* / *Reabrir {título}* · *Editar título* |
+ | Section | **Concluídas** · count |
+ | Group headers | **Atrasadas** · **Hoje** · **Próximas** · **Sem data** — each followed by its count |
++| Quick-filter chips | *Abertas* · *Para hoje* · *Alta prioridade* · *Filtros…* |
++| Filter icon (accessible name) | *Filtros* · with filters active, *Filtros (N ativos)* |
++| Filter sheet | title *Filtros* · labels *Status · Prioridade · Período* · status chips *Abertas · Concluídas · Não concluídas* · priority chips *Alta · Normal · Baixa* · date labels *De* / *Até* · *Limpar filtros* · close button *Fechar* |
+ | Toasts | *Tarefa reaberta* · *Tarefa excluída* |
+ | List load error | the approved request-error sentence · *Tentar de novo* |
+ | Request errors (tested) | `Sem conexão com o servidor. Nada se perdeu — tente de novo quando a conexão voltar.` · `O servidor recusou a operação (código N). Tente de novo.` |
+@@ -113,6 +116,7 @@ TBD — after A5 ships: a week of cold opens on the phone against the three É w
+ 
+ | Date | What changed |
+ |---|---|
++| 2026-08-24 | **today-view-and-filters Phase 3 (Task 2): the quick-filter chip, filter-icon and filter-sheet strings added ahead of the code that renders them** (`PRPs/plans/today-view-and-filters-phase-3-quick-filters-and-the-filter-sheet.plan.md`) — chip row *Abertas · Para hoje · Alta prioridade · Filtros…*, the filter icon's accessible name (plain and with an active count), and the filter sheet's title, labels, chip vocabulary and *Limpar filtros* action |
+ | 2026-08-23 | **today-view-and-filters Phase 2 (Task 2): the four group-header names added ahead of the code that uses them** (`PRPs/plans/today-view-and-filters-phase-2-grouping-and-the-grouped-list.plan.md`) — *Atrasadas*, *Hoje*, *Próximas* and *Sem data*, the group headers layout standard §2.5 specifies, each rendered with its count by the new `TaskGroup` component |
+ | 2026-08-21 | **ui-design-pass Phase 2 (Task 10): one microcopy row added ahead of the code that uses it** (`PRPs/plans/ui-design-pass-phase-2-today-screen.plan.md`) — *List load error*, the retry copy the *Hoje* screen shows under a failed first load, pairing the existing request-error sentence with the infinitive button *Tentar de novo* |
+ | 2026-08-21 | **ui-design-pass Phase 1: the A5 microcopy rows approved by the owner in the PRD scope round added to the table above, ahead of Phase 1's code** (`PRPs/prds/ui-design-pass.prd.md`, "Microcopy added by this pass") — token gate, token-store failure, header, capture deck, row meta line, row actions, section, toasts, request errors, detail sheet, `<title>`, manifest |
+diff --git a/documentation/40-engineering/ui-layout-standard.md b/documentation/40-engineering/ui-layout-standard.md
+index 6c828e2..5760fcb 100644
+--- a/documentation/40-engineering/ui-layout-standard.md
++++ b/documentation/40-engineering/ui-layout-standard.md
+@@ -1,6 +1,6 @@
+ ---
+ status: active
+-last_updated: 2026-08-23
++last_updated: 2026-08-24
+ review_trigger: "a screen is added that the anatomy does not fit, a navigation destination of equal weight appears, or a platform behaviour a rule relies on changes"
+ ---
+ 
+@@ -26,7 +26,7 @@ Top to bottom, every screen that lists Tasks:
+ 
+ 1. **Header (flat, never elevated):** page title as the `<h1>` (*Hoje*), the date in mono beside it (`qua., 20/08`), a remaining count as text (*4 restantes* — never a ratio or a progress bar: progress shown before the effort increases drop-off; the honest mirror lives in the group counts), and on the right up to three 48 px icon buttons: filters (with a numeric badge when any filter is active), then — in model B — search and settings. No wordmark in the header (it lives on the splash, the settings screen and the desktop rail).
+ 2. **Offline / unreachable banner** (when applicable): directly under the header, one line, icon + action language, persistent while the condition holds, not dismissible (§8).
+-3. **Quick-filter chip row:** one horizontally scrolling row of 3–5 toggles (*Abertas*, *Alta prioridade*, *Com hora*) plus a trailing *Filtros…* chip that opens the filter sheet; applied filters stay visible as selected chips with a *Limpar filtros* chip; chips are 48 px hit areas with 8 px gaps. Default state: nothing selected; a narrowing filter never survives a cold start silently.
++3. **Quick-filter chip row:** one horizontally scrolling row of 3–5 toggles (*Abertas*, *Para hoje*, *Alta prioridade* — **amended 2026-08-24:** the row previously offered *Com hora*; a Task carries no time of day, since `deadline` and `scheduledDate` are calendar days enforced by `tasks_single_date_chk`, so that chip named a filter the domain cannot express. It returns as an option only when Event ships in unit 14) plus a trailing *Filtros…* chip that opens the filter sheet; applied filters stay visible as selected chips with a *Limpar filtros* chip; chips are 48 px hit areas with 8 px gaps. Default state: nothing selected; a narrowing filter never survives a cold start silently.
+ 4. **Agenda stack (unit 4 hook):** today's Google events as **one** group at the top of the list, collapsed to the next event + count (*Agenda · 2*), expanding to rows with **no checkbox**, a leading time column, a calendar glyph and a dashed outline treatment — never interleaved with Tasks, never in the accent colour; tap opens Google Calendar (read-only).
+ 5. **Groups, in this order,** each with a 40 px header carrying name + count (counts stay visible when collapsed — the "my tasks vanished" trap): **Atrasadas** first (collapsible; header action *Reagendar para hoje*; rows also show the overdue date inline in the live/overdue colour, so lateness is visible away from the header) → **Hoje** (never collapsible; sorted by time, then priority) → **Próximas** (collapsed by default) → **Sem data** (collapsed by default — no major app shows undated items on Today; here it is a deliberate "pick something" drawer). Collapse state persists per group.
+ 6. **Row anatomy:** 64 px minimum (the project constant), leading 48 px completion control (every task app leads with it), title on **two lines then ellipsis** (`line-clamp-2` — amended 2026-08-23 to match [guidelines §12.4](ui-ux-guidelines.md), which sits above this document and which A5 implemented; Portuguese titles run ~15 % longer than English and one line truncated too many of them), a second metadata line in mono (*até 18:00* · *venceu seg., 18/08* in the overdue colour · priority glyph + word · area dot later), at most **one** trailing element, never a chevron. Tapping the row opens the detail; swipe actions, if ever added, are shortcuts to visible controls (guidelines §12.4), never the only way.
+@@ -69,6 +69,7 @@ Top to bottom, every screen that lists Tasks:
+ 
+ | Date | What changed |
+ |---|---|
++| 2026-08-24 | **today-view-and-filters Phase 3 (Task 2).** §2.3 amended: the quick-filter row's third chip was ***Com hora*** and is now *Para hoje*. A Task carries no time of day — `deadline` and `scheduledDate` are calendar days, enforced by `tasks_single_date_chk` — so the old chip named a filter the domain cannot express; it becomes expressible only when Event ships in unit 14. Proven by building the phase-3 chip row, which found the rule unimplementable as written. *The retired name is written here deliberately: a reader who meets `Com hora` in the PRD, the plans or the A3 sketches must be able to find this row by searching for it.* |
+ | 2026-08-23 | **A5 retro (plan A6).** Five rules amended by what building the screens measured: §2.6 titles wrap to two lines (the guidelines sit above this document), §2.7 the empty state carries the *Nova tarefa* CTA (the approved microcopy postdated the "no duplicate button" line), §2.8 the toast is slotted into the open dialog's subtree rather than made a `popover="manual"` (which would itself be inert), §3 the centred-sheet breakpoint is Tailwind's 640 px and the `cancel` event must be mirrored alongside `close`, §4 the `:has()` rule is anchored on the shell, not `:root` |
+ | 2026-08-20 | **Owner chose model B (single screen + sheets) → `active`.** Model A kept in §1 as the rejected alternative with the flip rule |
+ | 2026-08-20 | Written as draft from the A3 research (three lenses, verified) and the sketches; Q4 pending the owner's choice; keyboard decision taken |
+diff --git a/src/app/api.ts b/src/app/api.ts
+index 44fa04d..38c6ba3 100644
+--- a/src/app/api.ts
++++ b/src/app/api.ts
+@@ -1,4 +1,5 @@
+-import type { CreateTaskInput, TaskDto, TaskStatus, UpdateTaskInput } from "../shared/api";
++import type { CreateTaskInput, TaskDto, UpdateTaskInput } from "../shared/api";
++import { EMPTY_FILTER, toQuery, type TaskFilter } from "../shared/task-filter";
+ import { createTokenStore } from "../shared/token-store";
+ import { durableTokenStorage, legacyTokenStorage } from "./token-storage";
+ 
+@@ -87,11 +88,13 @@ export async function checkHealth(): Promise<void> {
+  * the one thing every consumer must agree on in the one place they cannot
+  * share (`docs/api-reference.md`, "Task read contract").
+  */
+-export async function listTasks(status?: TaskStatus, limit?: number): Promise<TaskDto[]> {
+-  const params = new URLSearchParams();
+-  if (status !== undefined) params.set("status", status);
+-  if (limit !== undefined) params.set("limit", String(limit));
+-  const query = params.size === 0 ? "" : `?${params.toString()}`;
++export async function listTasks(
++  filter: TaskFilter = EMPTY_FILTER,
++  limit?: number,
++): Promise<TaskDto[]> {
++  const base = toQuery(filter);
++  const query =
++    limit === undefined ? base : `${base}${base === "" ? "?" : "&"}limit=${String(limit)}`;
+ 
+   const body = await request<{ tasks: TaskDto[] }>(`/api/tasks${query}`);
+   return body.tasks;
+diff --git a/src/app/components/EmptyState.tsx b/src/app/components/EmptyState.tsx
+index 834dbd5..831867a 100644
+--- a/src/app/components/EmptyState.tsx
++++ b/src/app/components/EmptyState.tsx
+@@ -1,10 +1,33 @@
+ // The list region's empty state (layout standard §2.7, guidelines §8): a
+ // positive title, one line of body, one CTA that focuses capture — no
+-// duplicate button, never a blank region.
++// duplicate button, never a blank region. Phase 3 (today-view-and-filters)
++// adds a second, explicit branch for a filtered-to-nothing result — its
++// copy and its action (*Limpar filtros*) are different, so it is a visibly
++// distinct branch here rather than a silent reuse of the first.
+ 
+ import { Button } from "./ui/Button";
+ 
+-export function EmptyState({ onCapture }: { onCapture: () => void }) {
++export function EmptyState({
++  filtered = false,
++  onCapture,
++  onClearFilters,
++}: {
++  filtered?: boolean;
++  onCapture: () => void;
++  onClearFilters?: () => void;
++}) {
++  if (filtered) {
++    return (
++      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-8 text-center">
++        <p className="m-0 font-display text-t4 font-extrabold text-ink">
++          Nenhuma tarefa com esse filtro.
++        </p>
++        {/* prettier-ignore */}
++        <Button variant="secondary" onClick={onClearFilters}>Limpar filtros</Button>
++      </div>
++    );
++  }
++
+   return (
+     <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-8 text-center">
+       <p className="m-0 font-display text-t4 font-extrabold text-ink">Nada para hoje.</p>
+diff --git a/src/app/components/FilterChips.tsx b/src/app/components/FilterChips.tsx
+new file mode 100644
+index 0000000..5d6e11c
+--- /dev/null
++++ b/src/app/components/FilterChips.tsx
+@@ -0,0 +1,62 @@
++// The quick-filter chip row of layout standard §2.3: one horizontally
++// scrolling `ChipGroup` holding the three quick chips — *Abertas*, *Para
++// hoje*, *Alta prioridade* — plus a trailing *Filtros…* chip that opens the
++// filter sheet. Every chip's pressed state is derived from `isChipActive`,
++// never held as local state: this row is a VIEW of the one `TaskFilter`
++// `TodayScreen` owns, not a second copy of it (`src/shared/task-filter.ts`).
++// The trailing chip is a plain button sharing `Chip`'s class list verbatim
++// (rather than a `Chip` itself) so it can never read as pressed — it opens
++// the sheet, it does not belong to the filter's own toggle vocabulary.
++
++import { isChipActive, type QuickChip, type TaskFilter } from "../../shared/task-filter";
++import { Chip, ChipGroup } from "./ui/Chip";
++
++const QUICK_CHIPS: readonly QuickChip[] = ["open", "today", "high"];
++
++const CHIP_LABEL: Record<QuickChip, string> = {
++  open: "Abertas",
++  today: "Para hoje",
++  high: "Alta prioridade",
++};
++
++// `Chip`'s own class list (src/app/components/ui/Chip.tsx), reused verbatim
++// so the trailing action reads as the same pill — the `data-pressed:*`
++// variants are inert here since this is a plain button, never a `Toggle`.
++const TRAILING_CHIP_CLASSNAME =
++  "inline-flex min-h-12 flex-none items-center gap-1 rounded-pill border border-line bg-surface-2 px-3 font-text text-t2 font-medium whitespace-nowrap text-ink data-pressed:border-transparent data-pressed:bg-accent data-pressed:font-semibold data-pressed:text-on-accent";
++
++export function FilterChips({
++  filter,
++  today,
++  onToggleChip,
++  onOpenSheet,
++}: {
++  filter: TaskFilter;
++  today: string;
++  onToggleChip: (chip: QuickChip) => void;
++  onOpenSheet: () => void;
++}) {
++  const pressed = QUICK_CHIPS.filter((chip) => isChipActive(filter, chip, today));
++
++  // The ToggleGroup reports the WHOLE next pressed-array on every tap; the
++  // single chip that differs from `pressed` (derived straight from the
++  // filter, never from local state) is the one that was tapped.
++  function handleValueChange(next: string[]): void {
++    const nextSet = new Set(next);
++    const changed = QUICK_CHIPS.find((chip) => nextSet.has(chip) !== pressed.includes(chip));
++    if (changed !== undefined) onToggleChip(changed);
++  }
++
++  return (
++    <ChipGroup value={pressed} onValueChange={handleValueChange} label="Filtros rápidos">
++      {QUICK_CHIPS.map((chip) => (
++        <Chip key={chip} value={chip}>
++          {CHIP_LABEL[chip]}
++        </Chip>
++      ))}
++      <button type="button" className={TRAILING_CHIP_CLASSNAME} onClick={onOpenSheet}>
++        Filtros…
++      </button>
++    </ChipGroup>
++  );
++}
+diff --git a/src/app/components/FilterSheet.tsx b/src/app/components/FilterSheet.tsx
+new file mode 100644
+index 0000000..e86c003
+--- /dev/null
++++ b/src/app/components/FilterSheet.tsx
+@@ -0,0 +1,113 @@
++// The filter sheet (layout standard §3, PRD AC-15): Status, Prioridade and
++// Período over the existing `Sheet`, light-dismissible — the one surface
++// layout standard §3 allows that on. Every change applies IMMEDIATELY
++// through `onChange` (there is no *Aplicar* button and no draft to lose),
++// which is what makes light dismiss safe here, unlike the detail editor
++// `TaskSheet`, which never passes `lightDismiss`. Every selected chip is
++// derived straight from the current `TaskFilter` prop, mirroring
++// `TaskSheet.tsx`'s own `ChipGroup` usage for the detail editor's date-mode
++// and priority dimensions — this sheet and the chip row are two VIEWS of
++// the one filter state `TodayScreen` owns, never a second copy of it.
++
++import type { TaskPriority, TaskStatus } from "../../shared/api";
++import { EMPTY_FILTER, type TaskFilter } from "../../shared/task-filter";
++import { Button } from "./ui/Button";
++import { Chip, ChipGroup } from "./ui/Chip";
++import { Sheet } from "./ui/Sheet";
++
++export function FilterSheet({
++  open,
++  onOpenChange,
++  filter,
++  onChange,
++}: {
++  open: boolean;
++  onOpenChange: (open: boolean) => void;
++  filter: TaskFilter;
++  onChange: (next: TaskFilter) => void;
++}) {
++  return (
++    <Sheet open={open} onOpenChange={onOpenChange} title="Filtros" lightDismiss>
++      <div className="flex flex-col gap-4">
++        <div className="flex flex-col gap-1">
++          <p className="m-0 font-data text-t1 font-semibold text-muted">Status</p>
++          <ChipGroup
++            multiple={false}
++            label="Status"
++            value={filter.status === null ? [] : [filter.status]}
++            onValueChange={(next) =>
++              onChange({ ...filter, status: (next[0] as TaskStatus | undefined) ?? null })
++            }
++          >
++            <Chip value="open">Abertas</Chip>
++            <Chip value="done">Concluídas</Chip>
++            <Chip value="missed">Não concluídas</Chip>
++          </ChipGroup>
++        </div>
++
++        <div className="flex flex-col gap-1">
++          <p className="m-0 font-data text-t1 font-semibold text-muted">Prioridade</p>
++          <ChipGroup
++            multiple={false}
++            label="Prioridade"
++            value={filter.priority === null ? [] : [filter.priority]}
++            onValueChange={(next) =>
++              onChange({ ...filter, priority: (next[0] as TaskPriority | undefined) ?? null })
++            }
++          >
++            <Chip value="high">Alta</Chip>
++            <Chip value="normal">Normal</Chip>
++            <Chip value="low">Baixa</Chip>
++          </ChipGroup>
++        </div>
++
++        <div className="flex flex-col gap-1">
++          <p className="m-0 font-data text-t1 font-semibold text-muted">Período</p>
++          <div className="flex gap-2">
++            <div className="flex flex-1 flex-col gap-1">
++              <label
++                htmlFor="filter-sheet-from"
++                className="m-0 font-data text-t1 font-semibold text-muted"
++              >
++                De
++              </label>
++              <input
++                id="filter-sheet-from"
++                type="date"
++                value={filter.from ?? ""}
++                onChange={(event) =>
++                  onChange({
++                    ...filter,
++                    from: event.target.value === "" ? null : event.target.value,
++                  })
++                }
++                className="min-h-12 w-full rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
++              />
++            </div>
++            <div className="flex flex-1 flex-col gap-1">
++              <label
++                htmlFor="filter-sheet-to"
++                className="m-0 font-data text-t1 font-semibold text-muted"
++              >
++                Até
++              </label>
++              <input
++                id="filter-sheet-to"
++                type="date"
++                value={filter.to ?? ""}
++                onChange={(event) =>
++                  onChange({ ...filter, to: event.target.value === "" ? null : event.target.value })
++                }
++                className="min-h-12 w-full rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
++              />
++            </div>
++          </div>
++        </div>
++
++        <Button type="button" variant="secondary" onClick={() => onChange(EMPTY_FILTER)}>
++          Limpar filtros
++        </Button>
++      </div>
++    </Sheet>
++  );
++}
+diff --git a/src/app/components/TodayHeader.tsx b/src/app/components/TodayHeader.tsx
+index 3cdd400..09c19ca 100644
+--- a/src/app/components/TodayHeader.tsx
++++ b/src/app/components/TodayHeader.tsx
+@@ -1,11 +1,28 @@
+ // The flat, never-elevated header of the layout standard §2.1: the page
+-// title, the date in mono, and the remaining count. No icon buttons yet —
+-// nothing exists behind them in this phase.
++// title, the date in mono, the remaining count, and (phase 3,
++// today-view-and-filters) the 48 px filter icon button — the first of the
++// up to three icon buttons §2.1 allows on the right. Its accessible name
++// states the active filter count in words, and the numeric badge beside it
++// is real text, never a bare dot (guidelines §4.4), so the filtered state
++// is never carried by colour alone.
+ 
++import { SlidersHorizontal } from "lucide-react";
+ import { formatHeaderDate, formatRemaining } from "../../shared/format";
++import { Button } from "./ui/Button";
+ 
+-export function TodayHeader({ now, remaining }: { now: Date; remaining: number }) {
++export function TodayHeader({
++  now,
++  remaining,
++  activeFilterCount,
++  onOpenFilters,
++}: {
++  now: Date;
++  remaining: number;
++  activeFilterCount: number;
++  onOpenFilters: () => void;
++}) {
+   const { figure, label } = formatRemaining(remaining);
++  const filterLabel = activeFilterCount > 0 ? `Filtros (${activeFilterCount} ativos)` : "Filtros";
+ 
+   return (
+     <header className="flex items-end gap-3 px-4 pt-6 pb-2">
+@@ -21,6 +38,19 @@ export function TodayHeader({ now, remaining }: { now: Date; remaining: number }
+         )}
+         <span className="font-text text-t1 font-medium text-muted">{label}</span>
+       </span>
++      <span className="relative">
++        <Button type="button" variant="icon" aria-label={filterLabel} onClick={onOpenFilters}>
++          <SlidersHorizontal className="size-[22px]" aria-hidden="true" />
++        </Button>
++        {activeFilterCount > 0 && (
++          <span
++            aria-hidden="true"
++            className="absolute -top-1 -right-1 flex min-w-[18px] items-center justify-center rounded-pill bg-accent px-1 font-data text-[11px] font-bold text-on-accent tabular-nums"
++          >
++            {activeFilterCount}
++          </span>
++        )}
++      </span>
+     </header>
+   );
+ }
+diff --git a/src/app/components/TodayScreen.tsx b/src/app/components/TodayScreen.tsx
+index ad884b8..f4aa10e 100644
+--- a/src/app/components/TodayScreen.tsx
++++ b/src/app/components/TodayScreen.tsx
+@@ -14,6 +14,13 @@ import { todayIn } from "../../shared/dates";
+ import { classifyRequestFailure } from "../../shared/request-failure";
+ import type { ShareTarget } from "../../shared/share-target";
+ import { buildTaskPatch } from "../../shared/task-edit";
++import {
++  activeCount,
++  EMPTY_FILTER,
++  toggleChip,
++  type QuickChip,
++  type TaskFilter,
++} from "../../shared/task-filter";
+ import { groupTasks } from "../../shared/task-groups";
+ import { currentDraft, INITIAL_TASK_SHEET_STATE, reduceTaskSheet } from "../../shared/task-sheet";
+ import {
+@@ -29,6 +36,8 @@ import { useConnectivity } from "../hooks/useConnectivity";
+ import { dismissToast, showToast, useToast } from "../toast-store";
+ import { CaptureDeck } from "./CaptureDeck";
+ import { EmptyState } from "./EmptyState";
++import { FilterChips } from "./FilterChips";
++import { FilterSheet } from "./FilterSheet";
+ import { TaskGroup } from "./TaskGroup";
+ import { TaskRow } from "./TaskRow";
+ import { TaskSheet } from "./TaskSheet";
+@@ -91,6 +100,12 @@ export function TodayScreen({
+   const [doneCollapsed, setDoneCollapsed] = useState(() =>
+     readCollapsed(CLOSED_COLLAPSED_KEY, false),
+   );
++  // Seeded from the constant and never from storage, and never written to
++  // storage — the deliberate asymmetry against the collapse state above,
++  // which layout standard §2.3 requires: a narrowing filter must never
++  // survive a cold start.
++  const [filter, setFilter] = useState<TaskFilter>(EMPTY_FILTER);
++  const [filtersOpen, setFiltersOpen] = useState(false);
+   const captureRef = useRef<HTMLInputElement>(null);
+ 
+   const today = todayIn(new Date());
+@@ -115,7 +130,7 @@ export function TodayScreen({
+ 
+   async function refresh(): Promise<void> {
+     try {
+-      const next = await listTasks();
++      const next = await listTasks(filter);
+       setTasks(next);
+       setLoadError(null);
+       report({ type: "request-succeeded" });
+@@ -259,6 +274,14 @@ export function TodayScreen({
+     });
+   }
+ 
++  // The chip row's own handler: flips exactly `chip`'s own dimension via
++  // `toggleChip` (`src/shared/task-filter.ts`) — the functional update reads
++  // the latest filter regardless of render timing, so this never races the
++  // `[filter]` effect below that re-reads on every change.
++  function handleToggleChip(chip: QuickChip): void {
++    setFilter((current) => toggleChip(current, chip, today));
++  }
++
+   function openSheet(task: TaskDto): void {
+     setSheetError(null);
+     dispatchSheet({ type: "open", task });
+@@ -294,10 +317,13 @@ export function TodayScreen({
+   }
+ 
+   useEffect(() => {
+-    // Runs once, on mount — every later refetch is triggered explicitly
+-    // (a mutation, `visibilitychange`, or reconnecting).
++    // Runs on mount AND on every filter change (the chip row, the sheet and
++    // *Limpar filtros* all only call `setFilter` — this is the one place
++    // that turns a new filter into the read, so a chip tap issues exactly
++    // one `GET /api/tasks`). Every OTHER refetch is triggered explicitly (a
++    // mutation, `visibilitychange`, or reconnecting).
+     void refresh();
+-  }, []);
++  }, [filter]);
+ 
+   useEffect(() => {
+     function handleVisibilityChange(): void {
+@@ -362,7 +388,7 @@ export function TodayScreen({
+   return (
+     <div
+       data-shell
+-      className="mx-auto grid h-dvh w-full max-w-[640px] grid-rows-[auto_auto_1fr_auto_auto] overflow-clip bg-bg"
++      className="mx-auto grid h-dvh w-full max-w-[640px] grid-rows-[auto_auto_auto_1fr_auto_auto] overflow-clip bg-bg"
+     >
+       <TodayHeader
+         now={now}
+@@ -372,6 +398,8 @@ export function TodayScreen({
+           groups.upcoming.length +
+           groups.undated.length
+         }
++        activeFilterCount={activeCount(filter)}
++        onOpenFilters={() => setFiltersOpen(true)}
+       />
+ 
+       {connectivity !== "online" ? (
+@@ -380,6 +408,13 @@ export function TodayScreen({
+         <div />
+       )}
+ 
++      <FilterChips
++        filter={filter}
++        today={today}
++        onToggleChip={handleToggleChip}
++        onOpenSheet={() => setFiltersOpen(true)}
++      />
++
+       <main className="flex flex-col gap-2 overflow-y-auto overscroll-contain px-4 pb-2">
+         {tasks === null && loadError === null && <Skeleton slow={slow} />}
+ 
+@@ -394,7 +429,11 @@ export function TodayScreen({
+         )}
+ 
+         {tasks !== null && tasks.length === 0 && (
+-          <EmptyState onCapture={() => captureRef.current?.focus()} />
++          <EmptyState
++            onCapture={() => captureRef.current?.focus()}
++            filtered={activeCount(filter) > 0}
++            onClearFilters={() => setFilter(EMPTY_FILTER)}
++          />
+         )}
+ 
+         {tasks !== null && tasks.length > 0 && (
+@@ -481,6 +520,15 @@ export function TodayScreen({
+         }}
+         onDeleteConfirm={deleteSheetTask}
+       />
++
++      {/* Never stack sheets (layout standard §3): gated on the same
++          condition the toast slot above already uses. */}
++      <FilterSheet
++        open={filtersOpen && sheet.taskId === null}
++        onOpenChange={setFiltersOpen}
++        filter={filter}
++        onChange={setFilter}
++      />
+     </div>
+   );
+ }
+diff --git a/src/app/components/ui/Sheet.tsx b/src/app/components/ui/Sheet.tsx
+index 2b2924b..8148bf9 100644
+--- a/src/app/components/ui/Sheet.tsx
++++ b/src/app/components/ui/Sheet.tsx
+@@ -11,14 +11,21 @@
+ // verification browser even on a bare, React-free <dialog>; without the
+ // guard that leaves `open` stuck at `true` in React state forever, since no
+ // event would call `onOpenChange(false)` again and the sheet could never be
+-// reopened short of a reload. `closedby` is left at its `showModal()` default
+-// of `closerequest`, so there is no light dismiss on this editor. `showModal()`
+-// itself makes the page behind inert and scroll-locked
+-// (`html:has(dialog[open])` in styles.css) and returns focus to the opener
+-// natively on close. The `history.pushState` fallback of PRD risk row 400 is
+-// NOT built here — it is specified in the phase-3 plan's `## Notes` and wired
+-// only if the owner's device check finds the Android back gesture does not
+-// close this dialog.
++// reopened short of a reload. `showModal()` itself makes the page behind
++// inert and scroll-locked (`html:has(dialog[open])` in styles.css) and
++// returns focus to the opener natively on close. The `history.pushState`
++// fallback of PRD risk row 400 is NOT built here — it is specified in the
++// phase-3 plan's `## Notes` and wired only if the owner's device check finds
++// the Android back gesture does not close this dialog.
++//
++// `lightDismiss` (phase 3, today-view-and-filters): opt-in, defaults to
++// `false`. Layout standard §3 allows light dismiss (`closedby="any"`) on the
++// filter sheet ONLY, and forbids it on an editor with unsaved changes — so
++// `TaskSheet` never passes this prop, and `closedby` stays absent from its
++// `<dialog>`, leaving `showModal()`'s own default of `closerequest` exactly
++// as before this phase (Esc, the close button and the back gesture still
++// close it; only the tap-outside shortcut is unavailable). Only the new
++// `FilterSheet` passes `lightDismiss`.
+ 
+ import { X } from "lucide-react";
+ import { useEffect, useId, useRef } from "react";
+@@ -30,11 +37,13 @@ export function Sheet({
+   onOpenChange,
+   title,
+   children,
++  lightDismiss = false,
+ }: {
+   open: boolean;
+   onOpenChange: (open: boolean) => void;
+   title: string;
+   children: ReactNode;
++  lightDismiss?: boolean;
+ }) {
+   const ref = useRef<HTMLDialogElement>(null);
+   const titleId = useId();
+@@ -87,6 +96,7 @@ export function Sheet({
+       data-sheet
+       tabIndex={-1}
+       aria-labelledby={titleId}
++      closedby={lightDismiss ? "any" : undefined}
+       className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[90dvh] w-full max-w-none overflow-y-auto overscroll-contain rounded-t-[24px] border-0 bg-surface-1 p-0 px-4 pt-2 pb-4 text-ink shadow-deck outline-none sm:inset-0 sm:m-auto sm:h-fit sm:w-[560px] sm:max-w-[calc(100vw-2rem)] sm:rounded-card"
+     >
+       <div
+diff --git a/src/shared/task-filter.ts b/src/shared/task-filter.ts
+new file mode 100644
+index 0000000..59c7fdf
+--- /dev/null
++++ b/src/shared/task-filter.ts
+@@ -0,0 +1,102 @@
++/**
++ * The single source of truth for what a Task filter IS (PRD AC-12). The
++ * quick-filter chip row and the filter sheet are two VIEWS of one
++ * `TaskFilter` — never two states that must be kept in sync — so every
++ * question either surface can ask (is this chip pressed? what does the
++ * request look like? how many dimensions are active?) is answered here and
++ * nowhere else.
++ *
++ * Like `src/shared/task-groups.ts`, `format.ts` and `dates.ts`, this module
++ * is compiled into BOTH the browser and the Worker projects, so it stays
++ * environment-agnostic: no DOM globals, no runtime dependencies, and no
++ * reads of the clock. `today` is always an ARGUMENT, never read from the
++ * clock internally — that is what keeps every caller (and every test)
++ * deterministic regardless of when or where it runs.
++ */
++
++import type { TaskPriority, TaskStatus } from "./api";
++
++/** The whole filter state: four independent, nullable dimensions. `null` means "not set". */
++export interface TaskFilter {
++  status: TaskStatus | null;
++  priority: TaskPriority | null;
++  from: string | null;
++  to: string | null;
++}
++
++/** The filter a screen starts with — every dimension unset. Never seeded from storage (layout standard §2.3). */
++export const EMPTY_FILTER: TaskFilter = {
++  status: null,
++  priority: null,
++  from: null,
++  to: null,
++};
++
++/** The three quick-filter chips of layout standard §2.3, each backed by exactly one `TaskFilter` dimension. */
++export type QuickChip = "open" | "today" | "high";
++
++/**
++ * The query string `listTasks` sends: `""` when every dimension is `null` —
++ * the case that keeps an unfiltered load byte-identical to the request the
++ * screen issued before filters existed — otherwise `?` plus the set
++ * parameters in the FIXED order `status`, `from`, `to`, `priority`, built
++ * with `URLSearchParams` so every value is encoded rather than concatenated
++ * raw. The fixed order is what makes the output assertable and keeps two
++ * callers building the same filter from ever producing two different URLs.
++ */
++export function toQuery(filter: TaskFilter): string {
++  const params = new URLSearchParams();
++  if (filter.status !== null) params.set("status", filter.status);
++  if (filter.from !== null) params.set("from", filter.from);
++  if (filter.to !== null) params.set("to", filter.to);
++  if (filter.priority !== null) params.set("priority", filter.priority);
++  return params.size === 0 ? "" : `?${params.toString()}`;
++}
++
++/**
++ * How many DIMENSIONS are narrowing the list, for the header badge — never
++ * how many fields are set. `status` is one dimension, `priority` is one
++ * dimension, and `from`/`to` together are one *period*: a range counts once,
++ * whether one end is set or both, because the badge answers "how many
++ * questions are narrowing the list?", not "how many fields hold a value?".
++ * Range: 0–3.
++ */
++export function activeCount(filter: TaskFilter): number {
++  let count = 0;
++  if (filter.status !== null) count += 1;
++  if (filter.priority !== null) count += 1;
++  if (filter.from !== null || filter.to !== null) count += 1;
++  return count;
++}
++
++/**
++ * Whether `chip` reads as pressed against `filter`: `open` when `status` is
++ * `"open"`, `high` when `priority` is `"high"`, `today` when `to` equals
++ * `today`. The sheet can set values no chip represents (e.g. `status:
++ * "done"`, or a `to` that is not today) — those correctly leave the chip
++ * unpressed rather than pressed-but-wrong, which is the round trip between
++ * the chip row and the sheet.
++ */
++export function isChipActive(filter: TaskFilter, chip: QuickChip, today: string): boolean {
++  if (chip === "open") return filter.status === "open";
++  if (chip === "high") return filter.priority === "high";
++  return filter.to === today;
++}
++
++/**
++ * Toggles exactly `chip`'s own dimension and returns a NEW `TaskFilter` —
++ * `filter` is never mutated. Pressing an unpressed chip sets its dimension
++ * (overwriting whatever value that one dimension held); pressing a pressed
++ * chip clears exactly that dimension to `null`. No other field is ever
++ * touched: a chip that also cleared a neighbouring field would make the
++ * chip row and the sheet disagree the moment both are used, which is the
++ * defect this function exists to prevent. `today` maps to the `to` field —
++ * switching the `today` chip off clears only `to`, leaving any `from` the
++ * sheet set untouched.
++ */
++export function toggleChip(filter: TaskFilter, chip: QuickChip, today: string): TaskFilter {
++  const active = isChipActive(filter, chip, today);
++  if (chip === "open") return { ...filter, status: active ? null : "open" };
++  if (chip === "high") return { ...filter, priority: active ? null : "high" };
++  return { ...filter, to: active ? null : today };
++}

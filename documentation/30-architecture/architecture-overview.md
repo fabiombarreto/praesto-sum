@@ -116,8 +116,8 @@ renaming, removing or retyping one does not** — that asymmetry is what the
 freeze actually protects, and it is why `updatedAt` and `detached` are
 deliberately absent from the wire.
 
-The full contract — the ordering key, the filter vocabulary reserved for unit 3,
-and the paging revisit trigger — is recorded in
+The full contract — the ordering key, the filter vocabulary unit 3 implemented
+on 2026-08-23, and the paging revisit trigger — is recorded in
 [`docs/api-reference.md`](../../docs/api-reference.md), which is the document
 the PWA and every later unit code against.
 

@@ -1,0 +1,46 @@
+{
+  "run_id": "c9a2e517-3b64-4d18-9f02-7ea1c6b35d80",
+  "feature": "today-view-and-filters",
+  "phase": 2,
+  "plan": "PRPs/plans/completed/today-view-and-filters-phase-2-grouping-and-the-grouped-list.plan.md",
+  "worktree": "C:/repos/assistente-pessoal (branch main, uncommitted)",
+  "started_at": "2026-08-23T20:05:00Z",
+  "ended_at": "2026-08-23T20:05:12Z",
+  "max_test_retries": 3,
+  "max_test_minutes": 30,
+  "attempts": [
+    {
+      "n": 1,
+      "verdict": "GREEN",
+      "record": "phase-2/test-attempts/1/record.json",
+      "implementer_diff": null
+    }
+  ],
+  "outcome": "GREEN",
+  "framework": "vitest",
+  "command": "npm test",
+  "totals": {
+    "files": 16,
+    "passed": 349,
+    "failed": 0,
+    "skipped": 0
+  },
+  "baseline": {
+    "before_phase": 333,
+    "after_phase": 349,
+    "added": 16
+  },
+  "build": "client JS ~94.3 KB gzip, CSS 5.98 KB gzip, precache 402.81 KiB - inside guidelines 11 (170/30 KB, 1 MB)",
+  "tdd_mode": true,
+  "preconditions": {
+    "settings_json": "absent - same deviation as phase 1 and every ui-design-pass phase",
+    "uncommitted_changes": "yes - the whole unit is uncommitted by design; Pillar 2 never commits"
+  },
+  "gates": {
+    "npm_run_check": "clean",
+    "phase_delta_leaves_test_untouched": "git diff --quiet -- test/ exits 0 against the phase's own pre-tree (785d867); note it exits 1 against HEAD, because BOTH new test files are new relative to main - the phase-scoped comparison is the meaningful one, as the post-green reviewer noted",
+    "partition_never_sorts": "no .sort( or .reverse( in src/shared/task-groups.ts",
+    "owner_preference_key_survives": "praesto.today.doneCollapsed present verbatim in TodayScreen.tsx"
+  },
+  "notes": "Green on the first attempt. The 16 new cases are test/task-groups.test.ts, authored test-first; the RED was the weak module-not-found shape (the module is this phase's deliverable), compensated by verifying the import path against the plan and by hand-simulating both order properties before any code existed. This run.json was filed after the post-green review flagged its absence - the reviewer declined to trust the run summary in its prompt and corroborated GREEN from the code-review jsonl instead."
+}
