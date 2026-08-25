@@ -6,8 +6,41 @@ import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
   // Vite 8 binds IPv6 (::1) by default; pinning IPv4 keeps curl/health checks
-  // and e2e scripts deterministic on Windows.
-  server: { host: "127.0.0.1" },
+  // and e2e scripts deterministic on Windows. The dev container overrides the
+  // host with `--host 0.0.0.0` on the command line, so this stays as written.
+  //
+  // PRAESTO_WATCH_POLLING is set ONLY by compose.yaml (ADR-0012). inotify does
+  // not cross a Windows bind mount into Linux, so the watcher sees nothing and
+  // HMR silently stops — measured 2026-08-24: an edit produced no update at
+  // all, in the vite log or in the browser. Polling is the fix, and it is the
+  // only one: vite does not read CHOKIDAR_USEPOLLING. Unset on the host, this
+  // branch is inert and watching stays event-driven and free.
+  server: {
+    host: "127.0.0.1",
+    ...(process.env.PRAESTO_WATCH_POLLING === "true"
+      ? {
+          watch: {
+            usePolling: true,
+            interval: 300,
+            // Every poll is a stat() crossing the Windows/Linux boundary, so
+            // the cost scales with how many files are watched. Vite already
+            // ignores .git and node_modules; these are the rest of the tree
+            // the dev server never serves. PRPs alone is half the remainder.
+            ignored: [
+              "**/PRPs/**",
+              "**/documentation/**",
+              "**/docs/**",
+              "**/dist/**",
+              "**/coverage/**",
+              "**/.worktrees/**",
+              // Also a correctness fix, not only a cost one: the Cloudflare
+              // plugin writes into .wrangler/tmp while the server is running.
+              "**/.wrangler/**",
+            ],
+          },
+        }
+      : {}),
+  },
   plugins: [
     react(),
     // Tailwind v4 reads src/app/styles.css (ADR-0011); tokens.css stays the source of values.

@@ -1,0 +1,67 @@
+# Praesto Sum — optional containerised local dev server (ADR-0012).
+#
+# `npm run dev` on the host remains the default, documented way to run the
+# project. This stack is the second door: one command up, one command down,
+# and it comes back by itself after a machine restart.
+#
+#   npm run docker:up       start (detached)
+#   npm run docker:status    is it up?
+#   npm run docker:down      stop and remove
+#
+# Full walkthrough: documentation/40-engineering/dev-environment.md
+name: praesto
+
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: praesto-dev:local
+    container_name: praesto-dev
+    # Brings the stack back after a reboot — but only once the Docker engine
+    # itself is running, which on Windows means Docker Desktop's "Start Docker
+    # Desktop when you sign in" setting. `docker compose down` removes the
+    # container, so a deliberate stop stays stopped.
+    restart: unless-stopped
+    ports:
+      # Loopback only, matching vite.config.ts's deliberate 127.0.0.1 bind.
+      # The dev server is token-gated but is not meant to face the LAN; to
+      # reach it from the phone, change this to "5173:5173" knowingly.
+      - "127.0.0.1:5173:5173"
+    volumes:
+      # The working tree itself — edits on the host are what the container
+      # serves, and that is also how local D1 state survives: miniflare keeps
+      # it under .wrangler/state/v3/, which is inside this mount and therefore
+      # on the host disk, not in the container's writable layer. Nothing here
+      # is lost by `down`, and the host's own `npm run dev` reads the same
+      # database.
+      - .:/app
+      # ...except node_modules. The host tree carries the Windows build of
+      # workerd (@cloudflare/workerd-linux-64 is what Linux needs), so this
+      # named volume keeps the image's own install visible instead. It
+      # deliberately outlives `down`; the entrypoint refreshes it whenever
+      # package-lock.json moves.
+      - praesto-node-modules:/app/node_modules
+    environment:
+      # inotify events do not cross a Windows bind mount, so the file watcher
+      # sees nothing and HMR silently stops. Read by vite.config.ts, which
+      # switches the watcher to polling — at a CPU cost paid only here.
+      PRAESTO_WATCH_POLLING: "true"
+    healthcheck:
+      # What `npm run docker:status` reports. The image has no curl; node's
+      # global fetch is enough, and "/" is the SPA shell, which needs no token.
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:5173/').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      # First boot may run `npm ci` into an empty volume before vite starts.
+      start_period: 180s
+
+volumes:
+  praesto-node-modules:

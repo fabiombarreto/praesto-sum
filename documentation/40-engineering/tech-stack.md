@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-23
+last_updated: 2026-08-24
 review_trigger: "a stack-related ADR is accepted, or any technology/version in use changes"
 ---
 
@@ -24,6 +24,7 @@ The stack is fully decided ([ADR-0003](../60-decisions/ADR-0003-store-canonical-
 | API | Hono (bearer-token middleware; `scheduled()` cron in the same Worker) | hono 4.12.34 | [ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md) |
 | Integrations | Web Push via `web-push` + `nodejs_compat`; external calendar TBD — decision 4 in [60-decisions/index.md](../60-decisions/index.md) | web-push 3.6.7 | [ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md) (push) |
 | Tooling | npm (`save-exact`), Vitest + `@cloudflare/vitest-pool-workers`, Prettier, ESLint flat config | vitest 4.1.10 · @cloudflare/vitest-pool-workers 0.20.1 · prettier 3.9.6 · eslint 10.8.0 · typescript-eslint 8.66.0 | [ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md) |
+| Local dev runtime (**optional**) | Docker Compose — `Dockerfile` + `compose.yaml` running the same `vite dev` + workerd + local D1 under `restart: unless-stopped`. A *second door*, never a replacement: `npm run dev` on the host is unchanged and stays the default, and nothing here reaches production | base image `node:24.15.0-bookworm-slim` (exact tag, Debian not Alpine — workerd is glibc-linked) | [ADR-0012](../60-decisions/ADR-0012-optional-docker-compose-local-dev-runtime.md) |
 
 Version constraints discovered at scaffold time (do not "fix" them casually):
 

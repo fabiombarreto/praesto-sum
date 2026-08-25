@@ -118,6 +118,15 @@ Atualizado pelo Docs Updater após cada aprovação de implementação.
 
 ---
 
+## [2026-08-24] Docker Compose as an optional second way to run the local dev server
+
+**Context:** `npm run dev` is a foreground process: it dies on reboot, offers no "is it up?" and no "bring it down". On a ~1 h/day budget (CON-003) with QA-002 asking for resume-in-one-action, "find the window" is the wrong interface. The runtime itself was never in question.
+**Decision:** Ship `Dockerfile` + `compose.yaml` as an **optional second door** (`npm run docker:up` / `docker:down` / `docker:status`, `restart: unless-stopped`), with `npm run dev` on the host unchanged and still the default. Five load-bearing properties: the host workflow is untouched (the only `vite.config.ts` change is a branch gated on `PRAESTO_WATCH_POLLING`, which only compose sets); the container never sees the host `node_modules` (it holds the *Windows* workerd — a named volume shadows it and the entrypoint refuses to start without `@cloudflare/workerd-linux-64`); local D1 stays on the host disk under `.wrangler/state/v3/`, so both doors open onto one database; `.dev.vars` is mounted, never baked, and is excluded from the build context; the base image tag is exact (`node:24.15.0-bookworm-slim`), Debian never Alpine because workerd is glibc-linked.
+**Reason:** Solves the literal complaint without touching the one-Worker shape of ADR-0003 or the stack of ADR-0005 — the container runs the same `vite dev`, workerd and D1. Costs measured, not assumed: HMR needs `server.watch.usePolling` (vite ignores `CHOKIDAR_USEPOLLING`), which took idle CPU from 0 % to ~47 % of a core, cut to ~10–15 % by scoping the watch; HMR lands ~1.25 s after a save. A detached background process plus up/down/status scripts is the recorded lighter alternative if that cost ever bites.
+**Areas affected:** all (development environment only — nothing that ships) · Source: `documentation/60-decisions/ADR-0012-optional-docker-compose-local-dev-runtime.md`
+
+---
+
 <!-- Template for future entries:
 
 ## [YYYY-MM-DD] Title of the decision

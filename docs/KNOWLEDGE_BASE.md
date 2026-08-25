@@ -12,7 +12,7 @@ Tier 2 index: one entry per doc, 1-2 lines each. Details live in the target file
 
 **Decision Gate** — mandatory gate before planning, coding or reviewing; consultation sources and evidence block format. → docs/decision-gate.md
 
-**Decisions** — relay-facing index of the settled decisions (ADR-0001..0011 + MVP freeze; includes the identity ADR-0010 and the UI library ADR-0011); never re-evaluate. → docs/decisions.md
+**Decisions** — relay-facing index of the settled decisions (ADR-0001..0012 + MVP freeze; includes the identity ADR-0010, the UI library ADR-0011 and the optional Docker dev runtime ADR-0012); never re-evaluate. → docs/decisions.md
 
 **Anti-patterns** — forbidden by decision: offline queues, live-DB sync, SSR/meta-frameworks, version ranges, synonym drift, test-weakening. → docs/anti-patterns.md
 
@@ -54,7 +54,7 @@ Tier 2 index: one entry per doc, 1-2 lines each. Details live in the target file
 
 **Architecture (dev view)** — the system in one paragraph, request paths, where to add things. → docs/architecture.md
 
-**Development** — setup, day-to-day commands (planned, validate at scaffold), the feature loop. → docs/development.md
+**Development** — setup, day-to-day commands (planned, validate at scaffold), the optional Docker dev container (ADR-0012: `npm run docker:up`/`down`/`status`; `npm run dev` on the host is unchanged and still the default), the feature loop. → docs/development.md
 
 **API reference** — planned `/api/*` surface; fill with the real contract as routes land. → docs/api-reference.md
 

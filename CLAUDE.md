@@ -25,6 +25,7 @@ The `documentation/` folder is the project's **authoritative source of truth**: 
 ## Essential commands
 
 - `npm run dev` — Vite HMR + real workerd + local D1, one process
+- `npm run docker:up` / `docker:down` / `docker:status` — the SAME dev server under Docker Compose (ADR-0012): survives a reboot, one command up and one down. Optional second door; `npm run dev` on the host is unchanged and stays the default. Never mount the host `node_modules` into it — it holds the Windows workerd
 - `npm test` · `npm run check` — tests / types + `tsc -b` + lint + format gate
 - `npm run db:generate` · `npm run db:migrate` — drizzle-kit → wrangler d1 migrations
 - `npm run cf-typegen` — regenerate committed worker-configuration.d.ts after editing wrangler.jsonc

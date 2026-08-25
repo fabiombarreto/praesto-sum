@@ -1,0 +1,34 @@
+# Build context for the dev image (ADR-0012). The Dockerfile copies only
+# package.json, package-lock.json, .npmrc and docker/ — everything else
+# reaches the container through the bind mount in compose.yaml, so keeping the
+# context small is free and keeps secrets and local state out of the daemon.
+
+# The four the brief names explicitly:
+node_modules/
+.wrangler/
+dist/
+.dev.vars
+.dev.vars.*
+
+# Never bake local secrets into a layer.
+.env
+.env.*
+
+# Large or local-only, and never needed to install dependencies.
+.git/
+.worktrees/
+coverage/
+PRPs/
+docs/
+documentation/
+public/
+src/
+test/
+migrations/
+scripts/
+.claude/
+
+# The image's own recipe and this file.
+Dockerfile
+.dockerignore
+compose.yaml

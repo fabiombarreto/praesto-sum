@@ -27,6 +27,25 @@ Cloudflare account (free) + `npx wrangler login` are needed only for deploys and
 
 `npm run db:snapshot` (FR-042 export) does not exist yet — it lands with the export slice.
 
+## Running it in Docker (optional second door — ADR-0012)
+
+`npm run dev` is a foreground process: it dies on reboot and has no up/down/status. A `Dockerfile` + `compose.yaml` give the same `vite dev` + workerd + local D1 under a supervisor.
+
+| Action | Command |
+|---|---|
+| Start (detached, survives reboot) | `npm run docker:up` |
+| Is it up? | `npm run docker:status` |
+| Stop | `npm run docker:down` |
+| Log / rebuild / shell | `npm run docker:logs` · `npm run docker:rebuild` · `npm run docker:shell` |
+
+Three rules that are load-bearing, not taste:
+
+- **`npm run dev` on the host is unchanged and stays the default.** The container is an addition.
+- **Never bind-mount the host `node_modules`** — it holds `@cloudflare/workerd-windows-64` and the container needs the Linux build. A named volume shadows it.
+- **Local D1 is shared, not duplicated**: `.wrangler/state/v3/` is inside the bind mount, so both doors read one database and `down` loses nothing.
+
+HMR needs `server.watch.usePolling` inside the container (file events do not cross a Windows bind mount, and vite ignores `CHOKIDAR_USEPOLLING`); `compose.yaml` sets `PRAESTO_WATCH_POLLING=true` for it, which costs ~10–15 % of a core there and nothing on the host. Full detail, including the measurements: `documentation/40-engineering/dev-environment.md`.
+
 ## Adding a feature (the loop)
 
 1. Read `documentation/README.md` + the relevant `docs/domain/areas/*.md`; run the Decision Gate (`docs/decision-gate.md`).

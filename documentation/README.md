@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-23
+last_updated: 2026-08-24
 review_trigger: "any document is created, renamed, merged or changes status"
 ---
 
@@ -96,6 +96,7 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 60-decisions/ADR-0009-ui-copy-in-brazilian-portuguese.md | accepted | 2026-08-18 |
 | 60-decisions/ADR-0010-visual-identity-direction-arcade.md | accepted | 2026-08-20 |
 | 60-decisions/ADR-0011-ui-library-shadcn-style-base-ui-tailwind.md | accepted | 2026-08-21 |
+| 60-decisions/ADR-0012-optional-docker-compose-local-dev-runtime.md | accepted | 2026-08-24 |
 
 ## How AI assistants should use this folder
 
