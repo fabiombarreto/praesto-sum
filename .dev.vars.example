@@ -12,3 +12,12 @@ API_BEARER_TOKEN="replace-me-locally"
 VAPID_SUBJECT="mailto:you@example.com"
 VAPID_PUBLIC_KEY="replace-me-locally"
 VAPID_PRIVATE_KEY="replace-me-locally"
+
+# Google Calendar OAuth (unit 4 `google-calendar-read`, ADR-0007).
+# From the `praesto-sum` project in Google Cloud Console > Credentials.
+# The redirect URI must match one registered on the OAuth client EXACTLY;
+# chore C11 registered https://praesto.fabiobarreto.workers.dev/oauth/callback.
+# Locally, register http://127.0.0.1:5173/oauth/callback as a second URI.
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=

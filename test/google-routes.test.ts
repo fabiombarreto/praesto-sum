@@ -101,7 +101,9 @@ describe("POST /api/google/connect (AC-1)", () => {
   });
 
   it("mints a different nonce on every call", async () => {
-    const first = (await (await exports.default.fetch(CONNECT, auth({ method: "POST" }))).json()) as {
+    const first = (await (
+      await exports.default.fetch(CONNECT, auth({ method: "POST" }))
+    ).json()) as {
       consentUrl: string;
     };
     const second = (await (
@@ -208,8 +210,36 @@ describe("the credential never leaves the Worker", () => {
 
     const res = await exports.default.fetch(CONNECTION, auth());
 
-    if (res.status === 200) {
-      expect(await res.text()).not.toContain("stored-refresh-token");
-    }
+    // Asserted unconditionally on purpose. Wrapping this in `if (res.status
+    // === 200)` would make it pass vacuously the day the route regresses to
+    // erroring — and this is the ONLY test standing between the refresh token
+    // and a response body.
+    expect(res.status).toBe(200);
+    const body = await res.text();
+    expect(body).not.toContain("stored-refresh-token");
+    expect(body).not.toContain("refreshToken");
+  });
+
+  it("reports the connection's status without its credential", async () => {
+    await seedConnection();
+
+    const res = await exports.default.fetch(CONNECTION, auth());
+    const body = (await res.json()) as {
+      connection: { connected: boolean; scope: string; connectedAt: number } | null;
+    };
+
+    expect(body.connection?.connected).toBe(true);
+    expect(body.connection?.scope).toBe(GOOGLE_READONLY_SCOPES.join(" "));
+    expect(Object.keys(body.connection ?? {}).sort()).toEqual(
+      ["connectedAt", "connected", "scope"].sort(),
+    );
+  });
+
+  it("reports no connection when there is none", async () => {
+    const res = await exports.default.fetch(CONNECTION, auth());
+    const body = (await res.json()) as { connection: unknown };
+
+    expect(res.status).toBe(200);
+    expect(body.connection).toBeNull();
   });
 });

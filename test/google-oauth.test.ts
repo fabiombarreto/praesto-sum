@@ -15,11 +15,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import {
-  buildConsentUrl,
-  GOOGLE_READONLY_SCOPES,
-  isNonceUsable,
-} from "../src/shared/google-oauth";
+import { buildConsentUrl, GOOGLE_READONLY_SCOPES, isNonceUsable } from "../src/shared/google-oauth";
 
 const CLIENT_ID = "client-id.apps.googleusercontent.com";
 const REDIRECT_URI = "https://praesto.fabiobarreto.workers.dev/oauth/callback";

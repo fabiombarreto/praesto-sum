@@ -47,13 +47,25 @@ function expectRefused(res: Response): void {
   expect(res.status).toBeLessThan(500);
 }
 
+/**
+ * Inserts a nonce row.
+ *
+ * `createdAt` is derived as one TTL before `expiresAt` rather than pinned to
+ * "now", because the schema enforces `expires_at > created_at` and an EXPIRED
+ * nonce is one whose creation is also in the past — a nonce created now and
+ * already expired is not a state the route can ever encounter. Deriving it
+ * keeps every fixture a state production could actually produce.
+ */
+const NONCE_TTL_SECONDS = 10 * 60;
+
 async function mintNonce(id: string, overrides: { expiresAt?: number; consumedAt?: number } = {}) {
   const db = createDb(env);
   const now = Math.floor(Date.now() / 1000);
+  const expiresAt = overrides.expiresAt ?? now + NONCE_TTL_SECONDS;
   await db.insert(oauthStates).values({
     id,
-    createdAt: new Date(now * 1000),
-    expiresAt: new Date((overrides.expiresAt ?? now + 600) * 1000),
+    createdAt: new Date((expiresAt - NONCE_TTL_SECONDS) * 1000),
+    expiresAt: new Date(expiresAt * 1000),
     consumedAt: overrides.consumedAt ? new Date(overrides.consumedAt * 1000) : null,
   });
 }

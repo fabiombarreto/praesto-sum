@@ -39,6 +39,21 @@ export interface TaskDto {
   createdAt: number;
 }
 
+/**
+ * The Google connection's STATUS — never its credential.
+ *
+ * There is no `refreshToken` field and there must never be one: the token
+ * exists only inside the Worker and inside D1 (unit 4 phase 2, ADR-0007). If a
+ * future field ever needs to carry it, that is a new decision, not an edit.
+ */
+export interface GoogleConnectionDto {
+  connected: true;
+  /** Epoch seconds. */
+  connectedAt: number;
+  /** The scopes Google actually granted, space-joined, as it reported them. */
+  scope: string;
+}
+
 export interface CreateTaskInput {
   title: string;
   description?: string | null;

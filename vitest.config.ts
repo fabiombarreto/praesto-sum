@@ -37,7 +37,20 @@ export default defineConfig(async () => {
               miniflare: {
                 // Test-only bindings: the migrations carried into the workerd isolate,
                 // and the API token the auth middleware checks (ADR-0003).
-                bindings: { TEST_MIGRATIONS: migrations, API_BEARER_TOKEN: "test-token" },
+                //
+                // The GOOGLE_* trio is test-only too and deliberately fake. The
+                // suite never reaches Google — every outbound call is faked — so
+                // these exist purely to get the routes past their fail-closed
+                // "is the integration configured?" guard. The owner's real values
+                // live in `.dev.vars` (local) and Worker secrets (production), and
+                // must never be needed to run the tests.
+                bindings: {
+                  TEST_MIGRATIONS: migrations,
+                  API_BEARER_TOKEN: "test-token",
+                  GOOGLE_CLIENT_ID: "test-client-id.apps.googleusercontent.com",
+                  GOOGLE_CLIENT_SECRET: "test-client-secret",
+                  GOOGLE_REDIRECT_URI: "https://example.com/oauth/callback",
+                },
                 // Test-only and experimental: required for `exports.default.scheduled()`.
                 // NEVER put this flag in wrangler.jsonc — it cannot be enabled in production.
                 compatibilityFlags: ["service_binding_extra_handlers"],

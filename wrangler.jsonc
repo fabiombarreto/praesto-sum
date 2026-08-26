@@ -14,7 +14,15 @@
     // index.html straight from asset storage and never reach the Worker.
     // This forces /api/* to the Worker. Without it the API 200s with HTML on
     // direct navigation — a bug that only shows up in production.
-    "run_worker_first": ["/api/*"],
+    //
+    // /oauth/* is here for the same reason arriving through a different door
+    // (unit 4 phase 2): Google's redirect to /oauth/callback IS a navigation
+    // request, so without this entry the SPA would answer it and the OAuth
+    // callback would never run — passing every local test while being dead in
+    // production. It is also deliberately NOT under /api/*, because the bearer
+    // gate is mounted there: keeping the callback on its own prefix is what
+    // makes its exemption structural rather than a conditional in auth.ts.
+    "run_worker_first": ["/api/*", "/oauth/*"],
   },
 
   "d1_databases": [

@@ -1,5 +1,5 @@
-import type { TaskDto } from "../shared/api";
-import type { Task } from "./db/schema";
+import type { GoogleConnectionDto, TaskDto } from "../shared/api";
+import type { GoogleConnection, Task } from "./db/schema";
 
 /**
  * The single mapping point between database rows and the wire contract.
@@ -26,4 +26,19 @@ export function toTaskDto(row: Task): TaskDto {
 
 function toEpochSeconds(value: Date | null): number | null {
   return value === null ? null : Math.floor(value.getTime() / 1000);
+}
+
+/**
+ * Maps a stored connection to the wire.
+ *
+ * Written field by field, like `toTaskDto`, so schema drift breaks the build —
+ * and so the ABSENCE of `refreshToken` is a visible, deliberate line in this
+ * file rather than an omission someone has to notice.
+ */
+export function toGoogleConnectionDto(row: GoogleConnection): GoogleConnectionDto {
+  return {
+    connected: true,
+    connectedAt: toEpochSeconds(row.connectedAt) ?? 0,
+    scope: row.scope,
+  };
 }

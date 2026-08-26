@@ -21,6 +21,9 @@ import { check, index, integer, sqliteTable, text, uniqueIndex } from "drizzle-o
  * the reminders.event_id column. They are deliberately absent here.
  */
 
+/** The one and only connection row's id. One owner, one connection (see `googleConnections`). */
+export const GOOGLE_CONNECTION_ID = "default";
+
 export const lifeAreas = sqliteTable(
   "life_areas",
   {
@@ -285,6 +288,71 @@ export const pushSubscriptions = sqliteTable(
   (t) => [uniqueIndex("push_subscriptions_endpoint_unq").on(t.endpoint)],
 );
 
+/**
+ * Single-use OAuth `state` nonces (unit 4 phase 2).
+ *
+ * This table is the entire reason `/oauth/callback` may exist as an
+ * unauthenticated route without breaking ADR-0003 safeguard 4. A nonce is
+ * minted only by an AUTHENTICATED request to `/api/google/connect`, so the
+ * callback accepts nothing the owner did not personally initiate; it is
+ * short-lived, so a leaked redirect URL stops working; and it is consumed on
+ * use, so replaying the same URL is inert.
+ *
+ * Rows are worthless once consumed or expired and carry no user data, so
+ * there is deliberately no cleanup job: a handful of dead rows is cheaper
+ * than a cron that can fail.
+ */
+export const oauthStates = sqliteTable(
+  "oauth_states",
+  {
+    /** The nonce itself — unguessable, generated with `crypto.randomUUID()`. */
+    id: text("id").primaryKey(),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+    /** Non-null the moment it is spent. A consumed nonce is never usable again. */
+    consumedAt: integer("consumed_at", { mode: "timestamp" }),
+  },
+  (t) => [check("oauth_states_expiry_after_creation", sql`${t.expiresAt} > ${t.createdAt}`)],
+);
+
+/**
+ * The Google OAuth credential (unit 4 phase 2, ADR-0007).
+ *
+ * There is exactly one owner, so there is exactly one connection — and that is
+ * enforced by a CHECK pinning `id` to a single literal rather than by
+ * convention, following the ADR-0006 discipline of making invariants that
+ * protect the owner's data structural.
+ *
+ * The refresh token lives here because a Worker cannot write its own secret at
+ * runtime, so an in-app connect has nowhere else to put what it obtains. Three
+ * rules follow and are enforced elsewhere in the code rather than here: it is
+ * never logged, it never appears in any DTO or response body, and it is
+ * excluded from the FR-042 export — an export carrying a live credential would
+ * make every backup file a credential.
+ */
+export const googleConnections = sqliteTable(
+  "google_connections",
+  {
+    id: text("id").primaryKey().default(GOOGLE_CONNECTION_ID),
+    refreshToken: text("refresh_token").notNull(),
+    /** The scopes actually granted, space-joined, as Google reported them. */
+    scope: text("scope").notNull(),
+    connectedAt: integer("connected_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`)
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    check("google_connections_singleton", sql`${t.id} = 'default'`),
+    check("google_connections_token_not_empty", sql`length(trim(${t.refreshToken})) > 0`),
+  ],
+);
+
 // Types flow OUT of the schema — never hand-duplicated (docs/anti-patterns.md).
 export type LifeArea = typeof lifeAreas.$inferSelect;
 export type NewLifeArea = typeof lifeAreas.$inferInsert;
@@ -296,3 +364,7 @@ export type Reminder = typeof reminders.$inferSelect;
 export type NewReminder = typeof reminders.$inferInsert;
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type NewPushSubscription = typeof pushSubscriptions.$inferInsert;
+export type OauthState = typeof oauthStates.$inferSelect;
+export type NewOauthState = typeof oauthStates.$inferInsert;
+export type GoogleConnection = typeof googleConnections.$inferSelect;
+export type NewGoogleConnection = typeof googleConnections.$inferInsert;
