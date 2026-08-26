@@ -1,0 +1,83 @@
+# TDD Suite Manifest — google-calendar-read, phase 2 "Consent, credential, revocation"
+
+- **Plan:** `PRPs/plans/google-calendar-read-phase-2-consent-credential-revocation.plan.md` (APPROVED 2026-08-26)
+- **Source PRD:** `PRPs/prds/google-calendar-read.prd.md` (APPROVED 2026-08-25)
+- **Mode:** test-first (`tdd: true`, ADR-0008)
+- **Framework:** vitest, `worker` project (`@cloudflare/vitest-pool-workers` 0.20.1)
+- **Aggregate verdict:** `SUITE_DRAFT_WRITTEN`
+- **Test files written:** 4 (57 tests)
+
+## Per-AC outcomes
+
+| AC | Outcome | Where |
+|---|---|---|
+| PRD AC-1 — consent URL minted, scoped, stateful | `NEW_TEST_REQUIRED` | `test/google-oauth.test.ts` (the URL's content, no Worker needed) + `test/google-routes.test.ts` → "POST /api/google/connect" (the route's persistence of the nonce) |
+| PRD AC-2 — the callback refuses every state it did not mint | `NEW_TEST_REQUIRED` | `test/oauth-callback.test.ts` → "the callback refuses every state it did not mint" (6 tests) |
+| PRD AC-3 — a valid callback stores the credential exactly once | `NEW_TEST_REQUIRED` | `test/oauth-callback.test.ts` → "a valid callback stores the credential exactly once" (5 tests) + `test/google-client.test.ts` (the exchange request itself) |
+| PRD AC-4 — disconnect revokes remotely, preserves everything locally | `NEW_TEST_REQUIRED` | `test/google-routes.test.ts` → "DELETE /api/google/connection" (5 tests) |
+| PRD AC-5 — disconnect succeeds even when Google refuses | `NEW_TEST_REQUIRED` | `test/google-routes.test.ts` → "succeeds even when Google refuses" (2 tests) + `test/google-client.test.ts` → `revokeToken` (2 tests) |
+| Plan AC-A6 — `run_worker_first` includes `/oauth/*` | `NO_TEST_REQUIRED (config-only)` | No local test can observe the asset router — the plan says so in its own Risks table. Task 1's VALIDATE asserts the config directly, and was verified to exit 1 without `/oauth/*` and 0 with it |
+| Plan AC-A7 — `/api/google` routes 401, `auth.ts` unchanged | `NEW_TEST_REQUIRED` + `VALIDATE` | The 401 half is covered by three tests across `google-routes.test.ts` and `oauth-callback.test.ts`; the byte-unchanged half is Task 8's git VALIDATE, which no test can express |
+
+## Three assertions that carry more weight than the rest
+
+1. **The refusal path makes zero outbound calls.** Every rejection test asserts `outbound).toHaveLength(0)`, not merely a 4xx status. A callback that rejects the request *after* calling Google is an unauthenticated trigger for third-party traffic — the exact property that makes ADR-0003 safeguard 4 scopeable here rather than simply broken.
+2. **Disconnect is tested against real Task rows, not an empty database.** `seedTasks(5)` then asserts 5 survive. FR-030 promises the owner that revoking never costs him his own data; deleting nothing from nothing would prove nothing.
+3. **The scope set is asserted for equality, not containment.** A test checking that the two readonly scopes are *present* would pass on a URL that also requested write access. Equality against `GOOGLE_READONLY_SCOPES` is what makes the ADR-0007 consent boundary testable.
+
+## Lifecycle ledger
+
+No existing test file was updated, removed or weakened. Four creations.
+
+| Op | Path | Tests |
+|---|---|---|
+| CREATE | `test/google-oauth.test.ts` | 16 |
+| CREATE | `test/google-client.test.ts` | 12 |
+| CREATE | `test/oauth-callback.test.ts` | 12 |
+| CREATE | `test/google-routes.test.ts` | 17 |
+
+## RED verification (test-first)
+
+```
+npx vitest run test/google-oauth.test.ts test/google-client.test.ts test/oauth-callback.test.ts test/google-routes.test.ts
+```
+
+Exit code **1**, 4 suites failed. Recorded honestly, because the four failures are not all equally clean:
+
+- `google-oauth.test.ts`, `google-routes.test.ts` — `Cannot find module '../src/shared/google-oauth'`
+- `google-client.test.ts` — `Cannot find module '../src/worker/google/client'`
+- `oauth-callback.test.ts` — **a murkier signal**: `Failed query: delete from` / `D1_ERROR: incomplete input`. `src/worker/db/schema.ts` exists, so the import resolves; `googleConnections` and `oauthStates` simply are not exported yet, arriving as `undefined`, and Drizzle then builds a `delete from ` with no table name. The cause is still the missing artifact (Task 2's tables), and `tsc -b` would name it plainly — but the runtime message does not, so it is written down rather than presented as a clean module error.
+
+Every symbol referenced by the suite is named in the APPROVED plan's task prose: `GOOGLE_READONLY_SCOPES`, `buildConsentUrl`, `isNonceUsable` (Task 4); `exchangeCode`, `revokeToken` (Task 5); `googleConnections`, `oauthStates` (Task 2); the three route paths (Tasks 6 and 7). Nothing was invented by the suite.
+
+## Test seam
+
+`fetchMock` was removed from `cloudflare:test` in vitest-pool-workers 0.13.x; this project pins 0.20.1 and its exports were listed empirically to confirm. The suite therefore uses two seams, chosen per tier rather than uniformly:
+
+- **Dependency injection** in `google-client.test.ts`, where the function under test takes `{ fetchImpl }`. This is what allows asserting on the outbound `Request` itself — its URL, method and body — including the negative assertion that the client secret never reaches the query string.
+- **`vi.stubGlobal("fetch", …)`** in the two route suites, where the call travels through the real Hono app and there is no parameter to inject. Verified to work under workerd in this pool before being relied on.
+
+## Review round 1 — CHANGES_REQUESTED, and what it caught
+
+`R-TRIVIAL-ASSERT` failed. Seven refusal tests in `test/oauth-callback.test.ts` asserted only
+`expect(res.status).toBeGreaterThanOrEqual(400)` with no upper bound; only the first test paired it
+with `toBeLessThan(500)`. An unbounded check is satisfied by a **500** — a crash from an unhandled
+exception — just as much as by a deliberate rejection. On the project's first unauthenticated route,
+distinguishing "refused on purpose" from "blew up" is the entire point of the suite, so the reviewer
+was right to gate on it.
+
+Fixed by extracting one `expectRefused(res)` helper asserting `>= 400 && < 500`, used at all ten
+refusal sites, so the two halves cannot drift apart again. One self-inflicted bug was made and caught
+in the process: the regex that rewrote the call sites also rewrote the helper's own body, leaving
+`expectRefused` calling itself. Caught by re-running the suite, which recursed instead of failing on
+the expected missing table. Recorded because a green run would have hidden it.
+
+## Scope limits
+
+- No production code written.
+- No calendar data is read anywhere — no `events.list`, no `calendarList.list`, no mapper. Phase 3.
+- No UI, no pt-BR copy. Phase 4.
+- The suite asserts the credential is never echoed in a response body, but does not test the FR-042 export exclusion — the export does not exist until unit 5.
+
+*Generated: 2026-08-26*
+*Status: DRAFT*
