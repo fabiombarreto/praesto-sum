@@ -21,7 +21,8 @@ import {
   type QuickChip,
   type TaskFilter,
 } from "../../shared/task-filter";
-import { groupTasks } from "../../shared/task-groups";
+import { collectDayItems } from "../../shared/day-groups";
+import { assertNeverDaySource, dayItemFromTask, type DayItem } from "../../shared/day-item";
 import { currentDraft, INITIAL_TASK_SHEET_STATE, reduceTaskSheet } from "../../shared/task-sheet";
 import {
   ApiError,
@@ -114,7 +115,12 @@ export function TodayScreen({
   const { state: connectivity, report } = useConnectivity({ onOnline: () => void refresh() });
   const toast = useToast();
   const writable = canWrite(connectivity);
-  const groups = groupTasks(tasks ?? [], today);
+  // ONE source today, a list of sources by construction: unit 4 phase 3 adds
+  // the Google stream here and nothing below this line has to change.
+  const groups = collectDayItems(
+    [{ id: "tasks", items: (tasks ?? []).map(dayItemFromTask) }],
+    today,
+  );
   const sheetTask = tasks?.find((task) => task.id === sheet.taskId) ?? null;
 
   /** A 401 routes to the token gate; otherwise reports the failure kind and returns its message (`null` on the 401 route, since the caller is about to unmount). */
@@ -363,24 +369,44 @@ export function TodayScreen({
       />
     ) : null;
 
-  /** The `<ul>` of `TaskRow`s shared by every group — five callers, one prop shape, unchanged from what the screen rendered before grouping. */
-  function renderTaskRows(rows: TaskDto[]): ReactNode {
+  /**
+   * The `<ul>` shared by every group — five callers, one shape. Since unit 4
+   * phase 1 it takes day items rather than Tasks and dispatches on their
+   * `source`; the `task` branch is byte-for-byte what the screen rendered
+   * before, and the `google` branch is unreachable here because this screen
+   * feeds `collectDayItems` a single Task source. It exists so that adding a
+   * second source in phase 3 is a compile error until this switch handles it.
+   */
+  function renderDayItems(rows: DayItem[]): ReactNode {
     return (
       <ul className="m-0 flex list-none flex-col gap-2 p-0">
-        {rows.map((task) => (
-          <TaskRow
-            key={task.id}
-            task={task}
-            today={today}
-            busy={busy || !writable}
-            editing={editingId === task.id}
-            onToggle={(next) => void (next ? complete(task.id) : reopen(task.id))}
-            onOpen={() => openSheet(task)}
-            onEdit={() => setEditingId(task.id)}
-            onCommitTitle={(newTitle) => commitTitle(task.id, newTitle)}
-            onCancelEdit={() => setEditingId(null)}
-          />
-        ))}
+        {rows.map((item) => {
+          switch (item.source) {
+            case "task": {
+              const task = item.task;
+              return (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  today={today}
+                  busy={busy || !writable}
+                  editing={editingId === task.id}
+                  onToggle={(next) => void (next ? complete(task.id) : reopen(task.id))}
+                  onOpen={() => openSheet(task)}
+                  onEdit={() => setEditingId(task.id)}
+                  onCommitTitle={(newTitle) => commitTitle(task.id, newTitle)}
+                  onCancelEdit={() => setEditingId(null)}
+                />
+              );
+            }
+            case "google":
+              // Phase 4 renders this. Reaching it before then is a bug, not a
+              // blank row.
+              return assertNeverDaySource(item.source as never);
+            default:
+              return assertNeverDaySource(item);
+          }
+        })}
       </ul>
     );
   }
@@ -439,12 +465,12 @@ export function TodayScreen({
               collapsed={overdueCollapsed}
               onToggle={toggleOverdueCollapsed}
             >
-              {renderTaskRows(groups.overdue)}
+              {renderDayItems(groups.overdue)}
             </TaskGroup>
 
             {/* Never collapsible (layout standard §2.5): no `onToggle`, so `TaskGroup` renders no control at all. */}
             <TaskGroup name="Hoje" count={groups.today.length}>
-              {renderTaskRows(groups.today)}
+              {renderDayItems(groups.today)}
             </TaskGroup>
 
             <TaskGroup
@@ -453,7 +479,7 @@ export function TodayScreen({
               collapsed={upcomingCollapsed}
               onToggle={toggleUpcomingCollapsed}
             >
-              {renderTaskRows(groups.upcoming)}
+              {renderDayItems(groups.upcoming)}
             </TaskGroup>
 
             <TaskGroup
@@ -462,7 +488,7 @@ export function TodayScreen({
               collapsed={undatedCollapsed}
               onToggle={toggleUndatedCollapsed}
             >
-              {renderTaskRows(groups.undated)}
+              {renderDayItems(groups.undated)}
             </TaskGroup>
 
             <TaskGroup
@@ -471,7 +497,7 @@ export function TodayScreen({
               collapsed={doneCollapsed}
               onToggle={toggleDoneCollapsed}
             >
-              {renderTaskRows(groups.closed)}
+              {renderDayItems(groups.closed)}
             </TaskGroup>
           </>
         )}

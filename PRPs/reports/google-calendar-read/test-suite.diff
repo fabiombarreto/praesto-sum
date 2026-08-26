@@ -1,0 +1,59 @@
+# TDD Suite Manifest — google-calendar-read, phase 1 "Dated items, one screen"
+
+- **Plan:** `PRPs/plans/google-calendar-read-phase-1-dated-items-one-screen.plan.md` (APPROVED 2026-08-26)
+- **Source PRD:** `PRPs/prds/google-calendar-read.prd.md` (APPROVED 2026-08-25)
+- **Mode:** test-first (`tdd: true`, `tdd_evidence: "user-declared"`, ADR-0008)
+- **Framework:** vitest, `worker` project (`@cloudflare/vitest-pool-workers`) — `vitest.config.ts:30-65`. Both new files are pure and DOM-free, so they need nothing the workerd pool lacks.
+- **Aggregate verdict:** `SUITE_DRAFT_WRITTEN`
+- **Test files written:** 2
+
+## Per-AC outcomes
+
+| AC | Outcome | Where |
+|---|---|---|
+| PRD AC-10 — one range function, proved at zero, one and two sources | `NEW_TEST_REQUIRED` | `test/day-groups.test.ts` — describes "zero sources", "one source", "two sources" and "no source-count branch" |
+| PRD AC-14 — grouping stays byte-identical for a Task-only day | `EXISTING_TEST_COVERS test/task-groups.test.ts:192` | The concatenation-identity test already pins the property. It is this phase's characterization suite and must pass **byte-unchanged**; authoring a second copy would create a rival truth about the same behaviour |
+| Plan AC-A1 — zero sources returns five empty buckets, no throw | `NEW_TEST_REQUIRED` | `test/day-groups.test.ts` → "collectDayItems — zero sources" (3 tests, including an empty source treated identically to no source) |
+| Plan AC-A2 — one source preserves its own relative order exactly | `NEW_TEST_REQUIRED` | `test/day-groups.test.ts` → "collectDayItems — one source" (5 tests, including the partition-is-the-identity property and a scrambled input the function must NOT repair) |
+| Plan AC-A3 — two sources merge stably, ties by source index | `NEW_TEST_REQUIRED` | `test/day-groups.test.ts` → "collectDayItems — two sources" (5 tests) plus "no source-count branch" (2 tests, incl. a three-source case) |
+| Plan AC-A4 — `test/task-groups.test.ts` passes byte-unchanged | `EXISTING_TEST_COVERS test/task-groups.test.ts:1-` | Same file as PRD AC-14. Enforced additionally by the plan's Task 5 VALIDATE, which fails non-zero if the file was modified |
+| Plan AC-A5 — `groupTasks` signature and `TaskGroups` unchanged | `EXISTING_TEST_COVERS test/task-groups.test.ts:19-21` | The suite's import block does not compile if the exported signature moved; `tsc -b` (Level 1) is the type-level half |
+| Plan AC-A6 — the rendered *Hoje* screen is indistinguishable | `NO_TEST_REQUIRED (manual)` | `docs/context/methodology.md` keeps React component verification manual and `documentation/40-engineering/testing-strategy.md` carries the same split. Verified on device; no test file, and that is the sanctioned path rather than a coverage gap |
+
+**Projection coverage.** `test/day-item.test.ts` has no AC of its own: it pins the boundary projection that PRD AC-10 depends on at its first link. The rules it asserts — status before dates, `deadline ?? scheduledDate` — are lifted verbatim out of `src/shared/task-groups.ts:45-66`, so they are characterization of existing behaviour in a new home, not new behaviour.
+
+## Lifecycle ledger
+
+No existing test file was updated, removed or weakened. Both entries below are creations.
+
+| Op | Path | Note |
+|---|---|---|
+| CREATE | `test/day-item.test.ts` | 16 tests over `dayItemFromTask` and `assertNeverDaySource` |
+| CREATE | `test/day-groups.test.ts` | 17 tests over `collectDayItems` |
+
+The local `task()` fixture factory is duplicated into both new files rather than extracted from `test/task-groups.test.ts:26-49`. That is deliberate: extracting it would require editing the characterization suite, which AC-A4 forbids. Grounding confirmed no shared fixture factory exists anywhere in `test/`.
+
+## RED verification (test-first)
+
+```
+npx vitest run test/day-item.test.ts test/day-groups.test.ts
+```
+
+Exit code **1**. Both suites fail with:
+
+```
+Error: Cannot find module '../src/shared/day-item' imported from .../test/day-item.test.ts
+Error: Cannot find module '../src/shared/day-item' imported from .../test/day-groups.test.ts
+```
+
+RED for the right reason — the modules the plan's Tasks 1 and 2 create do not exist yet. No assertion failed, no test was authored against a signature this suite invented: every symbol referenced (`DaySource`, `DayItem`, `dayItemFromTask`, `assertNeverDaySource`, `DayItemSource`, `collectDayItems`, `DayItemGroups`) is named in the APPROVED plan's Task 1 and Task 2 `**ACTION**` prose.
+
+## Scope limits
+
+- No production code was written. B7 authors tests only.
+- No Google item is constructed anywhere in this suite. A "source" is a named list, not a provider, so two sources of projected Tasks exercise every merge path without inventing an Event entity ahead of unit 14 — the plan's NOT Building list, honoured.
+- `src/shared/format.ts` and `src/shared/task-filter.ts` are untouched, matching the plan's deferral of both to phase 4.
+
+*Generated: 2026-08-26*
+*Approved: 2026-08-26*
+*Status: APPROVED*
