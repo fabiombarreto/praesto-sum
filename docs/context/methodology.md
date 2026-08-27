@@ -3,6 +3,7 @@ tdd: true
 tdd_evidence: "user-declared"
 test_frameworks: ["vitest"]
 docs_sync: true
+formatter_cmd: "npx prettier --write"
 figma_track: false
 visual_first_approval: auto
 ---
@@ -73,3 +74,32 @@ Heuristics MUST NOT flip this value — only a human edit or an explicit owner
 declaration can. Reverting means setting `tdd: false`, clearing
 `tdd_evidence`, and recording a superseding ADR; the guardrail in
 `docs/context/testing.md` stays in force either way.
+
+## Formatter
+
+Current state: **declared** — `formatter_cmd: "npx prettier --write"` in the
+frontmatter above. `/relay-write-test` (prevention) and `/relay-implement`
+(preflight) read this key and invoke the command scoped to the touched test
+files, before the code reviewer's R-X inspection window opens. That is what
+keeps an approved suite Level-1 clean without the Implementer ever editing a
+test file — R-X and D17 keep zero carve-outs.
+
+The value is declared explicitly rather than left to relay's `package.json`
+fallback on purpose. That fallback builds `npm run format -- <files>`, and
+this project's `scripts.format` is `prettier --write .` — the trailing `.`
+survives the pass-through, so the fallback would format the whole repository
+instead of the touched files, which `/relay-write-test` forbids outright
+("never `.`"). Declaring the key takes precedence over the fallback and keeps
+the invocation scoped.
+
+Keep the command **without a path target**: relay appends the file paths as
+trailing arguments itself.
+
+### How to override
+
+Heuristics MUST NOT flip this value — only a human edit can. `context-builder`
+always emits the deterministic default `formatter_cmd: null` and never infers a
+value from `package.json`, devDependencies or config files; on `*update` it
+preserves an existing value untouched. Setting it back to `null` disables the
+formatting step, which restores the R-X × Level 1 deadlock this key exists to
+prevent.
