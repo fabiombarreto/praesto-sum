@@ -1,17 +1,30 @@
 /**
  * Structural invariants over the source tree (unit 4 phase 3).
  *
- * Covers PRD **AC-13** — "read-only is enforced by construction" — which is a
- * UNIVERSAL NEGATIVE and therefore not expressible as a unit test over the
- * calls a suite happens to construct. Asserting `method === "GET"` on
- * `listEvents` proves that `listEvents` is a read; it says nothing about
- * whether an `events.insert` exists three files away. The claim is about the
- * whole codebase, so the test has to read the whole codebase.
+ * Supports PRD **AC-13** — "read-only is enforced by construction". Asserting
+ * `method === "GET"` on `listEvents` proves that `listEvents` is a read; it
+ * says nothing about whether an `events.insert` exists three files away, so
+ * something has to read the whole tree.
+ *
+ * **What this suite does NOT do, stated plainly so nobody trusts it further
+ * than it reaches.** It is a TRIPWIRE against the ACCIDENTAL introduction of a
+ * write, not a proof that none can exist. It matches literal `fetch(` /
+ * `fetchImpl(` call tokens, a literal quoted `method:` string, and a window of
+ * 500 characters from the call. A determined evasion defeats it: a `new
+ * Request()` handed to `fetch`, a renamed import, a wrapper helper, a method
+ * held in a variable, or a URL far from its init object. Arbitration on
+ * 2026-08-28 ruled that a regex-only check CANNOT be made sound against those
+ * — they need data-flow tracing a regex has no model of — and that widening
+ * the window or piling on literal patterns would repeat the earlier rounds'
+ * mistake. The honest stronger options, if this ever has to be a proof rather
+ * than a tripwire: an AST-based check, or a single injected-fetch chokepoint
+ * enforced at the type level so no Google call can be written outside it.
  *
  * Runs in the `docs` vitest project, in plain Node, because workerd has no
  * `node:fs` — the same reason `docs-consistency.test.ts` lives there.
  *
- * **This file has been wrong three times.** Each failure was found by planting
+ * **This file has been wrong four times**, and the fourth is why the claim
+ * above is now narrowed rather than widened again. Each failure was found by planting
  * a violation and watching the check pass, never by reading it:
  *   1. Comment stripping ate the tail of every `https://` URL, so the check saw
  *      files with no Google endpoints at all.
@@ -21,7 +34,14 @@
  *   3. Writing the file through a tool that mangled `\b` into a literal
  *      backspace left `/<BS>fetch\s*\(/`, which matches nothing — invisible on
  *      screen, and it made the check pass unconditionally.
- * A guard is worth exactly what its last deliberate failure proved.
+ *   4. Review then named four evasions the repaired version still misses,
+ *      which is what settled the question: the check is sound for the shapes
+ *      it names and unsound as a universal claim, so the docstring says so
+ *      instead of the regex pretending otherwise.
+ *
+ * A guard is worth exactly what its last deliberate failure proved. This one
+ * is verified against three planted violations and one legitimate lookalike;
+ * that is its whole warranty.
  */
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -50,7 +70,7 @@ const CODE = sourceFiles().map((path) => ({
     .replace(/(^|[^:])\/\/.*$/gm, "$1"),
 }));
 
-describe("AC-13 — read-only by construction", () => {
+describe("AC-13 tripwire — no ACCIDENTAL write reaches the Calendar API", () => {
   it("contains no Calendar mutation call anywhere in src/", () => {
     // The Calendar API's write surface. Unit 15 introduces these deliberately,
     // behind a re-consent to a scope this unit does not hold; until then their

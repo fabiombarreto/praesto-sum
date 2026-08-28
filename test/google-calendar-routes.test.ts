@@ -233,6 +233,83 @@ describe("PUT /api/google/calendars (AC-15)", () => {
   });
 });
 
+describe("PUT /api/google/calendars — an empty selection (AC-15)", () => {
+  it("answers 4xx and changes nothing", async () => {
+    // Deleting every row would be read back as "the owner has not chosen yet",
+    // and the next read would silently re-enable `primary` — the opposite of
+    // what he just asked for. Refusing keeps the two states from colliding.
+    await connect();
+    await createDb(env).insert(googleCalendarSelections).values({ calendarId: "primary" });
+
+    const res = await exports.default.fetch(
+      CALENDARS,
+      auth({ method: "PUT", body: JSON.stringify({ calendarIds: [] }) }),
+    );
+
+    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(res.status).toBeLessThan(500);
+    // The previous selection survives — a refused request must not half-apply.
+    const rows = await createDb(env).select().from(googleCalendarSelections);
+    expect(rows.map((r) => r.calendarId)).toEqual(["primary"]);
+  });
+
+  it("points the owner at disconnect, which is what he actually means", async () => {
+    await connect();
+
+    const res = await exports.default.fetch(
+      CALENDARS,
+      auth({ method: "PUT", body: JSON.stringify({ calendarIds: [] }) }),
+    );
+
+    expect(await res.text()).toMatch(/disconnect/i);
+  });
+});
+
+describe("a dead credential is not a transient outage (AC-A8)", () => {
+  it("answers 409 on invalid_grant, so the screen can say RECONNECT", async () => {
+    // 409 is the same code the never-connected case uses, because both mean
+    // "the connection is unusable and only you can change that". 502 would put
+    // it in the retry bucket and the owner would wait forever.
+    await connect();
+    stubGoogle((url) =>
+      url.pathname === "/token" ? json({ error: "invalid_grant" }, 400) : json({}, 500),
+    );
+
+    const res = await exports.default.fetch(EVENTS, auth());
+
+    expect(res.status).toBe(409);
+    expect(((await res.json()) as { reason: string }).reason).toBe("invalid_grant");
+  });
+
+  it("answers 502 on a transient Google failure, which IS worth retrying", async () => {
+    await connect();
+    stubGoogle((url) =>
+      url.pathname === "/token" ? json({ error: "backend_error" }, 503) : json({}, 503),
+    );
+
+    const res = await exports.default.fetch(EVENTS, auth());
+
+    expect(res.status).toBe(502);
+    expect(((await res.json()) as { reason: string }).reason).not.toBe("invalid_grant");
+  });
+
+  it("still reports invalid_grant when Google answers 400 with a NON-JSON body", async () => {
+    // The body is read as text first for exactly this: the earlier version
+    // parsed JSON only, so an unparseable invalid_grant degraded to http_400
+    // and a dead credential was reported as an outage.
+    await connect();
+    stubGoogle((url) =>
+      url.pathname === "/token"
+        ? new Response("error=invalid_grant", { status: 400 })
+        : json({}, 500),
+    );
+
+    const res = await exports.default.fetch(EVENTS, auth());
+
+    expect(res.status).toBe(409);
+  });
+});
+
 describe("GET /api/google/events (AC-6)", () => {
   it("queries only the selected calendars", async () => {
     await connect();

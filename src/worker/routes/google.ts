@@ -154,9 +154,18 @@ async function accessTokenFor(c: {
 
   const refreshed = await refreshAccessToken(stored.refreshToken, { clientId, clientSecret }, {});
   if (!refreshed.ok) {
-    // `invalid_grant` means the credential is dead — the owner must reconnect,
-    // which is a different sentence from "Google is having a bad minute".
-    return { ok: false, status: 502, reason: refreshed.reason };
+    // The distinction has to reach the STATUS, not just the body. A dead
+    // credential is the owner's to fix by reconnecting (409, the same code the
+    // never-connected case uses, because both mean "the connection is not
+    // usable and only you can change that"); anything else is Google being
+    // unreachable and is worth retrying (502). Returning 502 for both — as the
+    // first version did — made `refreshAccessToken`'s careful separation of
+    // `invalid_grant` pointless the moment it crossed this boundary.
+    return {
+      ok: false,
+      status: refreshed.reason === "invalid_grant" ? 409 : 502,
+      reason: refreshed.reason,
+    };
   }
 
   return { ok: true, accessToken: refreshed.accessToken };
@@ -197,6 +206,20 @@ googleRoutes.put("/calendars", async (c) => {
   const body = (await c.req.json().catch(() => null)) as { calendarIds?: unknown } | null;
   const ids = Array.isArray(body?.calendarIds) ? body.calendarIds : null;
   if (ids === null) return c.json({ error: "calendarIds must be an array" }, 400);
+  // An empty selection would delete every row, and zero rows is how "never
+  // chosen" is stored — so the next read would silently re-enable `primary`,
+  // the exact opposite of what the owner just asked for. Rather than encode a
+  // third state, refuse: "no calendars" and "not connected" are the same
+  // product state, and disconnect already expresses it honestly.
+  if (ids.length === 0) {
+    return c.json(
+      {
+        error: "at least one calendar must be selected",
+        hint: "to stop seeing Google events entirely, disconnect the calendar",
+      },
+      400,
+    );
+  }
   if (ids.some((id) => typeof id !== "string" || id.trim() === "")) {
     return c.json({ error: "every calendarId must be a non-empty string" }, 400);
   }

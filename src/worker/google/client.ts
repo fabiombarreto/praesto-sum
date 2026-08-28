@@ -151,18 +151,22 @@ export async function refreshAccessToken(
     return { ok: false, reason: "network" };
   }
 
+  // Read the body as TEXT first, then try to parse it. Google has been seen to
+  // answer 400 with a non-JSON body, and the first version read only the parsed
+  // object — so an unparseable `invalid_grant` degraded to `http_400` and a
+  // dead credential was reported as a transient outage, sending the owner to
+  // "try again later" forever instead of to "reconnect".
+  const body = await response.text().catch(() => "");
   let payload: { access_token?: unknown; error?: unknown } = {};
   try {
-    payload = (await response.json()) as typeof payload;
+    payload = JSON.parse(body) as typeof payload;
   } catch {
-    /* An unparseable body is still a failure; the status decides which. */
+    /* Not JSON. The raw text is still evidence; see below. */
   }
 
   if (!response.ok) {
-    return {
-      ok: false,
-      reason: payload.error === "invalid_grant" ? "invalid_grant" : `http_${response.status}`,
-    };
+    const invalidGrant = payload.error === "invalid_grant" || body.includes("invalid_grant");
+    return { ok: false, reason: invalidGrant ? "invalid_grant" : `http_${response.status}` };
   }
 
   const accessToken = typeof payload.access_token === "string" ? payload.access_token : "";

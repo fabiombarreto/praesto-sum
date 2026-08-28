@@ -61,8 +61,14 @@ export default defineConfig(async () => {
             name: "worker",
             setupFiles: ["./test/apply-migrations.ts"],
             include: ["test/**/*.test.ts"],
-            // The docs suite needs `node:fs`, which workerd does not have.
-            exclude: ["test/docs-consistency.test.ts"],
+            // Both node-project suites need `node:fs`, which workerd does not
+            // have. Adding a suite to the `docs` project's include is only half
+            // the job — without excluding it here it runs in BOTH, and the
+            // workerd copy fails to load with `readdir '/bundle/src'`. That
+            // failure is a FILE-level load error, so its tests never run and
+            // never appear in the "Tests N passed" line, which is how it was
+            // reported green twice before review caught it.
+            exclude: ["test/docs-consistency.test.ts", "test/source-invariants.test.ts"],
             // Coverage note: @vitest/coverage-v8 does NOT work inside workerd
             // (node:inspector is unavailable). Only @vitest/coverage-istanbul works,
             // and it must be pinned to the exact vitest version.
