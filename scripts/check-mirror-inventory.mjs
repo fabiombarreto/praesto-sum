@@ -25,26 +25,33 @@ import { join } from "node:path";
 const FORBIDDEN = /\.(attendees|reminders|recurrence)\b/;
 const MAPPER = "src/shared/google-events.ts";
 /** The one sanctioned shape: a presence test, never a binding. */
-const PRESENCE_TEST = /Array\.isArray\(\s*\w+\.attendees\s*\)|\w+\.attendees\?\?\.length|\w+\.attendees\)\s*&&/;
+const PRESENCE_TEST =
+  /Array\.isArray\(\s*\w+\.attendees\s*\)|\w+\.attendees\?\?\.length|\w+\.attendees\)\s*&&/;
 
 function walk(dir) {
   return readdirSync(dir).flatMap((name) => {
     const full = join(dir, name);
-    return statSync(full).isDirectory() ? walk(full) : full.endsWith(".ts") || full.endsWith(".tsx") ? [full] : [];
+    return statSync(full).isDirectory()
+      ? walk(full)
+      : full.endsWith(".ts") || full.endsWith(".tsx")
+        ? [full]
+        : [];
   });
 }
 
 const violations = [];
 for (const file of walk("src")) {
   const rel = file.replaceAll("\\", "/");
-  readFileSync(file, "utf8").split("\n").forEach((line, i) => {
-    // Comments cannot leak data, and are stripped BEFORE the test rather than
-    // used to excuse the line — that inversion is the whole point.
-    const code = line.replace(/\/\/.*$/, "").replace(/\/\*.*?\*\//g, "");
-    if (!FORBIDDEN.test(code)) return;
-    if (rel.endsWith(MAPPER) && PRESENCE_TEST.test(code)) return;
-    violations.push(`${rel}:${i + 1}: ${line.trim()}`);
-  });
+  readFileSync(file, "utf8")
+    .split("\n")
+    .forEach((line, i) => {
+      // Comments cannot leak data, and are stripped BEFORE the test rather than
+      // used to excuse the line — that inversion is the whole point.
+      const code = line.replace(/\/\/.*$/, "").replace(/\/\*.*?\*\//g, "");
+      if (!FORBIDDEN.test(code)) return;
+      if (rel.endsWith(MAPPER) && PRESENCE_TEST.test(code)) return;
+      violations.push(`${rel}:${i + 1}: ${line.trim()}`);
+    });
 }
 
 if (violations.length > 0) {
