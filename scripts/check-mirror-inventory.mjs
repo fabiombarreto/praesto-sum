@@ -48,11 +48,11 @@ for (const file of walk("src")) {
       // Comments cannot leak data, and are stripped BEFORE the test rather than
       // used to excuse the line — that inversion is the whole point.
       // `//` only starts a comment when it is not preceded by `:` — otherwise
-    // this eats the rest of every line containing an https:// URL, which is
-    // how the first version of this check silently saw a file with no Google
-    // endpoints in it at all (found 2026-08-28 by deliberately planting a
-    // violation and watching the check pass).
-    const code = line.replace(/(^|[^:])\/\/.*$/, "$1").replace(/\/\*.*?\*\//g, "");
+      // this eats the rest of every line containing an https:// URL, which is
+      // how the first version of this check silently saw a file with no Google
+      // endpoints in it at all (found 2026-08-28 by deliberately planting a
+      // violation and watching the check pass).
+      const code = line.replace(/(^|[^:])\/\/.*$/, "$1").replace(/\/\*.*?\*\//g, "");
       if (!FORBIDDEN.test(code)) return;
       if (rel.endsWith(MAPPER) && PRESENCE_TEST.test(code)) return;
       violations.push(`${rel}:${i + 1}: ${line.trim()}`);

@@ -19,6 +19,7 @@
 
 const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 const REVOKE_ENDPOINT = "https://oauth2.googleapis.com/revoke";
+const CALENDAR_API = "https://www.googleapis.com/calendar/v3";
 
 /** The `fetch` signature, so a test can hand over a recorder. */
 export type GoogleFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
@@ -112,4 +113,187 @@ export async function revokeToken(token: string, deps: GoogleDeps = {}): Promise
   } catch {
     return false;
   }
+}
+
+export type RefreshResult =
+  { ok: true; accessToken: string } | { ok: false; reason: "invalid_grant" | "network" | string };
+
+/**
+ * Trades the stored refresh token for a short-lived access token.
+ *
+ * `invalid_grant` is kept DISTINCT from every other failure on purpose. It is
+ * what a revoked, expired or otherwise dead credential looks like, and the
+ * owner's action differs: "reconnect your calendar" versus "try again later".
+ * Collapsing the two would make the screen give the wrong instruction, which
+ * is the same defect that cost real time in phase 2 when a certificate failure
+ * was reported as "Google refused".
+ */
+export async function refreshAccessToken(
+  refreshToken: string,
+  { clientId, clientSecret }: { clientId: string; clientSecret: string },
+  deps: GoogleDeps = {},
+): Promise<RefreshResult> {
+  const fetchImpl = deps.fetchImpl ?? fetch;
+
+  let response: Response;
+  try {
+    response = await fetchImpl(TOKEN_ENDPOINT, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+        client_id: clientId,
+        client_secret: clientSecret,
+      }).toString(),
+    });
+  } catch {
+    return { ok: false, reason: "network" };
+  }
+
+  let payload: { access_token?: unknown; error?: unknown } = {};
+  try {
+    payload = (await response.json()) as typeof payload;
+  } catch {
+    /* An unparseable body is still a failure; the status decides which. */
+  }
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      reason: payload.error === "invalid_grant" ? "invalid_grant" : `http_${response.status}`,
+    };
+  }
+
+  const accessToken = typeof payload.access_token === "string" ? payload.access_token : "";
+  if (accessToken === "") return { ok: false, reason: "no_access_token" };
+
+  return { ok: true, accessToken };
+}
+
+export interface GoogleCalendarSummary {
+  id: string;
+  summary: string;
+  primary: boolean;
+}
+
+export type ListCalendarsResult =
+  { ok: true; calendars: GoogleCalendarSummary[] } | { ok: false; reason: string };
+
+/**
+ * Lists the calendars the owner is subscribed to.
+ *
+ * Requires `calendar.calendarlist.readonly`; without it Google answers 403
+ * `insufficientPermissions` — measured by chore C11 on 2026-08-11 and
+ * reproduced by C12 on 2026-08-25. That scope was granted for real on
+ * 2026-08-28.
+ */
+export async function listCalendars(
+  accessToken: string,
+  deps: GoogleDeps = {},
+): Promise<ListCalendarsResult> {
+  const fetchImpl = deps.fetchImpl ?? fetch;
+
+  let response: Response;
+  try {
+    // The token travels in a header, never the query string: a credential in a
+    // URL reaches logs, proxies and browser history.
+    response = await fetchImpl(`${CALENDAR_API}/users/me/calendarList`, {
+      method: "GET",
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    return { ok: false, reason: "network" };
+  }
+
+  if (!response.ok) return { ok: false, reason: `http_${response.status}` };
+
+  let payload: { items?: unknown } = {};
+  try {
+    payload = (await response.json()) as typeof payload;
+  } catch {
+    return { ok: false, reason: "malformed_response" };
+  }
+
+  const items = Array.isArray(payload.items) ? payload.items : [];
+  return {
+    ok: true,
+    calendars: items.flatMap((raw) => {
+      const item = raw as { id?: unknown; summary?: unknown; primary?: unknown };
+      if (typeof item.id !== "string" || item.id === "") return [];
+      return [
+        {
+          id: item.id,
+          summary: typeof item.summary === "string" ? item.summary : item.id,
+          primary: item.primary === true,
+        },
+      ];
+    }),
+  };
+}
+
+export type ListEventsResult = { ok: true; items: unknown[] } | { ok: false; reason: string };
+
+/**
+ * Reads one calendar's events inside a bounded window.
+ *
+ * **No `syncToken`, deliberately and permanently for this unit.** Google
+ * returns 400 when a sync token accompanies `timeMin`/`timeMax`/`orderBy`, so
+ * incremental sync and a bounded window are mutually exclusive — and this unit
+ * takes the window. `syncToken` becomes meaningful in unit 15, when a local
+ * table exists to keep incrementally.
+ *
+ * `singleEvents=true` expands recurring series into instances at Google's
+ * boundary, which is why this codebase contains zero recurrence code and why
+ * `orderBy=startTime` is even legal (Google requires the former for the
+ * latter).
+ */
+export async function listEvents(
+  {
+    accessToken,
+    calendarId,
+    timeMin,
+    timeMax,
+    maxResults = 250,
+  }: {
+    accessToken: string;
+    calendarId: string;
+    timeMin: string;
+    timeMax: string;
+    maxResults?: number;
+  },
+  deps: GoogleDeps = {},
+): Promise<ListEventsResult> {
+  const fetchImpl = deps.fetchImpl ?? fetch;
+
+  const query = new URLSearchParams({
+    timeMin,
+    timeMax,
+    singleEvents: "true",
+    orderBy: "startTime",
+    maxResults: String(maxResults),
+  });
+
+  let response: Response;
+  try {
+    response = await fetchImpl(
+      `${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events?${query.toString()}`,
+      { method: "GET", headers: { authorization: `Bearer ${accessToken}` } },
+    );
+  } catch {
+    return { ok: false, reason: "network" };
+  }
+
+  if (!response.ok) return { ok: false, reason: `http_${response.status}` };
+
+  let payload: { items?: unknown } = {};
+  try {
+    payload = (await response.json()) as typeof payload;
+  } catch {
+    return { ok: false, reason: "malformed_response" };
+  }
+
+  // A missing `items` is an empty day, not a failure — Google omits it rather
+  // than sending `[]` when nothing falls in the window.
+  return { ok: true, items: Array.isArray(payload.items) ? payload.items : [] };
 }

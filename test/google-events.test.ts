@@ -95,8 +95,13 @@ describe("toCalendarEventDto — an event with no title (AC-8)", () => {
     // visible copy in a module that must not carry any.
     const dto = toCalendarEventDto({ ...TIMED, summary: undefined }, CAL)!;
 
-    expect(dto.title).not.toMatch(/sem t[ií]tulo/i);
-    expect(dto.title).not.toBe("(no title)");
+    // Asserted over the SERIALIZED dto rather than over `title` alone: the
+    // original form called `.toMatch()` on `title`, which is `null` in exactly
+    // the case this test constructs, so it threw instead of asserting. Reading
+    // the whole object also catches a fallback that lands in some other field.
+    expect(JSON.stringify(dto)).not.toMatch(/sem t[ií]tulo/i);
+    expect(JSON.stringify(dto)).not.toMatch(/\(no title\)|untitled/i);
+    expect(dto.title).toBeNull();
   });
 
   it("keeps a real title verbatim", () => {

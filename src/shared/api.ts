@@ -54,6 +54,48 @@ export interface GoogleConnectionDto {
   scope: string;
 }
 
+/** An event's start or end. The two shapes stay DISTINCT rather than being flattened into one lossy field. */
+export type EventMoment =
+  /** All-day: a local calendar day with no time and no zone at all. */
+  | { date: string }
+  /** Timed: an instant (epoch ms) plus the zone Google reported, when it did. */
+  | { dateTime: number; timeZone: string | null };
+
+/**
+ * A Google Calendar event, as Praesto sees it (unit 4 phase 3, ADR-0007).
+ *
+ * **What is absent is the feature.** There is no `attendees`, no `reminders`,
+ * no `recurrence` and no `organizer` field, and adding one would not be an
+ * extension — it would break the closed mirror inventory of ADR-0007 and the
+ * CON-005 consent boundary. Attendees are other people's PII and would land in
+ * the FR-042 export; Google's own reminders would double every notification.
+ * The only permitted derivative of the guest list is the boolean below.
+ * `scripts/check-mirror-inventory.mjs` is the tripwire for the day someone
+ * widens this type anyway.
+ */
+export interface CalendarEventDto {
+  id: string;
+  /** Which calendar it came from, so a multi-calendar day can attribute rows. */
+  calendarId: string;
+  /** `null` means the event genuinely has no title — one exists in the owner's calendar. Never `""`, never a placeholder: how an untitled event READS is the screen's decision. */
+  title: string | null;
+  allDay: boolean;
+  start: EventMoment;
+  end: EventMoment;
+  location: string | null;
+  /** Derived from the presence of a guest list. No attendee value is ever copied. */
+  hasGuests: boolean;
+  htmlLink: string | null;
+}
+
+/** One of the owner's calendars, and whether it feeds the day. */
+export interface GoogleCalendarDto {
+  id: string;
+  summary: string;
+  primary: boolean;
+  selected: boolean;
+}
+
 export interface CreateTaskInput {
   title: string;
   description?: string | null;

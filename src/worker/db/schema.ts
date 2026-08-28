@@ -353,6 +353,29 @@ export const googleConnections = sqliteTable(
   ],
 );
 
+/**
+ * Which Google calendars feed the day (unit 4 phase 3, FR-027).
+ *
+ * A row present means the calendar is selected. **The absence of ALL rows is
+ * not "nothing selected" — it is "never chosen", which the read path resolves
+ * to `primary`.** The schema cannot express that difference, so the route owns
+ * it explicitly; a table that conflated the two would give a newly connected
+ * owner a permanently empty day and no way to tell why.
+ *
+ * Only ids, never calendar contents: this unit persists nothing about events
+ * (ADR-0007).
+ */
+export const googleCalendarSelections = sqliteTable(
+  "google_calendar_selections",
+  {
+    calendarId: text("calendar_id").primaryKey(),
+    selectedAt: integer("selected_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (t) => [check("google_calendar_selections_id_not_empty", sql`length(trim(${t.calendarId})) > 0`)],
+);
+
 // Types flow OUT of the schema — never hand-duplicated (docs/anti-patterns.md).
 export type LifeArea = typeof lifeAreas.$inferSelect;
 export type NewLifeArea = typeof lifeAreas.$inferInsert;
@@ -368,3 +391,5 @@ export type OauthState = typeof oauthStates.$inferSelect;
 export type NewOauthState = typeof oauthStates.$inferInsert;
 export type GoogleConnection = typeof googleConnections.$inferSelect;
 export type NewGoogleConnection = typeof googleConnections.$inferInsert;
+export type GoogleCalendarSelection = typeof googleCalendarSelections.$inferSelect;
+export type NewGoogleCalendarSelection = typeof googleCalendarSelections.$inferInsert;

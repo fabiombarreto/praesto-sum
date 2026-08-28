@@ -20,7 +20,8 @@
  * receives `today` at all — comparing against a day is the partition's job.
  */
 
-import type { TaskDto } from "./api";
+import type { CalendarEventDto, TaskDto } from "./api";
+import { PRAESTO_TIMEZONE, todayIn } from "./dates";
 
 /**
  * Where a day item came from. Adding a member here is deliberately expensive:
@@ -48,16 +49,15 @@ export interface TaskDayItem extends DayItemBase {
 /**
  * An external calendar event, projected.
  *
- * Phase 1 constructs none of these — the variant exists so the union has a
- * second member and every `switch` is forced to be exhaustive from the day the
- * seam opens rather than the day it is used. `payload` is deliberately
- * `unknown`: this phase persists nothing and defines no Event entity (ADR-0007
- * puts that in unit 14), so giving it a shape now would be inventing the
- * entity early under a different name.
+ * `payload` was `unknown` through phases 1 and 2 — a placeholder for a type
+ * that did not exist yet. Phase 3 defines `CalendarEventDto`, so the
+ * placeholder is spent. It is still NOT an Event entity: nothing is persisted
+ * and no table exists (ADR-0007 puts the entity in unit 14); this is a
+ * view-model shape for something Google owns.
  */
 export interface ExternalDayItem extends DayItemBase {
   source: "google";
-  payload: unknown;
+  payload: CalendarEventDto;
 }
 
 export type DayItem = TaskDayItem | ExternalDayItem;
@@ -86,4 +86,34 @@ export function dayItemFromTask(task: TaskDto): TaskDayItem {
  */
 export function assertNeverDaySource(value: never): never {
   throw new Error(`Unhandled day item source: ${String(value)}`);
+}
+
+/**
+ * Projects a calendar event into the shape the partition reads.
+ *
+ * Two rules carry the weight:
+ *
+ *  - `closed` is always `false`. An Event has NO completion state — it occurs
+ *    or is cancelled, never "done" (`docs/domain/areas/events.md`). A `true`
+ *    here would file the owner's commitments under *Concluídas*.
+ *  - `dueDate` is the event's LOCAL day. For an all-day event that is the date
+ *    Google gave, used verbatim: it carries no zone, and passing it through a
+ *    conversion is exactly how such events land a day off. For a timed event
+ *    it is the instant's day in the owner's fixed zone — 22:00 in São Paulo is
+ *    01:00 UTC tomorrow, so deriving it from the UTC date would push every
+ *    late commitment to the following day.
+ */
+export function dayItemFromEvent(event: CalendarEventDto): ExternalDayItem {
+  const dueDate =
+    "date" in event.start
+      ? event.start.date
+      : todayIn(new Date(event.start.dateTime), PRAESTO_TIMEZONE);
+
+  return {
+    source: "google",
+    id: event.id,
+    dueDate,
+    closed: false,
+    payload: event,
+  };
 }
