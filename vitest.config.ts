@@ -72,7 +72,12 @@ export default defineConfig(async () => {
           test: {
             name: "docs",
             environment: "node",
-            include: ["test/docs-consistency.test.ts"],
+            // Both suites here read files off disk to assert something about
+            // the repository itself, which workerd cannot do (no node:fs).
+            // `source-invariants` covers PRD AC-13's universal negative —
+            // "no Calendar mutation exists ANYWHERE" — which no per-call
+            // assertion can reach.
+            include: ["test/docs-consistency.test.ts", "test/source-invariants.test.ts"],
           },
         },
       ],

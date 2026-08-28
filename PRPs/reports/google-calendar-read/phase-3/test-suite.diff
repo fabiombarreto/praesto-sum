@@ -1,0 +1,96 @@
+# TDD Suite Manifest — google-calendar-read, phase 3 "Reading the calendar"
+
+- **Plan:** `PRPs/plans/google-calendar-read-phase-3-reading-the-calendar.plan.md` (APPROVED 2026-08-28)
+- **Source PRD:** `PRPs/prds/google-calendar-read.prd.md` (APPROVED 2026-08-25)
+- **Mode:** test-first (`tdd: true`, ADR-0008)
+- **Framework:** vitest, `worker` project (`@cloudflare/vitest-pool-workers` 0.20.1)
+- **Aggregate verdict:** `SUITE_DRAFT_WRITTEN`
+- **Test files written:** 5 (47 tests, plus 3 structural guards)
+
+## Per-AC outcomes
+
+| AC | Outcome | Where |
+|---|---|---|
+| PRD AC-6 — bounded window, no `syncToken` | `NEW_TEST_REQUIRED` | `test/google-calendar-client.test.ts` → "listEvents — the request shape" (7 tests) + `test/google-events.test.ts` → "eventWindow" (5) + `test/google-calendar-routes.test.ts` → "GET /api/google/events" (5) |
+| PRD AC-7 — both date shapes | `NEW_TEST_REQUIRED` | `test/google-events.test.ts` → "the two date shapes" (5 tests) |
+| PRD AC-8 — an event with no title | `NEW_TEST_REQUIRED` | `test/google-events.test.ts` → "an event with no title" (4 tests) |
+| PRD AC-9 — closed mirror inventory | `NEW_TEST_REQUIRED` | `test/google-events.test.ts` → "the closed mirror inventory" (6 tests) |
+| PRD AC-13 — read-only by construction | `NEW_TEST_REQUIRED` (structural) | `test/source-invariants.test.ts` (3 tests, `docs` project, plain Node). Per-call `GET` assertions in `google-calendar-client.test.ts` prove those calls are reads; AC-13 is a UNIVERSAL NEGATIVE about the whole codebase, so it is covered by a suite that reads the whole source tree — no `events.insert/patch/delete`, no non-GET to the Calendar API, no write-capable scope |
+| PRD AC-15 — selection honoured, `primary` default | `NEW_TEST_REQUIRED` | `test/google-calendar-routes.test.ts` → GET/PUT `/calendars` (11 tests) |
+| Plan AC-A8 — a partial failure is never a shorter list | `NEW_TEST_REQUIRED` | `test/google-calendar-routes.test.ts` → "a partial failure is never a shorter list" (2 tests) |
+| Plan AC-A9 — `dayItemFromEvent` | `NEW_TEST_REQUIRED` | `test/day-item-event.test.ts` (9 tests). **This row first claimed `EXISTING_TEST_COVERS test/day-item.test.ts`, and that claim was false** — that suite exercises `dayItemFromTask` and `assertNeverDaySource` and never touches `dayItemFromEvent`. Review caught it. A coverage gap dressed as existing coverage is worse than an admitted one |
+
+## Four assertions that carry more weight than the rest
+
+1. **`syncToken` is asserted ABSENT.** `expect(searchParams.has("syncToken")).toBe(false)`. Google returns 400 when a sync token accompanies a bounded window, so this is the one parameter whose absence is the contract. Proving a negative needs the outbound request object, which is exactly what the injected `fetch` provides and what `fetchMock` — removed from the pool in 0.13.x — no longer could.
+2. **The mirror inventory is tested by SERIALIZING the DTO and searching it**, not field by field. `expect(JSON.stringify(dto)).not.toContain("someone@example.com")` catches a leak into any field, including one added later; a field-by-field assertion would pass right over a new one.
+3. **A partial failure returns the healthy events AND names the failed calendar.** Both halves are asserted in the same test, because either alone is the bug: dropping the events loses real commitments, and hiding the failure produces a day that looks complete and is not.
+4. **`title` is asserted NOT to be a pt-BR fallback.** `expect(dto.title).not.toMatch(/sem t[ií]tulo/i)` — the mapper knows an event has no title but not what an untitled event should *read as*, and ADR-0009 keeps `src/shared` free of visible copy. The test stops a well-meaning future edit from moving a design decision into a data layer.
+
+## Lifecycle ledger
+
+Three creations. **No existing test file was touched** — a deliberate change of approach after phase 2, where extending approved suites cost a full R-X arbitration round. Phase 3's tests live in new files (`google-calendar-client.test.ts`, `google-calendar-routes.test.ts`) rather than extending phase 2's `google-client.test.ts` / `google-routes.test.ts`, even though the subject matter is adjacent.
+
+| Op | Path | Tests |
+|---|---|---|
+| CREATE | `test/google-events.test.ts` | 20 |
+| CREATE | `test/google-calendar-client.test.ts` | 17 |
+| CREATE | `test/google-calendar-routes.test.ts` | 18 |
+| CREATE | `test/day-item-event.test.ts` | 9 |
+| CREATE | `test/source-invariants.test.ts` | 3 (structural guards; green from the start by design) |
+
+Verified after writing: `git diff --quiet HEAD` over all four phase-2 test files reports **untouched**, and those suites still pass (54 tests).
+
+## RED verification (test-first)
+
+```
+npx vitest run test/google-events.test.ts test/google-calendar-client.test.ts test/google-calendar-routes.test.ts
+```
+
+Exit code **1**, 3 suites failed, 38 tests failed. The three failure signatures each name a seam-set artifact:
+
+- `Cannot find module '../src/shared/google-events'` — Task 2's mapper.
+- `TypeError: refreshAccessToken is not a function` (also `listCalendars`, `listEvents`) — Task 3's client operations. The module exists from phase 2, so the import resolves and the missing exports surface as undefined rather than a module error.
+- `D1_ERROR: incomplete input` — Task 4's `google_calendar_selections` table, not yet exported from the schema, so Drizzle builds a `delete from ` with no table name. The same murky signature phase 2 recorded; written down again rather than dressed up.
+
+Every symbol referenced is named in the APPROVED plan's task prose: `toCalendarEventDto`, `eventWindow` (Task 2); `refreshAccessToken`, `listCalendars`, `listEvents` (Task 3); `googleCalendarSelections` (Task 4); the three route paths (Tasks 5 and 6).
+
+## Fixtures come from the owner's real calendar
+
+The mapper's fixtures are not invented shapes. They are what chore C12 pulled out of the owner's account on 2026-08-25: an all-day event (`momo`, `start.date`), a timed one with an offset (`Daily - Super Ensino`, `start.dateTime`), and one with no `summary` at all. Testing against shapes that actually occurred is the difference between covering the API surface and covering this owner's calendar.
+
+## Scope limits
+
+- No production code written.
+- No UI, no rendering, no pt-BR copy — phase 4. The suite asserts the mapper does NOT invent Portuguese copy, which is the inverse obligation.
+- No test of the FR-042 export exclusion; the export does not exist until unit 5.
+- Nothing is asserted against the real Google. These tests fake every outbound call; the real round-trip is a separate, human step.
+
+## Review round 1 — CHANGES_REQUESTED, and the bug my own fix contained
+
+Three findings, all upheld:
+
+1. **`R-TRIVIAL-ASSERT`** — "answers distinguishably when there is no connection" asserted only
+   `not.toBe(200)`, which a 500 crash satisfies identically to a deliberate fail-closed answer. Worse,
+   nothing anywhere asserted the not-connected response actually DIFFERS from the Google-down one,
+   which is the plan's literal Task 5 obligation. Now two tests: one pinning 4xx, one comparing both
+   responses' `reason` discriminator.
+2. **`R-AC-COVERAGE` on AC-13** — per-call `GET` assertions cannot carry a universal negative. Covered
+   now by `test/source-invariants.test.ts`, which reads the source tree in the `docs` project (plain
+   Node, because workerd has no `node:fs`).
+3. **`R-AC-COVERAGE` on AC-A9** — the manifest claimed coverage that did not exist. Closed by
+   `test/day-item-event.test.ts`.
+
+**The structural guard shipped broken, and only a deliberate violation exposed it.** After writing
+`source-invariants`, a violating `events` POST was planted in `client.ts` — and the guard **passed**.
+Cause: the comment-stripping regex `/\/\/.*$/gm` eats everything after the `//` in `https://`, so the
+check saw a file containing no Google endpoints at all. `scripts/check-mirror-inventory.mjs` — written
+one round earlier to replace a *different* defeatable check — carried the identical bug. Both now
+strip `//` only when it is not preceded by `:`, and the guard was re-verified in both directions:
+**fails** with the planted violation, **passes** without it.
+
+The lesson is not the regex. It is that a green guard proves nothing until it has been made to fail
+on purpose.
+
+*Generated: 2026-08-28*
+*Status: DRAFT*
