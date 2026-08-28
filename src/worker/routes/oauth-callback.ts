@@ -81,7 +81,23 @@ oauthCallbackRoutes.get("/callback", async (c) => {
     // The nonce is deliberately NOT consumed: the owner did nothing wrong and
     // should be able to retry the same consent URL if Google was merely
     // having a bad moment.
-    return refuse("o Google recusou a autorização");
+    //
+    // The reason is logged — never the code, never the secret. Collapsing four
+    // distinct failures into one message cost real debugging time on
+    // 2026-08-26: the container had no CA store, so the request never left the
+    // machine, and the screen said "o Google recusou" while Google had not
+    // heard from us at all. An error that names the wrong culprit is worse
+    // than a vague one.
+    console.error(`[oauth-callback] token exchange failed: ${exchanged.reason}`);
+
+    // `network` means we never reached Google — a local problem (DNS, TLS,
+    // egress), not a decision Google made. Saying so points the owner at the
+    // right half of the system.
+    return refuse(
+      exchanged.reason === "network"
+        ? "não foi possível falar com o Google (falha de rede ou de certificado no servidor)"
+        : "o Google recusou a autorização",
+    );
   }
 
   // ONE operation, not two. Storing the credential and consuming the nonce

@@ -20,8 +20,25 @@ import { revokeToken } from "../google/client";
  */
 export const googleRoutes = new Hono<{ Bindings: Env }>();
 
-/** How long a consent URL stays usable. Long enough to read a consent screen, short enough that a leaked URL is worthless. */
-const NONCE_TTL_SECONDS = 10 * 60;
+/**
+ * How long a consent URL stays usable.
+ *
+ * Raised from 10 to 30 minutes on 2026-08-26, after the first real consent
+ * round-trip expired mid-flow. 10 was a guess made before the flow existed;
+ * the measured path is longer than it, because this app is published
+ * UNVERIFIED (chore C11), so Google interposes a warning screen that costs the
+ * owner two extra clicks — *Avançado* then *Ir para praesto-sum* — on top of a
+ * possible sign-in. That interstitial is a permanent property of the
+ * deployment, not a one-off.
+ *
+ * 30 minutes is still short-lived, and the nonce was never the primary control
+ * anyway: it proves the callback was initiated by an authenticated request. A
+ * leaked consent URL is inert to anyone who cannot also pass Google's own
+ * sign-in as the owner. Widening a security parameter for convenience deserves
+ * suspicion, so the reasoning is recorded rather than the number quietly
+ * changed.
+ */
+const NONCE_TTL_SECONDS = 30 * 60;
 
 /**
  * FR-030 — begin the connection.

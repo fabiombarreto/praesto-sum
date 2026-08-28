@@ -2,6 +2,12 @@ dist
 coverage
 node_modules
 .wrangler
+
+# Agent worktrees are full copies of this repo inside it — formatting them
+# would rewrite files that belong to another branch.
+.claude
+.worktrees
+
 migrations
 worker-configuration.d.ts
 package-lock.json

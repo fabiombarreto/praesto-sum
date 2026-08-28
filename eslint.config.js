@@ -13,6 +13,13 @@ export default defineConfig(
     ".wrangler/**",
     "migrations/**",
     "worker-configuration.d.ts",
+    // Agent worktrees are full copies of this repository living INSIDE it.
+    // Without this, `npm run check` lints the duplicate tree and fails with
+    // "multiple candidate TSConfigRootDirs" for every file in it — the gate
+    // breaks for as long as any worktree exists, which is exactly when the
+    // developer least wants a false alarm.
+    ".claude/**",
+    ".worktrees/**",
   ]),
   {
     files: ["**/*.{ts,tsx}"],

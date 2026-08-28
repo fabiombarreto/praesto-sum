@@ -13,6 +13,19 @@
 #     from the loader that reads like a missing file.
 FROM node:24.15.0-bookworm-slim
 
+# Root certificates. The `-slim` image ships without a system CA store, and
+# workerd reads THAT store rather than carrying its own — so without this line
+# every outbound HTTPS request from the Worker dies at the TLS handshake with
+# "TLS peer's certificate is not trusted; unable to get local issuer
+# certificate", and nothing in the app's own logs explains why.
+#
+# This hid for four days because nothing was affected until the first feature
+# that calls an external API (unit 4 `google-calendar-read`, 2026-08-26).
+# `npm ci` during the build kept working throughout and proves nothing: Node
+# BUNDLES its own CA store, so Node-based HTTPS succeeds in exactly the image
+# where workerd-based HTTPS cannot.
+RUN apt-get update     && apt-get install -y --no-install-recommends ca-certificates     && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Dependency manifests only, so this layer caches until they actually change.
