@@ -113,7 +113,18 @@ googleRoutes.delete("/connection", async (c) => {
   const stored = rows[0];
   const revoked = stored ? await revokeToken(stored.refreshToken) : false;
 
-  await db.delete(googleConnections).where(eq(googleConnections.id, GOOGLE_CONNECTION_ID));
+  // BOTH tables, per PRD AC-4: disconnect deletes the credential *and the
+  // calendar selection*. This route was written in phase 2, when the credential
+  // was the only thing there was to delete; phase 3 added the selection table
+  // and did not wire it in here — so a disconnect followed by a reconnect
+  // silently resurrected a stale selection instead of returning to the
+  // documented never-chosen/primary default. A phase boundary is exactly where
+  // this kind of gap opens: the old route stayed correct for the world it was
+  // written in and quietly stopped being correct for the new one.
+  await db.batch([
+    db.delete(googleConnections).where(eq(googleConnections.id, GOOGLE_CONNECTION_ID)),
+    db.delete(googleCalendarSelections),
+  ]);
 
   // `revoked` is reported so the UI can say "revoked at Google" versus
   // "disconnected locally; Google may still list the grant" — an honest

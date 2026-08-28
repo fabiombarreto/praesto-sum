@@ -17,6 +17,7 @@ import { googleCalendarSelections, googleConnections, oauthStates } from "../src
 
 const CALENDARS = "https://example.com/api/google/calendars";
 const EVENTS = "https://example.com/api/google/events";
+const CONNECTION = "https://example.com/api/google/connection";
 
 let outbound: Request[] = [];
 
@@ -307,6 +308,39 @@ describe("a dead credential is not a transient outage (AC-A8)", () => {
     const res = await exports.default.fetch(EVENTS, auth());
 
     expect(res.status).toBe(409);
+  });
+});
+
+describe("DELETE /api/google/connection clears the selection too (AC-4)", () => {
+  it("leaves no calendar selection behind", async () => {
+    // PRD AC-4 names both: the credential AND the calendar selection. This
+    // route predates the selection table by a phase, which is precisely how it
+    // came to delete one and not the other.
+    await connect();
+    await createDb(env)
+      .insert(googleCalendarSelections)
+      .values([{ calendarId: "primary" }, { calendarId: "work@example.com" }]);
+
+    await exports.default.fetch(CONNECTION, auth({ method: "DELETE" }));
+
+    expect(await createDb(env).select().from(googleCalendarSelections)).toHaveLength(0);
+  });
+
+  it("means a reconnect starts from the documented default, not a ghost", async () => {
+    // The observable consequence: without this, disconnect + reconnect would
+    // silently restore a selection the owner had every reason to think was
+    // gone with the connection.
+    await connect();
+    await createDb(env).insert(googleCalendarSelections).values({ calendarId: "work@example.com" });
+
+    await exports.default.fetch(CONNECTION, auth({ method: "DELETE" }));
+    await connect();
+
+    const res = await exports.default.fetch(CALENDARS, auth());
+    const body = (await res.json()) as { calendars: { id: string; selected: boolean }[] };
+
+    expect(body.calendars.find((c) => c.id === "primary")?.selected).toBe(true);
+    expect(body.calendars.find((c) => c.id === "work@example.com")?.selected).toBe(false);
   });
 });
 
