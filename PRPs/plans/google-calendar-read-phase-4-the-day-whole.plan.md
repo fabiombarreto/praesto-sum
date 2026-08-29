@@ -76,12 +76,12 @@ Render the *Agenda* group per layout standard §2.4, from a new `EventRow` sibli
 ## Patterns to Mirror
 
 ```tsx
-# SOURCE: src/app/components/TaskRow.tsx:47
+# SOURCE: src/app/components/TaskRow.tsx:78
       className="flex min-h-16 items-center gap-2 rounded-card bg-surface-2 py-2 pr-2 pl-2 shadow-row [content-visibility:auto] [contain-intrinsic-size:auto_64px]"
 ```
 
 ```tsx
-# SOURCE: src/app/components/TaskGroup.tsx:24-27
+# SOURCE: src/app/components/TaskGroup.tsx:25-27
   // A defensive early return: the caller decides which groups to render, but
   // an empty section must never reach the DOM (layout standard §2.7).
   if (count === 0) return null;
@@ -101,7 +101,7 @@ export function Banner({ lead, body }: { lead: string; body: string }) {
 ```
 
 ```ts
-# SOURCE: src/shared/day-item.ts:106-119
+# SOURCE: src/shared/day-item.ts:106-119 (the return spans 112-118; collapsed here)
 export function dayItemFromEvent(event: CalendarEventDto): ExternalDayItem {
   const dueDate =
     "date" in event.start
@@ -113,7 +113,7 @@ export function dayItemFromEvent(event: CalendarEventDto): ExternalDayItem {
 ```
 
 ```ts
-# SOURCE: src/shared/dates.ts:29-36
+# SOURCE: src/shared/dates.ts:30-37
 export function todayIn(now: Date, timeZone: string = PRAESTO_TIMEZONE): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone,
@@ -135,6 +135,8 @@ export function todayIn(now: Date, timeZone: string = PRAESTO_TIMEZONE): string 
 | `src/app/components/TodayScreen.tsx` | UPDATE | The events atom, its own error atom, the source-aware predicates, the agenda group, and deleting the `as never` cast |
 | `src/app/api.ts` | UPDATE | `fetchGoogleEvents()`, carrying the `reason` discriminator through instead of flattening it |
 | `src/shared/api.ts` | UPDATE | The events response type the client consumes |
+| `scripts/check-banner-semantics.mjs` | CREATE | Guards what `tsc -b` cannot: that the Banner kept `role="status"` and its `aria-hidden`, and that its doc comment stopped describing one condition |
+| `scripts/check-device-verification.mjs` | CREATE | Makes a manual task fail when nobody recorded doing it, and when the record skips one of AC-A8's four conditions |
 
 ## NOT Building (Scope Limits)
 
@@ -164,7 +166,8 @@ export function todayIn(now: Date, timeZone: string = PRAESTO_TIMEZONE): string 
 
 - **ACTION**: Add an optional `icon` prop defaulting to `WifiOff`, typed against Lucide's icon component type, so the existing offline call site is unchanged and a Google outage can pass `CalendarX` (or the chosen glyph) instead. Keep `role="status"`, the class list and the `aria-hidden` on the icon exactly as they are. Update the component's own doc comment, which currently says "the offline / unreachable banner" — it now serves two conditions and the comment must stop describing one. Serves **AC-A4 (PRD AC-11)**.
 - **MIRROR**: `src/app/components/ui/Banner.tsx:4-12` — the shipped markup, preserved verbatim around the one new prop.
-- **VALIDATE**: `npx tsc -b`
+- **VALIDATE**: `npx tsc -b && node scripts/check-banner-semantics.mjs`
+  *(`tsc -b` alone only proves it compiles: JSX attribute VALUES are not typechecked and comments are not typechecked at all, so silently dropping `role="status"` or leaving the doc comment describing one condition would have passed. Review raised this; the script exercises what the ACTION claims. Verified to fail today and to pass once the prop exists.)*
 
 ### Task 4: CREATE `src/app/components/EventRow.tsx`
 
@@ -192,9 +195,10 @@ export function todayIn(now: Date, timeZone: string = PRAESTO_TIMEZONE): string 
 
 ### Task 8: VERIFY on the device, and run the mandated checklist
 
-- **ACTION**: Manual verification, because `docs/context/methodology.md` keeps React component verification manual and this phase's acceptance is visual. On the Windows PC and the **Android phone** (which unit 3 never got, and the roadmap records that gap): the agenda renders today's events in time order, visually distinct and inert; an untitled event reads `(sem título)`; tapping opens Google Calendar; collapse persists across a reload; **a deliberately cut network and a deliberately revoked token each produce a distinguishable, persistent state that is not a free day**; task capture and completion keep working while Google is failing. Then run the guidelines' **review checklist** item by item and paste the ✔/✘ result into the plan record — `CLAUDE.md` makes that mandatory on every interface change, not optional. Serves **AC-A9 (PRD AC-11)** and **AC-A10 (PRD AC-12)**.
+- **ACTION**: Manual verification, because `docs/context/methodology.md` keeps React component verification manual and this phase's acceptance is visual. On the Windows PC and the **Android phone** (which unit 3 never got, and the roadmap records that gap): the agenda renders today's events in time order, visually distinct and inert; an untitled event reads `(sem título)`; tapping opens Google Calendar; collapse persists across a reload; **a deliberately cut network and a deliberately revoked token each produce a distinguishable, persistent state that is not a free day**; task capture and completion keep working while Google is failing. Record all FOUR AC-A8 conditions in the written verification at `PRPs/reports/google-calendar-read/phase-4/device-verification.md`, including the two that cannot be staged on a device: **sem eventos** (arrange it, or note the day it happened naturally) and **falha parcial** per calendar, whose correctness rests on code review of Task 7's diff rather than on the device — review raised this and it is true, so it is a named limit rather than an implied one. Then run the guidelines' **review checklist** item by item and paste the ✔/✘ result into the plan record — `CLAUDE.md` makes that mandatory on every interface change, not optional. Serves **AC-A9 (PRD AC-11)** and **AC-A10 (PRD AC-12)**.
 - **MIRROR**: `documentation/40-engineering/ui-ux-guidelines.md` — the review checklist, run rather than referenced.
-- **VALIDATE**: `npm test && npm run check`
+- **VALIDATE**: `npm test && npm run check && node scripts/check-device-verification.mjs`
+  *(The ACTION is entirely manual, so `npm test` alone reports PASS even if the device pass and the checklist were skipped — review said so and was right. The script cannot prove the owner looked; nothing can. It fails when nobody wrote down that he did, and when the record omits a condition — including the two AC-A8 conditions that cannot be staged on demand, which are the ones most likely to be quietly dropped.)*
 
 ## Validation Commands
 
@@ -255,4 +259,5 @@ Current value of `tdd` in `docs/context/methodology.md`: **true**. Test-first or
 **Three MoSCoW Musts moved out.** Connect, the calendar picker and disconnect are product surfaces the grounding pass found assigned to no phase; the owner chose a new phase 5 over widening this one. Shipping phase 4 alone therefore does NOT close the unit.
 
 *Generated: 2026-08-29*
-*Status: DRAFT*
+*Approved: 2026-08-29*
+*Status: APPROVED*

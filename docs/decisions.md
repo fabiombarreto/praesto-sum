@@ -127,6 +127,24 @@ Atualizado pelo Docs Updater após cada aprovação de implementação.
 
 ---
 
+## [2026-08-29] An APPROVED PRD's phase table may grow, but only with a dated amendment note
+
+**Context:** Unit 4's grounding pass for phase 4 found three MoSCoW **Must** rows — in-app connect, in-app disconnect, the calendar picker — named in the PRD's Solution Detail and User Flow but assigned to no Implementation Phase. Shipping the table as approved would have closed the unit with FR-030 satisfied by `curl`, which that same PRD's Decisions Log had explicitly rejected. Nothing in this project said whether an APPROVED PRD's phase table may gain a row, and the table is the pipeline's state machine, so the question is not cosmetic.
+**Decision:** A row may be **added** to an APPROVED PRD's Implementation Phases table when a gap is found mid-unit, provided the PRD carries a **dated amendment note** stating what was found, why the alternative (recording it as debt) was rejected, and who decided. Never a silent append. Editing or removing an existing row is NOT covered by this and stays out of bounds; the only sanctioned backwards transition remains hand-editing a `Status` cell to `pending`.
+**Reason:** The alternative to amending was to leave three Musts unbuilt and close the unit knowing it. A PRD is a claim about what will exist; discovering the claim was incomplete is a reason to extend it, not to quietly narrow what "done" means. The dated note is what keeps the amendment from reading later as scope drift.
+**Areas affected:** all (process) · Source: `PRPs/prds/google-calendar-read.prd.md` amendment note of 2026-08-29, and the plan-reviewer verdict in `PRPs/plans/google-calendar-read-phase-4-the-day-whole.review.jsonl` that raised the missing precedent
+
+---
+
+## [2026-08-29] The phase-lifecycle "2026-05-04" citation points at relay's decisions log, not this one
+
+**Context:** Every PRD generated from the relay template carries a "Phase-status lifecycle" section citing `docs/decisions.md, 2026-05-04`. A reviewer went looking for that entry in THIS project and found none — the earliest entry here is 2026-08-02.
+**Decision:** Read that citation as pointing at the **relay plugin's own** `docs/decisions.md` (`C:epos\PRPs-agentic-eng`), not this project's. Nothing is missing here; the boilerplate simply reads as local when it is not.
+**Reason:** Recorded so the next reader does not repeat the search, and so nobody "fixes" it by inventing a local entry that never existed. The wording is relay's to clarify upstream, not this project's to patch.
+**Areas affected:** all (documentation) · Source: plan-reviewer verdict, unit 4 phase 4, 2026-08-29
+
+---
+
 <!-- Template for future entries:
 
 ## [YYYY-MM-DD] Title of the decision
