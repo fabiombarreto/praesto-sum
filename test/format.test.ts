@@ -30,6 +30,7 @@ import { describe, expect, it } from "vitest";
 import type { TaskDto } from "../src/shared/api";
 import {
   formatDayShort,
+  formatEventTime,
   formatHeaderDate,
   formatRemaining,
   taskMetaLine,
@@ -273,5 +274,65 @@ describe("taskMetaLine — closed Tasks (PRD AC-6 row-meta-formatter)", () => {
     expect(
       taskMetaLine(task({ status: "missed", deadline: "2026-08-18", priority: "high" }), TODAY),
     ).toEqual({ text: "não concluída", overdue: true });
+  });
+});
+
+/**
+ * Unit 4 `google-calendar-read`, phase 4 — the leading time column of layout
+ * standard §2.4.
+ *
+ * No time-of-day formatter existed anywhere in `src/` before this: a Task
+ * carries calendar DAYS (`deadline`/`scheduledDate`, enforced by
+ * `tasks_single_date_chk`), never an instant. An event is the first thing in
+ * this app that happens at a time.
+ */
+describe("formatEventTime (unit 4 phase 4)", () => {
+  it("renders a timed event as 24-hour HH:MM in the owner's zone", () => {
+    // pt-BR is 24-hour; an AM/PM string would be the wrong locale, and a time
+    // rendered in UTC would be three hours wrong every day of the year.
+    expect(
+      formatEventTime({ dateTime: Date.parse("2026-08-28T15:00:00-03:00"), timeZone: null }),
+    ).toBe("15:00");
+  });
+
+  it("pads the hour, so a mono column stays aligned", () => {
+    // The column is `tabular-nums` in a mono face; "9:05" against "15:00"
+    // would break the alignment the column exists for.
+    expect(
+      formatEventTime({ dateTime: Date.parse("2026-08-28T09:05:00-03:00"), timeZone: null }),
+    ).toBe("09:05");
+  });
+
+  it("uses the owner's fixed zone, not the instant's offset", () => {
+    // Same moment expressed in UTC — it must still read as São Paulo local.
+    expect(formatEventTime({ dateTime: Date.parse("2026-08-28T18:00:00Z"), timeZone: null })).toBe(
+      "15:00",
+    );
+  });
+
+  it("shows a late-evening event on its own clock, not tomorrow's", () => {
+    expect(
+      formatEventTime({ dateTime: Date.parse("2026-08-28T22:30:00-03:00"), timeZone: null }),
+    ).toBe("22:30");
+  });
+
+  it("labels an all-day event rather than leaving the column blank", () => {
+    // §2.4 specifies a leading time column; an empty cell in a mono column
+    // reads as a rendering bug, not as "no time".
+    expect(formatEventTime({ date: "2026-08-28" })).toBe("dia todo");
+  });
+
+  it("never returns an empty string", () => {
+    // Whatever the shape, the column always has something to show.
+    expect(formatEventTime({ date: "2026-08-28" })).not.toBe("");
+    expect(
+      formatEventTime({ dateTime: Date.parse("2026-08-28T00:00:00-03:00"), timeZone: null }),
+    ).not.toBe("");
+  });
+
+  it("is deterministic — it reads no clock of its own", () => {
+    const moment = { dateTime: Date.parse("2026-08-28T11:11:00-03:00"), timeZone: null };
+
+    expect(formatEventTime(moment)).toBe(formatEventTime(moment));
   });
 });

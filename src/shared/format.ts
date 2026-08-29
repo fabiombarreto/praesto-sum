@@ -33,8 +33,19 @@
  *   zero-padded ISO dates.
  */
 
-import type { TaskDto } from "./api";
+import type { EventMoment, TaskDto } from "./api";
 import { PRAESTO_TIMEZONE, todayIn } from "./dates";
+
+/**
+ * What the §2.4 time column shows for an all-day event.
+ *
+ * PENDING OWNER CONFIRMATION (2026-08-29). The owner approved four visible
+ * strings for this phase; this fifth one was not among them, and guidelines
+ * §9 records the product voice as `TBD — pending owner input`, which its own
+ * preamble says is "never a licence to improvise around it". Proposed rather
+ * than decided, and named here so it is one edit to change.
+ */
+const ALL_DAY_LABEL = "dia todo";
 
 /** `day` (`YYYY-MM-DD`) as a `Date` at UTC noon — never local time. */
 function toUtcNoon(day: string): Date {
@@ -152,4 +163,29 @@ export function taskMetaLine(
   return priorityWord === null
     ? phrase
     : { text: `${phrase.text} · ${priorityWord}`, overdue: phrase.overdue };
+}
+
+/**
+ * The leading time column of layout standard §2.4.
+ *
+ * The first formatter in this app that deals with a time of day: a Task
+ * carries calendar DAYS (`deadline`/`scheduledDate`, enforced by
+ * `tasks_single_date_chk`), never an instant. An event is the first thing here
+ * that happens at a time.
+ *
+ * An all-day event gets a LABEL rather than a blank cell — §2.4 specifies a
+ * time column, and an empty cell in a mono, tabular column reads as a
+ * rendering bug rather than as "no time".
+ */
+export function formatEventTime(moment: EventMoment): string {
+  if ("date" in moment) return ALL_DAY_LABEL;
+
+  // The owner's fixed zone, never the instant's own offset: the same moment
+  // must read the same on the phone and the PC (ADR-0009's single-owner,
+  // single-calendar assumption, and `PRAESTO_TIMEZONE`'s whole reason).
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: PRAESTO_TIMEZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(moment.dateTime));
 }
