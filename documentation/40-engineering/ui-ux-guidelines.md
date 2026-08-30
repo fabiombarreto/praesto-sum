@@ -128,7 +128,7 @@ Self-imposed, at or under the web's 10th percentile; React 19.2 + ReactDOM alone
 |---|---|---|
 | First-load JavaScript | ≤ 170 KB gzip | `vite build` size report (Rolldown prints gzip; the 500 KB/chunk warning stays on) — read at every A5 / unit UI phase; `size-limit` (exact-pinned) may be added in A5 if a gate is wanted |
 | First-load CSS | ≤ 30 KB gzip | same |
-| Fonts | one WOFF2, ≤ 100 KB | build output + precache manifest |
+| Fonts | at most two WOFF2, ≤ 100 KB **together** (§5.3) | build output + precache manifest |
 | Precache total (what the phone downloads per SW version) | ≤ 1 MB | `dist/` precache manifest |
 | LCP · INP · CLS on the owner's phone | ≤ 2.5 s · ≤ 200 ms · ≤ 0.1 | Lighthouse against the real device (`chrome://inspect`, or `lighthouse --port=9222 --throttling-method=provided`), recorded under `PRPs/reports/` |
 | Lighthouse performance on the built shell | ≥ 90 | same; Lighthouse 12+ has no `budget.json` — LHCI assertions or `size-limit` if ever automated |
@@ -177,5 +177,6 @@ Kept in the [UI/UX plan](../50-planning/ui-ux-plan.md) while that plan was open;
 
 | Date | What changed |
 |---|---|
+| 2026-08-30 | **§11's font row corrected** to match §5.3. ADR-0010 made the two-file budget conditional — *"if Inter + Unbounded stay ≤ 100 KB together, §5.3 is amended to ≤ 2 files"* — step 2.8 measured 70 KB on 2026-08-20 and §5.3 was amended, but the §11 table still read "one WOFF2". Two files have shipped since A5, so the stale row made every build fail a budget it was never held to. Found by running the checklist on unit 4 phase 4 (item 13), which is the second time a mandated run has found a defect no one was looking for |
 | 2026-08-23 | **A5 retro (plan A6).** Four rules amended by what the design pass measured: §2.3 (the safe-area prohibition targets fixed elements; the in-flow deck may use `env()` plainly), §4.5 (frame the ring on whatever reads as the field, and repeat `--inset-field` in the focus shadow — both owner-reported defects), §12.2 (scope Tailwind's scan to `src/`, after this repository's own prose compiled 144 rules into production), §12.6 (what the browser pane can and cannot verify, including the two false positives it produces). Nothing was removed: the retro looked for rules that had proved useless and found none — every rule in this document was exercised at least once across the four phases |
 | 2026-08-19 | Written (plan A1); reviewed adversarially (facts + usability) and revised; first checklist run recorded |
