@@ -25,7 +25,11 @@ const UNTITLED = "(sem título)";
 const DESTINATION = "Abrir no Google Calendar";
 
 const ROW_CLASSNAME =
-  "flex min-h-14 items-center gap-3 rounded-card border border-dashed border-line-strong px-3 py-2";
+  // 64 px — `--row-min`, the project constant (§2.6), and the same height as
+  // `TaskRow`. Found by the Tier A checklist: this was 56 px, which passes the
+  // 48 px hit-area rule but puts two row kinds at different heights in one
+  // list, where the mismatch reads as misalignment rather than as a distinction.
+  "flex min-h-16 items-center gap-3 rounded-card border border-dashed border-line-strong px-3 py-2";
 
 export function EventRow({ event }: { event: CalendarEventDto }) {
   const time = formatEventTime(event.start);
