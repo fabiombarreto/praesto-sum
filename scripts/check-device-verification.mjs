@@ -42,4 +42,10 @@ if (!/[✔✘]/.test(text)) {
   process.exit(1);
 }
 
-console.log("PASS: device-verification record present, both devices and all four conditions named");
+// Deliberately worded as "names", not "verifies". This script checks that a
+// record EXISTS and mentions each device and condition; it cannot read a ✔
+// from a ✘, and a record that honestly says "not covered" passes here on
+// purpose — the gate exists to stop silence, not to stop an admitted gap.
+console.log(
+  "PASS: record exists and names both devices and all four conditions (it does not judge their outcomes)",
+);
