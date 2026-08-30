@@ -1,4 +1,4 @@
-import type { CreateTaskInput, TaskDto, UpdateTaskInput } from "../shared/api";
+import type { CreateTaskInput, GoogleEventsDto, TaskDto, UpdateTaskInput } from "../shared/api";
 import { EMPTY_FILTER, toQuery, type TaskFilter } from "../shared/task-filter";
 import { createTokenStore } from "../shared/token-store";
 import { durableTokenStorage, legacyTokenStorage } from "./token-storage";
@@ -40,11 +40,23 @@ export async function clearToken(): Promise<void> {
  */
 export class ApiError extends Error {
   readonly status: number;
+  /**
+   * The server's machine-readable discriminator, when it sent one.
+   *
+   * Added by unit 4 phase 4. `/api/google/*` answers `{ error, reason }` where
+   * `reason` separates `not_connected` from `invalid_grant` from a transport
+   * failure — three conditions the owner acts on differently ("conecte",
+   * "reconecte", "tente mais tarde"). Without carrying it, every one of them
+   * arrives as the single word `unavailable` and the screen cannot choose the
+   * right sentence.
+   */
+  readonly reason: string | null;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, reason: string | null = null) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.reason = reason;
   }
 }
 
@@ -66,11 +78,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok) {
+    const shape =
+      body !== null && typeof body === "object" ? (body as Record<string, unknown>) : {};
     const message =
-      body !== null && typeof body === "object" && "error" in body
-        ? String((body as { error: unknown }).error)
-        : `Request failed with status ${response.status}`;
-    throw new ApiError(response.status, message);
+      "error" in shape ? String(shape.error) : `Request failed with status ${response.status}`;
+    const reason = typeof shape.reason === "string" ? shape.reason : null;
+    throw new ApiError(response.status, message, reason);
   }
   return body as T;
 }
@@ -133,4 +146,18 @@ export async function reopenTask(id: string): Promise<TaskDto> {
 
 export async function deleteTask(id: string): Promise<void> {
   await request<void>(`/api/tasks/${id}`, { method: "DELETE" });
+}
+
+/**
+ * FR-027 — the owner's Google commitments for the API's window.
+ *
+ * Returns the whole window; narrowing it to today is the screen's job
+ * (`agendaForToday`), because the window is also what unit 16's week view will
+ * consume and the API should not have two shapes.
+ *
+ * Failures arrive as `ApiError` carrying `reason`, which is what lets the
+ * screen distinguish "not connected" from "reconnect" from "try later".
+ */
+export async function fetchGoogleEvents(): Promise<GoogleEventsDto> {
+  return request<GoogleEventsDto>("/api/google/events");
 }

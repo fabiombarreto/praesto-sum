@@ -88,6 +88,20 @@ export interface CalendarEventDto {
   htmlLink: string | null;
 }
 
+/**
+ * What `GET /api/google/events` answers on success.
+ *
+ * `failedCalendars` is not decoration: a calendar that failed is the
+ * difference between a short day and an incomplete one, and the screen has to
+ * be able to say which. A response with events and a non-empty
+ * `failedCalendars` is a PARTIAL success, not a success.
+ */
+export interface GoogleEventsDto {
+  events: CalendarEventDto[];
+  failedCalendars: string[];
+  window: { timeMin: string; timeMax: string };
+}
+
 /** One of the owner's calendars, and whether it feeds the day. */
 export interface GoogleCalendarDto {
   id: string;

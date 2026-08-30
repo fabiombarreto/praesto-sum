@@ -21,6 +21,7 @@ import {
   type QuickChip,
   type TaskFilter,
 } from "../../shared/task-filter";
+import type { CalendarEventDto } from "../../shared/api";
 import { collectDayItems } from "../../shared/day-groups";
 import { assertNeverDaySource, dayItemFromTask, type DayItem } from "../../shared/day-item";
 import { currentDraft, INITIAL_TASK_SHEET_STATE, reduceTaskSheet } from "../../shared/task-sheet";
@@ -43,6 +44,10 @@ import { TaskGroup } from "./TaskGroup";
 import { TaskRow } from "./TaskRow";
 import { TaskSheet } from "./TaskSheet";
 import { TodayHeader } from "./TodayHeader";
+import { CalendarX } from "lucide-react";
+import { agendaForToday } from "../../shared/agenda";
+import { fetchGoogleEvents } from "../api";
+import { EventRow } from "./EventRow";
 import { Banner } from "./ui/Banner";
 import { Button } from "./ui/Button";
 import { Skeleton } from "./ui/Skeleton";
@@ -51,6 +56,9 @@ import { Toast } from "./ui/Toast";
 const OVERDUE_COLLAPSED_KEY = "praesto.today.collapsed.overdue";
 const UPCOMING_COLLAPSED_KEY = "praesto.today.collapsed.upcoming";
 const UNDATED_COLLAPSED_KEY = "praesto.today.collapsed.undated";
+// The `collapsed.<group>` shape, not the legacy `doneCollapsed` one below —
+// a new key has no history to preserve, so it starts on the current scheme.
+const AGENDA_COLLAPSED_KEY = "praesto.today.collapsed.agenda";
 // Kept exactly as shipped — renaming this literal would migrate (silently
 // lose) the owner's existing *Concluídas* preference.
 const CLOSED_COLLAPSED_KEY = "praesto.today.doneCollapsed";
@@ -73,6 +81,35 @@ function writeCollapsed(key: string, value: boolean): void {
   }
 }
 
+/**
+ * What the agenda region knows about itself.
+ *
+ * Four states, and they must never render the same pixels. `TaskGroup` returns
+ * `null` at zero rows, so a failed fetch would otherwise be indistinguishable
+ * from a genuinely free day — which is the one outcome the unit's success
+ * metric sets to zero.
+ */
+type AgendaState =
+  | { kind: "loading" }
+  | { kind: "ready" }
+  /** Some calendars answered, at least one did not. A short day, not a free one. */
+  | { kind: "partial"; failed: number }
+  /** Nothing arrived. `reason` separates "connect" from "reconnect" from "try later". */
+  | { kind: "failed"; reason: string | null };
+
+/** The agenda's own copy. Every string here is an owner approval (2026-08-28), not an invention. */
+const AGENDA = {
+  name: "Agenda",
+  empty: "Nada na agenda hoje.",
+  notConnected: "Google não conectado.",
+  reconnect: "A conexão com o Google expirou. Reconecte para ver a agenda.",
+  failed: "Não foi possível carregar a agenda agora. Tente novamente mais tarde.",
+  partial: (n: number) =>
+    n === 1
+      ? "Um calendário não respondeu — a agenda pode estar incompleta."
+      : `${n} calendários não responderam — a agenda pode estar incompleta.`,
+} as const;
+
 export function TodayScreen({
   onUnauthorized,
   initialShare,
@@ -82,6 +119,13 @@ export function TodayScreen({
 }) {
   const [tasks, setTasks] = useState<TaskDto[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // Google lives in its OWN atoms, never folded into `tasks`, `loadError` or
+  // `busy`. Three things depend on that separation: a failed events fetch must
+  // not blank the Task list, a task PATCH's optimistic rollback (which
+  // captures `previous = tasks`) must not discard events, and the global
+  // `busy` gate must never be held by a Google request.
+  const [events, setEvents] = useState<CalendarEventDto[] | null>(null);
+  const [eventsState, setEventsState] = useState<AgendaState>({ kind: "loading" });
   const [captureError, setCaptureError] = useState<string | null>(null);
   const [title, setTitle] = useState(initialShare?.title ?? "");
   const [busy, setBusy] = useState(false);
@@ -98,6 +142,9 @@ export function TodayScreen({
   const [undatedCollapsed, setUndatedCollapsed] = useState(() =>
     readCollapsed(UNDATED_COLLAPSED_KEY, true),
   );
+  const [agendaCollapsed, setAgendaCollapsed] = useState(() =>
+    readCollapsed(AGENDA_COLLAPSED_KEY, true),
+  );
   const [doneCollapsed, setDoneCollapsed] = useState(() =>
     readCollapsed(CLOSED_COLLAPSED_KEY, false),
   );
@@ -112,7 +159,12 @@ export function TodayScreen({
   const today = todayIn(new Date());
   const now = new Date();
 
-  const { state: connectivity, report } = useConnectivity({ onOnline: () => void refresh() });
+  const { state: connectivity, report } = useConnectivity({
+    onOnline: () => {
+      void refresh();
+      void refreshEvents();
+    },
+  });
   const toast = useToast();
   const writable = canWrite(connectivity);
   // ONE source today, a list of sources by construction: unit 4 phase 3 adds
@@ -132,6 +184,36 @@ export function TodayScreen({
     const failure = classifyRequestFailure(cause);
     report({ type: "request-failed", kind: failure.kind });
     return failure.message;
+  }
+
+  /**
+   * Fetches the agenda.
+   *
+   * It deliberately does NOT call `report(...)`. `useConnectivity`'s reducer is
+   * global: `server-unreachable` disables capture and completion app-wide, so
+   * routing a Google failure through it would let Google being down stop the
+   * owner writing his own Tasks — the opposite of AC-11. The reverse matters
+   * too: `request-succeeded` would clear the offline banner while
+   * `/api/tasks` is still failing.
+   */
+  async function refreshEvents(): Promise<void> {
+    try {
+      const payload = await fetchGoogleEvents();
+      setEvents(payload.events);
+      setEventsState(
+        payload.failedCalendars.length > 0
+          ? { kind: "partial", failed: payload.failedCalendars.length }
+          : { kind: "ready" },
+      );
+    } catch (cause) {
+      // A 401 is the app's token, not Google's — route it like any other.
+      if (cause instanceof ApiError && cause.status === 401) {
+        onUnauthorized();
+        return;
+      }
+      setEvents(null);
+      setEventsState({ kind: "failed", reason: cause instanceof ApiError ? cause.reason : null });
+    }
   }
 
   async function refresh(): Promise<void> {
@@ -248,6 +330,14 @@ export function TodayScreen({
     }
   }
 
+  function toggleAgendaCollapsed(): void {
+    setAgendaCollapsed((current) => {
+      writeCollapsed(AGENDA_COLLAPSED_KEY, !current);
+
+      return !current;
+    });
+  }
+
   function toggleOverdueCollapsed(): void {
     setOverdueCollapsed((current) => {
       const next = !current;
@@ -332,8 +422,21 @@ export function TodayScreen({
   }, [filter]);
 
   useEffect(() => {
+    // Mount only. Deliberately NOT keyed on `filter`: the chips and the sheet
+    // narrow Tasks, and the owner's 2026-08-28 decision keeps them off the
+    // agenda — refetching Google on a chip tap would spend a request to
+    // produce the identical list.
+    void refreshEvents();
+  }, []);
+
+  useEffect(() => {
     function handleVisibilityChange(): void {
-      if (document.visibilityState === "visible") void refresh();
+      if (document.visibilityState !== "visible") return;
+      void refresh();
+      // The agenda goes stale on wall-clock time rather than on anything the
+      // owner did, so coming back to the app is exactly when it is worth
+      // re-reading (guidelines §12.4 — there is no manual refresh gesture).
+      void refreshEvents();
     }
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -411,6 +514,62 @@ export function TodayScreen({
     );
   }
 
+  const agenda = events === null ? [] : agendaForToday(events, today);
+
+  /**
+   * The agenda region: the group when there is something to show, and an
+   * explicit line when there is not.
+   *
+   * The line is NOT optional. `TaskGroup` returns `null` at zero rows, so
+   * without it a failed fetch renders as nothing at all — pixel-identical to a
+   * genuinely free day, which the PRD's success metrics set to zero
+   * occurrences. It is also not a toast: `src/shared/toast.ts` auto-dismisses
+   * an actionless toast after 4 s, and guidelines §10 (2.2.1) forbids putting
+   * a time limit on a state the owner has to read.
+   */
+  const agendaNotice = ((): string | null => {
+    switch (eventsState.kind) {
+      case "loading":
+        return null;
+      case "partial":
+        return AGENDA.partial(eventsState.failed);
+      case "failed":
+        return eventsState.reason === "not_connected"
+          ? AGENDA.notConnected
+          : eventsState.reason === "invalid_grant"
+            ? AGENDA.reconnect
+            : AGENDA.failed;
+      case "ready":
+        return agenda.length === 0 ? AGENDA.empty : null;
+    }
+  })();
+
+  const agendaRegion =
+    agenda.length === 0 && agendaNotice === null ? null : (
+      <section aria-label={AGENDA.name}>
+        {agenda.length > 0 && (
+          <TaskGroup
+            name={AGENDA.name}
+            count={agenda.length}
+            collapsed={agendaCollapsed}
+            onToggle={toggleAgendaCollapsed}
+          >
+            <ul className="m-0 flex list-none flex-col gap-2 p-0">
+              {agenda.map((event) => (
+                // Prefixed: ids are unique per SOURCE, not across sources.
+                <EventRow key={`google-${event.id}`} event={event} />
+              ))}
+            </ul>
+          </TaskGroup>
+        )}
+        {agendaNotice !== null && (
+          <p role="status" className="mt-2 font-text text-t1 text-muted">
+            {agendaNotice}
+          </p>
+        )}
+      </section>
+    );
+
   return (
     <div
       data-shell
@@ -419,6 +578,9 @@ export function TodayScreen({
       <TodayHeader
         now={now}
         remaining={
+          // Tasks only. `groups` will carry events the moment a second source
+          // is fed to `collectDayItems`, and *N restantes* means "things you
+          // still have to do" — an event is not one of them.
           groups.today.length +
           groups.overdue.length +
           groups.upcoming.length +
@@ -428,8 +590,17 @@ export function TodayScreen({
         onOpenFilters={() => setFiltersOpen(true)}
       />
 
+      {/* One slot, two conditions, with a stated precedence: being offline
+          explains the Google failure too, so showing both would say the same
+          thing twice (guidelines §1, principle 4). */}
       {connectivity !== "online" ? (
         <Banner lead="Sem conexão." body="Dá para ler, mas não para salvar por enquanto." />
+      ) : eventsState.kind === "failed" ? (
+        <Banner
+          icon={CalendarX}
+          lead="Agenda indisponível."
+          body="Suas tarefas estão aqui; os compromissos do Google não carregaram."
+        />
       ) : (
         <div />
       )}
@@ -437,10 +608,19 @@ export function TodayScreen({
       <FilterChips filter={filter} today={today} onToggleChip={handleToggleChip} />
 
       <main className="flex flex-col gap-2 overflow-y-auto overscroll-contain px-4 pb-2">
+        {/* The agenda comes FIRST in the DOM — §10 1.3.2 makes DOM order the
+            reading order, so it is never CSS-reordered above *Atrasadas*. It
+            renders independently of `tasks`: a failed Task load must not hide
+            the agenda, and a zero-Task day must not either. */}
+        {agendaRegion}
+
         {tasks === null && loadError === null && <Skeleton slow={slow} />}
 
         {tasks === null && loadError !== null && (
           <>
+            {/* Scoped to the TASK list. The agenda is rendered above this
+                branch and survives it — a failed `GET /api/tasks` says nothing
+                about whether the owner's commitments loaded. */}
             <p role="alert" className="font-text text-t2 text-overdue">
               {loadError}
             </p>
