@@ -1,59 +1,91 @@
-# TDD Suite Manifest — google-calendar-read, phase 1 "Dated items, one screen"
+# TDD initial suite — phase 5 (consent-made-visible)
+# Source PRD: PRPs/prds/google-calendar-read.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/google-calendar-read-phase-5-consent-made-visible.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-08-30
 
-- **Plan:** `PRPs/plans/google-calendar-read-phase-1-dated-items-one-screen.plan.md` (APPROVED 2026-08-26)
-- **Source PRD:** `PRPs/prds/google-calendar-read.prd.md` (APPROVED 2026-08-25)
-- **Mode:** test-first (`tdd: true`, `tdd_evidence: "user-declared"`, ADR-0008)
-- **Framework:** vitest, `worker` project (`@cloudflare/vitest-pool-workers`) — `vitest.config.ts:30-65`. Both new files are pure and DOM-free, so they need nothing the workerd pool lacks.
-- **Aggregate verdict:** `SUITE_DRAFT_WRITTEN`
-- **Test files written:** 2
+## Scope note (read before the table)
 
-## Per-AC outcomes
+`docs/context/methodology.md` keeps React component verification manual, and
+ADR-0008 states explicitly that test-first "does not mean writing React
+component tests first". This phase's testable surface is therefore exactly
+the two pure `src/shared/` modules the plan creates (Task 1 `app-route.ts`,
+Task 2 `google-settings.ts`) plus the one Worker route change (Task 9,
+`oauth-callback.ts`'s success leg). `SettingsScreen.tsx`, `GoogleConnectionCard.tsx`,
+`useRoute.ts`, `TodayHeader.tsx` and `App.tsx` are React/browser-API glue,
+verified on the device per the plan's own Notes — no test file is authored
+for them, and none of the outcomes below treats that absence as a gap.
 
-| AC | Outcome | Where |
+Several PRD ACs this phase's plan cites (AC-1, AC-4, AC-15) already have full
+SERVER-side coverage from phase 2/3, unaffected by this phase (no route file
+is in this phase's `## Files to Change`). Where the plan adds a genuine new
+CLIENT-side property to one of those ACs (a delta), the outcome below is
+`NEW_TEST_REQUIRED` for that delta, with the pre-existing coverage cited in
+the new test's own header comment rather than duplicated.
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
 |---|---|---|
-| PRD AC-10 — one range function, proved at zero, one and two sources | `NEW_TEST_REQUIRED` | `test/day-groups.test.ts` — describes "zero sources", "one source", "two sources" and "no source-count branch" |
-| PRD AC-14 — grouping stays byte-identical for a Task-only day | `EXISTING_TEST_COVERS test/task-groups.test.ts:192` | The concatenation-identity test already pins the property. It is this phase's characterization suite and must pass **byte-unchanged**; authoring a second copy would create a rival truth about the same behaviour |
-| Plan AC-A1 — zero sources returns five empty buckets, no throw | `NEW_TEST_REQUIRED` | `test/day-groups.test.ts` → "collectDayItems — zero sources" (3 tests, including an empty source treated identically to no source) |
-| Plan AC-A2 — one source preserves its own relative order exactly | `NEW_TEST_REQUIRED` | `test/day-groups.test.ts` → "collectDayItems — one source" (5 tests, including the partition-is-the-identity property and a scrambled input the function must NOT repair) |
-| Plan AC-A3 — two sources merge stably, ties by source index | `NEW_TEST_REQUIRED` | `test/day-groups.test.ts` → "collectDayItems — two sources" (5 tests) plus "no source-count branch" (2 tests, incl. a three-source case) |
-| Plan AC-A4 — `test/task-groups.test.ts` passes byte-unchanged | `EXISTING_TEST_COVERS test/task-groups.test.ts:1-` | Same file as PRD AC-14. Enforced additionally by the plan's Task 5 VALIDATE, which fails non-zero if the file was modified |
-| Plan AC-A5 — `groupTasks` signature and `TaskGroups` unchanged | `EXISTING_TEST_COVERS test/task-groups.test.ts:19-21` | The suite's import block does not compile if the exported signature moved; `tsc -b` (Level 1) is the type-level half |
-| Plan AC-A6 — the rendered *Hoje* screen is indistinguishable | `NO_TEST_REQUIRED (manual)` | `docs/context/methodology.md` keeps React component verification manual and `documentation/40-engineering/testing-strategy.md` carries the same split. Verified on device; no test file, and that is the sanctioned path rather than a coverage gap |
+| AC-1 | EXISTING_TEST_COVERS | `test/google-routes.test.ts:77-130` (describe "POST /api/google/connect (AC-1)") — server contract unchanged this phase |
+| AC-2 | OUT_OF_PHASE_SCOPE | Not referenced by this phase's plan `## Acceptance Criteria` section. Task 9 explicitly leaves `refuse()` untouched (plan Task 9 constraint + Level 3 grep for `status: 400`). Full existing coverage: `test/oauth-callback.test.ts:95-156` |
+| AC-3 | NEW_TEST_REQUIRED | `test/oauth-callback-redirect.test.ts` (delta only: the success leg's redirect target). Pre-existing partial coverage cited in the new file's header: `test/oauth-callback.test.ts:159-168` (exchange/store, `status < 400`) and `:202-208` (never echoes the token) — both pass unmodified against a 3xx |
+| AC-4 | EXISTING_TEST_COVERS | `test/google-routes.test.ts:132-176` (describe "DELETE /api/google/connection (AC-4)") + `test/google-calendar-routes.test.ts:314-345` (selection cleared too) — server contract unchanged this phase; the plan's AC-A3 delta (the confirmation dialog, the two-outcome report) is component glue, not tested |
+| AC-5 | OUT_OF_PHASE_SCOPE | Not referenced by this phase's plan. Full existing coverage: `test/google-routes.test.ts:178-205` |
+| AC-6 | OUT_OF_PHASE_SCOPE | Not referenced; phase 3 territory, unaffected |
+| AC-7 | OUT_OF_PHASE_SCOPE | Not referenced; phase 3 territory, unaffected |
+| AC-8 | OUT_OF_PHASE_SCOPE | Not referenced; phase 3 territory, unaffected |
+| AC-9 | OUT_OF_PHASE_SCOPE | Not referenced; phase 3 territory, unaffected |
+| AC-10 | OUT_OF_PHASE_SCOPE | Not referenced; phase 1 territory, unaffected |
+| AC-11 | NEW_TEST_REQUIRED | `test/google-settings.test.ts` (delta: the decidable half of plan AC-A7's vocabulary-consistency requirement — the reducer's `failed` state carries a `reason` and never grows a fifth kind for "needs reconnection". AC-11 itself stays PRD-marked manual for the screen-rendering half; the full cross-screen copy-identity check is not automatable in this tier and is device-verified) |
+| AC-12 | OUT_OF_PHASE_SCOPE | Not referenced; phase 4 territory (manual), unaffected |
+| AC-13 | OUT_OF_PHASE_SCOPE | Not referenced by this phase's plan. (`test/source-invariants.test.ts`'s tripwire mechanically extends to every new file under `src/` this phase adds, at zero action — a byproduct, not a decision recorded here) |
+| AC-14 | OUT_OF_PHASE_SCOPE | Not referenced; phase 1 territory, unaffected |
+| AC-15 | NEW_TEST_REQUIRED | `test/google-settings.test.ts` (delta: the client-side selection-draft state machine — `canSaveSelection` / `selectionChanged`. Server-side `primary` default + `PUT` persistence unchanged, already covered: `test/google-calendar-routes.test.ts:98-267`) |
+| AC-1, AC-4, AC-15 (navigation precondition — plan AC-A6) | NEW_TEST_REQUIRED | `test/app-route.test.ts` (`routeFromPath` / `pathOf` — the pure half of the seam that makes `/settings` reachable at all, which the three ACs' UI-reachable forms depend on. The `history.pushState`/`popstate`/Android-back glue itself, `src/app/hooks/useRoute.ts`, is exempt and device-verified per CON-007) |
 
-**Projection coverage.** `test/day-item.test.ts` has no AC of its own: it pins the boundary projection that PRD AC-10 depends on at its first link. The rules it asserts — status before dates, `deadline ?? scheduledDate` — are lifted verbatim out of `src/shared/task-groups.ts:45-66`, so they are characterization of existing behaviour in a new home, not new behaviour.
+## Test files written this session
+
+- `test/app-route.test.ts` — `src/shared/app-route.ts` (plan Task 1): `routeFromPath` / `pathOf` bidirectional mapping, trailing-slash and unrecognised-path handling, round trip.
+- `test/google-settings.test.ts` — `src/shared/google-settings.ts` (plan Task 2): `INITIAL_GOOGLE_SETTINGS_STATE`, `canSaveSelection` (empty / unchanged / mid-save / genuine-change), `selectionChanged`, and `reduceGoogleSettings`'s `failed`-state shape (no fifth kind).
+- `test/oauth-callback-redirect.test.ts` — `src/worker/routes/oauth-callback.ts` success leg (plan Task 9): 3xx status and `/settings?google=connected` redirect target, additive to the untouched `test/oauth-callback.test.ts`.
 
 ## Lifecycle ledger
 
-No existing test file was updated, removed or weakened. Both entries below are creations.
+(none — no update/delete this session)
 
-| Op | Path | Note |
-|---|---|---|
-| CREATE | `test/day-item.test.ts` | 16 tests over `dayItemFromTask` and `assertNeverDaySource` |
-| CREATE | `test/day-groups.test.ts` | 17 tests over `collectDayItems` |
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no update/delete this session) | — | — | — |
 
-The local `task()` fixture factory is duplicated into both new files rather than extracted from `test/task-groups.test.ts:26-49`. That is deliberate: extracting it would require editing the characterization suite, which AC-A4 forbids. Grounding confirmed no shared fixture factory exists anywhere in `test/`.
+## Pre-emission self-check
 
-## RED verification (test-first)
+1. **Ledger completeness** — no UPDATE or DELETE performed this session; the ledger's default row applies. `test/oauth-callback.test.ts` was read and deliberately left untouched (its existing assertions already pass against a 3xx, per the plan's own Risk Mitigation note), not modified.
+2. **Coverage completeness** — every PRD AC referenced by this phase's plan `## Acceptance Criteria` section (AC-1, AC-3, AC-4, AC-11, AC-15, plus the AC-A6 navigation precondition spanning AC-1/AC-4/AC-15) has an explicit recorded outcome above. No plan-referenced AC is silently unaddressed.
 
-```
-npx vitest run test/day-item.test.ts test/day-groups.test.ts
-```
+## Formatting Outcome
 
-Exit code **1**. Both suites fail with:
+**formatted** — the three test files written this session were passed to the
+declared formatter, scoped to their explicit paths and never to the repository.
 
-```
-Error: Cannot find module '../src/shared/day-item' imported from .../test/day-item.test.ts
-Error: Cannot find module '../src/shared/day-item' imported from .../test/day-groups.test.ts
-```
+| Field | Value |
+|---|---|
+| Command | `npx prettier --write` |
+| Discovery source | `methodology.md` frontmatter `formatter_cmd` (branch a) |
+| Files passed | `test/app-route.test.ts`, `test/google-settings.test.ts`, `test/oauth-callback-redirect.test.ts` |
+| Exit code | 0 |
+| Result | all three reported **unchanged** — the writer's output was already Prettier-clean |
 
-RED for the right reason — the modules the plan's Tasks 1 and 2 create do not exist yet. No assertion failed, no test was authored against a signature this suite invented: every symbol referenced (`DaySource`, `DayItem`, `dayItemFromTask`, `assertNeverDaySource`, `DayItemSource`, `collectDayItems`, `DayItemGroups`) is named in the APPROVED plan's Task 1 and Task 2 `**ACTION**` prose.
+`test/oauth-callback.test.ts` was NOT in the touched set: it appears in this
+manifest only as prose ("additive to the untouched ..."), the lifecycle ledger
+records no UPDATE row for it, and `git status` confirms it unmodified. It was
+therefore not passed to the formatter — which is the point of scoping the
+invocation to the written-file set rather than to a glob.
 
-## Scope limits
+This step exists so the approved suite is Level-1 clean before the code
+reviewer's R-X window opens, without the Implementer ever editing a test file.
 
-- No production code was written. B7 authors tests only.
-- No Google item is constructed anywhere in this suite. A "source" is a named list, not a provider, so two sources of projected Tasks exercise every merge path without inventing an Event entity ahead of unit 14 — the plan's NOT Building list, honoured.
-- `src/shared/format.ts` and `src/shared/task-filter.ts` are untouched, matching the plan's deferral of both to phase 4.
+## Status
 
-*Generated: 2026-08-26*
-*Approved: 2026-08-26*
+*Approved: 2026-08-30*
 *Status: APPROVED*
