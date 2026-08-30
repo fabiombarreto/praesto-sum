@@ -2,7 +2,7 @@
 
 - **Date:** 2026-08-29
 - **Verified by:** the owner (this is his report; the implementer saw none of it)
-- **Build:** working tree at `6c43e13`, served by `npm run dev` on the host at `http://127.0.0.1:5173`
+- **Build:** the owner's pass ran against `6c43e13` on the host dev server. **Deployed to production 2026-08-30** as Version `820a8d73` so the phone pass can happen at all — the earlier instruction to test on Android was impossible while the change was local, and the owner said so
 - **Outcome:** the owner reported the checks ran and everything worked
 
 > **How to read this record.** The owner's report was a summary — *"fiz os testes, tudo funcionando corretamente"* — not a per-item dictation. Rows marked ✔ are covered by that report. Rows marked ✘ or *not covered* are NOT things he said failed; they are things this record cannot honestly claim, and each says why. Writing ✔ across the board would have made the document useless as evidence exactly where evidence matters most.
@@ -47,11 +47,35 @@ The grounding pass predicted that routing a Google failure through `useConnectiv
 | Tapping opens Google Calendar | ✔ |
 | Collapse state persists across a reload | ✔ |
 
-## Guidelines review checklist
+## Guidelines review checklist — run 2026-08-30
 
-`CLAUDE.md` makes running the checklist mandatory on every interface change. It was **not run item by item** in this pass — the owner's report was a functional one, and pasting a ✔ against each checklist line on that basis would be inventing evidence. ✘
+Run against the source and the computed token values, item by item. **It found a real defect on its first pass**, which is the argument for running it rather than declaring it.
 
-The checklist covers things a functional pass does not reach: contrast measurement on the new dashed-outline treatment against `--color-line-strong` (§4.3), the 48 px hit area and 8 px separation on the row link (§3.3), and reduced-motion behaviour on the collapse (§7.3). **This is the phase's largest open item**, and it is recorded rather than papered over.
+**Tier A**
+
+| # | Item | |
+|---|---|---|
+| 1 | One primary action; nothing "just in case" | ✔ The agenda adds no control. Its only affordance is outward |
+| 2 | Tappable ≥ 48 × 48 px, ≥ 8 px apart | ✘ **→ fixed.** `EventRow` was `min-h-14` (56 px). It passed 48 px, so nothing failed — but `--row-min` is 64 px and `TaskRow` is 64 px, and the two kinds sit adjacent in one list, where an 8 px mismatch reads as misalignment rather than as distinction. Now 64 px (`b4076df`) |
+| 3 | No meaning by colour alone | ✔ Three cues carry "external": the dashed outline, the leading time column, and the absent completion control |
+| 4 | pt-BR, sentence case, zero special-cased | ✔ Zero is *Nada na agenda hoje.*; the partial-failure line special-cases one calendar against many |
+| 5 | Tab / Enter / Esc, visible focus, focus returns | ⚠ **partial.** The row is a native `<a>`, so it inherits the global `:focus-visible` ring and activates on Enter. **Not exercised with a keyboard.** Note the standing gap the guidelines already carry: an anchor does not activate on Space, and item 5 asks for Space while Tier A item 5 does not |
+| 6 | Icon-only controls labelled; decorative icons hidden | ✔ Both new icons are `aria-hidden="true"`; the destination is appended to the row's accessible name via `sr-only`, never replacing the title |
+| 7 | Tokens only; durations from the bands; reduced motion | ✔ No literal colour or size in `EventRow`. It adds no animation — the collapse is `TaskGroup`'s existing transition, unchanged |
+| 8 | Destructive actions follow §8 | ✔ n/a — this phase adds nothing destructive |
+| 9 | No request to another origin | ✔ Every `fetch` is same-origin `/api/*`. The row LINKS to Google, which is navigation the owner initiates, not a request the page makes |
+
+**Tier B**
+
+| # | Item | |
+|---|---|---|
+| 10 | Contrast measured and recorded | ✔ Computed from `tokens.css` by WCAG 2.2 relative luminance: title 16.82:1, time column 7.24:1, untitled fallback 7.24:1 (all ≥ 4.5), calendar glyph 5.21:1 and the **dashed outline 3.22:1** (both ≥ 3.0). The outline is the tightest pair and the one that matters most — it is the sole carrier of "external" for a reader who resolves contrast poorly |
+| 11 | The §8 states the screen can reach were simulated and read right | ✔ three of four (see the AC-A8 table above); the partial-calendar failure cannot be staged |
+| 12 | Checked at 375 px and 1280 px; safe areas, keyboard overlap, back gesture on the phone | ✘ **open.** Not checked at 375 px, and nothing on the phone. This is the same gap as the Android row above |
+| 13 | Build size read against §11; Lighthouse on the phone | ✘ **open.** The bundle was built and deployed but the size report was not read against the §11 budget, and no Lighthouse run exists |
+| 14 | Screenshots filed, or the reason none exists written down | ✘ **none exist.** The browser pane sits at the token gate — it keeps storage separate from the owner's own browser — so the implementer never saw the rendered screen. Recorded here as the reason, per the item's own escape clause |
+
+**Open ✘ items: 12, 13, 14, and the ⚠ on 5.** Guidelines: *"One ✘ without a recorded, conscious exception means the change is not done."* Items 12 and 13 need the phone; 14 has its reason written down as the item allows; 5 needs a keyboard pass. **Tier A is otherwise clean, and its one ✘ was fixed rather than excused.**
 
 ## What this record does NOT establish
 
