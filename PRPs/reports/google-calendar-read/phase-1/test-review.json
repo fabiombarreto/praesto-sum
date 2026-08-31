@@ -1,0 +1,27 @@
+{
+  "review_type": "retrospective_post_green",
+  "reviewed_at": "2026-08-31",
+  "method": "history-only (git show/diff/ls-tree). No checkout, stash or reset: the working tree is shared and holds committed work. npm test could NOT be run at a past commit, so GREEN was corroborated from artifacts.",
+  "coverage_drop_check": "unavailable - no PRPs/reports/coverage-baseline.json exists anywhere in the repo; the project configures no coverage tooling (docs/context/testing.md). Recorded as unavailable, never scored as zero drop.",
+  "verdict": "APPROVED",
+  "phase": 1,
+  "range": {
+    "base": "78960c6",
+    "head": "7739157"
+  },
+  "load_bearing_claim": {
+    "claim": "test/task-groups.test.ts passes byte-unchanged - the entire safety argument for widening the screen data path",
+    "status": "VERIFIED_TRUE",
+    "evidence": "identical git blob SHA 5884db3e983a3ab690c0a2ba7ac18483c4aa5a49 at both commits; zero-line diff. Verified by object identity, which is stronger than a diff."
+  },
+  "structural": {
+    "test_files": "21 -> 23",
+    "name_status": "two A entries only; zero M, zero D anywhere in test/",
+    "title_census": "full it()/describe() title set across the whole tree at both commits, diffed with comm -3, excluding the two new files: ZERO lines"
+  },
+  "concerns": [],
+  "notes": [
+    "LIMITATION: the lifecycle ledger (read historically at 7739157) claims 16 tests for test/day-item.test.ts; the file has 14. Git shows only one committed version, so a pre-commit draft is not inspectable. Reported as an evidentiary limitation, NOT folded into the verdict either way.",
+    "Observation, not a finding: two ordering tests in day-groups.test.ts use fixture dates that do not fully discriminate a stable merge from a global sort in the two-source case. Pre-existing authoring characteristic, already passed by the test-reviewer gate; not a base-to-head regression."
+  ]
+}

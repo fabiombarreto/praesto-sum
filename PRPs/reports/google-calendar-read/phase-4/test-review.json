@@ -1,0 +1,31 @@
+{
+  "review_type": "retrospective_post_green",
+  "reviewed_at": "2026-08-31",
+  "method": "history-only (git show/diff/ls-tree). No checkout, stash or reset: the working tree is shared and holds committed work. npm test could NOT be run at a past commit, so GREEN was corroborated from artifacts.",
+  "coverage_drop_check": "unavailable - no PRPs/reports/coverage-baseline.json exists anywhere in the repo; the project configures no coverage tooling (docs/context/testing.md). Recorded as unavailable, never scored as zero drop.",
+  "verdict": "APPROVED_ON_WEAKENING_ONLY",
+  "phase": 4,
+  "range": {
+    "base": "9e98cdd",
+    "head": "7b86ba7"
+  },
+  "weakening": "none. Purely additive: test/format.test.ts 61 insertions / 0 deletions; test/agenda.test.ts new with 16 cases. Independent recount of every it()/test() across the whole tree gives 440 -> 463, exactly +23, matching the commit self-reported 538->561 delta with zero removed. No skip/todo/only markers, no if-guarded assertion.",
+  "why_not_advanced_to_tested": "This phase never had a code review. `implemented` means code written AND code-review APPROVED; `tested` presupposes it. A passing post-green review does not retroactively supply a gate that never ran, so row 4 is deliberately NOT advanced.",
+  "gate_gaps_confirmed": [
+    "no PRPs/plans/google-calendar-read-phase-4-*.code-review.jsonl exists anywhere in the repo, worktrees included",
+    "no test-write-review entry for phase 4 in any jsonl",
+    "no test( commit - test/agenda.test.ts and test/format.test.ts were authored inside the feat( commit 3682007, i.e. by the implementer alongside the code, which under tdd: true and R-X is what the test pair exists to prevent",
+    "no run.json"
+  ],
+  "coverage_finding": {
+    "claim_under_test": "the delivery record says the per-calendar partial failure rests on code review and two route tests",
+    "verdict": "GENEROUS, NOT FALSE",
+    "detail": "Only ONE of the two demonstrates the per-calendar mechanism: 'returns the healthy calendar's events AND reports the failed one' asserts both the surviving event list and the named failed calendar. The second, 'reports a dead credential distinguishably from a transient outage', stubs the token refresh itself, which fails EVERY calendar identically before any per-calendar request - the sibling total-failure state, not the partial one. Both live in test/google-calendar-routes.test.ts and were authored in phase 3; phase 4 contributed zero automated coverage toward its own claim. The UI-visible 'falha parcial' text has no automated test at all, which the record does state accurately.",
+    "note": "test/agenda.test.ts covers only today-filtering and ordering of already-successful lists - zero overlap with any failure path."
+  },
+  "concerns": [],
+  "notes": [
+    "The reviewer caught itself reading the current TodayScreen.tsx (already past phase 5) and re-read it pinned at 7b86ba7 - the correct discipline for a retrospective review.",
+    "ALL_DAY_LABEL 'dia todo' is flagged PENDING OWNER CONFIRMATION in src/shared/format.ts and DOES have strict toBe() coverage pinning the current string. A test can pin a value; it cannot validate an unconfirmed product decision. Expected, not a weakening."
+  ]
+}

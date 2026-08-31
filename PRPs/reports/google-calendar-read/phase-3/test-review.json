@@ -1,0 +1,29 @@
+{
+  "review_type": "retrospective_post_green",
+  "reviewed_at": "2026-08-31",
+  "method": "history-only (git show/diff/ls-tree). No checkout, stash or reset: the working tree is shared and holds committed work. npm test could NOT be run at a past commit, so GREEN was corroborated from artifacts.",
+  "coverage_drop_check": "unavailable - no PRPs/reports/coverage-baseline.json exists anywhere in the repo; the project configures no coverage tooling (docs/context/testing.md). Recorded as unavailable, never scored as zero drop.",
+  "verdict": "APPROVED",
+  "phase": 3,
+  "range": {
+    "base": "2ebb8b1",
+    "head": "9e98cdd"
+  },
+  "scrutinised": "three commits after the test-first suite touched test files, and the delivery record makes two specific claims about them",
+  "claim_1_ac13_guard_narrowing": {
+    "status": "VERIFIED - honest scoping, not laundered weakening",
+    "detail": "The fde3fe8->4e3e853 rewrite replaced per-FILE correlation (fires when a file merely contains both a Calendar URL and a quoted non-GET method anywhere - unsound, and the reason it misfired on client.ts's legitimate OAuth-POST-plus-Calendar-GET mix) with per-CALL-SITE windowed comparison. The assertion target stays expect(offenders).toEqual([]) throughout: what changed is the soundness of what populates offenders, not the bar being cleared. Both committed versions were grepped for the mangled-control-character defect named in the record; the regexes are clean."
+  },
+  "claim_2_rx_carried_knowingly": {
+    "status": "VERIFIED - the edit was docstring and describe()-title only",
+    "detail": "git diff 4e3e853 64b56b5 on source-invariants.test.ts touches only the header docstring and the describe title string. Zero it() bodies, zero expect() calls, zero regexes. The dispute channel genuinely had nothing to arbitrate. R-X stayed flagged through attempt 5 and was cleared at attempt 6 by scripts/executable-content-hash.mjs reporting identical SHA-256 on both sides - an auditable computation, not a discretionary call."
+  },
+  "concerns": [],
+  "notes": [
+    "Whole-tree title census across all 27 pre-existing files: zero removed, zero renamed, zero added. All growth confined to the 5 net-new files. No whole file deleted.",
+    "google-calendar-routes.test.ts purely additive: 77/0 in 64b56b5, 34/0 in 727b195.",
+    "google-events.test.ts 4e3e853 edit fixed a test that would have THROWN on null.toMatch(), replacing it with a strictly larger assertion set including an added toBeNull() pin. A bug fix, not a weakening.",
+    "RESIDUAL GAP (inherited, not introduced): test/google-calendar-routes.test.ts 'reports a dead credential distinguishably from a transient outage' still uses expect(res.status).not.toBe(200) - the same weak pattern that WAS fixed for the analogous /calendars test in the same file, which now carries a comment explaining why. Byte-identical since fde3fe8, so never strengthened-then-weakened; no review pass caught it. Not blocking; routed to follow-up.",
+    "PROCESS GAP: PRPs/reports/google-calendar-read/phase-3/test-suite.diff sits at *Status: DRAFT* though its paired test-write-review.jsonl records APPROVED twice. ledger=none was applied throughout this review as a result; immaterial to the verdict since nothing needed ledger cover."
+  ]
+}

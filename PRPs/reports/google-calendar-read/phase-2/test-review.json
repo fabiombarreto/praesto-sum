@@ -1,0 +1,25 @@
+{
+  "review_type": "retrospective_post_green",
+  "reviewed_at": "2026-08-31",
+  "method": "history-only (git show/diff/ls-tree). No checkout, stash or reset: the working tree is shared and holds committed work. npm test could NOT be run at a past commit, so GREEN was corroborated from artifacts.",
+  "coverage_drop_check": "unavailable - no PRPs/reports/coverage-baseline.json exists anywhere in the repo; the project configures no coverage tooling (docs/context/testing.md). Recorded as unavailable, never scored as zero drop.",
+  "verdict": "APPROVED",
+  "phase": 2,
+  "range": {
+    "base": "7739157",
+    "head": "2ebb8b1"
+  },
+  "scrutinised": "the implementation commit b21845c edited three test files the test-first commit had just authored - the shape R-X forbids. The arbitration that authorised it was treated as the claim under test, not as a licence.",
+  "findings_on_the_four_edits": [
+    "google-oauth.test.ts: import statement reflowed 5 lines to 1. Tokens byte-identical; all 16 it() titles identical and in order.",
+    "oauth-callback.test.ts: mintNonce helper only. The old fixture inserted expires_at < created_at, violating the oauth_states_expiry_after_creation CHECK that THIS phase introduced - verified by reading migrations/0002 and schema.ts at the relevant commits and confirming the table did not exist when the fixture was authored. Genuinely unrunnable. Zero assertions touched; all 12 titles identical.",
+    "google-routes.test.ts hunk 1: prettier reflow, no substance.",
+    "google-routes.test.ts hunk 2: STRENGTHENING. A vacuous if (res.status === 200) wrapper around the suite's only leaked-refresh-token check was replaced by an unconditional assertion plus checks against both the token value and the wire field name, plus two new tests pinning the DTO key set. A strict superset."
+  ],
+  "chronology": "attempt 1 13:40:48Z and attempt 2 13:47:41Z both fail R-X with the edits already present; arbitration 13:51:01Z upholds; commit 13:54:30Z. The record's own admission that the process error was ordering checks out.",
+  "concerns": [],
+  "notes": [
+    "Whole range: four files changed, 738 insertions, ZERO deletions. All 23 base files survive untouched. No removal could hide behind an addition because no pre-existing test file has a single changed line.",
+    "The phase-2 manifest header claims 54/57 tests; its own ledger rows sum to 52/54, which is what git-verified counting gives and what reconciles with code-review 455/457 and the commit 403->457. A prose slip that OVERSTATES rather than hides. Documentation accuracy only."
+  ]
+}

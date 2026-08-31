@@ -93,4 +93,11 @@ The lesson is not the regex. It is that a green guard proves nothing until it ha
 on purpose.
 
 *Generated: 2026-08-28*
-*Status: DRAFT*
+*Status: APPROVED*
+*Flipped 2026-08-31, late.* The paired `PRPs/plans/google-calendar-read-phase-3.test-write-review.jsonl`
+recorded APPROVED on 2026-08-28T18:30:00Z and this trailing line was never flipped to match, so the
+manifest and its own verdict log disagreed for three days. Found by the retrospective post-green
+review of 2026-08-31, which had to apply `ledger = none` throughout as a result — a DRAFT ledger
+authorizes nothing, so every phase-3 test modification was judged on raw diff content instead. That
+turned out not to matter (nothing needed ledger cover), but it would have mattered had a removal or a
+skip needed authorizing. Corrected to match the recorded verdict, not to grant a new one.
