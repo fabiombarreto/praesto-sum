@@ -6,7 +6,7 @@
 // is real text, never a bare dot (guidelines §4.4), so the filtered state
 // is never carried by colour alone.
 
-import { SlidersHorizontal } from "lucide-react";
+import { Settings, SlidersHorizontal } from "lucide-react";
 import { formatHeaderDate, formatRemaining } from "../../shared/format";
 import { Button } from "./ui/Button";
 
@@ -15,11 +15,13 @@ export function TodayHeader({
   remaining,
   activeFilterCount,
   onOpenFilters,
+  onOpenSettings,
 }: {
   now: Date;
   remaining: number;
   activeFilterCount: number;
   onOpenFilters: () => void;
+  onOpenSettings: () => void;
 }) {
   const { figure, label } = formatRemaining(remaining);
   // Singular at one, plural above it — the same agreement `formatRemaining`
@@ -57,6 +59,9 @@ export function TodayHeader({
           </span>
         )}
       </span>
+      <Button type="button" variant="icon" aria-label="Configurações" onClick={onOpenSettings}>
+        <Settings className="size-[22px]" aria-hidden="true" />
+      </Button>
     </header>
   );
 }

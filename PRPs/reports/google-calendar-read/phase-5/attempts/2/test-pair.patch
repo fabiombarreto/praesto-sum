@@ -1,0 +1,87 @@
+diff --git a/test/oauth-callback-redirect.test.ts b/test/oauth-callback-redirect.test.ts
+index 26e038d..535ca01 100644
+--- a/test/oauth-callback-redirect.test.ts
++++ b/test/oauth-callback-redirect.test.ts
+@@ -25,6 +25,29 @@
+ // success leg still returns the phase-2 plain-text body today, so this file
+ // is RED for the right reason (no 3xx status, no Location header) until plan
+ // Task 9 lands.
++//
++// --- Correction (dispute-driven; see
++// PRPs/reports/google-calendar-read/phase-5/halt.json) ---
++// The paragraph above is accurate about what the callback RETURNS (a 3xx that
++// satisfies `status < 400` either way) but was incomplete about what THIS
++// HARNESS OBSERVES. `exports.default.fetch()` — the typed successor to the
++// deprecated `SELF: Fetcher`
++// (node_modules/@cloudflare/vitest-pool-workers/types/cloudflare-test.d.ts) —
++// auto-follows redirects exactly like global `fetch()`. The followed request
++// for `/settings` has no Worker-side route (`wrangler.jsonc`'s
++// `assets.run_worker_first` is exactly `["/api/*","/oauth/*"]` — `/settings`
++// is deliberately client-only, the entire point of this phase), so it lands
++// on `app.notFound()`: a 404 with no Location header, not the callback's own
++// 302. A real browser follows the identical 302 into the SPA shell via
++// `not_found_handling: "single-page-application"` and never takes this path
++// — the 404 was a test-harness artifact, not a production defect. A
++// `code-reviewer` TEST_CONTRACT_DISPUTE arbitration upheld this reading
++// (`DISPUTE_UPHELD_TEST_WRONG`) and the two cases below now pass
++// `redirect: "manual"` — a real, typed `RequestInit` member
++// (`worker-configuration.d.ts:1850`) — so they observe the raw response the
++// callback itself returns instead of the harness's auto-follow. Neither
++// assertion's substance changed: still a 3xx status, still a Location
++// resolving to `/settings?google=connected`.
+ 
+ import { env, exports } from "cloudflare:workers";
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+@@ -66,7 +89,13 @@ describe("the callback closes the loop on success (AC-3 delta, plan AC-A2)", ()
+   it("answers a 3xx redirect rather than the phase-2 plain-text page", async () => {
+     await mintNonce("good-status");
+ 
+-    const res = await exports.default.fetch(`${CALLBACK}?code=auth-code&state=good-status`);
++    // `redirect: "manual"` — see the header comment: without it,
++    // exports.default.fetch() auto-follows the 302 into a /settings request
++    // this harness cannot route, and the test would observe that request's
++    // 404 instead of the callback's own response.
++    const res = await exports.default.fetch(`${CALLBACK}?code=auth-code&state=good-status`, {
++      redirect: "manual",
++    });
+ 
+     expect(res.status).toBeGreaterThanOrEqual(300);
+     expect(res.status).toBeLessThan(400);
+@@ -75,7 +104,10 @@ describe("the callback closes the loop on success (AC-3 delta, plan AC-A2)", ()
+   it("points the redirect at /settings?google=connected", async () => {
+     await mintNonce("good-location");
+ 
+-    const res = await exports.default.fetch(`${CALLBACK}?code=auth-code&state=good-location`);
++    // `redirect: "manual"` — same reason as the case above.
++    const res = await exports.default.fetch(`${CALLBACK}?code=auth-code&state=good-location`, {
++      redirect: "manual",
++    });
+     const location = res.headers.get("location") ?? "";
+ 
+     // Accept either a relative or an absolute Location: `Response.redirect()`
+diff --git a/test/oauth-callback.test.ts b/test/oauth-callback.test.ts
+index 3a4a7c3..fcf7ae3 100644
+--- a/test/oauth-callback.test.ts
++++ b/test/oauth-callback.test.ts
+@@ -159,7 +159,20 @@ describe("a valid callback stores the credential exactly once (AC-3)", () => {
+   it("exchanges the code and stores the refresh token", async () => {
+     await mintNonce("good");
+ 
+-    const res = await exports.default.fetch(`${CALLBACK}?code=auth-code&state=good`);
++    // `redirect: "manual"` — exports.default.fetch() auto-follows redirects
++    // (it is the typed successor to the deprecated `SELF: Fetcher`), and the
++    // success leg now answers 302 (phase 5, Task 9). An auto-followed request
++    // for /settings has no Worker route in this harness and would surface as
++    // a 404 here instead of the callback's own response. See
++    // test/oauth-callback-redirect.test.ts's header comment and
++    // PRPs/reports/google-calendar-read/phase-5/halt.json for the full
++    // arbitration record (DISPUTE_UPHELD_TEST_WRONG). The assertion below is
++    // unchanged: `status < 400` already accepted either the old 200 or the
++    // new 302, which is why only the observation — never the contract —
++    // needed correcting.
++    const res = await exports.default.fetch(`${CALLBACK}?code=auth-code&state=good`, {
++      redirect: "manual",
++    });
+ 
+     expect(res.status).toBeLessThan(400);
+     expect(outbound).toHaveLength(1);

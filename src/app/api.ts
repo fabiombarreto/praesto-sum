@@ -1,4 +1,11 @@
-import type { CreateTaskInput, GoogleEventsDto, TaskDto, UpdateTaskInput } from "../shared/api";
+import type {
+  CreateTaskInput,
+  GoogleCalendarDto,
+  GoogleConnectionDto,
+  GoogleEventsDto,
+  TaskDto,
+  UpdateTaskInput,
+} from "../shared/api";
 import { EMPTY_FILTER, toQuery, type TaskFilter } from "../shared/task-filter";
 import { createTokenStore } from "../shared/token-store";
 import { durableTokenStorage, legacyTokenStorage } from "./token-storage";
@@ -160,4 +167,42 @@ export async function deleteTask(id: string): Promise<void> {
  */
 export async function fetchGoogleEvents(): Promise<GoogleEventsDto> {
   return request<GoogleEventsDto>("/api/google/events");
+}
+
+/**
+ * FR-030 / FR-027 — the five Google connection & calendar wrappers phase 5
+ * needs. Each is a one-liner over `request<T>()`, exactly like
+ * `fetchGoogleEvents` above: no local types, no error re-mapping — a
+ * failure already arrives as `ApiError` carrying `reason`, which is what
+ * lets the settings screen tell "not connected" from "reconnect" from "try
+ * later" apart.
+ */
+export async function startGoogleConnect(): Promise<{ consentUrl: string }> {
+  return request<{ consentUrl: string }>("/api/google/connect", { method: "POST" });
+}
+
+export async function fetchGoogleConnection(): Promise<{ connection: GoogleConnectionDto | null }> {
+  return request<{ connection: GoogleConnectionDto | null }>("/api/google/connection");
+}
+
+export async function disconnectGoogle(): Promise<{
+  disconnected: boolean;
+  revokedAtGoogle: boolean;
+}> {
+  return request<{ disconnected: boolean; revokedAtGoogle: boolean }>("/api/google/connection", {
+    method: "DELETE",
+  });
+}
+
+export async function fetchGoogleCalendars(): Promise<{ calendars: GoogleCalendarDto[] }> {
+  return request<{ calendars: GoogleCalendarDto[] }>("/api/google/calendars");
+}
+
+export async function saveGoogleCalendars(
+  calendarIds: string[],
+): Promise<{ calendarIds: string[] }> {
+  return request<{ calendarIds: string[] }>("/api/google/calendars", {
+    method: "PUT",
+    body: JSON.stringify({ calendarIds }),
+  });
 }

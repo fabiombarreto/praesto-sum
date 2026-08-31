@@ -77,10 +77,10 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 30-architecture/architecture-overview.md | draft | 2026-08-23 |
 | 30-architecture/domain-model.md | draft | 2026-08-15 |
 | 40-engineering/tech-stack.md | active | 2026-08-23 |
-| 40-engineering/engineering-conventions.md | active | 2026-08-23 |
+| 40-engineering/engineering-conventions.md | active | 2026-08-30 |
 | 40-engineering/dev-environment.md | active | 2026-08-15 |
 | 40-engineering/testing-strategy.md | active | 2026-08-12 |
-| 40-engineering/ui-ux-guidelines.md | active | 2026-08-23 |
+| 40-engineering/ui-ux-guidelines.md | active | 2026-08-30 |
 | 40-engineering/ui-layout-standard.md | active | 2026-08-23 |
 | 50-planning/roadmap.md | active | 2026-08-23 |
 | 50-planning/ui-ux-plan.md | deprecated | 2026-08-23 |

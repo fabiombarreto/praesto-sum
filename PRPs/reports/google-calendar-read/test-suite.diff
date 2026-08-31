@@ -52,18 +52,96 @@ the new test's own header comment rather than duplicated.
 
 ## Lifecycle ledger
 
-(none — no update/delete this session)
+**Session 1 (2026-08-30, initial authoring):** none — the suite was
+create-only.
+
+**Correction round (2026-08-30, attempt 2 — dispute-driven):** three
+`EXISTING_TEST_UPDATED` entries below. See "## Correction round" further
+down for the full narrative. Listed as three separate rows (not one) because
+each is a distinct test case `test-reviewer`'s `R-LIFECYCLE-LEGITIMATE` check
+must independently re-validate.
 
 | Op | Classification | Test (file:function) | Justification |
 |----|-----------------|-----------------------|----------------|
-| (none — no update/delete this session) | — | — | — |
+| UPDATE | EXISTING_TEST_UPDATED | `test/oauth-callback-redirect.test.ts` — `it("answers a 3xx redirect rather than the phase-2 plain-text page")` | `code-reviewer` TEST_CONTRACT_DISPUTE arbitration upheld as `DISPUTE_UPHELD_TEST_WRONG` (evidence: `PRPs/reports/google-calendar-read/phase-5/halt.json`): `exports.default.fetch()` — the typed successor to the deprecated `SELF: Fetcher` — auto-follows the callback's 302, and the followed `/settings` request has no Worker route in this harness, landing on `app.notFound()` (404, no Location) instead of the callback's real response. Added `redirect: "manual"` (a real, typed `RequestInit` member, `worker-configuration.d.ts:1850`) so the test observes the raw response. The status-range assertion (`>=300`, `<400`) is unchanged in substance. |
+| UPDATE | EXISTING_TEST_UPDATED | `test/oauth-callback-redirect.test.ts` — `it("points the redirect at /settings?google=connected")` | Same upheld arbitration and evidence file as the row above (identical auto-follow defect). Added `redirect: "manual"`. The Location-resolution assertions (`pathname === "/settings"`, `searchParams.get("google") === "connected"`) are unchanged in substance. |
+| UPDATE | EXISTING_TEST_UPDATED | `test/oauth-callback.test.ts` — `it("exchanges the code and stores the refresh token")` | Collateral damage from the same auto-follow, on a pre-existing phase-2 test this phase never authored: its `status < 400` assertion was written to accept either the old 200 or the new 302, and started seeing the followed 404 instead. Same upheld arbitration and evidence file as the two rows above. Added `redirect: "manual"`; the `status < 400`, `outbound` and `connectionCount()` assertions are unchanged in substance. The sibling assertion at `:202-208` ("never echoes the refresh token") needed no change — re-verified by inspection: a manually-observed 302 has an empty body, and the previously auto-followed 404 JSON body never contained the token either, so it held under both observations. |
 
-## Pre-emission self-check
+## Pre-emission self-check (session 1)
 
 1. **Ledger completeness** — no UPDATE or DELETE performed this session; the ledger's default row applies. `test/oauth-callback.test.ts` was read and deliberately left untouched (its existing assertions already pass against a 3xx, per the plan's own Risk Mitigation note), not modified.
 2. **Coverage completeness** — every PRD AC referenced by this phase's plan `## Acceptance Criteria` section (AC-1, AC-3, AC-4, AC-11, AC-15, plus the AC-A6 navigation precondition spanning AC-1/AC-4/AC-15) has an explicit recorded outcome above. No plan-referenced AC is silently unaddressed.
 
-## Formatting Outcome
+## Correction round (dispute-driven revision, attempt 2)
+
+**Trigger:** the `/relay-implement` attempt on this plan produced a
+`TEST_CONTRACT_DISPUTE` (`PRPs/reports/google-calendar-read/phase-5/attempts/1/record.json`):
+Level 2 (`npm test`) reported 3 failing (of the 3 disputed assertions) while
+the 21 new phase-5 unit tests — Tasks 1–2, `test/app-route.test.ts` /
+`test/google-settings.test.ts` — all passed. The Implementer's diff itself
+was not in question: `src/worker/routes/oauth-callback.ts` returns
+`c.redirect(destination.toString(), 302)` exactly as Task 9 specifies.
+
+**Arbitration:** `DISPUTE_UPHELD_TEST_WRONG`
+(`PRPs/reports/google-calendar-read/phase-5/halt.json`). Evidence: `SELF: Fetcher`
+is documented `@deprecated` in `node_modules/@cloudflare/vitest-pool-workers/types/cloudflare-test.d.ts`
+in favour of `exports.default.fetch()`, which auto-follows redirects exactly
+like global `fetch()`; `src/worker/index.ts` has no `/settings` route;
+`wrangler.jsonc`'s `assets.run_worker_first` is exactly `["/api/*", "/oauth/*"]`,
+deliberately excluding `/settings`; and a real browser follows the identical
+302 into the SPA shell via `not_found_handling: "single-page-application"` —
+production behaviour is correct, and only the test harness's observation was
+wrong.
+
+**Correction applied this session — exactly three assertions, two files,
+nothing else:**
+
+- `test/oauth-callback-redirect.test.ts` — the two disputed cases — added
+  `redirect: "manual"` to the `exports.default.fetch()` call in each, so the
+  raw 3xx response is observed instead of the harness's auto-followed 404.
+  No assertion was loosened, removed, or skipped; the status-range and
+  Location-resolution checks are unchanged from what the approved suite
+  already asserted.
+- `test/oauth-callback.test.ts` — the pre-existing case "exchanges the code
+  and stores the refresh token" — same fix, same reasoning (collateral
+  damage from the identical auto-follow). Its sibling "never echoes the
+  refresh token back in the response body" (`:202-208`) was read and
+  confirmed to need no change, per the reasoning in the ledger row above, and
+  was left untouched.
+
+**Not touched, by design:** no file under `src/` (the implementation is
+arbitrated as correct and the working tree holds it uncommitted); no new test
+file created; no test besides the three named above; no `git` history-
+mutating command (stash/checkout/clean/reset/commit) was run.
+
+**Correction-round self-check:**
+
+1. **Ledger completeness** — all three UPDATEs performed this session have a
+   matching row in "## Lifecycle ledger" above, each classified
+   `EXISTING_TEST_UPDATED` with a justification citing the upheld arbitration
+   and its evidence file.
+2. **Anti-weakening guard** — none of the three edits removed, loosened, or
+   skipped an assertion. Each edit's only functional change is adding
+   `redirect: "manual"` to an `exports.default.fetch()` call already present;
+   every `expect(...)` line is textually identical to the suite `test-reviewer`
+   (B8) already approved.
+3. **Scope discipline** — only the three cited assertions were touched.
+   `test/oauth-callback.test.ts`'s other nine `it(...)` blocks, and
+   `test/oauth-callback-redirect.test.ts`'s imports/helpers, are unchanged.
+4. **Execution — the one open item before re-approval.** This agent
+   invocation carries no Bash tool (by design: B7 never certifies RED/GREEN
+   legitimacy — that is B8's `R-RED-LEGITIMATE` / `R-GREEN-LEGITIMATE`
+   dynamic check) and therefore could not itself run
+   `npx vitest run --project worker test/oauth-callback-redirect.test.ts test/oauth-callback.test.ts`
+   or the full `npm test` to confirm the corrected suite is green. Whoever
+   drives `/relay-test-write-review` next must run those commands (or
+   dispatch a runner) and record the actual pass/fail counts. The expected
+   outcome per the dispatching instructions is 584 passing / 0 failing
+   (baseline 561 + the 21 new phase-5 unit tests + the 3 corrected
+   assertions turning green) — that number is not self-reported here because
+   it was not observed by this session.
+
+## Formatting Outcome (session 1)
 
 **formatted** — the three test files written this session were passed to the
 declared formatter, scoped to their explicit paths and never to the repository.
@@ -76,16 +154,30 @@ declared formatter, scoped to their explicit paths and never to the repository.
 | Exit code | 0 |
 | Result | all three reported **unchanged** — the writer's output was already Prettier-clean |
 
-`test/oauth-callback.test.ts` was NOT in the touched set: it appears in this
-manifest only as prose ("additive to the untouched ..."), the lifecycle ledger
-records no UPDATE row for it, and `git status` confirms it unmodified. It was
-therefore not passed to the formatter — which is the point of scoping the
-invocation to the written-file set rather than to a glob.
+`test/oauth-callback.test.ts` was NOT in the touched set at that time: it
+appeared in that session's manifest only as prose ("additive to the
+untouched ..."), that session's lifecycle ledger recorded no UPDATE row for
+it, and `git status` confirmed it unmodified then. (It IS touched in the
+correction round — see immediately below.)
 
-This step exists so the approved suite is Level-1 clean before the code
-reviewer's R-X window opens, without the Implementer ever editing a test file.
+## Formatting Outcome (correction round)
+
+**not run by this agent invocation** — this dispatch has no Bash tool (see
+"Correction-round self-check" item 4 above), so `formatter_cmd` from
+`methodology.md` (`npx prettier --write`) could not be invoked here. The two
+edited files (`test/oauth-callback-redirect.test.ts`,
+`test/oauth-callback.test.ts`) were hand-formatted to match the surrounding
+file's existing indentation, quote style and line-wrap conventions, but that
+is not a substitute for running the declared formatter. **Whoever runs
+`/relay-test-write-review` next should run
+`npx prettier --write test/oauth-callback-redirect.test.ts test/oauth-callback.test.ts`
+(scoped to exactly these two paths, never `.`) before or alongside the
+rubric pass**, so the re-approved suite stays Level-1 clean without the
+Implementer ever editing a test file.
 
 ## Status
 
-*Approved: 2026-08-30*
+*Approved: 2026-08-30 (session 1 — superseded by the correction round above)*
+*Revised: 2026-08-30 — dispute-driven correction (attempt 2); three
+EXISTING_TEST_UPDATED entries recorded above, re-submitted for B8 review*
 *Status: APPROVED*

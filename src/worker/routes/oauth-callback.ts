@@ -120,10 +120,13 @@ oauthCallbackRoutes.get("/callback", async (c) => {
     db.update(oauthStates).set({ consumedAt: new Date() }).where(eq(oauthStates.id, state)),
   ]);
 
-  // Plain text, and deliberately free of the token. Phase 4 replaces this with
-  // a redirect into the app.
-  return new Response("Google conectado. Pode fechar esta aba e voltar ao Praesto.", {
-    status: 200,
-    headers: { "content-type": "text/plain; charset=utf-8" },
-  });
+  // Redirects the owner back into the app rather than rendering a dead end.
+  // `?google=connected` is the one-time signal `SettingsScreen` (unit 4
+  // phase 5, Task 5) reads and clears with `history.replaceState`; this file
+  // only ever SENDS it, never reads it back. A redirect also drops the
+  // authorization code from the address bar once it has been exchanged, per
+  // Google's own web-server OAuth guidance — and the response body is empty,
+  // so it stays free of the token exactly as the plain-text response was.
+  const destination = new URL("/settings?google=connected", c.req.url);
+  return c.redirect(destination.toString(), 302);
 });

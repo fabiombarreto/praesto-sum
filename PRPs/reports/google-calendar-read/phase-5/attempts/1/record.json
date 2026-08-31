@@ -1,0 +1,42 @@
+{
+  "attempt": 1,
+  "verdict": "TEST_CONTRACT_DISPUTE",
+  "files_changed": [
+    "src/shared/app-route.ts",
+    "src/shared/google-settings.ts",
+    "src/app/hooks/useRoute.ts",
+    "src/app/api.ts",
+    "src/app/components/SettingsScreen.tsx",
+    "src/app/components/GoogleConnectionCard.tsx",
+    "src/app/components/TodayHeader.tsx",
+    "src/app/App.tsx",
+    "src/worker/routes/oauth-callback.ts",
+    "src/app/components/TodayScreen.tsx"
+  ],
+  "validation": {
+    "level_1": "PASS",
+    "level_2": "FAIL",
+    "level_3": "PASS"
+  },
+  "dispute_evidence": {
+    "disputed_tests": [
+      "test/oauth-callback-redirect.test.ts:66-73",
+      "test/oauth-callback-redirect.test.ts:75-89",
+      "test/oauth-callback.test.ts:159-168"
+    ],
+    "prd_refs": [
+      "PRPs/prds/google-calendar-read.prd.md:140-141",
+      "PRPs/prds/google-calendar-read.prd.md:65"
+    ],
+    "claim": "exports.default.fetch() in @cloudflare/vitest-pool-workers follows redirects by default; the followed request to /settings has no Worker handler and lands on app.notFound() (404, no Location). No genuine 3xx redirect implementation can satisfy the assertions as written.",
+    "proposed_resolution": "Amend the assertions to observe the redirect without auto-following (redirect: \"manual\"). Test-authoring fix routed through the test pair; the Task 9 implementation should not change."
+  },
+  "command_independent_verification": {
+    "baseline_failure": "expected 200 to be greater than or equal to 300",
+    "post_impl_failure": "expected 404 to be less than 400",
+    "reading": "the >=300 assertion now PASSES and <400 fails, so the observed status is 404, not the 200 of the old plain-text page; 404 is reachable only via app.notFound(), which requires a request for /settings to have reached the Worker — i.e. the 302 was followed. Location absent on the final response, so new URL('', CALLBACK) resolves to /oauth/callback.",
+    "source_confirms_redirect": "src/worker/routes/oauth-callback.ts returns c.redirect(destination.toString(), 302)",
+    "diagnostic_reverted": "src/worker/index.ts absent from the attempt diff"
+  },
+  "base_commit": "03b9e310e423b1bb7f7c1d91c17328a8b9286032"
+}

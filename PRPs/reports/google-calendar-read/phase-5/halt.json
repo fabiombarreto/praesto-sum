@@ -1,0 +1,65 @@
+{
+  "outcome": "DISPUTE_UPHELD_TEST_WRONG",
+  "phase": 5,
+  "feature": "google-calendar-read",
+  "attempt": 1,
+  "dispute_payload": {
+    "disputed_tests": [
+      "test/oauth-callback-redirect.test.ts:66-73",
+      "test/oauth-callback-redirect.test.ts:75-89",
+      "test/oauth-callback.test.ts:159-168"
+    ],
+    "prd_refs": [
+      "PRPs/prds/google-calendar-read.prd.md:140-141",
+      "PRPs/prds/google-calendar-read.prd.md:65"
+    ],
+    "claim": "exports.default.fetch() auto-follows redirects; the followed /settings request has no Worker handler and lands on app.notFound() (404, no Location). No genuine 3xx implementation can satisfy the assertions as written.",
+    "proposed_resolution": "Amend the three cited assertions to observe the redirect without auto-following (redirect: \"manual\"). Task 9's implementation is correct as shipped and must not change."
+  },
+  "arbitration_verdict": {
+    "verdict": "DISPUTE_UPHELD_TEST_WRONG",
+    "evidence": [
+      "node_modules/@cloudflare/vitest-pool-workers/types/cloudflare-test.d.ts documents SELF: Fetcher as @deprecated in favour of exports.default.fetch() — the typed Fetcher successor, which auto-follows redirects",
+      "src/worker/index.ts has no /settings route; ends in app.notFound() -> 404 JSON",
+      "wrangler.jsonc assets.run_worker_first is exactly [\"/api/*\", \"/oauth/*\"] — /settings deliberately excluded",
+      "worker-configuration.d.ts:1850 confirms redirect is a real typed RequestInit member, so the remedy is achievable",
+      "a real browser follows the same 302 into the SPA shell via not_found_handling: single-page-application — production behaviour is correct"
+    ],
+    "classification": "existing-test defect (zero test files in the diff), not new coverage and not PRD ambiguity"
+  },
+  "attempt_history": [
+    {
+      "attempt": 1,
+      "verdict": "TEST_CONTRACT_DISPUTE",
+      "validation": {
+        "level_1": "PASS",
+        "level_2": "FAIL",
+        "level_3": "PASS"
+      },
+      "tests": "581 passing / 3 failing (baseline was 561 passing); the 21 new phase-5 unit tests all pass"
+    }
+  ],
+  "dispute_history": [
+    {
+      "attempt": 1,
+      "outcome": "DISPUTE_UPHELD_TEST_WRONG"
+    }
+  ],
+  "actionable_recommendation": "Route the dispute to the shipped test pair: run /relay-write-test with the halt.json dispute_evidence as the correction input so test-writer records the fix as an EXISTING_TEST_UPDATED lifecycle-ledger entry, then /relay-test-write-review to re-approve the suite, then re-run /relay-implement.",
+  "audit_log_anomaly": {
+    "file": "PRPs/plans/google-calendar-read-phase-5-consent-made-visible.code-review.jsonl",
+    "line": "last",
+    "observed": {
+      "verdict": "APPROVED",
+      "action": "final_flip",
+      "mode": "arbitration"
+    },
+    "expected": {
+      "verdict": "DISPUTE_UPHELD_TEST_WRONG",
+      "action": "n/a for arbitration mode"
+    },
+    "substantive_verdict_location": "rubric[0].verdict == DISPUTE_UPHELD_TEST_WRONG",
+    "impact": "A naive parse of the top-level verdict would read this arbitration line as an implementation approval and could trigger D8 mutations (plan -> IMPLEMENTED, PRD row -> implemented) against a RED suite. The command did NOT do that: it branched on the substantive arbitration outcome in rubric[0], and no D8 mutation was performed.",
+    "action_taken": "recorded, not rewritten — the code-reviewer agent owns its own audit log (D11); the command does not edit another component's verdict"
+  }
+}

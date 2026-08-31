@@ -11,6 +11,7 @@ import type { ReactNode } from "react";
 import type { TaskDto } from "../../shared/api";
 import { canWrite } from "../../shared/connectivity";
 import { todayIn } from "../../shared/dates";
+import { googleFailureMessage } from "../../shared/google-failure-copy";
 import { classifyRequestFailure } from "../../shared/request-failure";
 import type { ShareTarget } from "../../shared/share-target";
 import { buildTaskPatch } from "../../shared/task-edit";
@@ -97,13 +98,18 @@ type AgendaState =
   /** Nothing arrived. `reason` separates "connect" from "reconnect" from "try later". */
   | { kind: "failed"; reason: string | null };
 
-/** The agenda's own copy. Every string here is an owner approval (2026-08-28), not an invention. */
+/**
+ * The agenda's own copy — the strings only *Hoje* says. Every one is an owner
+ * approval (2026-08-28), not an invention.
+ *
+ * The three failure strings are NOT here: the settings screen says them too,
+ * so both the words and the reason that selects them live in
+ * `src/shared/google-failure-copy.ts`, where one edit reaches both surfaces
+ * and a test can reach the mapping (AC-A7).
+ */
 const AGENDA = {
   name: "Agenda",
   empty: "Nada na agenda hoje.",
-  notConnected: "Google não conectado.",
-  reconnect: "A conexão com o Google expirou. Reconecte para ver a agenda.",
-  failed: "Não foi possível carregar a agenda agora. Tente novamente mais tarde.",
   partial: (n: number) =>
     n === 1
       ? "Um calendário não respondeu — a agenda pode estar incompleta."
@@ -113,9 +119,12 @@ const AGENDA = {
 export function TodayScreen({
   onUnauthorized,
   initialShare,
+  onOpenSettings,
 }: {
   onUnauthorized: () => void;
   initialShare: ShareTarget | null;
+  /** Threaded from `App.tsx` (plan Task 8) so `TodayHeader`'s settings icon button (Task 7) can navigate. */
+  onOpenSettings: () => void;
 }) {
   const [tasks, setTasks] = useState<TaskDto[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -534,11 +543,7 @@ export function TodayScreen({
       case "partial":
         return AGENDA.partial(eventsState.failed);
       case "failed":
-        return eventsState.reason === "not_connected"
-          ? AGENDA.notConnected
-          : eventsState.reason === "invalid_grant"
-            ? AGENDA.reconnect
-            : AGENDA.failed;
+        return googleFailureMessage(eventsState.reason);
       case "ready":
         return agenda.length === 0 ? AGENDA.empty : null;
     }
@@ -588,6 +593,7 @@ export function TodayScreen({
         }
         activeFilterCount={activeCount(filter)}
         onOpenFilters={() => setFiltersOpen(true)}
+        onOpenSettings={onOpenSettings}
       />
 
       {/* One slot, two conditions, with a stated precedence: being offline

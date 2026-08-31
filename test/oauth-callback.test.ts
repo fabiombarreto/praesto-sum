@@ -159,7 +159,20 @@ describe("a valid callback stores the credential exactly once (AC-3)", () => {
   it("exchanges the code and stores the refresh token", async () => {
     await mintNonce("good");
 
-    const res = await exports.default.fetch(`${CALLBACK}?code=auth-code&state=good`);
+    // `redirect: "manual"` — exports.default.fetch() auto-follows redirects
+    // (it is the typed successor to the deprecated `SELF: Fetcher`), and the
+    // success leg now answers 302 (phase 5, Task 9). An auto-followed request
+    // for /settings has no Worker route in this harness and would surface as
+    // a 404 here instead of the callback's own response. See
+    // test/oauth-callback-redirect.test.ts's header comment and
+    // PRPs/reports/google-calendar-read/phase-5/halt.json for the full
+    // arbitration record (DISPUTE_UPHELD_TEST_WRONG). The assertion below is
+    // unchanged: `status < 400` already accepted either the old 200 or the
+    // new 302, which is why only the observation — never the contract —
+    // needed correcting.
+    const res = await exports.default.fetch(`${CALLBACK}?code=auth-code&state=good`, {
+      redirect: "manual",
+    });
 
     expect(res.status).toBeLessThan(400);
     expect(outbound).toHaveLength(1);

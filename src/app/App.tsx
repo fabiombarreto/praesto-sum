@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import type { ShareTarget } from "../shared/share-target";
 import { readToken } from "./api";
+import { SettingsScreen } from "./components/SettingsScreen";
 import { TodayScreen } from "./components/TodayScreen";
 import { TokenGate, type TokenGateReason } from "./components/TokenGate";
 import { Skeleton } from "./components/ui/Skeleton";
+import { useRoute } from "./hooks/useRoute";
 
 /**
  * The token-gate switch — everything else lives in `TodayScreen` (A5),
- * `TokenGate` (A5 phase 3) and their shared `src/app/components/ui/`.
+ * `SettingsScreen` (unit 4 phase 5), `TokenGate` (A5 phase 3) and their
+ * shared `src/app/components/ui/`.
  *
  * It exists to prove the whole stack end to end (PWA → Worker → D1) and to be
  * the surface the remaining Phase 1 requirements grow into — recurrence
@@ -18,9 +21,12 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
   // async (the token now lives behind src/shared/token-store.ts), so this
   // starts as "unknown" rather than assuming unauthorized.
   const [authorized, setAuthorized] = useState<boolean | null>(null);
-  // Why the gate is showing again — set on a 401 route from `TodayScreen`,
-  // cleared once a fresh token is saved.
+  // Why the gate is showing again — set on a 401 route from `TodayScreen` or
+  // `SettingsScreen`, cleared once a fresh token is saved.
   const [gateReason, setGateReason] = useState<TokenGateReason>(null);
+  // Called unconditionally, before either early return below, per the Rules
+  // of Hooks — `route`/`navigate` are only READ once the gate has passed.
+  const { route, navigate, back } = useRoute();
 
   useEffect(() => {
     let cancelled = false;
@@ -61,13 +67,19 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
       />
     );
   }
-  return (
+
+  function onUnauthorized(): void {
+    setGateReason("unauthorized");
+    setAuthorized(false);
+  }
+
+  return route === "settings" ? (
+    <SettingsScreen onUnauthorized={onUnauthorized} back={back} />
+  ) : (
     <TodayScreen
-      onUnauthorized={() => {
-        setGateReason("unauthorized");
-        setAuthorized(false);
-      }}
+      onUnauthorized={onUnauthorized}
       initialShare={initialShare}
+      onOpenSettings={() => navigate("settings")}
     />
   );
 }

@@ -1,0 +1,1298 @@
+diff --git a/PRPs/plans/google-calendar-read-phase-5-consent-made-visible.code-review.jsonl b/PRPs/plans/google-calendar-read-phase-5-consent-made-visible.code-review.jsonl
+new file mode 100644
+index 0000000..d94e398
+--- /dev/null
++++ b/PRPs/plans/google-calendar-read-phase-5-consent-made-visible.code-review.jsonl
+@@ -0,0 +1 @@
++{"timestamp": "2026-08-30T19:49:42Z", "attempt": 1, "verdict": "APPROVED", "mode": "arbitration", "rubric": [{"id": "arbitration", "verdict": "DISPUTE_UPHELD_TEST_WRONG", "reason": "Independently verified, not taken on the implementer's or command's word. (1) Ran test/oauth-callback-redirect.test.ts and test/oauth-callback.test.ts myself, unmodified: test/oauth-callback-redirect.test.ts:72 'expected 404 to be less than 400'; test/oauth-callback-redirect.test.ts:87 'expected \\'/oauth/callback\\' to be \\'/settings\\'' (Received: '/oauth/callback'); test/oauth-callback.test.ts:164 'expected 404 to be less than 400'. The :87 failure is decisive: location read as '' and new URL('', CALLBACK) trivially resolves back to the original request URL -- exactly what happens when an intermediate 3xx's Location header is consumed by auto-following and the final non-redirect response carries none. (2) Confirmed the mechanism at its source, not by inference: node_modules/@cloudflare/vitest-pool-workers/types/cloudflare-test.d.ts documents 'SELF: Fetcher' (service-binding-style fetch) as @deprecated in favour of 'import { exports } from \"cloudflare:workers\"' + 'exports.default.fetch()' -- i.e. exports.default.fetch() is the typed successor to a Fetcher, and Fetcher/service-binding fetches carry the same default redirect:'follow' semantics as global fetch(). (3) Confirmed src/worker/index.ts has no /settings route and ends in app.notFound() -> 404 JSON, and wrangler.jsonc's assets.run_worker_first is exactly ['/api/*','/oauth/*'] -- /settings is deliberately excluded by design (plan Summary + NOT Building), and vitest.config.ts's miniflare block for the 'worker' project configures no assets binding either. So the 404 is a test-harness artifact, not a production defect: a real browser follows the same 302 in production and lands on the SPA shell via not_found_handling:'single-page-application', a path exports.default.fetch() bypasses entirely by calling the Hono app directly. (4) Considered alternatives before concluding: redirect-following is controlled by the CALLER's fetch options, not by any status or Location value the server chooses, so no genuinely-redirecting implementation of PRD AC-3 / User Flow step 4-5 (PRPs/prds/google-calendar-read.prd.md:140-141, confirmed read directly: 'Google redirects to the callback... He is returned to *Hoje*') and plan AC-A2 can satisfy test/oauth-callback-redirect.test.ts:66-73, :75-89 or test/oauth-callback.test.ts:159-168 as currently invoked. A Worker-side /settings handler would both fall outside the plan's Files to Change (settings is explicitly client-only) and still fail :75-89, since the intermediate redirect's Location is unrecoverable from the final response regardless of what the followed request returns. (5) Confirmed the proposed remedy is achievable, not wishful: redirect is a real, typed RequestInit member in this project's own generated worker-configuration.d.ts:1850, so exports.default.fetch(url, {redirect:'manual'}) is directly usable to observe the raw 3xx and its Location. (6) Confirmed src/worker/routes/oauth-callback.ts's change is exactly c.redirect(destination.toString(), 302) -- correct and spec-compliant, satisfying PRD AC-3 (line 65: 'the code is exchanged... the refresh token is persisted... the nonce is marked consumed') and AC-A2 exactly as intended; git status confirms no test file and no diagnostic residue remain in the working tree. (7) This is a genuine EXISTING-test defect, not new coverage (diff touches zero test files) and not PRD ambiguity (AC-3 and User Flow steps 4-5 are unambiguous) -- it is a test-authoring gap around the harness's redirect-following default that the test file's own pre-implementation docstring and the plan's own pre-implementation Risk table both independently assumed away ('a 302 satisfies... status < 400'), a shared good-faith misunderstanding across the pipeline's planning artifacts, not a self-serving implementer claim. The three cited assertions must be corrected (redirect:'manual' or equivalent) by the test-writer/test-reviewer pair; Task 9's implementation is correct as shipped and must not change."}], "dispute_evidence": {"disputed_tests": ["test/oauth-callback-redirect.test.ts:66-73", "test/oauth-callback-redirect.test.ts:75-89", "test/oauth-callback.test.ts:159-168"], "prd_refs": ["PRPs/prds/google-calendar-read.prd.md:140-141", "PRPs/prds/google-calendar-read.prd.md:65"], "claim": "Plan Task 9 requires the OAuth callback's success leg to return a redirect to /settings?google=connected. The implementation does exactly that: c.redirect(destination.toString(), 302). However exports.default.fetch(...) -- the cloudflare:workers entrypoint this suite calls -- FOLLOWS redirects by default, like a real Fetcher. The followed request for /settings has no Worker-side handler (it is intentionally a client-only SPA route -- that is the entire point of this phase), so it lands on app.notFound() (src/worker/index.ts, 404) and the final response carries no Location header. Therefore no implementation of a genuine 3xx redirect can satisfy these assertions as written. The implementer proved this by temporarily registering a /settings handler returning 599 and observing the test see 599 -- the harness had silently re-dispatched the followed request. That probe was reverted and src/worker/index.ts is absent from the attempt diff.", "proposed_resolution": "Amend the assertions to observe the redirect without auto-following it (e.g. construct the request with redirect: \"manual\"), which is the standard Fetch-API mechanism for inspecting a 3xx response's own status and Location. A test-authoring fix; the Task 9 implementation itself should not change."}, "action": "final_flip", "user_message": ""}
+diff --git a/PRPs/plans/google-calendar-read.test-write-review.jsonl b/PRPs/plans/google-calendar-read.test-write-review.jsonl
+index 5efa171..cbf3182 100644
+--- a/PRPs/plans/google-calendar-read.test-write-review.jsonl
++++ b/PRPs/plans/google-calendar-read.test-write-review.jsonl
+@@ -1,2 +1,3 @@
+ {"timestamp":"2026-08-26T01:20:00Z","verdict":"APPROVED","rubric":[{"id":"R-IMPL-LEAK","passed":true},{"id":"R-TRIVIAL-ASSERT","passed":true},{"id":"R-MOCK-ABUSE","passed":true},{"id":"R-AC-COVERAGE","passed":true},{"id":"R-DUPLICATE","passed":true},{"id":"R-RED-LEGITIMATE","passed":true,"reason":"npx vitest run test/day-item.test.ts test/day-groups.test.ts exits 1 with 'Cannot find module ../src/shared/day-item' in both files; the unresolved symbol (src/shared/day-item, and transitively src/shared/day-groups) is in the plan's Files to Change CREATE set (Task 1, Task 2) — legitimate red-by-design, not broken setup"},{"id":"R-LIFECYCLE-LEGITIMATE","passed":true,"reason":"ledger lists two CREATE rows only, no UPDATE/DELETE; git status confirms test/day-item.test.ts and test/day-groups.test.ts are untracked new files and git diff HEAD -- test/task-groups.test.ts is empty, matching the manifest's claim that the characterization suite is byte-unchanged — completeness holds trivially, no anti-weakening checks apply"}],"action":"rubric_evaluation","user_message":""}
+ {"timestamp":"2026-08-30T18:56:16Z","verdict":"APPROVED","rubric":[{"id":"R-IMPL-LEAK","passed":true},{"id":"R-TRIVIAL-ASSERT","passed":true},{"id":"R-MOCK-ABUSE","passed":true},{"id":"R-AC-COVERAGE","passed":true},{"id":"R-DUPLICATE","passed":true},{"id":"R-RED-LEGITIMATE","passed":true,"reason":"npx vitest run --project worker test/app-route.test.ts test/google-settings.test.ts test/oauth-callback-redirect.test.ts exits 1; test/app-route.test.ts and test/google-settings.test.ts fail with Cannot find module '../src/shared/app-route' / '../src/shared/google-settings' — both unresolved symbols are in the plan's Files to Change CREATE set (Task 1, Task 2) — legitimate red-by-design; test/oauth-callback-redirect.test.ts fails on two genuine AssertionErrors against the existing UPDATE-target route ('expected 200 to be greater than or equal to 300'; 'expected /oauth/callback to be /settings') — legitimate assertion-failure red, not broken setup. A full npx vitest run confirms isolation: 561 passed, 2 failed of 563 tests (30 of 33 files green) — no other suite affected"},{"id":"R-LIFECYCLE-LEGITIMATE","passed":true,"reason":"ledger's sole row is the create-only sentinel; independently confirmed via git status --porcelain=v1: only PRPs/reports/google-calendar-read/test-suite.diff is modified (the manifest itself) and the three test files are untracked (??) new files — no existing test file appears modified, matching the manifest's claim that test/oauth-callback.test.ts was read but not touched. Create-only session — passes trivially"}],"action":"rubric_evaluation","user_message":""}
++{"timestamp":"2026-08-30T20:16:20Z","verdict":"APPROVED","rubric":[{"id":"R-IMPL-LEAK","passed":true},{"id":"R-TRIVIAL-ASSERT","passed":true},{"id":"R-MOCK-ABUSE","passed":true},{"id":"R-AC-COVERAGE","passed":true},{"id":"R-DUPLICATE","passed":true},{"id":"R-GREEN-LEGITIMATE","passed":true,"reason":"Correction round re-review: npm test exits 0 with 584 passed (584), 33/33 files (baseline 561 + 21 new phase-5 unit tests, net of the redirect fix); npx vitest run --project worker test/oauth-callback-redirect.test.ts test/oauth-callback.test.ts exits 0 with 14 passed (14) — both independently run, not taken on faith. This row is emitted under the GREEN-legitimate id per the dispatching command's explicit instruction: production code already exists here (arbitrated correct by code-reviewer, DISPUTE_UPHELD_TEST_WRONG, PRPs/reports/google-calendar-read/phase-5/halt.json), so the live question is whether the green was earned or manufactured, not whether the suite is red pre-implementation. git diff 03b9e310e423b1bb7f7c1d91c17328a8b9286032 -- test/oauth-callback-redirect.test.ts test/oauth-callback.test.ts filtered to lines matching expect / it( / describe( / skip / todo returns EMPTY — zero assertion or structural lines changed across either file. The only functional change at all three call sites is redirect: manual added to the exports.default.fetch() RequestInit, plus explanatory comments. Independently verified the underlying technical claim rather than trusting the arbitration at face value: src/worker/index.ts:40 shows app.notFound() answers 404 JSON with no Location header for any path Hono does not route, including a followed /settings request, and node_modules/@cloudflare/vitest-pool-workers/types/cloudflare-test.d.ts:8-13 confirms SELF: Fetcher is deprecated in favour of exports.default.fetch(), a standard Fetcher whose default RequestInit.redirect is follow per the Fetch spec — so the auto-follow-into-404 defect was real and the manual-redirect fix is the correct, minimal remedy, not a weakening"},{"id":"R-LIFECYCLE-LEGITIMATE","passed":true,"reason":"Ledger records three EXISTING_TEST_UPDATED rows this round (not the create-only sentinel) — independently re-validated per (a)-(d), not trusted at face value. (a) Completeness: git status --porcelain confirms exactly two test files carry unstaged modifications (test/oauth-callback-redirect.test.ts, test/oauth-callback.test.ts); the diff shows exactly 2 touched it() blocks in the first file and 1 in the second, matching all 3 ledger rows keyed by file:function — no unrecorded UPDATE or DELETE. (b) and (c) are not applicable — no OBSOLETE_TEST_REMOVED or REDUNDANT_TEST_REMOVED rows exist this round. (d) EXISTING_TEST_UPDATED anti-weakening, re-derived independently rather than trusting the ledger's own justification: the filtered git diff (see the R-GREEN-LEGITIMATE reason) shows every expect(...) line in all three touched tests is byte-identical before and after; the only change is redirect: manual added to the fetch call's RequestInit, plus comments. No assertion that plan AC-A2 / PRD AC-3 requires was dropped, loosened to a substring match, or had its status-range check removed. The adjacent assertion the ledger claims needed no change (test/oauth-callback.test.ts, never echoes the refresh token back in the response body, lines 215-221) was independently re-verified: it asserts the response body excludes the literal refresh-token string, which holds whether the observed body is an empty 302 or the harness-followed 404 JSON error body — correctly left untouched"}],"action":"rubric_evaluation","user_message":""}
+diff --git a/PRPs/reports/google-calendar-read/phase-5/attempts/1/record.json b/PRPs/reports/google-calendar-read/phase-5/attempts/1/record.json
+new file mode 100644
+index 0000000..6af067b
+--- /dev/null
++++ b/PRPs/reports/google-calendar-read/phase-5/attempts/1/record.json
+@@ -0,0 +1,42 @@
++{
++  "attempt": 1,
++  "verdict": "TEST_CONTRACT_DISPUTE",
++  "files_changed": [
++    "src/shared/app-route.ts",
++    "src/shared/google-settings.ts",
++    "src/app/hooks/useRoute.ts",
++    "src/app/api.ts",
++    "src/app/components/SettingsScreen.tsx",
++    "src/app/components/GoogleConnectionCard.tsx",
++    "src/app/components/TodayHeader.tsx",
++    "src/app/App.tsx",
++    "src/worker/routes/oauth-callback.ts",
++    "src/app/components/TodayScreen.tsx"
++  ],
++  "validation": {
++    "level_1": "PASS",
++    "level_2": "FAIL",
++    "level_3": "PASS"
++  },
++  "dispute_evidence": {
++    "disputed_tests": [
++      "test/oauth-callback-redirect.test.ts:66-73",
++      "test/oauth-callback-redirect.test.ts:75-89",
++      "test/oauth-callback.test.ts:159-168"
++    ],
++    "prd_refs": [
++      "PRPs/prds/google-calendar-read.prd.md:140-141",
++      "PRPs/prds/google-calendar-read.prd.md:65"
++    ],
++    "claim": "exports.default.fetch() in @cloudflare/vitest-pool-workers follows redirects by default; the followed request to /settings has no Worker handler and lands on app.notFound() (404, no Location). No genuine 3xx redirect implementation can satisfy the assertions as written.",
++    "proposed_resolution": "Amend the assertions to observe the redirect without auto-following (redirect: \"manual\"). Test-authoring fix routed through the test pair; the Task 9 implementation should not change."
++  },
++  "command_independent_verification": {
++    "baseline_failure": "expected 200 to be greater than or equal to 300",
++    "post_impl_failure": "expected 404 to be less than 400",
++    "reading": "the >=300 assertion now PASSES and <400 fails, so the observed status is 404, not the 200 of the old plain-text page; 404 is reachable only via app.notFound(), which requires a request for /settings to have reached the Worker — i.e. the 302 was followed. Location absent on the final response, so new URL('', CALLBACK) resolves to /oauth/callback.",
++    "source_confirms_redirect": "src/worker/routes/oauth-callback.ts returns c.redirect(destination.toString(), 302)",
++    "diagnostic_reverted": "src/worker/index.ts absent from the attempt diff"
++  },
++  "base_commit": "03b9e310e423b1bb7f7c1d91c17328a8b9286032"
++}
+diff --git a/PRPs/reports/google-calendar-read/phase-5/halt.json b/PRPs/reports/google-calendar-read/phase-5/halt.json
+new file mode 100644
+index 0000000..b865051
+--- /dev/null
++++ b/PRPs/reports/google-calendar-read/phase-5/halt.json
+@@ -0,0 +1,65 @@
++{
++  "outcome": "DISPUTE_UPHELD_TEST_WRONG",
++  "phase": 5,
++  "feature": "google-calendar-read",
++  "attempt": 1,
++  "dispute_payload": {
++    "disputed_tests": [
++      "test/oauth-callback-redirect.test.ts:66-73",
++      "test/oauth-callback-redirect.test.ts:75-89",
++      "test/oauth-callback.test.ts:159-168"
++    ],
++    "prd_refs": [
++      "PRPs/prds/google-calendar-read.prd.md:140-141",
++      "PRPs/prds/google-calendar-read.prd.md:65"
++    ],
++    "claim": "exports.default.fetch() auto-follows redirects; the followed /settings request has no Worker handler and lands on app.notFound() (404, no Location). No genuine 3xx implementation can satisfy the assertions as written.",
++    "proposed_resolution": "Amend the three cited assertions to observe the redirect without auto-following (redirect: \"manual\"). Task 9's implementation is correct as shipped and must not change."
++  },
++  "arbitration_verdict": {
++    "verdict": "DISPUTE_UPHELD_TEST_WRONG",
++    "evidence": [
++      "node_modules/@cloudflare/vitest-pool-workers/types/cloudflare-test.d.ts documents SELF: Fetcher as @deprecated in favour of exports.default.fetch() — the typed Fetcher successor, which auto-follows redirects",
++      "src/worker/index.ts has no /settings route; ends in app.notFound() -> 404 JSON",
++      "wrangler.jsonc assets.run_worker_first is exactly [\"/api/*\", \"/oauth/*\"] — /settings deliberately excluded",
++      "worker-configuration.d.ts:1850 confirms redirect is a real typed RequestInit member, so the remedy is achievable",
++      "a real browser follows the same 302 into the SPA shell via not_found_handling: single-page-application — production behaviour is correct"
++    ],
++    "classification": "existing-test defect (zero test files in the diff), not new coverage and not PRD ambiguity"
++  },
++  "attempt_history": [
++    {
++      "attempt": 1,
++      "verdict": "TEST_CONTRACT_DISPUTE",
++      "validation": {
++        "level_1": "PASS",
++        "level_2": "FAIL",
++        "level_3": "PASS"
++      },
++      "tests": "581 passing / 3 failing (baseline was 561 passing); the 21 new phase-5 unit tests all pass"
++    }
++  ],
++  "dispute_history": [
++    {
++      "attempt": 1,
++      "outcome": "DISPUTE_UPHELD_TEST_WRONG"
++    }
++  ],
++  "actionable_recommendation": "Route the dispute to the shipped test pair: run /relay-write-test with the halt.json dispute_evidence as the correction input so test-writer records the fix as an EXISTING_TEST_UPDATED lifecycle-ledger entry, then /relay-test-write-review to re-approve the suite, then re-run /relay-implement.",
++  "audit_log_anomaly": {
++    "file": "PRPs/plans/google-calendar-read-phase-5-consent-made-visible.code-review.jsonl",
++    "line": "last",
++    "observed": {
++      "verdict": "APPROVED",
++      "action": "final_flip",
++      "mode": "arbitration"
++    },
++    "expected": {
++      "verdict": "DISPUTE_UPHELD_TEST_WRONG",
++      "action": "n/a for arbitration mode"
++    },
++    "substantive_verdict_location": "rubric[0].verdict == DISPUTE_UPHELD_TEST_WRONG",
++    "impact": "A naive parse of the top-level verdict would read this arbitration line as an implementation approval and could trigger D8 mutations (plan -> IMPLEMENTED, PRD row -> implemented) against a RED suite. The command did NOT do that: it branched on the substantive arbitration outcome in rubric[0], and no D8 mutation was performed.",
++    "action_taken": "recorded, not rewritten — the code-reviewer agent owns its own audit log (D11); the command does not edit another component's verdict"
++  }
++}
+diff --git a/PRPs/reports/google-calendar-read/phase-5/preflight-formatting.json b/PRPs/reports/google-calendar-read/phase-5/preflight-formatting.json
+new file mode 100644
+index 0000000..b480e29
+--- /dev/null
++++ b/PRPs/reports/google-calendar-read/phase-5/preflight-formatting.json
+@@ -0,0 +1,41 @@
++{
++  "formatter_cmd": "npx prettier --write",
++  "discovery_source": "methodology.md formatter_cmd",
++  "files_scoped": [
++    "test/agenda.test.ts",
++    "test/app-route.test.ts",
++    "test/connectivity.test.ts",
++    "test/day-groups.test.ts",
++    "test/day-item-event.test.ts",
++    "test/day-item.test.ts",
++    "test/docs-consistency.test.ts",
++    "test/format.test.ts",
++    "test/google-calendar-client.test.ts",
++    "test/google-calendar-routes.test.ts",
++    "test/google-client.test.ts",
++    "test/google-events.test.ts",
++    "test/google-oauth.test.ts",
++    "test/google-routes.test.ts",
++    "test/google-settings.test.ts",
++    "test/health.test.ts",
++    "test/isolation.test.ts",
++    "test/oauth-callback-redirect.test.ts",
++    "test/oauth-callback.test.ts",
++    "test/request-failure.test.ts",
++    "test/share-target.test.ts",
++    "test/source-invariants.test.ts",
++    "test/task-edit.test.ts",
++    "test/task-filter.test.ts",
++    "test/task-groups.test.ts",
++    "test/task-list-contract.test.ts",
++    "test/task-list-filters.test.ts",
++    "test/task-priority.test.ts",
++    "test/task-sheet.test.ts",
++    "test/task-update.test.ts",
++    "test/tasks.test.ts",
++    "test/toast.test.ts",
++    "test/token-store.test.ts"
++  ],
++  "outcome": "formatted",
++  "exit_code_or_null": 0
++}
+diff --git a/PRPs/reports/google-calendar-read/test-suite.diff b/PRPs/reports/google-calendar-read/test-suite.diff
+index 1131ece..f3db4c9 100644
+--- a/PRPs/reports/google-calendar-read/test-suite.diff
++++ b/PRPs/reports/google-calendar-read/test-suite.diff
+@@ -52,18 +52,96 @@ the new test's own header comment rather than duplicated.
+ 
+ ## Lifecycle ledger
+ 
+-(none — no update/delete this session)
++**Session 1 (2026-08-30, initial authoring):** none — the suite was
++create-only.
++
++**Correction round (2026-08-30, attempt 2 — dispute-driven):** three
++`EXISTING_TEST_UPDATED` entries below. See "## Correction round" further
++down for the full narrative. Listed as three separate rows (not one) because
++each is a distinct test case `test-reviewer`'s `R-LIFECYCLE-LEGITIMATE` check
++must independently re-validate.
+ 
+ | Op | Classification | Test (file:function) | Justification |
+ |----|-----------------|-----------------------|----------------|
+-| (none — no update/delete this session) | — | — | — |
++| UPDATE | EXISTING_TEST_UPDATED | `test/oauth-callback-redirect.test.ts` — `it("answers a 3xx redirect rather than the phase-2 plain-text page")` | `code-reviewer` TEST_CONTRACT_DISPUTE arbitration upheld as `DISPUTE_UPHELD_TEST_WRONG` (evidence: `PRPs/reports/google-calendar-read/phase-5/halt.json`): `exports.default.fetch()` — the typed successor to the deprecated `SELF: Fetcher` — auto-follows the callback's 302, and the followed `/settings` request has no Worker route in this harness, landing on `app.notFound()` (404, no Location) instead of the callback's real response. Added `redirect: "manual"` (a real, typed `RequestInit` member, `worker-configuration.d.ts:1850`) so the test observes the raw response. The status-range assertion (`>=300`, `<400`) is unchanged in substance. |
++| UPDATE | EXISTING_TEST_UPDATED | `test/oauth-callback-redirect.test.ts` — `it("points the redirect at /settings?google=connected")` | Same upheld arbitration and evidence file as the row above (identical auto-follow defect). Added `redirect: "manual"`. The Location-resolution assertions (`pathname === "/settings"`, `searchParams.get("google") === "connected"`) are unchanged in substance. |
++| UPDATE | EXISTING_TEST_UPDATED | `test/oauth-callback.test.ts` — `it("exchanges the code and stores the refresh token")` | Collateral damage from the same auto-follow, on a pre-existing phase-2 test this phase never authored: its `status < 400` assertion was written to accept either the old 200 or the new 302, and started seeing the followed 404 instead. Same upheld arbitration and evidence file as the two rows above. Added `redirect: "manual"`; the `status < 400`, `outbound` and `connectionCount()` assertions are unchanged in substance. The sibling assertion at `:202-208` ("never echoes the refresh token") needed no change — re-verified by inspection: a manually-observed 302 has an empty body, and the previously auto-followed 404 JSON body never contained the token either, so it held under both observations. |
+ 
+-## Pre-emission self-check
++## Pre-emission self-check (session 1)
+ 
+ 1. **Ledger completeness** — no UPDATE or DELETE performed this session; the ledger's default row applies. `test/oauth-callback.test.ts` was read and deliberately left untouched (its existing assertions already pass against a 3xx, per the plan's own Risk Mitigation note), not modified.
+ 2. **Coverage completeness** — every PRD AC referenced by this phase's plan `## Acceptance Criteria` section (AC-1, AC-3, AC-4, AC-11, AC-15, plus the AC-A6 navigation precondition spanning AC-1/AC-4/AC-15) has an explicit recorded outcome above. No plan-referenced AC is silently unaddressed.
+ 
+-## Formatting Outcome
++## Correction round (dispute-driven revision, attempt 2)
++
++**Trigger:** the `/relay-implement` attempt on this plan produced a
++`TEST_CONTRACT_DISPUTE` (`PRPs/reports/google-calendar-read/phase-5/attempts/1/record.json`):
++Level 2 (`npm test`) reported 3 failing (of the 3 disputed assertions) while
++the 21 new phase-5 unit tests — Tasks 1–2, `test/app-route.test.ts` /
++`test/google-settings.test.ts` — all passed. The Implementer's diff itself
++was not in question: `src/worker/routes/oauth-callback.ts` returns
++`c.redirect(destination.toString(), 302)` exactly as Task 9 specifies.
++
++**Arbitration:** `DISPUTE_UPHELD_TEST_WRONG`
++(`PRPs/reports/google-calendar-read/phase-5/halt.json`). Evidence: `SELF: Fetcher`
++is documented `@deprecated` in `node_modules/@cloudflare/vitest-pool-workers/types/cloudflare-test.d.ts`
++in favour of `exports.default.fetch()`, which auto-follows redirects exactly
++like global `fetch()`; `src/worker/index.ts` has no `/settings` route;
++`wrangler.jsonc`'s `assets.run_worker_first` is exactly `["/api/*", "/oauth/*"]`,
++deliberately excluding `/settings`; and a real browser follows the identical
++302 into the SPA shell via `not_found_handling: "single-page-application"` —
++production behaviour is correct, and only the test harness's observation was
++wrong.
++
++**Correction applied this session — exactly three assertions, two files,
++nothing else:**
++
++- `test/oauth-callback-redirect.test.ts` — the two disputed cases — added
++  `redirect: "manual"` to the `exports.default.fetch()` call in each, so the
++  raw 3xx response is observed instead of the harness's auto-followed 404.
++  No assertion was loosened, removed, or skipped; the status-range and
++  Location-resolution checks are unchanged from what the approved suite
++  already asserted.
++- `test/oauth-callback.test.ts` — the pre-existing case "exchanges the code
++  and stores the refresh token" — same fix, same reasoning (collateral
++  damage from the identical auto-follow). Its sibling "never echoes the
++  refresh token back in the response body" (`:202-208`) was read and
++  confirmed to need no change, per the reasoning in the ledger row above, and
++  was left untouched.
++
++**Not touched, by design:** no file under `src/` (the implementation is
++arbitrated as correct and the working tree holds it uncommitted); no new test
++file created; no test besides the three named above; no `git` history-
++mutating command (stash/checkout/clean/reset/commit) was run.
++
++**Correction-round self-check:**
++
++1. **Ledger completeness** — all three UPDATEs performed this session have a
++   matching row in "## Lifecycle ledger" above, each classified
++   `EXISTING_TEST_UPDATED` with a justification citing the upheld arbitration
++   and its evidence file.
++2. **Anti-weakening guard** — none of the three edits removed, loosened, or
++   skipped an assertion. Each edit's only functional change is adding
++   `redirect: "manual"` to an `exports.default.fetch()` call already present;
++   every `expect(...)` line is textually identical to the suite `test-reviewer`
++   (B8) already approved.
++3. **Scope discipline** — only the three cited assertions were touched.
++   `test/oauth-callback.test.ts`'s other nine `it(...)` blocks, and
++   `test/oauth-callback-redirect.test.ts`'s imports/helpers, are unchanged.
++4. **Execution — the one open item before re-approval.** This agent
++   invocation carries no Bash tool (by design: B7 never certifies RED/GREEN
++   legitimacy — that is B8's `R-RED-LEGITIMATE` / `R-GREEN-LEGITIMATE`
++   dynamic check) and therefore could not itself run
++   `npx vitest run --project worker test/oauth-callback-redirect.test.ts test/oauth-callback.test.ts`
++   or the full `npm test` to confirm the corrected suite is green. Whoever
++   drives `/relay-test-write-review` next must run those commands (or
++   dispatch a runner) and record the actual pass/fail counts. The expected
++   outcome per the dispatching instructions is 584 passing / 0 failing
++   (baseline 561 + the 21 new phase-5 unit tests + the 3 corrected
++   assertions turning green) — that number is not self-reported here because
++   it was not observed by this session.
++
++## Formatting Outcome (session 1)
+ 
+ **formatted** — the three test files written this session were passed to the
+ declared formatter, scoped to their explicit paths and never to the repository.
+@@ -76,16 +154,30 @@ declared formatter, scoped to their explicit paths and never to the repository.
+ | Exit code | 0 |
+ | Result | all three reported **unchanged** — the writer's output was already Prettier-clean |
+ 
+-`test/oauth-callback.test.ts` was NOT in the touched set: it appears in this
+-manifest only as prose ("additive to the untouched ..."), the lifecycle ledger
+-records no UPDATE row for it, and `git status` confirms it unmodified. It was
+-therefore not passed to the formatter — which is the point of scoping the
+-invocation to the written-file set rather than to a glob.
+-
+-This step exists so the approved suite is Level-1 clean before the code
+-reviewer's R-X window opens, without the Implementer ever editing a test file.
++`test/oauth-callback.test.ts` was NOT in the touched set at that time: it
++appeared in that session's manifest only as prose ("additive to the
++untouched ..."), that session's lifecycle ledger recorded no UPDATE row for
++it, and `git status` confirmed it unmodified then. (It IS touched in the
++correction round — see immediately below.)
++
++## Formatting Outcome (correction round)
++
++**not run by this agent invocation** — this dispatch has no Bash tool (see
++"Correction-round self-check" item 4 above), so `formatter_cmd` from
++`methodology.md` (`npx prettier --write`) could not be invoked here. The two
++edited files (`test/oauth-callback-redirect.test.ts`,
++`test/oauth-callback.test.ts`) were hand-formatted to match the surrounding
++file's existing indentation, quote style and line-wrap conventions, but that
++is not a substitute for running the declared formatter. **Whoever runs
++`/relay-test-write-review` next should run
++`npx prettier --write test/oauth-callback-redirect.test.ts test/oauth-callback.test.ts`
++(scoped to exactly these two paths, never `.`) before or alongside the
++rubric pass**, so the re-approved suite stays Level-1 clean without the
++Implementer ever editing a test file.
+ 
+ ## Status
+ 
+-*Approved: 2026-08-30*
++*Approved: 2026-08-30 (session 1 — superseded by the correction round above)*
++*Revised: 2026-08-30 — dispute-driven correction (attempt 2); three
++EXISTING_TEST_UPDATED entries recorded above, re-submitted for B8 review*
+ *Status: APPROVED*
+diff --git a/src/app/App.tsx b/src/app/App.tsx
+index 3bfed85..5028d0b 100644
+--- a/src/app/App.tsx
++++ b/src/app/App.tsx
+@@ -1,13 +1,16 @@
+ import { useEffect, useState } from "react";
+ import type { ShareTarget } from "../shared/share-target";
+ import { readToken } from "./api";
++import { SettingsScreen } from "./components/SettingsScreen";
+ import { TodayScreen } from "./components/TodayScreen";
+ import { TokenGate, type TokenGateReason } from "./components/TokenGate";
+ import { Skeleton } from "./components/ui/Skeleton";
++import { useRoute } from "./hooks/useRoute";
+ 
+ /**
+  * The token-gate switch — everything else lives in `TodayScreen` (A5),
+- * `TokenGate` (A5 phase 3) and their shared `src/app/components/ui/`.
++ * `SettingsScreen` (unit 4 phase 5), `TokenGate` (A5 phase 3) and their
++ * shared `src/app/components/ui/`.
+  *
+  * It exists to prove the whole stack end to end (PWA → Worker → D1) and to be
+  * the surface the remaining Phase 1 requirements grow into — recurrence
+@@ -18,9 +21,12 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
+   // async (the token now lives behind src/shared/token-store.ts), so this
+   // starts as "unknown" rather than assuming unauthorized.
+   const [authorized, setAuthorized] = useState<boolean | null>(null);
+-  // Why the gate is showing again — set on a 401 route from `TodayScreen`,
+-  // cleared once a fresh token is saved.
++  // Why the gate is showing again — set on a 401 route from `TodayScreen` or
++  // `SettingsScreen`, cleared once a fresh token is saved.
+   const [gateReason, setGateReason] = useState<TokenGateReason>(null);
++  // Called unconditionally, before either early return below, per the Rules
++  // of Hooks — `route`/`navigate` are only READ once the gate has passed.
++  const { route, navigate } = useRoute();
+ 
+   useEffect(() => {
+     let cancelled = false;
+@@ -61,13 +67,19 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
+       />
+     );
+   }
+-  return (
++
++  function onUnauthorized(): void {
++    setGateReason("unauthorized");
++    setAuthorized(false);
++  }
++
++  return route === "settings" ? (
++    <SettingsScreen onUnauthorized={onUnauthorized} navigate={navigate} />
++  ) : (
+     <TodayScreen
+-      onUnauthorized={() => {
+-        setGateReason("unauthorized");
+-        setAuthorized(false);
+-      }}
++      onUnauthorized={onUnauthorized}
+       initialShare={initialShare}
++      onOpenSettings={() => navigate("settings")}
+     />
+   );
+ }
+diff --git a/src/app/api.ts b/src/app/api.ts
+index 710797e..884c36f 100644
+--- a/src/app/api.ts
++++ b/src/app/api.ts
+@@ -1,4 +1,11 @@
+-import type { CreateTaskInput, GoogleEventsDto, TaskDto, UpdateTaskInput } from "../shared/api";
++import type {
++  CreateTaskInput,
++  GoogleCalendarDto,
++  GoogleConnectionDto,
++  GoogleEventsDto,
++  TaskDto,
++  UpdateTaskInput,
++} from "../shared/api";
+ import { EMPTY_FILTER, toQuery, type TaskFilter } from "../shared/task-filter";
+ import { createTokenStore } from "../shared/token-store";
+ import { durableTokenStorage, legacyTokenStorage } from "./token-storage";
+@@ -161,3 +168,41 @@ export async function deleteTask(id: string): Promise<void> {
+ export async function fetchGoogleEvents(): Promise<GoogleEventsDto> {
+   return request<GoogleEventsDto>("/api/google/events");
+ }
++
++/**
++ * FR-030 / FR-027 — the five Google connection & calendar wrappers phase 5
++ * needs. Each is a one-liner over `request<T>()`, exactly like
++ * `fetchGoogleEvents` above: no local types, no error re-mapping — a
++ * failure already arrives as `ApiError` carrying `reason`, which is what
++ * lets the settings screen tell "not connected" from "reconnect" from "try
++ * later" apart.
++ */
++export async function startGoogleConnect(): Promise<{ consentUrl: string }> {
++  return request<{ consentUrl: string }>("/api/google/connect", { method: "POST" });
++}
++
++export async function fetchGoogleConnection(): Promise<{ connection: GoogleConnectionDto | null }> {
++  return request<{ connection: GoogleConnectionDto | null }>("/api/google/connection");
++}
++
++export async function disconnectGoogle(): Promise<{
++  disconnected: boolean;
++  revokedAtGoogle: boolean;
++}> {
++  return request<{ disconnected: boolean; revokedAtGoogle: boolean }>("/api/google/connection", {
++    method: "DELETE",
++  });
++}
++
++export async function fetchGoogleCalendars(): Promise<{ calendars: GoogleCalendarDto[] }> {
++  return request<{ calendars: GoogleCalendarDto[] }>("/api/google/calendars");
++}
++
++export async function saveGoogleCalendars(
++  calendarIds: string[],
++): Promise<{ calendarIds: string[] }> {
++  return request<{ calendarIds: string[] }>("/api/google/calendars", {
++    method: "PUT",
++    body: JSON.stringify({ calendarIds }),
++  });
++}
+diff --git a/src/app/components/GoogleConnectionCard.tsx b/src/app/components/GoogleConnectionCard.tsx
+new file mode 100644
+index 0000000..98ffe4b
+--- /dev/null
++++ b/src/app/components/GoogleConnectionCard.tsx
+@@ -0,0 +1,353 @@
++// The settings screen's one card (plan Tasks 2 + 6) — connection status,
++// connect, the calendar picker and disconnect, the three FR-030/FR-027
++// Musts phase 5 exists to ship. Owns the requests and the DOM; every
++// DECISION about what state comes next lives in
++// `src/shared/google-settings.ts` (the exempt-glue half of
++// `docs/context/methodology.md`'s "Browser-API work" split), mirroring how
++// `TaskSheet.tsx` relates to `src/shared/task-sheet.ts`.
++
++import { useEffect, useReducer, useState } from "react";
++import type { GoogleConnectionDto } from "../../shared/api";
++import {
++  canSaveSelection,
++  INITIAL_GOOGLE_SETTINGS_STATE,
++  reduceGoogleSettings,
++} from "../../shared/google-settings";
++import {
++  ApiError,
++  disconnectGoogle,
++  fetchGoogleCalendars,
++  fetchGoogleConnection,
++  saveGoogleCalendars,
++  startGoogleConnect,
++} from "../api";
++import { Button } from "./ui/Button";
++import { ConfirmView } from "./ui/ConfirmView";
++
++/**
++ * Copied VERBATIM from `TodayScreen.tsx`'s `AGENDA.notConnected` /
++ * `AGENDA.reconnect` / `AGENDA.failed` (owner approvals of 2026-08-28) —
++ * not imported, because `AGENDA` is a module-local, unexported `const` in a
++ * file this phase's `## Files to Change` table does not touch. Plan Task 6
++ * asks to "reuse ... strings rather than writing new ones"; AC-A7 enforces
++ * agreement at the WORDS the owner reads, which is what this satisfies. If
++ * either copy ever changes, the other must be updated to match by hand —
++ * that hand-kept coupling is exactly what this comment exists to surface
++ * for the next reader (and the code reviewer's AC-A7 check).
++ */
++const FAILED_COPY = {
++  notConnected: "Google não conectado.",
++  reconnect: "A conexão com o Google expirou. Reconecte para ver a agenda.",
++  failed: "Não foi possível carregar a agenda agora. Tente novamente mais tarde.",
++} as const;
++
++/** How each granted OAuth scope reads in one word, for the connected summary. */
++const SCOPE_LABELS: Readonly<Record<string, string>> = {
++  "https://www.googleapis.com/auth/calendar.events.readonly": "compromissos",
++  "https://www.googleapis.com/auth/calendar.calendarlist.readonly": "lista de calendários",
++};
++
++function summarizeScope(scope: string): string {
++  const labels = scope
++    .split(" ")
++    .map((value) => SCOPE_LABELS[value])
++    .filter((label): label is string => label !== undefined);
++  return labels.length > 0 ? `Leitura de ${labels.join(" e ")}.` : "Leitura de calendários.";
++}
++
++export function GoogleConnectionCard({ onUnauthorized }: { onUnauthorized: () => void }) {
++  const [state, dispatch] = useReducer(reduceGoogleSettings, INITIAL_GOOGLE_SETTINGS_STATE);
++  // The connection's own display data lives here, deliberately outside the
++  // reducer — see the module doc comment in `google-settings.ts`.
++  const [connection, setConnection] = useState<GoogleConnectionDto | null>(null);
++  const [showSkeleton, setShowSkeleton] = useState(false);
++  const [connecting, setConnecting] = useState(false);
++  const [connectError, setConnectError] = useState<string | null>(null);
++  const [saveError, setSaveError] = useState<string | null>(null);
++  const [confirmingDisconnect, setConfirmingDisconnect] = useState(false);
++  const [disconnecting, setDisconnecting] = useState(false);
++  const [disconnectError, setDisconnectError] = useState<string | null>(null);
++  const [disconnectResult, setDisconnectResult] = useState<{ revokedAtGoogle: boolean } | null>(
++    null,
++  );
++  const [retrying, setRetrying] = useState(false);
++
++  async function load(): Promise<void> {
++    try {
++      const { connection: loaded } = await fetchGoogleConnection();
++      if (loaded === null) {
++        setConnection(null);
++        dispatch({ type: "loaded-disconnected" });
++        return;
++      }
++      const { calendars } = await fetchGoogleCalendars();
++      setConnection(loaded);
++      dispatch({ type: "loaded-connected", calendars });
++    } catch (cause) {
++      if (cause instanceof ApiError && cause.status === 401) {
++        onUnauthorized();
++        return;
++      }
++      dispatch({ type: "load-failed", reason: cause instanceof ApiError ? cause.reason : null });
++    }
++  }
++
++  // Mount only — a retry is an explicit tap (`retry` below), never an
++  // implicit re-run.
++  useEffect(() => {
++    void load();
++  }, []);
++
++  useEffect(() => {
++    if (state.kind !== "loading") {
++      setShowSkeleton(false);
++      return;
++    }
++    // Guidelines §8, "Pending request": an indicator only after a 300–500 ms
++    // delay, so a fast answer never flashes a skeleton the owner cannot
++    // read.
++    const timer = setTimeout(() => setShowSkeleton(true), 400);
++    return () => clearTimeout(timer);
++  }, [state.kind]);
++
++  async function retry(): Promise<void> {
++    setRetrying(true);
++    await load();
++    setRetrying(false);
++  }
++
++  async function handleConnect(): Promise<void> {
++    setConnectError(null);
++    setConnecting(true);
++    try {
++      const { consentUrl } = await startGoogleConnect();
++      window.location.href = consentUrl;
++    } catch (cause) {
++      if (cause instanceof ApiError && cause.status === 401) {
++        onUnauthorized();
++        return;
++      }
++      setConnectError("Não foi possível iniciar a conexão com o Google. Tente novamente.");
++    } finally {
++      setConnecting(false);
++    }
++  }
++
++  function handleToggle(calendarId: string): void {
++    dispatch({ type: "toggle-calendar", calendarId });
++  }
++
++  async function handleSave(): Promise<void> {
++    if (state.kind !== "connected") return;
++    setSaveError(null);
++    dispatch({ type: "save-start" });
++    try {
++      const { calendarIds } = await saveGoogleCalendars([...state.draft]);
++      dispatch({ type: "save-succeeded", calendarIds });
++      // The change becomes visible "where it matters" (PRD AC-15) the
++      // moment the owner returns to Hoje: App.tsx renders TodayScreen and
++      // SettingsScreen as ALTERNATIVES, never both, so navigating back
++      // unmounts this screen and mounts a fresh TodayScreen — whose own
++      // mount effect already calls `refreshEvents()`. No explicit re-fetch
++      // belongs here: there is no shared events store to write into while
++      // this screen is showing, and calling fetchGoogleEvents() here would
++      // fetch data nothing on this screen renders.
++    } catch (cause) {
++      dispatch({ type: "save-failed" });
++      if (cause instanceof ApiError && cause.status === 401) {
++        onUnauthorized();
++        return;
++      }
++      setSaveError("Não foi possível salvar a seleção agora. Tente novamente.");
++    }
++  }
++
++  function requestDisconnect(): void {
++    setDisconnectError(null);
++    setConfirmingDisconnect(true);
++  }
++
++  function cancelDisconnect(): void {
++    setDisconnectError(null);
++    setConfirmingDisconnect(false);
++  }
++
++  async function confirmDisconnect(): Promise<void> {
++    setDisconnecting(true);
++    setDisconnectError(null);
++    try {
++      const { revokedAtGoogle } = await disconnectGoogle();
++      setConnection(null);
++      setDisconnectResult({ revokedAtGoogle });
++      setConfirmingDisconnect(false);
++      dispatch({ type: "loaded-disconnected" });
++    } catch (cause) {
++      if (cause instanceof ApiError && cause.status === 401) {
++        onUnauthorized();
++        return;
++      }
++      setDisconnectError("Não foi possível desconectar agora. Tente novamente.");
++    } finally {
++      setDisconnecting(false);
++    }
++  }
++
++  const failedMessage =
++    state.kind === "failed"
++      ? // Exactly the reading TodayScreen's own `agendaNotice` takes — one
++        // vocabulary for a dead credential, per AC-A7.
++        state.reason === "not_connected"
++        ? FAILED_COPY.notConnected
++        : state.reason === "invalid_grant"
++          ? FAILED_COPY.reconnect
++          : FAILED_COPY.failed
++      : null;
++
++  return (
++    <section
++      aria-label="Conexão com o Google"
++      className="flex flex-col gap-4 rounded-card bg-surface-1 p-4"
++    >
++      {state.kind === "loading" && showSkeleton && (
++        <div className="flex flex-col gap-3" role="status" aria-busy="true" aria-label="Carregando">
++          <div className="h-5 w-2/3 rounded-control bg-surface-2" aria-hidden="true" />
++          <div className="h-12 rounded-control bg-surface-2" aria-hidden="true" />
++          <div className="h-12 rounded-control bg-surface-2" aria-hidden="true" />
++        </div>
++      )}
++
++      {state.kind === "disconnected" && (
++        <>
++          {disconnectResult !== null &&
++            (disconnectResult.revokedAtGoogle ? (
++              <p role="status" className="m-0 font-text text-t2 text-ink">
++                Conexão revogada no Google e removida daqui.
++              </p>
++            ) : (
++              <p role="status" className="m-0 font-text text-t2 text-ink">
++                Conexão removida daqui. O Google pode continuar mostrando esse acesso — revise em{" "}
++                <a
++                  href="https://myaccount.google.com/permissions"
++                  target="_blank"
++                  rel="noreferrer"
++                  className="text-accent underline"
++                >
++                  sua Conta Google
++                </a>
++                .
++              </p>
++            ))}
++          <p className="m-0 font-text text-t3 text-muted">
++            Conecte sua conta do Google para ver seus compromissos junto com suas tarefas.
++          </p>
++          <p className="m-0 font-text text-t2 text-muted">
++            O Google vai avisar que o app não é verificado — isso é esperado. Toque em “Avançado” e
++            continue mesmo assim.
++          </p>
++          <Button
++            type="button"
++            variant="primary"
++            onClick={() => void handleConnect()}
++            disabled={connecting}
++          >
++            Conectar
++          </Button>
++          {connectError !== null && (
++            <p role="alert" className="m-0 font-text text-t2 text-overdue">
++              {connectError}
++            </p>
++          )}
++        </>
++      )}
++
++      {state.kind === "connected" && (
++        <>
++          {connection !== null && (
++            <p className="m-0 font-text text-t2 text-muted">{summarizeScope(connection.scope)}</p>
++          )}
++
++          <ul className="m-0 flex list-none flex-col gap-2 p-0">
++            {state.calendars.map((calendar) => (
++              <li key={calendar.id}>
++                <label className="flex min-h-12 items-center gap-3 rounded-control border border-line bg-surface-2 px-4 font-text text-t2 text-ink">
++                  <input
++                    type="checkbox"
++                    checked={state.draft.has(calendar.id)}
++                    onChange={() => handleToggle(calendar.id)}
++                    disabled={state.saving}
++                    className="size-5"
++                  />
++                  {calendar.summary}
++                  {calendar.primary && (
++                    <span className="ml-auto font-data text-t1 text-muted">Principal</span>
++                  )}
++                </label>
++              </li>
++            ))}
++          </ul>
++
++          <Button
++            type="button"
++            variant="primary"
++            onClick={() => void handleSave()}
++            disabled={!canSaveSelection(state)}
++          >
++            Salvar
++          </Button>
++
++          {state.draft.size === 0 && (
++            <p className="m-0 font-text text-t2 text-muted">
++              Escolha ao menos um calendário. Para não ver nada do Google, desconecte.
++            </p>
++          )}
++
++          {saveError !== null && (
++            <p role="alert" className="m-0 font-text text-t2 text-overdue">
++              {saveError}
++            </p>
++          )}
++
++          {!confirmingDisconnect && (
++            <Button
++              type="button"
++              variant="ghost"
++              className="self-start text-muted"
++              onClick={requestDisconnect}
++            >
++              Desconectar do Google
++            </Button>
++          )}
++
++          {confirmingDisconnect && (
++            <ConfirmView
++              title="Desconectar do Google?"
++              body="Você vai precisar refazer a autorização do Google para conectar de novo."
++              cancelLabel="Cancelar"
++              confirmLabel="Desconectar"
++              busy={disconnecting}
++              error={disconnectError}
++              onCancel={cancelDisconnect}
++              onConfirm={() => void confirmDisconnect()}
++            />
++          )}
++        </>
++      )}
++
++      {failedMessage !== null && (
++        <>
++          <p role="alert" className="m-0 font-text text-t2 text-overdue">
++            {failedMessage}
++          </p>
++          <Button
++            type="button"
++            variant="secondary"
++            onClick={() => void retry()}
++            disabled={retrying}
++          >
++            Tentar de novo
++          </Button>
++        </>
++      )}
++    </section>
++  );
++}
+diff --git a/src/app/components/SettingsScreen.tsx b/src/app/components/SettingsScreen.tsx
+new file mode 100644
+index 0000000..e2e43e1
+--- /dev/null
++++ b/src/app/components/SettingsScreen.tsx
+@@ -0,0 +1,92 @@
++// The route's shell (layout standard §3: "long flows [...] are ROUTES with
++// real history entries, not sheets") — the same 100dvh grid as *Hoje*
++// (header / scrolling content), the flat wordmark before the page title
++// (§2.1: "no wordmark in the [Hoje] header [...] it lives on the splash,
++// the settings screen and the desktop rail"; §5 describes the same
++// wordmark-before-title arrangement on the desktop list pane), and the one
++// card this phase puts on it (`## NOT Building` — no other settings content
++// yet).
++
++import { ArrowLeft } from "lucide-react";
++import { useEffect, useState } from "react";
++import type { AppRoute } from "../../shared/app-route";
++import { useConnectivity } from "../hooks/useConnectivity";
++import { GoogleConnectionCard } from "./GoogleConnectionCard";
++import { Banner } from "./ui/Banner";
++import { Button } from "./ui/Button";
++
++export function SettingsScreen({
++  onUnauthorized,
++  navigate,
++}: {
++  onUnauthorized: () => void;
++  navigate: (route: AppRoute) => void;
++}) {
++  const { state: connectivity } = useConnectivity();
++  const [justConnected, setJustConnected] = useState(false);
++
++  useEffect(() => {
++    document.title = "Configurações · Praesto Sum";
++  }, []);
++
++  useEffect(() => {
++    // The client half of the OAuth return leg — Task 9 changes only what
++    // the Worker SENDS (a redirect into `/settings?google=connected`); this
++    // is the only task whose scope includes the screen that RECEIVES it. A
++    // redirected owner has no other signal the round-trip worked, so the
++    // param earns an explicit confirmation, then `replaceState` clears it
++    // so a reload does not re-announce a connection that happened minutes
++    // ago.
++    const params = new URLSearchParams(window.location.search);
++    if (params.get("google") === "connected") {
++      setJustConnected(true);
++      window.history.replaceState(null, "", "/settings");
++    }
++  }, []);
++
++  function goBack(): void {
++    navigate("today");
++  }
++
++  return (
++    <div
++      data-shell
++      className="mx-auto grid h-dvh w-full max-w-[640px] grid-rows-[auto_auto_1fr] overflow-clip bg-bg"
++    >
++      <header className="flex items-center gap-3 px-4 pt-6 pb-2">
++        {/* The Android back gesture and Esc ALSO return to Hoje, because
++            `useRoute` (Task 3) pushed a real `history` entry for /settings —
++            this arrow is a convenience, never the only way out (guidelines
++            §2.2). A later refactor that drops that history entry would
++            leave this arrow load-bearing, which is why that fact is
++            written here rather than left to be rediscovered. */}
++        <Button type="button" variant="icon" aria-label="Voltar" onClick={goBack}>
++          <ArrowLeft className="size-[22px]" aria-hidden="true" />
++        </Button>
++        <span className="flex items-center gap-1.5" aria-hidden="true">
++          <img src="/brand/mark-flat.svg" alt="" className="size-5" />
++          <span className="font-display text-t2 font-extrabold text-muted">praesto</span>
++        </span>
++        <h1 className="m-0 font-text text-t4 font-bold text-ink">Configurações</h1>
++      </header>
++
++      {/* Mandatory on every screen (guidelines §8) — the same banner *Hoje*
++          uses, and the same always-render-a-slot discipline so the grid's
++          explicit row template does not shift when the condition clears. */}
++      {connectivity !== "online" ? (
++        <Banner lead="Sem conexão." body="Dá para ler, mas não para salvar por enquanto." />
++      ) : (
++        <div />
++      )}
++
++      <main className="flex flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
++        {justConnected && (
++          <p role="status" className="m-0 font-text text-t2 text-ink">
++            Conta do Google conectada.
++          </p>
++        )}
++        <GoogleConnectionCard onUnauthorized={onUnauthorized} />
++      </main>
++    </div>
++  );
++}
+diff --git a/src/app/components/TodayHeader.tsx b/src/app/components/TodayHeader.tsx
+index d0853c8..8e99799 100644
+--- a/src/app/components/TodayHeader.tsx
++++ b/src/app/components/TodayHeader.tsx
+@@ -6,7 +6,7 @@
+ // is real text, never a bare dot (guidelines §4.4), so the filtered state
+ // is never carried by colour alone.
+ 
+-import { SlidersHorizontal } from "lucide-react";
++import { Settings, SlidersHorizontal } from "lucide-react";
+ import { formatHeaderDate, formatRemaining } from "../../shared/format";
+ import { Button } from "./ui/Button";
+ 
+@@ -15,11 +15,13 @@ export function TodayHeader({
+   remaining,
+   activeFilterCount,
+   onOpenFilters,
++  onOpenSettings,
+ }: {
+   now: Date;
+   remaining: number;
+   activeFilterCount: number;
+   onOpenFilters: () => void;
++  onOpenSettings: () => void;
+ }) {
+   const { figure, label } = formatRemaining(remaining);
+   // Singular at one, plural above it — the same agreement `formatRemaining`
+@@ -57,6 +59,9 @@ export function TodayHeader({
+           </span>
+         )}
+       </span>
++      <Button type="button" variant="icon" aria-label="Configurações" onClick={onOpenSettings}>
++        <Settings className="size-[22px]" aria-hidden="true" />
++      </Button>
+     </header>
+   );
+ }
+diff --git a/src/app/components/TodayScreen.tsx b/src/app/components/TodayScreen.tsx
+index 4f65114..6aba90d 100644
+--- a/src/app/components/TodayScreen.tsx
++++ b/src/app/components/TodayScreen.tsx
+@@ -113,9 +113,12 @@ const AGENDA = {
+ export function TodayScreen({
+   onUnauthorized,
+   initialShare,
++  onOpenSettings,
+ }: {
+   onUnauthorized: () => void;
+   initialShare: ShareTarget | null;
++  /** Threaded from `App.tsx` (plan Task 8) so `TodayHeader`'s settings icon button (Task 7) can navigate. */
++  onOpenSettings: () => void;
+ }) {
+   const [tasks, setTasks] = useState<TaskDto[] | null>(null);
+   const [loadError, setLoadError] = useState<string | null>(null);
+@@ -588,6 +591,7 @@ export function TodayScreen({
+         }
+         activeFilterCount={activeCount(filter)}
+         onOpenFilters={() => setFiltersOpen(true)}
++        onOpenSettings={onOpenSettings}
+       />
+ 
+       {/* One slot, two conditions, with a stated precedence: being offline
+diff --git a/src/app/hooks/useRoute.ts b/src/app/hooks/useRoute.ts
+new file mode 100644
+index 0000000..6cf31d8
+--- /dev/null
++++ b/src/app/hooks/useRoute.ts
+@@ -0,0 +1,35 @@
++import { useCallback, useEffect, useState } from "react";
++import { pathOf, routeFromPath, type AppRoute } from "../../shared/app-route";
++
++/**
++ * The exempt glue over `src/shared/app-route.ts`
++ * (`docs/context/methodology.md`, "Browser-API work: split the logic out,
++ * then the glue is exempt"): every routing DECISION lives in that pure
++ * module; this hook only adds the `history.pushState` call, the `popstate`
++ * listener, and `history.scrollRestoration = "manual"` (guidelines §12.4,
++ * so SPA navigation restores scroll itself rather than the browser
++ * guessing). No branch here may test a path literal — that would smuggle a
++ * decision back into the glue this split exists to keep thin.
++ */
++export function useRoute(): { route: AppRoute; navigate: (route: AppRoute) => void } {
++  const [route, setRoute] = useState<AppRoute>(() => routeFromPath(window.location.pathname));
++
++  useEffect(() => {
++    history.scrollRestoration = "manual";
++  }, []);
++
++  useEffect(() => {
++    function handlePopState(): void {
++      setRoute(routeFromPath(window.location.pathname));
++    }
++    window.addEventListener("popstate", handlePopState);
++    return () => window.removeEventListener("popstate", handlePopState);
++  }, []);
++
++  const navigate = useCallback((next: AppRoute) => {
++    history.pushState(null, "", pathOf(next));
++    setRoute(next);
++  }, []);
++
++  return { route, navigate };
++}
+diff --git a/src/shared/app-route.ts b/src/shared/app-route.ts
+new file mode 100644
+index 0000000..e8935f1
+--- /dev/null
++++ b/src/shared/app-route.ts
+@@ -0,0 +1,38 @@
++/**
++ * The navigation seam's decidable half (PRD AC-1, AC-4, AC-15 via plan
++ * AC-A6) — path <-> route, both directions, total. Like
++ * `src/shared/connectivity.ts` and `src/shared/toast.ts`, it only maps the
++ * input it is handed and never touches the DOM, `history` or a timer.
++ *
++ * `src/app/hooks/useRoute.ts` is the exempt glue half of
++ * `docs/context/methodology.md`'s "Browser-API work" split:
++ * `history.pushState`, `popstate`, and `history.scrollRestoration` live
++ * there, never here. This module is the decidable half, authored test-first
++ * (`test/app-route.test.ts`).
++ *
++ * An unrecognised path resolves to `today` rather than throwing:
++ * `not_found_handling: "single-page-application"` (`wrangler.jsonc`) serves
++ * this SPA's shell for every unmatched path, so an unknown path is a real,
++ * reachable input here, never an error case.
++ *
++ * **The path stays English** (`/settings`, not `/configuracoes`). ADR-0009's
++ * pt-BR carve-out names "the string values the owner reads on screen
++ * (labels, buttons, placeholders, states, notifications, manifest text)" —
++ * not URLs — so ADR-0001 governs, and the existing dev-only `/design` route
++ * (`src/app/main.tsx`) is the in-repo precedent.
++ */
++
++export type AppRoute = "today" | "settings";
++
++/** Strips at most one trailing slash; the root path `/` itself is untouched. */
++function withoutTrailingSlash(pathname: string): string {
++  return pathname !== "/" && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
++}
++
++export function routeFromPath(pathname: string): AppRoute {
++  return withoutTrailingSlash(pathname) === "/settings" ? "settings" : "today";
++}
++
++export function pathOf(route: AppRoute): string {
++  return route === "settings" ? "/settings" : "/";
++}
+diff --git a/src/shared/google-settings.ts b/src/shared/google-settings.ts
+new file mode 100644
+index 0000000..e6517d5
+--- /dev/null
++++ b/src/shared/google-settings.ts
+@@ -0,0 +1,130 @@
++/**
++ * The settings screen's state machine (PRD AC-15 via plan AC-A4/AC-A5; PRD
++ * AC-11 via plan AC-A7) — the Google connection's status, its calendar
++ * list, and one selection draft kept for the session. Total and
++ * side-effect free, like `src/shared/connectivity.ts` and
++ * `src/shared/toast.ts`: it only reduces the events it is handed and never
++ * touches the DOM, a timer or the network.
++ *
++ * The `GET`/`PUT` requests, the checkbox markup and the *Salvar* button are
++ * React glue in `src/app/components/GoogleConnectionCard.tsx` — the exempt
++ * half of `docs/context/methodology.md`'s "Browser-API work" split. This
++ * module is the decidable half, authored test-first
++ * (`test/google-settings.test.ts`).
++ *
++ * Exactly four `kind`s, mirroring `AgendaState` in `TodayScreen.tsx:92-98`
++ * shape for shape. "Needs reconnection" is a `reason` ON `failed`, never a
++ * fifth kind: *Hoje* already separates "connect" from "reconnect" from "try
++ * later" by that one field, and a sibling state here would be the second
++ * vocabulary AC-A7 forbids. `disconnected` is a steady state, not a
++ * failure — it is what `GET /connection` answering `{ connection: null }`
++ * means.
++ *
++ * **The empty-draft rule is not cosmetic.** `PUT /api/google/calendars`
++ * answers 400 on an empty array on purpose: zero stored rows is how "never
++ * chosen" is encoded, so saving nothing would silently re-enable `primary`
++ * — the opposite of what the owner asked. `canSaveSelection` is what makes
++ * the empty state unsaveable here, before a request is ever built, rather
++ * than discovered through a failed one.
++ *
++ * The connection's own display data (`GoogleConnectionDto`'s `scope` and
++ * `connectedAt`) is deliberately NOT folded in here — it lives in its own
++ * atom in `GoogleConnectionCard.tsx`, the same separation `TodayScreen.tsx`
++ * already keeps between `tasks` and `events`.
++ */
++
++import type { GoogleCalendarDto } from "./api";
++
++export type GoogleSettingsState =
++  | { kind: "loading" }
++  | { kind: "disconnected" }
++  | {
++      kind: "connected";
++      calendars: readonly GoogleCalendarDto[];
++      draft: ReadonlySet<string>;
++      saving: boolean;
++    }
++  | { kind: "failed"; reason: string | null };
++
++export const INITIAL_GOOGLE_SETTINGS_STATE: GoogleSettingsState = { kind: "loading" };
++
++export type GoogleSettingsEvent =
++  | { type: "load-failed"; reason: string | null }
++  | { type: "loaded-disconnected" }
++  | { type: "loaded-connected"; calendars: readonly GoogleCalendarDto[] }
++  | { type: "toggle-calendar"; calendarId: string }
++  | { type: "save-start" }
++  | { type: "save-succeeded"; calendarIds: readonly string[] }
++  | { type: "save-failed" };
++
++/** The ids `calendars` reports as already selected — what a fresh draft seeds from, and what a draft is compared against. */
++function storedSelection(calendars: readonly GoogleCalendarDto[]): ReadonlySet<string> {
++  return new Set(calendars.filter((calendar) => calendar.selected).map((calendar) => calendar.id));
++}
++
++function setsEqual(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
++  if (a.size !== b.size) return false;
++  for (const id of a) if (!b.has(id)) return false;
++  return true;
++}
++
++export function reduceGoogleSettings(
++  state: GoogleSettingsState,
++  event: GoogleSettingsEvent,
++): GoogleSettingsState {
++  switch (event.type) {
++    case "load-failed":
++      return { kind: "failed", reason: event.reason };
++    case "loaded-disconnected":
++      return { kind: "disconnected" };
++    case "loaded-connected":
++      return {
++        kind: "connected",
++        calendars: event.calendars,
++        draft: storedSelection(event.calendars),
++        saving: false,
++      };
++    case "toggle-calendar": {
++      if (state.kind !== "connected") return state;
++      const draft = new Set(state.draft);
++      if (draft.has(event.calendarId)) draft.delete(event.calendarId);
++      else draft.add(event.calendarId);
++      return { ...state, draft };
++    }
++    case "save-start":
++      return state.kind === "connected" ? { ...state, saving: true } : state;
++    case "save-succeeded": {
++      if (state.kind !== "connected") return state;
++      const selected = new Set(event.calendarIds);
++      return {
++        ...state,
++        calendars: state.calendars.map((calendar) => ({
++          ...calendar,
++          selected: selected.has(calendar.id),
++        })),
++        draft: selected,
++        saving: false,
++      };
++    }
++    case "save-failed":
++      return state.kind === "connected" ? { ...state, saving: false } : state;
++  }
++}
++
++/**
++ * `true` only for a non-empty, changed, not-mid-save draft (plan AC-A5, PRD
++ * AC-15) — the guard that keeps the 400-triggering empty `PUT` from ever
++ * being built.
++ */
++export function canSaveSelection(state: GoogleSettingsState): boolean {
++  if (state.kind !== "connected") return false;
++  if (state.draft.size === 0) return false;
++  if (state.saving) return false;
++  return selectionChanged(state);
++}
++
++/** `true` the moment the draft diverges from what is stored (PRD AC-15). */
++export function selectionChanged(state: GoogleSettingsState): boolean {
++  if (state.kind !== "connected") return false;
++  return !setsEqual(state.draft, storedSelection(state.calendars));
++}
+diff --git a/src/worker/routes/oauth-callback.ts b/src/worker/routes/oauth-callback.ts
+index 0ec0425..a8a18c1 100644
+--- a/src/worker/routes/oauth-callback.ts
++++ b/src/worker/routes/oauth-callback.ts
+@@ -120,10 +120,13 @@ oauthCallbackRoutes.get("/callback", async (c) => {
+     db.update(oauthStates).set({ consumedAt: new Date() }).where(eq(oauthStates.id, state)),
+   ]);
+ 
+-  // Plain text, and deliberately free of the token. Phase 4 replaces this with
+-  // a redirect into the app.
+-  return new Response("Google conectado. Pode fechar esta aba e voltar ao Praesto.", {
+-    status: 200,
+-    headers: { "content-type": "text/plain; charset=utf-8" },
+-  });
++  // Redirects the owner back into the app rather than rendering a dead end.
++  // `?google=connected` is the one-time signal `SettingsScreen` (unit 4
++  // phase 5, Task 5) reads and clears with `history.replaceState`; this file
++  // only ever SENDS it, never reads it back. A redirect also drops the
++  // authorization code from the address bar once it has been exchanged, per
++  // Google's own web-server OAuth guidance — and the response body is empty,
++  // so it stays free of the token exactly as the plain-text response was.
++  const destination = new URL("/settings?google=connected", c.req.url);
++  return c.redirect(destination.toString(), 302);
+ });
+diff --git a/test/oauth-callback-redirect.test.ts b/test/oauth-callback-redirect.test.ts
+index 26e038d..535ca01 100644
+--- a/test/oauth-callback-redirect.test.ts
++++ b/test/oauth-callback-redirect.test.ts
+@@ -25,6 +25,29 @@
+ // success leg still returns the phase-2 plain-text body today, so this file
+ // is RED for the right reason (no 3xx status, no Location header) until plan
+ // Task 9 lands.
++//
++// --- Correction (dispute-driven; see
++// PRPs/reports/google-calendar-read/phase-5/halt.json) ---
++// The paragraph above is accurate about what the callback RETURNS (a 3xx that
++// satisfies `status < 400` either way) but was incomplete about what THIS
++// HARNESS OBSERVES. `exports.default.fetch()` — the typed successor to the
++// deprecated `SELF: Fetcher`
++// (node_modules/@cloudflare/vitest-pool-workers/types/cloudflare-test.d.ts) —
++// auto-follows redirects exactly like global `fetch()`. The followed request
++// for `/settings` has no Worker-side route (`wrangler.jsonc`'s
++// `assets.run_worker_first` is exactly `["/api/*","/oauth/*"]` — `/settings`
++// is deliberately client-only, the entire point of this phase), so it lands
++// on `app.notFound()`: a 404 with no Location header, not the callback's own
++// 302. A real browser follows the identical 302 into the SPA shell via
++// `not_found_handling: "single-page-application"` and never takes this path
++// — the 404 was a test-harness artifact, not a production defect. A
++// `code-reviewer` TEST_CONTRACT_DISPUTE arbitration upheld this reading
++// (`DISPUTE_UPHELD_TEST_WRONG`) and the two cases below now pass
++// `redirect: "manual"` — a real, typed `RequestInit` member
++// (`worker-configuration.d.ts:1850`) — so they observe the raw response the
++// callback itself returns instead of the harness's auto-follow. Neither
++// assertion's substance changed: still a 3xx status, still a Location
++// resolving to `/settings?google=connected`.
+ 
+ import { env, exports } from "cloudflare:workers";
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+@@ -66,7 +89,13 @@ describe("the callback closes the loop on success (AC-3 delta, plan AC-A2)", ()
+   it("answers a 3xx redirect rather than the phase-2 plain-text page", async () => {
+     await mintNonce("good-status");
+ 
+-    const res = await exports.default.fetch(`${CALLBACK}?code=auth-code&state=good-status`);
++    // `redirect: "manual"` — see the header comment: without it,
++    // exports.default.fetch() auto-follows the 302 into a /settings request
++    // this harness cannot route, and the test would observe that request's
++    // 404 instead of the callback's own response.
++    const res = await exports.default.fetch(`${CALLBACK}?code=auth-code&state=good-status`, {
++      redirect: "manual",
++    });
+ 
+     expect(res.status).toBeGreaterThanOrEqual(300);
+     expect(res.status).toBeLessThan(400);
+@@ -75,7 +104,10 @@ describe("the callback closes the loop on success (AC-3 delta, plan AC-A2)", ()
+   it("points the redirect at /settings?google=connected", async () => {
+     await mintNonce("good-location");
+ 
+-    const res = await exports.default.fetch(`${CALLBACK}?code=auth-code&state=good-location`);
++    // `redirect: "manual"` — same reason as the case above.
++    const res = await exports.default.fetch(`${CALLBACK}?code=auth-code&state=good-location`, {
++      redirect: "manual",
++    });
+     const location = res.headers.get("location") ?? "";
+ 
+     // Accept either a relative or an absolute Location: `Response.redirect()`
+diff --git a/test/oauth-callback.test.ts b/test/oauth-callback.test.ts
+index 3a4a7c3..fcf7ae3 100644
+--- a/test/oauth-callback.test.ts
++++ b/test/oauth-callback.test.ts
+@@ -159,7 +159,20 @@ describe("a valid callback stores the credential exactly once (AC-3)", () => {
+   it("exchanges the code and stores the refresh token", async () => {
+     await mintNonce("good");
+ 
+-    const res = await exports.default.fetch(`${CALLBACK}?code=auth-code&state=good`);
++    // `redirect: "manual"` — exports.default.fetch() auto-follows redirects
++    // (it is the typed successor to the deprecated `SELF: Fetcher`), and the
++    // success leg now answers 302 (phase 5, Task 9). An auto-followed request
++    // for /settings has no Worker route in this harness and would surface as
++    // a 404 here instead of the callback's own response. See
++    // test/oauth-callback-redirect.test.ts's header comment and
++    // PRPs/reports/google-calendar-read/phase-5/halt.json for the full
++    // arbitration record (DISPUTE_UPHELD_TEST_WRONG). The assertion below is
++    // unchanged: `status < 400` already accepted either the old 200 or the
++    // new 302, which is why only the observation — never the contract —
++    // needed correcting.
++    const res = await exports.default.fetch(`${CALLBACK}?code=auth-code&state=good`, {
++      redirect: "manual",
++    });
+ 
+     expect(res.status).toBeLessThan(400);
+     expect(outbound).toHaveLength(1);
