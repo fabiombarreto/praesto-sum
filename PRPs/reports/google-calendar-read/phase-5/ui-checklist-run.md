@@ -291,3 +291,11 @@ They are left open rather than marked done. Guidelines §12.6 is explicit that a
 for a screenshot but that a reason is not an image, and the same principle applies to a contrast
 number nobody measured. Recording them as satisfied on the strength of "tudo funcionando" would be
 the exact substitution the phase-4 entry warned about.
+
+**Owner's decision, 2026-08-31: carry them as debt rather than run them now.** They are therefore
+filed as **chore C15** in the [roadmap](../../../documentation/50-planning/roadmap.md#chores), which
+is where work that must happen but merits no PRD belongs — no decision space, no acceptance criteria,
+just measurements and files. Its trigger is the next time the owner has the app open with a token, or
+the next UI phase that touches `/settings`, whichever comes first. This report stays the detail; C15
+is the thing that will actually be looked at, so the debt has one owner instead of three
+half-mentions.
