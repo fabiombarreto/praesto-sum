@@ -258,3 +258,36 @@ Code review attempt 4: APPROVED, 14/14 rubric rows.
 
 Items 10, 14, the viewport half of 12 and the *live* half of 11 remain owed to the owner's CON-007
 device pass, unchanged.
+
+---
+
+## Device pass — 2026-08-31, the owner, Android and Windows
+
+The owner ran it against **production** (Version `09ebdd53`), not a tunnel, so what he exercised is
+byte-for-byte what ships. The five things to look at were named before he ran, so his *"tudo
+funcionando"* answers a question rather than being read back into one:
+
+1. the settings icon in the *Hoje* header opens `/settings`;
+2. the Android back gesture from `/settings` returns to *Hoje*;
+3. back again from *Hoje* **leaves the app** rather than returning to settings;
+4. on Windows, `Esc` returns to *Hoje*;
+5. connecting for real, through Google's unverified-app screen.
+
+All five reported working. Items 2 and 3 are the pair no automated tier here can reach, and are
+exactly where this checklist found defect 2 — so the pass confirms the fix on the surface the fix
+was written for, on the platform CON-007 names.
+
+**What this pass does NOT discharge.** The four items carried from the runs above are measurement and
+artefact items, not "does it work" items, and nothing in the owner's report claims them:
+
+| # | Item | Status |
+|---|---|---|
+| 10 | Contrast measured for the five §4.3 pairs and **recorded** | still open — needs a measurement, not a look |
+| 11 | The §8 states **simulated** (offline, throttled, empty, failed request) | still open — the offline half is now gated by `canWrite`, but nobody has staged the states |
+| 12 | 375 px / 1280 px, safe areas, keyboard overlap | **back-gesture half closed by this pass**; the viewport half still open |
+| 14 | Screenshots filed under `PRPs/reports/google-calendar-read/phase-5/` | still open — no image exists |
+
+They are left open rather than marked done. Guidelines §12.6 is explicit that a reason may stand in
+for a screenshot but that a reason is not an image, and the same principle applies to a contrast
+number nobody measured. Recording them as satisfied on the strength of "tudo funcionando" would be
+the exact substitution the phase-4 entry warned about.

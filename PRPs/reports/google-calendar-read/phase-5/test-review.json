@@ -1,0 +1,32 @@
+{
+  "verdict": "APPROVED",
+  "phase": 5,
+  "feature": "google-calendar-read",
+  "reviewed_at": "2026-08-31",
+  "head": "6aa5020",
+  "base": "03b9e31",
+  "green": {
+    "test_files": 34,
+    "tests_passing": 598,
+    "tests_failing": 0
+  },
+  "arithmetic": "561 previously passing + 2 previously failing (fixed) + 21 from the phase's own two suites + 14 from the follow-up copy suite = 598",
+  "structural_checks": {
+    "test_files_at_base": 33,
+    "test_files_at_head": 34,
+    "set_difference": [
+      "+ test/google-failure-copy.test.ts"
+    ],
+    "deletions": 0,
+    "renames": 0,
+    "note": "verified via git ls-tree at both commits, not by counting tests - this closes the 'removal hidden behind an addition elsewhere' failure mode structurally"
+  },
+  "assertion_integrity": "git diff 03b9e31..6aa5020 on the two corrected files, filtered to expect|it(|describe(|skip|todo|only(, is EMPTY on both the + and - sides: only a comment block and `redirect: \"manual\"` were added to existing exports.default.fetch() calls",
+  "skip_markers": "repo-wide git grep for .skip( / .only( / .todo( / xit( / xdescribe( / xtest( across test/*.ts returns empty at BOTH commits",
+  "untouched_red_contract": "test/app-route.test.ts and test/google-settings.test.ts have zero diff from the RED commit - they pass solely because the two src/shared modules were implemented, which is the correct RED->GREEN order",
+  "concerns": [],
+  "notes": [
+    "coverage baseline unavailable (no PRPs/reports/coverage-baseline.json), so weakening detection was limited to structural checks - recorded rather than silently skipped",
+    "test/google-failure-copy.test.ts bypassed the test-writer/test-reviewer lifecycle ledger (absent from test-suite.diff and google-calendar-read.test-write-review.jsonl). A genuine provenance deviation, already recorded as an advisory by code-review attempts 3 and 4. It ADDS coverage and removes none, so it is not a weakening pattern; carried as a governance note, not a blocking concern"
+  ]
+}
