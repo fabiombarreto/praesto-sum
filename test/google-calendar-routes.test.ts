@@ -431,17 +431,38 @@ describe("GET /api/google/events — a partial failure is never a shorter list (
     expect(body.failedCalendars).toContain("work@example.com");
   });
 
-  it("reports a dead credential distinguishably from a transient outage", async () => {
+  it("answers 200 when every calendar fails, not an outage-shaped status", async () => {
+    // Distinct from the case above: the credential is FINE (token refresh
+    // succeeds) and every per-calendar events.list call fails transiently.
+    // This is the sharpest form of this block's claim — if the route ever
+    // special-cased "every calendar failed" into some other status, a
+    // fully-failed day and a real outage reported elsewhere would become
+    // indistinguishable. The contract stays exactly what the 1-of-2 case
+    // above already uses: 200, an events list that is empty rather than
+    // fabricated, and every failed calendar named — the SCREEN decides how
+    // incomplete a day looks, not the route.
+    //
+    // (The dead-credential case this test used to assert — with a weaker
+    // `not.toBe(200)` — is a proven duplicate of "answers 409 on
+    // invalid_grant, so the screen can say RECONNECT" above: same route, same
+    // connect() precondition, same stub predicate, and the survivor already
+    // pins the exact status and reason a 502-outage would also have to avoid.
+    // See the phase-3 test-suite.diff lifecycle ledger for the removal.)
     await connect();
+    await createDb(env)
+      .insert(googleCalendarSelections)
+      .values([{ calendarId: "primary" }, { calendarId: "work@example.com" }]);
+
     stubGoogle((url) => {
-      if (url.pathname === "/token") return json({ error: "invalid_grant" }, 400);
-      return json({}, 500);
+      if (url.pathname === "/token") return json({ access_token: "ya29.access" });
+      return json({ error: "backendError" }, 503);
     });
 
     const res = await exports.default.fetch(EVENTS, auth());
+    const body = (await res.json()) as { events: unknown[]; failedCalendars: string[] };
 
-    // A revoked or expired credential is "reconnect", not "try again later".
-    expect(res.status).not.toBe(200);
-    expect(await res.text()).toMatch(/invalid_grant|reconnect|reconect/i);
+    expect(res.status).toBe(200);
+    expect(body.events).toEqual([]);
+    expect(body.failedCalendars.slice().sort()).toEqual(["primary", "work@example.com"]);
   });
 });

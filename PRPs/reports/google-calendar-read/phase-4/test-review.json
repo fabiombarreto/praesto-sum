@@ -21,7 +21,8 @@
     "claim_under_test": "the delivery record says the per-calendar partial failure rests on code review and two route tests",
     "verdict": "GENEROUS, NOT FALSE",
     "detail": "Only ONE of the two demonstrates the per-calendar mechanism: 'returns the healthy calendar's events AND reports the failed one' asserts both the surviving event list and the named failed calendar. The second, 'reports a dead credential distinguishably from a transient outage', stubs the token refresh itself, which fails EVERY calendar identically before any per-calendar request - the sibling total-failure state, not the partial one. Both live in test/google-calendar-routes.test.ts and were authored in phase 3; phase 4 contributed zero automated coverage toward its own claim. The UI-visible 'falha parcial' text has no automated test at all, which the record does state accurately.",
-    "note": "test/agenda.test.ts covers only today-filtering and ordering of already-successful lists - zero overlap with any failure path."
+    "note": "test/agenda.test.ts covers only today-filtering and ordering of already-successful lists - zero overlap with any failure path.",
+    "superseded_2026_08_31": "The weaker of the two route tests was removed on 2026-08-31 and replaced by 'answers 200 when every calendar fails, not an outage-shaped status'. The partial-failure block therefore still holds two tests, but for the first time BOTH exercise the per-calendar loop: one covers 1-of-2 failing, the other 2-of-2. The phase-4 record's 'rests on two route tests' claim is now accurate - not because the claim was right, but because the coverage was made to match it. The UI-visible 'falha parcial' text still has no automated test, so that half of the record's own disclosure stands."
   },
   "concerns": [],
   "notes": [

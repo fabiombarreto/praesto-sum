@@ -17,7 +17,7 @@
 | PRD AC-9 — closed mirror inventory | `NEW_TEST_REQUIRED` | `test/google-events.test.ts` → "the closed mirror inventory" (6 tests) |
 | PRD AC-13 — read-only by construction | `NEW_TEST_REQUIRED` (structural) | `test/source-invariants.test.ts` (3 tests, `docs` project, plain Node). Per-call `GET` assertions in `google-calendar-client.test.ts` prove those calls are reads; AC-13 is a UNIVERSAL NEGATIVE about the whole codebase, so it is covered by a suite that reads the whole source tree — no `events.insert/patch/delete`, no non-GET to the Calendar API, no write-capable scope |
 | PRD AC-15 — selection honoured, `primary` default | `NEW_TEST_REQUIRED` | `test/google-calendar-routes.test.ts` → GET/PUT `/calendars` (11 tests) |
-| Plan AC-A8 — a partial failure is never a shorter list | `NEW_TEST_REQUIRED` | `test/google-calendar-routes.test.ts` → "a partial failure is never a shorter list" (2 tests) |
+| Plan AC-A8 — a partial failure is never a shorter list | `NEW_TEST_REQUIRED` | `test/google-calendar-routes.test.ts` → "a partial failure is never a shorter list" (2 tests: the original 1-of-2 case, plus an all-calendars-fail boundary case swapped in on 2026-08-31 for a redundant test — see "Correction round" below) |
 | Plan AC-A9 — `dayItemFromEvent` | `NEW_TEST_REQUIRED` | `test/day-item-event.test.ts` (9 tests). **This row first claimed `EXISTING_TEST_COVERS test/day-item.test.ts`, and that claim was false** — that suite exercises `dayItemFromTask` and `assertNeverDaySource` and never touches `dayItemFromEvent`. Review caught it. A coverage gap dressed as existing coverage is worse than an admitted one |
 
 ## Four assertions that carry more weight than the rest
@@ -92,12 +92,128 @@ strip `//` only when it is not preceded by `:`, and the guard was re-verified in
 The lesson is not the regex. It is that a green guard proves nothing until it has been made to fail
 on purpose.
 
+## Correction round (2026-08-31 — AC-A8 test consolidation)
+
+**Trigger:** two independent retrospective `post-green-reviewer` findings named the same test without
+prescribing the same fix. `PRPs/reports/google-calendar-read/phase-3/test-review.json` flagged it
+directly as a "RESIDUAL GAP (inherited, not introduced)": `test/google-calendar-routes.test.ts`
+`"reports a dead credential distinguishably from a transient outage"` still used
+`expect(res.status).not.toBe(200)` — "the same weak pattern that WAS fixed for the analogous
+`/calendars` test in the same file". `PRPs/reports/google-calendar-read/phase-4/test-review.json`'s
+`coverage_finding` reached the same test from a different angle while checking phase 4's delivery
+claim that partial-failure coverage "rests on ... two route tests": it found "Only ONE of the two
+demonstrates the per-calendar mechanism" — the other "stubs the token refresh itself, which fails
+EVERY calendar identically before any per-calendar request — the sibling total-failure state, not the
+partial one." The task was filed as "strengthen the weak assertion"; that remedy was checked against
+source before being applied, and found to be the wrong one.
+
+**Investigation, verified directly against source before acting (not taken on either report's word):**
+
+1. **Strictly weaker duplicate.** The flagged test's stub — `url.pathname === "/token"` → `invalid_grant`
+   / 400, else 500 — is the same logic as `"answers 409 on invalid_grant, so the screen can say
+   RECONNECT"` (`describe("a dead credential is not a transient outage (AC-A8)")`, same file, line
+   270). Same `connect()` precondition, same route (`GET /events`), same stub predicate. The survivor
+   asserts `toBe(409)` and `reason === "invalid_grant"`; the flagged test asserted only `not.toBe(200)`
+   plus a regex match against the response text. Anything that satisfies the survivor's assertions (a
+   409 JSON body naming `invalid_grant`) also satisfies the flagged test's — including the exact
+   `{status: 502}` regression `accessTokenFor`'s own source comment
+   (`src/worker/routes/google.ts:166-180`) says was fixed, because `refreshed.reason` stays
+   `"invalid_grant"` regardless of which status the route attaches to it. The flagged test could not
+   have caught a reintroduction of that regression, so strengthening it in place would have produced a
+   near-exact copy of an already-existing, already-stronger test (its own pathology, `R-DUPLICATE`).
+2. **Wrong describe block.** The flagged test lived inside `"GET /api/google/events — a partial
+   failure is never a shorter list (AC-A8)"`, but its stub fails token refresh, and
+   `googleRoutes.get("/events")` (`src/worker/routes/google.ts:263-265`) calls `accessTokenFor` and
+   returns before the per-calendar loop (`:270-286`) ever starts. It is a total-failure case wearing a
+   partial-failure block's heading — confirmed by reading the route handler directly, not inferred from
+   either report.
+3. **A real, previously-uncovered boundary exists in the same block.** The per-calendar loop had no
+   test for "every selected calendar's `listEvents` fails, but the credential itself is fine" — only
+   the 1-of-2 case (`"returns the healthy calendar's events AND reports the failed one"`). Reading the
+   loop directly (`src/worker/routes/google.ts:270-286`) confirms it returns `c.json({ events,
+   failedCalendars, window })` — HTTP 200, Hono's default — with `events: []` and every id in
+   `failedCalendars` when ALL selected calendars fail transiently. This is the sharpest form of the
+   block's own claim: an all-failed day and a credential-level outage (409/502, asserted elsewhere)
+   must stay distinguishable, and nothing proved the all-fail case actually renders as 200 rather than
+   accidentally inheriting an error status.
+
+**Decision: `REDUNDANT_TEST_REMOVED`, immediately filled by `NEW_TEST_REQUIRED`, both against Plan
+AC-A8 / PRD AC-11, both at the same location** (`test/google-calendar-routes.test.ts`, inside the
+`"a partial failure is never a shorter list (AC-A8)"` describe block). Not `EXISTING_TEST_UPDATED`:
+AC-A8's contract did not change, and the old test's claimed behaviour was not "updated" so much as
+retired in favour of coverage that already exists, stronger, elsewhere in this file. Not a bare
+deletion either (option (a) was considered and rejected): the same investigation surfaced a real,
+previously-uncovered behaviour in scope of the very same AC, so filling it beat leaving the block
+thinner than it needs to be.
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| DELETE | REDUNDANT_TEST_REMOVED | `test/google-calendar-routes.test.ts` — `it("reports a dead credential distinguishably from a transient outage")` (was line 434) | Proven duplicate, strictly weaker, of `test/google-calendar-routes.test.ts:270` `it("answers 409 on invalid_grant, so the screen can say RECONNECT")` — same route, same precondition, same stub predicate; survivor named. Also physically misplaced (Investigation #2): its total-failure stub never reached the per-calendar mechanism the enclosing block is about. |
+
+The freed slot, same file, same describe block, now carries `it("answers 200 when every calendar
+fails, not an outage-shaped status")` — `NEW_TEST_REQUIRED` against Plan AC-A8 / PRD AC-11 (outcome
+row updated above): two selected calendars, token refresh succeeds, every `events.list` call answers
+503, asserts `res.status === 200`, `body.events` is `[]`, and `body.failedCalendars` names both ids.
+This is observable-outcome testing (HTTP status + response shape) naming no internal function, and it
+is discriminative against every other test in the file: distinct from the 1-of-2 case (all fail here,
+not one), distinct from the credential-dead cases (the token call succeeds here). Mocking stays
+confined to the same injected-`fetch` boundary every other test in this file already uses; no chained
+mocks, no was-called-only assertion.
+
+**Anti-weakening check.** AC-A8/AC-11's "dead credential is distinguishable from a transient outage"
+guarantee is NOT weakened by this removal: it remains fully covered, more strongly, by the untouched
+survivor at line 270 and its two untouched siblings (lines 285, 297) in the same describe block, none
+of which this correction touched. No in-scope AC lost coverage; AC-A8 gained a genuinely new,
+previously-absent case.
+
+**Test count, exactly.** One `it()` removed, one `it()` added, same file:
+`test/google-calendar-routes.test.ts` carries the same number of test cases (25) it had immediately
+before this correction. No other file was touched. The project-wide baseline (598 passing / 0 failing)
+should therefore be unaffected — but this agent invocation carries no Bash tool and did not and could
+not run `npm test` or `npm run check` to confirm it. **Whoever runs `/relay-test-write-review` next
+must run both and record the actual counts** before flipping this manifest's status.
+
+**Formatting outcome.** Not run by this agent invocation — no Bash tool available (the same constraint
+the phase-5 manifest's own correction round recorded). The edited test was hand-formatted against
+`.prettierrc` (`printWidth: 100`, `singleQuote: false`, `trailingComma: "all"`, `tabWidth: 2`) and the
+surrounding file's existing conventions — e.g. mirroring the exact `.insert(...).values(...)` line
+breaks the sibling test three cases above it already uses. **Whoever runs `/relay-test-write-review`
+next should run `npx prettier --write test/google-calendar-routes.test.ts`** (scoped to exactly this
+path, never `.`) before or alongside the rubric pass.
+
+**Correction-round self-check.**
+
+1. **Ledger completeness** — the one DELETE performed this session has its ledger row above, classified
+   `REDUNDANT_TEST_REMOVED`, survivor named. No UPDATE was performed (this is not an
+   `EXISTING_TEST_UPDATED` case; see the Decision paragraph for why).
+2. **Coverage completeness** — the Plan AC-A8 / PRD AC-11 outcome row is updated above to describe both
+   tests now in the block. No other AC was touched by this correction; every other row in the original
+   "## Per-AC outcomes" table stands exactly as written on 2026-08-28.
+3. **Anti-weakening guard** — see the dedicated paragraph above. No test whose covered behaviour still
+   maps to a live in-scope AC was weakened or lost.
+4. **Scope discipline** — exactly one file touched (`test/google-calendar-routes.test.ts`), exactly one
+   `it()` block replaced. No file under `src/` was read for the purpose of changing it, and none was
+   changed. No `git stash`/`checkout`/`clean`/`reset`/`commit` was run.
+
+## Status
+
 *Generated: 2026-08-28*
+*Approved: 2026-08-28 (flipped late, on 2026-08-31); superseded by the 2026-08-31 correction round
+above.* The paired `PRPs/plans/google-calendar-read-phase-3.test-write-review.jsonl` recorded APPROVED
+on 2026-08-28T18:30:00Z and this manifest's trailing status line was never flipped to match at the
+time, so the manifest and its own verdict log disagreed for three days. Found by the retrospective
+post-green review of 2026-08-31, which had to apply `ledger = none` throughout as a result — a DRAFT
+ledger authorizes nothing, so every phase-3 test modification up to that point was judged on raw diff
+content instead. That turned out not to matter (nothing needed ledger cover at the time), but it would
+have mattered had a removal or a skip needed authorizing.
+
+*Revised: 2026-08-31 — AC-A8 lifecycle correction (one `REDUNDANT_TEST_REMOVED`, immediately filled by
+one `NEW_TEST_REQUIRED`, both in `test/google-calendar-routes.test.ts`); re-submitted for B8
+(`test-reviewer`) review.*
+*Approved: 2026-08-31 — B8 APPROVED, 7/7 rubric. `R-DUPLICATE` and `R-LIFECYCLE-LEGITIMATE` both
+independently re-verified the deletion against source rather than against this manifest's own account
+of itself: the removed test's stub is byte-identical logic to the survivor's, and `accessTokenFor`
+always sets `reason` independent of the status it computes, so a reintroduced `{status: 502, reason:
+"invalid_grant"}` bug would have satisfied the removed test while failing the survivor. The
+replacement's gap was confirmed real by a repo-wide search, not accepted as claimed.*
 *Status: APPROVED*
-*Flipped 2026-08-31, late.* The paired `PRPs/plans/google-calendar-read-phase-3.test-write-review.jsonl`
-recorded APPROVED on 2026-08-28T18:30:00Z and this trailing line was never flipped to match, so the
-manifest and its own verdict log disagreed for three days. Found by the retrospective post-green
-review of 2026-08-31, which had to apply `ledger = none` throughout as a result — a DRAFT ledger
-authorizes nothing, so every phase-3 test modification was judged on raw diff content instead. That
-turned out not to matter (nothing needed ledger cover), but it would have mattered had a removal or a
-skip needed authorizing. Corrected to match the recorded verdict, not to grant a new one.
