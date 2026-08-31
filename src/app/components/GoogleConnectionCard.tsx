@@ -39,7 +39,22 @@ function summarizeScope(scope: string): string {
   return labels.length > 0 ? `Leitura de ${labels.join(" e ")}.` : "Leitura de calendários.";
 }
 
-export function GoogleConnectionCard({ onUnauthorized }: { onUnauthorized: () => void }) {
+export function GoogleConnectionCard({
+  onUnauthorized,
+  canWrite,
+}: {
+  onUnauthorized: () => void;
+  /**
+   * What the offline banner on this screen already promises the owner: *"Dá
+   * para ler, mas não para salvar por enquanto."* Without this the card left
+   * *Conectar*, *Salvar* and *Desconectar* live while the banner said they
+   * were not, so the screen contradicted itself. Passed down rather than read
+   * here, mirroring how `TodayScreen` owns `useConnectivity` and hands
+   * `canWrite` to its children. Reads stay enabled — *Tentar de novo* is a
+   * GET, and "dá para ler" is the half of the promise that still holds.
+   */
+  canWrite: boolean;
+}) {
   const [state, dispatch] = useReducer(reduceGoogleSettings, INITIAL_GOOGLE_SETTINGS_STATE);
   // The connection's own display data lives here, deliberately outside the
   // reducer — see the module doc comment in `google-settings.ts`.
@@ -226,7 +241,7 @@ export function GoogleConnectionCard({ onUnauthorized }: { onUnauthorized: () =>
             type="button"
             variant="primary"
             onClick={() => void handleConnect()}
-            disabled={connecting}
+            disabled={connecting || !canWrite}
           >
             Conectar
           </Button>
@@ -268,7 +283,7 @@ export function GoogleConnectionCard({ onUnauthorized }: { onUnauthorized: () =>
             type="button"
             variant="primary"
             onClick={() => void handleSave()}
-            disabled={!canSaveSelection(state)}
+            disabled={!canSaveSelection(state) || !canWrite}
           >
             Salvar
           </Button>
@@ -302,7 +317,7 @@ export function GoogleConnectionCard({ onUnauthorized }: { onUnauthorized: () =>
               body="Você vai precisar refazer a autorização do Google para conectar de novo."
               cancelLabel="Cancelar"
               confirmLabel="Desconectar"
-              busy={disconnecting}
+              busy={disconnecting || !canWrite}
               error={disconnectError}
               onCancel={cancelDisconnect}
               onConfirm={() => void confirmDisconnect()}

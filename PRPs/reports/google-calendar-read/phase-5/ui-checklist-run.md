@@ -214,3 +214,47 @@ returns which string turns it red on two independent assertions — the wording 
 invariant. What it cannot reach is the rendering — that both components call it and put the result on
 screen — because `src/app` is outside the test project and there is no browser tier. That half stays
 manual and is what the Tier A table above covers.
+
+---
+
+## Fourth run — 2026-08-31, what the code review caught that this checklist did not
+
+Attempt 3 of the code review returned CHANGES_REQUESTED and the semantic pass returned findings. Two
+of them are honest misses by the runs above, recorded here because the checklist's own value depends
+on saying so.
+
+**Item 11 was marked ◐ "read in source" and that was not good enough.** The offline state did not
+"read right": `SettingsScreen` renders the shared banner promising *"Dá para ler, mas não para salvar
+por enquanto."*, but `GoogleConnectionCard` never consulted connectivity — *Conectar*, *Salvar* and
+*Desconectar* stayed enabled offline, so the screen contradicted its own banner. Reading the four
+connection kinds in source is not the same as reading the states §8 asks for, and the item's own
+wording ("were simulated … and read right") is what I substituted a source read for. Fixed: the card
+now takes `canWrite`, computed by the screen from the existing shared `canWrite(connectivity)` — the
+same function and the same own-it-at-the-screen shape `TodayScreen` already uses. *Tentar de novo* is
+a GET and stays enabled, because "dá para ler" is still true.
+
+**A gate this phase's own plan wrote was failed by a comment.** Level 3 greps
+`src/app/hooks/useRoute.ts` for the settings path to prove no routing decision leaks into the exempt
+glue. The `back()` fix explained itself in comments that named the path, so the gate matched three
+comment lines and failed — no executable branch involved, but the gate has no comment-awareness and
+the plan's author wrote it that way deliberately. Reworded rather than the gate loosened: keeping the
+literal out of that file entirely is the stricter and simpler invariant.
+
+**And the fix for defect 2 above was itself replaced.** The first `back()` tracked "did we push?" in a
+`useRef` cleared on every `popstate`. `popstate` fires on browser *forward* too and carries no
+direction, so forward-navigating onto the pushed entry left the flag false and `back()` would
+`replaceState` where it should have popped — a milder version of the same trap. The ref is gone; the
+marker now travels *inside* the entry (`history.pushState({ praesto: "pushed" }, …)`), so `back()`
+reads the entry actually on screen and is correct under forward navigation by construction. Verified
+in the browser: with the same sequence the marker reports "ours" where the ref reported "not ours".
+
+One sub-agent finding was rejected as a false positive: it reported `connection` and `summarizeScope`
+as dead code in `GoogleConnectionCard`. They are live — `summarizeScope(connection.scope)` renders in
+the `connected` branch behind a `connection !== null` guard. Confirmed at the call site by both the
+command and the reviewer.
+
+Gates after all three fixes: `npm run check` exit 0, `npm test` 598 passing / 0 failing.
+Code review attempt 4: APPROVED, 14/14 rubric rows.
+
+Items 10, 14, the viewport half of 12 and the *live* half of 11 remain owed to the owner's CON-007
+device pass, unchanged.

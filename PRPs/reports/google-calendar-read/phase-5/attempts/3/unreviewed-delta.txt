@@ -1,0 +1,154 @@
++++ PRPs/reports/google-calendar-read/phase-5/attempts/3/diff.patch	2026-08-31 09:12:33.877646000 -0300
+++  const { route, navigate, back } = useRoute();
+++    <SettingsScreen onUnauthorized={onUnauthorized} back={back} />
+++import { googleFailureMessage } from "../../shared/google-failure-copy";
+++  // The same call `TodayScreen`'s `agendaNotice` makes, which is now what
+++  // makes AC-A7's "one condition, one vocabulary" structural rather than a
+++  // coincidence two files had to keep by hand.
+++  const failedMessage = state.kind === "failed" ? googleFailureMessage(state.reason) : null;
+++  back,
+++  back: () => void;
+++  useEffect(() => {
+++    // Guidelines §2.2 and plan AC-A6 name three ways out of this screen, and
+++    // the Android back gesture is only one of them: `Esc` is what a desktop
+++    // owner reaches for, and CON-007 has this app verified on Windows too.
+++    // A history entry does NOT give `Esc` any behaviour of its own — this
+++    // screen is a route shell, not a `<dialog>`, so nothing here is native.
+++    // (An open disconnect confirmation is abandoned along with the screen,
+++    // which is safe: `ConfirmView` destroys nothing until *Desconectar* is
+++    // actually pressed.)
+++    function handleKeyDown(event: KeyboardEvent): void {
+++      if (event.key === "Escape") back();
+++    }
+++    window.addEventListener("keydown", handleKeyDown);
+++    return () => window.removeEventListener("keydown", handleKeyDown);
+++  }, [back]);
+++        {/* Never the only way out (guidelines §2.2): the Android back gesture
+++            returns here because `useRoute` (Task 3) pushed a real `history`
+++            entry, and `Esc` returns because the effect above listens for it.
+++            Those are two separate mechanisms — a history entry gives `Esc`
+++            nothing on its own, since this is a route shell and not a
+++            `<dialog>`. The first checklist run on this phase found exactly
+++            that gap, so it is written down rather than left to be
+++            rediscovered. All three exits call `back()`, which POPS the
+++            pushed entry instead of pushing another one; a refactor that
+++            turns it back into a push would re-open the AC-A6 trap. */}
+++        <Button type="button" variant="icon" aria-label="Voltar" onClick={back}>
++ import type { TaskDto } from "../../shared/api";
++ import { canWrite } from "../../shared/connectivity";
++ import { todayIn } from "../../shared/dates";
+++import { googleFailureMessage } from "../../shared/google-failure-copy";
++ import { classifyRequestFailure } from "../../shared/request-failure";
++ import type { ShareTarget } from "../../shared/share-target";
++ import { buildTaskPatch } from "../../shared/task-edit";
++   /** Nothing arrived. `reason` separates "connect" from "reconnect" from "try later". */
++   | { kind: "failed"; reason: string | null };
++ 
+++/**
+++ * The agenda's own copy — the strings only *Hoje* says. Every one is an owner
+++ * approval (2026-08-28), not an invention.
+++ *
+++ * The three failure strings are NOT here: the settings screen says them too,
+++ * so both the words and the reason that selects them live in
+++ * `src/shared/google-failure-copy.ts`, where one edit reaches both surfaces
+++ * and a test can reach the mapping (AC-A7).
+++ */
++ const AGENDA = {
++   name: "Agenda",
++   empty: "Nada na agenda hoje.",
++   partial: (n: number) =>
++     n === 1
++       ? "Um calendário não respondeu — a agenda pode estar incompleta."
++       case "partial":
++         return AGENDA.partial(eventsState.failed);
++       case "failed":
+++        return googleFailureMessage(eventsState.reason);
++       case "ready":
++         return agenda.length === 0 ? AGENDA.empty : null;
++     }
+++import { useCallback, useEffect, useRef, useState } from "react";
+++export function useRoute(): {
+++  route: AppRoute;
+++  navigate: (route: AppRoute) => void;
+++  back: () => void;
+++} {
+++  // Whether the entry currently on screen is one `navigate` pushed, and so is
+++  // ours to pop. It is a browser-history fact, not a routing decision — the
+++  // decisions all stay in `app-route.ts`, which is what keeps this file glue.
+++  const pushedWithinApp = useRef(false);
+++      // The entry we pushed is gone once it has been popped, so it is no
+++      // longer ours to pop a second time.
+++      pushedWithinApp.current = false;
+++    pushedWithinApp.current = true;
+++  const back = useCallback(() => {
+++    if (pushedWithinApp.current) {
+++      // POP the entry `navigate` pushed — never push another one. Pushing
+++      // would leave the stack at [/, /settings, /], so the next back gesture
+++      // from *Hoje* would return to /settings instead of leaving the app:
+++      // exactly the trap AC-A6 forbids ("pressing back again from *Hoje*
+++      // leaves the app rather than being trapped"). `popstate` then re-derives
+++      // the route, so no `setRoute` belongs here.
+++      history.back();
+++      return;
+++    }
+++    // Nothing of ours to pop: the owner ARRIVED at /settings, which is a real
+++    // and frequent path — the OAuth callback redirects straight into it
+++    // (Task 9), and a reload or a bookmark does the same. `history.back()`
+++    // here would walk out of the app into the consent flow. Replace instead,
+++    // so the stack still gains no second entry and the trap stays closed.
+++    history.replaceState(null, "", pathOf("today"));
+++    setRoute("today");
+++  }, []);
+++
+++  return { route, navigate, back };
+++++ b/src/shared/google-failure-copy.ts
+++/**
+++ * The one mapping from a Google failure `reason` to the words the owner reads.
+++ *
+++ * `TodayScreen`'s agenda notice and `GoogleConnectionCard`'s status line
+++ * describe the SAME three conditions, and phase 5's AC-A7 requires they "name
+++ * the condition with the same words and offer the same next step — one
+++ * condition, one vocabulary". Both halves of that were duplicated: first the
+++ * three strings (extracted 2026-08-30), then the branch that picks among them,
+++ * which is what this module finally makes single-source. Either duplicate left
+++ * the agreement a coincidence the next edit could end, with nothing to catch
+++ * the drift.
+++ *
+++ * It lives in `src/shared` rather than the app layer because it is decidable
+++ * logic, not loose copy. `docs/context/methodology.md` names "the error
+++ * mapping" as exactly the part to extract here, citing `request-failure.ts` —
+++ * which this module deliberately mirrors: a failure signal in, a pt-BR message
+++ * out, literals inline. The app layer is not in `tsconfig.test.json`'s project
+++ * at all, so a mapping kept there could only ever be verified by eye. UI/UX
+++ * guidelines §12.3 reaches the same place by its older clause: wording a module
+++ * PRODUCES lives here and is pinned by that module's test.
+++ *
+++ * Like every module in `src/shared`, this compiles into both the browser and
+++ * the Worker targets, so it stays environment-agnostic: no DOM globals, no
+++ * runtime dependencies.
+++ *
+++ * `reason` is deliberately `string | null` and not a union. It arrives from the
+++ * wire (`ApiError.reason`, parsed in `src/app/api.ts`), and the server can name
+++ * a failure this screen has never heard of — `not_configured`, `network`,
+++ * `http_500`, `malformed_response`. Every one of those is transient or not the
+++ * owner's to fix, so they share the third message. Narrowing the parameter
+++ * would only move that decision somewhere less honest.
+++ *
+++ * Every string is an owner approval (2026-08-28), not an invention; the wording
+++ * is pinned by `test/google-failure-copy.test.ts` (ADR-0009).
+++ */
+++export function googleFailureMessage(reason: string | null): string {
+++  switch (reason) {
+++    // No credential is stored. Routine on *Hoje*, where it is simply the state
+++    // before the owner ever connects.
+++    case "not_connected":
+++      return "Google não conectado.";
+++    // A credential existed and Google refused it — only the owner can fix that,
+++    // and reconnecting is how.
+++    case "invalid_grant":
+++      return "A conexão com o Google expirou. Reconecte para ver a agenda.";
+++    // Everything else: nothing for the owner to do right now.
+++    default:
+++      return "Não foi possível carregar a agenda agora. Tente novamente mais tarde.";
+++  }
+++}

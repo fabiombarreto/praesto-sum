@@ -9,6 +9,7 @@
 
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
+import { canWrite } from "../../shared/connectivity";
 import { useConnectivity } from "../hooks/useConnectivity";
 import { GoogleConnectionCard } from "./GoogleConnectionCard";
 import { Banner } from "./ui/Banner";
@@ -100,7 +101,7 @@ export function SettingsScreen({
             Conta do Google conectada.
           </p>
         )}
-        <GoogleConnectionCard onUnauthorized={onUnauthorized} />
+        <GoogleConnectionCard onUnauthorized={onUnauthorized} canWrite={canWrite(connectivity)} />
       </main>
     </div>
   );
