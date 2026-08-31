@@ -82,7 +82,7 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 40-engineering/testing-strategy.md | active | 2026-08-12 |
 | 40-engineering/ui-ux-guidelines.md | active | 2026-08-30 |
 | 40-engineering/ui-layout-standard.md | active | 2026-08-23 |
-| 50-planning/roadmap.md | active | 2026-08-23 |
+| 50-planning/roadmap.md | active | 2026-08-31 |
 | 50-planning/ui-ux-plan.md | deprecated | 2026-08-23 |
 | 60-decisions/index.md | active | 2026-08-21 |
 | 60-decisions/ADR-0001-write-all-artifacts-in-english.md | accepted | 2026-08-02 |

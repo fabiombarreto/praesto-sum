@@ -370,4 +370,5 @@ echo "PASS: callback closes the loop, AC-2 intact, route decisions stay in src/s
 
 *Generated: 2026-08-30*
 *Approved: 2026-08-30*
-*Status: APPROVED*
+*Implemented: 2026-08-31*
+*Status: IMPLEMENTED*
