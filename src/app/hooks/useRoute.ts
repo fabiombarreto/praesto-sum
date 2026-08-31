@@ -11,11 +11,24 @@ function isOurs(state: unknown): boolean {
 /**
  * The exempt glue over `src/shared/app-route.ts`
  * (`docs/context/methodology.md`, "Browser-API work: split the logic out,
- * then the glue is exempt"): every routing DECISION lives in that pure
- * module; this hook only adds the `history.pushState` call, the `popstate`
- * listener, and `history.scrollRestoration = "manual"` (guidelines §12.4,
- * so SPA navigation restores scroll itself rather than the browser
- * guessing). No branch here may test a path literal — that would smuggle a
+ * then the glue is exempt"): every routing DECISION — which path is which
+ * route — lives in that pure module. This hook adds four things and nothing
+ * else: the `history.pushState` call, the `popstate` listener,
+ * `history.scrollRestoration = "manual"` (guidelines §12.4, so SPA navigation
+ * restores scroll itself rather than the browser guessing), and the
+ * `PUSHED_BY_APP` marker plus the `isOurs` test `back()` branches on.
+ *
+ * That fourth item is named here rather than left out of the count, because
+ * an enumeration that says "only" while the file does more is the kind of
+ * stale claim this phase already had to fix once elsewhere. It reads a fact
+ * about the browser's own history — did WE push the entry on screen — which
+ * is what the adapter exists to know; it decides no route. `isOurs` is pure
+ * and would be testable in `app-route.ts`, but `src/shared/` here is
+ * authored test-first (ADR-0008) and its suite is owned by the test pair, so
+ * moving it without coverage would trade a documented device-verified
+ * exemption for an undocumented gap. Move it when a test can move with it.
+ *
+ * No branch here may test a path literal — that would smuggle a real routing
  * decision back into the glue this split exists to keep thin.
  */
 export function useRoute(): {
