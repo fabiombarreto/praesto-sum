@@ -56,26 +56,25 @@ A single Cloudflare Worker serves everything: the SPA's static assets, the REST 
 
 ```mermaid
 flowchart TB
-    subgraph Device["Owner device - installed PWA"]
-        UI["React 19 SPA"]
-        SW["Service Worker"]
+    subgraph device["📱 Owner's device (installed PWA)"]
+        UI["React 19 SPA<br/>(Today screen, tasks, calendar)"]
+        SW["Service Worker<br/>(push, asset caching)"]
     end
 
-    subgraph Worker["Cloudflare Worker - single deploy"]
-        API["Hono API - bearer token"]
-        CRON["Cron job every 5 minutes"]
-        D1["D1 SQLite via Drizzle ORM"]
+    subgraph cf["☁️ Cloudflare Worker (single deploy)"]
+        API["Hono API<br/>/api/* — bearer token"]
+        CRON["scheduled()<br/>cron every 5 min"]
+        D1[("D1 (SQLite)<br/>via Drizzle ORM")]
     end
 
-    GCAL["Google Calendar API - read, OAuth"]
-    PUSH["Web Push - VAPID"]
+    GCAL["Google Calendar API<br/>(read, OAuth)"]
+    PUSH["Web Push<br/>(VAPID)"]
 
-    UI --> API
+    UI -- "authenticated fetch" --> API
     API --> D1
     CRON --> D1
-    CRON --> PUSH
-    PUSH --> SW
-    API --> GCAL
+    CRON -- "notifies" --> PUSH --> SW
+    API -- "syncs events" --> GCAL
 ```
 
 **Key patterns** (detailed in [`documentation/30-architecture/architecture-overview.md`](documentation/30-architecture/architecture-overview.md)):
