@@ -4,199 +4,199 @@
 
 # Praesto Sum
 
-**_"Praesto sum"_ — Latim para "Estou pronto, ao seu dispor."**
+**_"Praesto sum"_ — Latin for "I am ready, at your service."**
 
-Um assistente pessoal construído por um único usuário, para um único usuário: organizar tarefas e calendário em um só lugar, sem depender de um punhado de apps que nunca conversam entre si.
+A personal assistant built by a single user, for a single user: organizing tasks and calendar in one place, instead of relying on a handful of apps that never talk to each other.
 
-[![Status](https://img.shields.io/badge/status-em%20desenvolvimento-f5a524?style=flat-square)](documentation/50-planning/roadmap.md)
-[![Fase](https://img.shields.io/badge/fase-1%20%E2%80%94%20MVP%20Tasks-161012?style=flat-square)](documentation/50-planning/roadmap.md)
-[![Stack](https://img.shields.io/badge/stack-Cloudflare%20Workers%20%2B%20React%2019-f5a524?style=flat-square)](#-stack-t%C3%A9cnica)
-[![Licença](https://img.shields.io/badge/uso-pessoal-lightgrey?style=flat-square)](#-licença)
+[![Status](https://img.shields.io/badge/status-in%20development-f5a524?style=flat-square)](documentation/50-planning/roadmap.md)
+[![Phase](https://img.shields.io/badge/phase-1%20%E2%80%94%20MVP%20Tasks-161012?style=flat-square)](documentation/50-planning/roadmap.md)
+[![Stack](https://img.shields.io/badge/stack-Cloudflare%20Workers%20%2B%20React%2019-f5a524?style=flat-square)](#-tech-stack)
+[![License](https://img.shields.io/badge/use-personal-lightgrey?style=flat-square)](#-license)
 
 </div>
 
 ---
 
-## 📖 Sobre o projeto
+## 📖 About the project
 
-A maioria das pessoas organiza a vida espalhada entre um app de calendário, um ou mais apps de tarefas e anotações soltas em algum lugar. Cada ferramenta guarda um pedaço da história; nenhuma guarda o todo. O resultado é retrabalho, compromissos esquecidos e o usuário se adaptando à ferramenta — em vez do contrário.
+Most people end up organizing their life across a scattered set of tools: a calendar app for events, one or more task apps for to-dos, plus loose notes somewhere in between. Each tool holds a fragment of the picture; none holds the whole of it. The result is duplicated effort, things falling through the cracks, and the user adapting to the tool's model instead of the other way around.
 
-**Praesto Sum** nasce para resolver isso para o seu único usuário: uma assistente que começa pelo básico (tarefas e calendário) e cresce, uma "Área da Vida" por vez, até se tornar a visão única e confiável de tudo que precisa ser organizado. Os princípios do produto:
+**Praesto Sum** exists to fix that for its one and only user: an assistant that starts with the basics (tasks and calendar) and grows, one "Life Area" at a time, into the single trusted view of everything that needs organizing. The product principles:
 
-1. **Simplicidade acima de completude** — um conjunto pequeno de funcionalidades que funcionam todo dia vale mais que um catálogo grande que fica parado.
-2. **Os dados são do dono, sob controle do dono** — armazenamento explícito, com exportação local garantida.
-3. **Sustentável para uma pessoa manter** — complexidade que uma única pessoa não consegue carregar está fora de escopo.
-4. **A assistente se adapta ao dono, não o contrário.**
-5. **Fácil de entrar, fácil de sair** — capturar e encontrar informação precisa ser quase instantâneo.
-6. **Espelho honesto** — compromissos perdidos repetidamente são mostrados, nunca escondidos.
+1. **Simplicity over completeness** — a small set of features that work every day beats a large catalog that mostly sits idle.
+2. **The owner's data stays under the owner's control** — explicit storage choices, with guaranteed local export.
+3. **Sustainable for one person to maintain** — complexity that a single person cannot carry is out of scope.
+4. **The assistant adapts to the owner, not the other way around.**
+5. **Effortless in, effortless out** — capturing and finding information must be near-instant.
+6. **Honest mirror** — repeatedly missed commitments are shown, never hidden.
 
-📚 Toda a fundamentação de produto e arquitetura vive em [`documentation/`](documentation/README.md) — visão, requisitos, decisões arquiteturais (ADRs) e roadmap, tudo validado pelo dono do projeto antes de virar código.
+📚 The full product and architecture rationale lives in [`documentation/`](documentation/README.md) — vision, requirements, architecture decision records (ADRs) and roadmap, all validated by the project owner before becoming code.
 
-## ✨ Funcionalidades
+## ✨ Features
 
-| Funcionalidade | Status | Descrição |
+| Feature | Status | Description |
 |---|:---:|---|
-| **Instalação como app (PWA)** | ✅ | Ícone na tela inicial do celular, funciona como um app nativo |
-| **Captura rápida de tarefas** | ✅ | Criar, listar, concluir, editar e excluir tarefas sem fricção |
-| **Detalhe da tarefa** | ✅ | Título, descrição, prazo, data agendada, prioridade |
-| **Tela "Hoje"** | 🚧 | O que precisa de atenção hoje: atrasadas, de hoje, futuras e sem data — com filtros por status, data e prioridade |
-| **Leitura do Google Calendar** | 🚧 | Compromissos reais do Google aparecem ao lado das tarefas, com autorização única e desconexão a qualquer momento |
-| **Exportação de dados** | 📋 | Um clique baixa 100% dos dados em JSON + `.ics`, sempre sob controle do dono |
-| **Notificações push** | 📋 | O celular toca mesmo com o app fechado |
-| **Lembretes** | 📋 | "Beber água às 15h" ou "avisar 1h antes do prazo", entregues no horário |
-| **Recorrência de tarefas** | 📋 | Séries recorrentes com faltas registradas, nunca escondidas |
-| **Escrita no Google Calendar** | 📋 | Criar/editar compromissos a partir do próprio Praesto (Fase 2) |
-| **Novas Áreas da Vida** | 💭 | Notas e outras áreas, além de Tarefas e Calendário |
+| **Installable app (PWA)** | ✅ | Icon on the phone's home screen, works like a native app |
+| **Quick task capture** | ✅ | Create, list, complete, edit and delete tasks with near-zero friction |
+| **Task detail** | ✅ | Title, description, deadline, scheduled date, priority |
+| **"Today" view** | 🚧 | What needs attention today: overdue, today, upcoming and undated — with filters by status, date and priority |
+| **Google Calendar (read)** | 🚧 | Real Google commitments appear next to tasks, after a one-time authorization, with disconnect available anytime |
+| **Data export** | 📋 | One click downloads 100% of the data as JSON + `.ics`, always under the owner's control |
+| **Push notifications** | 📋 | The phone rings even with the app closed |
+| **Reminders** | 📋 | "Drink water at 3pm" or "warn me 1h before this deadline", delivered on time |
+| **Task recurrence** | 📋 | Recurring series with misses recorded, never hidden |
+| **Google Calendar (write)** | 📋 | Create/edit events directly from Praesto (Phase 2) |
+| **New Life Areas** | 💭 | Notes and other areas, beyond Tasks and Calendar |
 
-✅ entregue · 🚧 em progresso · 📋 planejado · 💭 ideia futura — veja o detalhamento completo em [`documentation/50-planning/roadmap.md`](documentation/50-planning/roadmap.md).
+✅ shipped · 🚧 in progress · 📋 planned · 💭 future idea — full breakdown in [`documentation/50-planning/roadmap.md`](documentation/50-planning/roadmap.md).
 
-## 🏗️ Arquitetura
+## 🏗️ Architecture
 
-Um único Cloudflare Worker serve tudo: os assets estáticos do SPA, a API REST e o cron de notificações. Sem backend separado, sem serviço de sincronização, sem escrita offline.
+A single Cloudflare Worker serves everything: the SPA's static assets, the REST API and the notification cron. No separate backend, no sync engine, no offline writes.
 
 ```mermaid
 flowchart TB
-    subgraph device["📱 Dispositivo do dono (PWA instalado)"]
-        UI["React 19 SPA<br/>(tela Hoje, tarefas, calendário)"]
-        SW["Service Worker<br/>(push, cache de assets)"]
+    subgraph device["📱 Owner's device (installed PWA)"]
+        UI["React 19 SPA<br/>(Today screen, tasks, calendar)"]
+        SW["Service Worker<br/>(push, asset caching)"]
     end
 
-    subgraph cf["☁️ Cloudflare Worker (um único deploy)"]
+    subgraph cf["☁️ Cloudflare Worker (single deploy)"]
         API["Hono API<br/>/api/* — bearer token"]
-        CRON["scheduled()<br/>cron a cada 5 min"]
+        CRON["scheduled()<br/>cron every 5 min"]
         D1[("D1 (SQLite)<br/>via Drizzle ORM")]
     end
 
-    GCAL["Google Calendar API<br/>(leitura, OAuth)"]
+    GCAL["Google Calendar API<br/>(read, OAuth)"]
     PUSH["Web Push<br/>(VAPID)"]
 
-    UI -- "fetch autenticado" --> API
+    UI -- "authenticated fetch" --> API
     API --> D1
     CRON --> D1
-    CRON -- "notifica" --> PUSH --> SW
-    API -- "sincroniza eventos" --> GCAL
+    CRON -- "notifies" --> PUSH --> SW
+    API -- "syncs events" --> GCAL
 ```
 
-**Padrões-chave** (detalhados em [`documentation/30-architecture/architecture-overview.md`](documentation/30-architecture/architecture-overview.md)):
+**Key patterns** (detailed in [`documentation/30-architecture/architecture-overview.md`](documentation/30-architecture/architecture-overview.md)):
 
-- Tipos fluem de `src/worker/db/schema.ts` (Drizzle) para fora; `src/worker/dto.ts` é o único ponto de mapeamento para o contrato de rede em `src/shared/api.ts`.
-- Enums de domínio são reforçados duas vezes: união de TypeScript + `CHECK` no SQL.
-- Sem conta multiusuário — um único bearer token protege toda a API.
+- Types flow from `src/worker/db/schema.ts` (Drizzle) outward; `src/worker/dto.ts` is the single mapping point to the wire contract in `src/shared/api.ts`.
+- Domain enums are enforced twice: TypeScript union + SQL `CHECK`.
+- No multi-user accounts — a single bearer token protects the whole API.
 
-## 🧰 Stack técnica
+## 🧰 Tech stack
 
-| Camada | Tecnologia |
+| Layer | Technology |
 |---|---|
-| Runtime | [Cloudflare Workers](https://workers.cloudflare.com/) (plano gratuito) + D1 + cron triggers |
+| Runtime | [Cloudflare Workers](https://workers.cloudflare.com/) (free plan) + D1 + cron triggers |
 | Frontend | React 19 + TypeScript (strict) + Vite + `vite-plugin-pwa` |
-| API | [Hono](https://hono.dev/) 4, com bearer token em toda rota |
-| Banco de dados | Cloudflare D1 (SQLite) via [Drizzle ORM](https://orm.drizzle.team/) |
-| Notificações | `web-push` (VAPID) sob `nodejs_compat` |
-| Testes | Vitest + `@cloudflare/vitest-pool-workers` |
-| Qualidade | TypeScript strict, ESLint, Prettier |
-| Dev container (opcional) | Docker Compose ([ADR-0012](documentation/60-decisions/ADR-0012-optional-docker-compose-local-dev-runtime.md)) |
+| API | [Hono](https://hono.dev/) 4, bearer token on every route |
+| Database | Cloudflare D1 (SQLite) via [Drizzle ORM](https://orm.drizzle.team/) |
+| Notifications | `web-push` (VAPID) under `nodejs_compat` |
+| Testing | Vitest + `@cloudflare/vitest-pool-workers` |
+| Quality | TypeScript strict, ESLint, Prettier |
+| Dev container (optional) | Docker Compose ([ADR-0012](documentation/60-decisions/ADR-0012-optional-docker-compose-local-dev-runtime.md)) |
 
-Versões exatas (sem `^`/`~`) em [`package.json`](package.json) — upgrades são eventos deliberados, nunca acidentais.
+Exact pinned versions (no `^`/`~`) in [`package.json`](package.json) — upgrades are deliberate events, never accidental.
 
-## 🚀 Como instalar
+## 🚀 Getting started
 
-### Pré-requisitos
+### Prerequisites
 
-- **Node.js 24+** (traz o npm)
+- **Node.js 24+** (bundles npm)
 - **git**
-- Uma conta [Cloudflare](https://dash.cloudflare.com/sign-up) (plano gratuito) — necessária apenas para deploy e migrações remotas; o desenvolvimento local não precisa dela
-- *(opcional)* [Docker Desktop](https://www.docker.com/products/docker-desktop/), se preferir o [ambiente containerizado](documentation/40-engineering/dev-environment.md#o-container-de-dev)
+- A [Cloudflare](https://dash.cloudflare.com/sign-up) account (free plan) — only needed for deploys and remote migrations; local development doesn't need it
+- *(optional)* [Docker Desktop](https://www.docker.com/products/docker-desktop/), if you prefer the [containerized environment](documentation/40-engineering/dev-environment.md#the-dev-container--the-optional-second-door-adr-0012)
 
-### Passo a passo
+### Step by step
 
 ```bash
-# 1. Clonar o repositório
+# 1. Clone the repository
 git clone https://github.com/fabiombarreto/praesto-sum.git
 cd praesto-sum
 
-# 2. Instalar dependências (versões exatas do lockfile)
+# 2. Install dependencies (exact versions from the lockfile)
 npm ci
 
-# 3. Configurar variáveis locais
+# 3. Set up local environment variables
 cp .dev.vars.example .dev.vars
 ```
 
-Edite o `.dev.vars` gerado:
+Edit the generated `.dev.vars`:
 
 ```bash
-# Qualquer string — é o "token" que você vai colar no app uma vez por dispositivo
-API_BEARER_TOKEN="escolha-uma-string-aleatoria"
+# Any string — it's the "token" you paste into the app once per device
+API_BEARER_TOKEN="choose-a-random-string"
 
-# Gere com: npx web-push generate-vapid-keys --json
-VAPID_SUBJECT="mailto:voce@example.com"
+# Generate with: npx web-push generate-vapid-keys --json
+VAPID_SUBJECT="mailto:you@example.com"
 VAPID_PUBLIC_KEY="..."
 VAPID_PRIVATE_KEY="..."
 
-# Opcional nesta fase — necessário só para a integração com Google Calendar
+# Optional at this stage — only needed for the Google Calendar integration
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI=
 ```
 
 ```bash
-# 4. Aplicar as migrações no banco D1 local
+# 4. Apply migrations to the local D1 database
 npm run db:migrate
 
-# 5. Subir tudo em um processo só: Vite HMR + workerd real + D1 local
+# 5. Run everything in one process: Vite HMR + real workerd + local D1
 npm run dev
 ```
 
-Abra **http://127.0.0.1:5173** — o app já funciona como PWA (instalável pelo navegador).
+Open **http://127.0.0.1:5173** — the app already works as a PWA (installable from the browser).
 
-> Alternativa: `npm run docker:up` sobe o mesmo ambiente dentro do Docker Compose (sobrevive a reboot, tem `status`/`down` próprios). Detalhes em [`documentation/40-engineering/dev-environment.md`](documentation/40-engineering/dev-environment.md#the-dev-container--the-optional-second-door-adr-0012).
+> Alternative: `npm run docker:up` brings up the same environment inside Docker Compose (survives a reboot, has its own `status`/`down`). Details in [`documentation/40-engineering/dev-environment.md`](documentation/40-engineering/dev-environment.md#the-dev-container--the-optional-second-door-adr-0012).
 
-## 🕹️ Como usar
+## 🕹️ Usage
 
-1. Acesse o app pelo navegador (ou instale-o na tela inicial — botão "Adicionar à tela inicial"/"Instalar app").
-2. Na primeira vez, cole o `API_BEARER_TOKEN` que você definiu — isso autentica o dispositivo, sem necessidade de conta ou senha.
-3. Capture uma tarefa direto na tela **Hoje**: título é o único campo obrigatório.
-4. Abra a tarefa para adicionar descrição, prazo, data e prioridade, concluir, reabrir ou excluir.
-5. Filtre por status, data ou prioridade para responder rápido "o que preciso fazer hoje?".
+1. Open the app in a browser (or install it on the home screen — "Add to home screen"/"Install app").
+2. On first use, paste the `API_BEARER_TOKEN` you defined — this authenticates the device, with no account or password needed.
+3. Capture a task straight from the **Today** screen: title is the only required field.
+4. Open the task to add a description, deadline, date and priority, complete, reopen or delete it.
+5. Filter by status, date or priority to quickly answer "what do I need to do today?".
 
-## 🧪 Comandos essenciais
+## 🧪 Essential commands
 
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `npm run dev` | Ambiente de desenvolvimento completo (HMR + Worker real + D1 local) |
-| `npm test` | Roda a suíte de testes (Vitest) |
-| `npm run check` | Gate de qualidade: tipos + `tsc -b` + lint + formatação |
-| `npm run db:generate` | Gera uma migração a partir de mudança no schema (Drizzle) |
-| `npm run db:migrate` | Aplica migrações no D1 local |
-| `npm run build` | Build de produção (client + Worker + service worker) |
-| `npm run deploy` | Build + `wrangler deploy` (assets + API + cron, um único Worker) |
+| `npm run dev` | Full development environment (HMR + real Worker + local D1) |
+| `npm test` | Runs the test suite (Vitest) |
+| `npm run check` | Quality gate: types + `tsc -b` + lint + formatting |
+| `npm run db:generate` | Generates a migration from a schema change (Drizzle) |
+| `npm run db:migrate` | Applies migrations to the local D1 database |
+| `npm run build` | Production build (client + Worker + service worker) |
+| `npm run deploy` | Build + `wrangler deploy` (assets + API + cron, one Worker) |
 
-Lista completa e o runbook de deploy em [`documentation/40-engineering/dev-environment.md`](documentation/40-engineering/dev-environment.md).
+Full list and the deploy runbook in [`documentation/40-engineering/dev-environment.md`](documentation/40-engineering/dev-environment.md).
 
-## 📂 Estrutura do projeto
+## 📂 Project structure
 
 ```
 src/
-├── app/          # SPA React (telas, componentes, hooks, PWA)
-├── worker/       # API Hono, schema Drizzle, push, integração Google
-└── shared/       # Contrato de API compartilhado entre app e worker
-documentation/    # Fonte da verdade: visão, requisitos, ADRs, roadmap
-migrations/       # Migrações SQL geradas pelo drizzle-kit
+├── app/          # React SPA (screens, components, hooks, PWA)
+├── worker/       # Hono API, Drizzle schema, push, Google integration
+└── shared/       # API contract shared between app and worker
+documentation/    # Source of truth: vision, requirements, ADRs, roadmap
+migrations/       # SQL migrations generated by drizzle-kit
 ```
 
-## 📄 Documentação
+## 📄 Documentation
 
-Este README é a porta de entrada. O projeto é **documentation-first**: todo requisito, decisão e regra de domínio é registrado antes de virar código.
+This README is the entry point. The project is **documentation-first**: every requirement, decision and domain rule is recorded before it becomes code.
 
-- [`documentation/README.md`](documentation/README.md) — mapa completo dos documentos
-- [`documentation/10-product/vision.md`](documentation/10-product/vision.md) — problema, visão e princípios
-- [`documentation/20-requirements/functional-requirements.md`](documentation/20-requirements/functional-requirements.md) — o que o sistema deve fazer
-- [`documentation/60-decisions/index.md`](documentation/60-decisions/index.md) — decisões arquiteturais (ADRs)
-- [`documentation/50-planning/roadmap.md`](documentation/50-planning/roadmap.md) — onde o projeto está e o que vem a seguir
+- [`documentation/README.md`](documentation/README.md) — full document map
+- [`documentation/10-product/vision.md`](documentation/10-product/vision.md) — problem, vision and principles
+- [`documentation/20-requirements/functional-requirements.md`](documentation/20-requirements/functional-requirements.md) — what the system must do
+- [`documentation/60-decisions/index.md`](documentation/60-decisions/index.md) — architecture decision records (ADRs)
+- [`documentation/50-planning/roadmap.md`](documentation/50-planning/roadmap.md) — where the project stands and what's next
 
-## 👤 Autor
+## 👤 Author
 
-Projeto pessoal de **[Fabio Barreto](https://github.com/fabiombarreto)** — construído para uso próprio, com o código aberto para quem quiser aprender com ele ou adaptar a ideia.
+Personal project by **[Fabio Barreto](https://github.com/fabiombarreto)** — built for personal use, with the code kept open for anyone who wants to learn from it or adapt the idea.
 
-## 📜 Licença
+## 📜 License
 
-Projeto pessoal sem licença de código aberto formal. O código é público para leitura e referência; entre em contato com o autor antes de reutilizá-lo.
+Personal project with no formal open-source license. The code is public for reading and reference; reach out to the author before reusing it.
