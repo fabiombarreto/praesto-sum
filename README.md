@@ -54,7 +54,20 @@ Most people end up organizing their life across a scattered set of tools: a cale
 
 A single Cloudflare Worker serves everything: the SPA's static assets, the REST API and the notification cron. No separate backend, no sync engine, no offline writes.
 
-```mermaid
+<!-- TEMPORARY: static SVG instead of a ```mermaid block. GitHub's mermaid
+     renderer (viewscreen mermaidMarkdown bundle deployed 2026-09-01) crashes
+     at init, breaking ALL mermaid diagrams site-wide. Once fixed (check that
+     https://github.com/mermaid-js/mermaid renders its README diagrams again),
+     replace the <picture> below with the mermaid source kept in <details>. -->
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/architecture-dark.svg">
+  <img src=".github/assets/architecture-light.svg" alt="Architecture diagram: the installed PWA (React SPA + Service Worker) talks to a single Cloudflare Worker (Hono API, 5-minute cron, D1 via Drizzle), which reads Google Calendar and sends Web Push notifications back to the device.">
+</picture>
+
+<details>
+<summary>Diagram source (mermaid)</summary>
+
+```text
 flowchart TB
     subgraph device["📱 Owner's device (installed PWA)"]
         UI["React 19 SPA<br/>(Today screen, tasks, calendar)"]
@@ -76,6 +89,8 @@ flowchart TB
     CRON -- "notifies" --> PUSH --> SW
     API -- "syncs events" --> GCAL
 ```
+
+</details>
 
 **Key patterns** (detailed in [`documentation/30-architecture/architecture-overview.md`](documentation/30-architecture/architecture-overview.md)):
 
