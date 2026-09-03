@@ -487,7 +487,8 @@ export function TodayScreen({
    * `source`; the `task` branch is byte-for-byte what the screen rendered
    * before, and the `google` branch is unreachable here because this screen
    * feeds `collectDayItems` a single Task source. It exists so that adding a
-   * second source in phase 3 is a compile error until this switch handles it.
+   * source — unit 14's local Events next — is a compile error at `default`
+   * until this switch handles it.
    */
   function renderDayItems(rows: DayItem[]): ReactNode {
     return (
@@ -512,9 +513,15 @@ export function TodayScreen({
               );
             }
             case "google":
-              // Phase 4 renders this. Reaching it before then is a bug, not a
-              // blank row.
-              return assertNeverDaySource(item.source as never);
+              // Unreachable: the agenda renders Google events in its own group
+              // (see `agenda` below), and this screen feeds `collectDayItems` a
+              // single Task source. Loud rather than a blank row if that ever
+              // changes. NOT `assertNeverDaySource` — `item` is narrowed to the
+              // google variant here, not `never`, and the cast that used to
+              // bridge that gap silenced the compiler in this branch. The
+              // exhaustiveness guarantee lives in `default`, where the narrowing
+              // is genuinely `never`.
+              throw new Error(`Unhandled day item source: ${item.source}`);
             default:
               return assertNeverDaySource(item);
           }
