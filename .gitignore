@@ -32,3 +32,13 @@ coverage/
 # per-attempt `diff.implementer.patch` slices are NOT reproducible from git and
 # ARE committed.
 PRPs/reports/**/attempts/*/diff.patch
+
+# Playwright MCP session output (console logs, page snapshots, screenshots)
+# written into the repo root by the browser tooling — ephemeral, per-session
+.playwright-mcp/
+
+# A one-off 1.7 MB minified bundle pulled from github.com while debugging why
+# GitHub failed to render the README's mermaid diagram (2026-09-01, commits
+# a3e0180..900d078). Not project code, not a dependency — vendor output that
+# happened to land in the repo root. Safe to delete at any time.
+/mermaidMarkdown.js
