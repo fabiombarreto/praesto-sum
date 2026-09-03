@@ -1,6 +1,6 @@
 ---
 status: draft
-last_updated: 2026-08-23
+last_updated: 2026-09-03
 review_trigger: "a pending technical decision is resolved (new ADR accepted), or stack/component/data/integration changes"
 ---
 
@@ -148,6 +148,15 @@ the PWA and every later unit code against.
 >    the verification category settled above) or a narrower unit 4 that reads `primary`
 >    only. **Unit 4's PRD must decide this**: it is the one place where ADR-0007's read-only
 >    scope set is demonstrably insufficient for the requirement it serves.
+>    **Decided, 2026-08-29 — the scope was added, not the requirement narrowed.** Unit 4's
+>    PRD took the first branch: the consent URL requests exactly
+>    `calendar.events.readonly` + `calendar.calendarlist.readonly` and nothing else, both
+>    readonly and sensitive-tier, neither restricted, so the verification category settled
+>    in finding 1 is unchanged. The price was a forced re-consent, which phase 2 performed
+>    early on purpose so a dead credential would surface at the start of the unit rather
+>    than the day before it shipped. Live in production since 2026-08-28 and device-verified
+>    2026-08-31; the calendar picker FR-027 asks for shipped as a real screen in phase 5.
+>    Recorded here because this finding is the open question it answers.
 > 3. **The free-plan ceiling does not bite at the owner's real scale.** Measured against the
 >    primary calendar (the only one reachable, per finding 2): **401 events** across all
 >    history arrive in **one** page — one subrequest — costing **4.45 ms** of CPU to parse
