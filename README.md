@@ -34,19 +34,19 @@ Most people end up organizing their life across a scattered set of tools: a cale
 
 ## ✨ Features
 
-| Feature | Status | Description |
-|---|:---:|---|
-| **Installable app (PWA)** | ✅ | Icon on the phone's home screen, works like a native app |
-| **Quick task capture** | ✅ | Create, list, complete, edit and delete tasks with near-zero friction |
-| **Task detail** | ✅ | Title, description, deadline, scheduled date, priority |
-| **"Today" view** | 🚧 | What needs attention today: overdue, today, upcoming and undated — with filters by status, date and priority |
-| **Google Calendar (read)** | 🚧 | Real Google commitments appear next to tasks, after a one-time authorization, with disconnect available anytime |
-| **Data export** | 📋 | One click downloads 100% of the data as JSON + `.ics`, always under the owner's control |
-| **Push notifications** | 📋 | The phone rings even with the app closed |
-| **Reminders** | 📋 | "Drink water at 3pm" or "warn me 1h before this deadline", delivered on time |
-| **Task recurrence** | 📋 | Recurring series with misses recorded, never hidden |
-| **Google Calendar (write)** | 📋 | Create/edit events directly from Praesto (Phase 2) |
-| **New Life Areas** | 💭 | Notes and other areas, beyond Tasks and Calendar |
+| Feature                     | Status | Description                                                                                                     |
+| --------------------------- | :----: | --------------------------------------------------------------------------------------------------------------- |
+| **Installable app (PWA)**   |   ✅   | Icon on the phone's home screen, works like a native app                                                        |
+| **Quick task capture**      |   ✅   | Create, list, complete, edit and delete tasks with near-zero friction                                           |
+| **Task detail**             |   ✅   | Title, description, deadline, scheduled date, priority                                                          |
+| **"Today" view**            |   ✅   | What needs attention today: overdue, today, upcoming and undated — with filters by status, date and priority    |
+| **Google Calendar (read)**  |   ✅   | Real Google commitments appear next to tasks, after a one-time authorization, with disconnect available anytime |
+| **Data export**             |   🚧   | One click downloads 100% of the data as JSON + `.ics`, always under the owner's control                         |
+| **Push notifications**      |   📋   | The phone rings even with the app closed                                                                        |
+| **Reminders**               |   📋   | "Drink water at 3pm" or "warn me 1h before this deadline", delivered on time                                    |
+| **Task recurrence**         |   📋   | Recurring series with misses recorded, never hidden                                                             |
+| **Google Calendar (write)** |   📋   | Create/edit events directly from Praesto (Phase 2)                                                              |
+| **New Life Areas**          |   💭   | Notes and other areas, beyond Tasks and Calendar                                                                |
 
 ✅ shipped · 🚧 in progress · 📋 planned · 💭 future idea — full breakdown in [`documentation/50-planning/roadmap.md`](documentation/50-planning/roadmap.md).
 
@@ -100,15 +100,15 @@ flowchart TB
 
 ## 🧰 Tech stack
 
-| Layer | Technology |
-|---|---|
-| Runtime | [Cloudflare Workers](https://workers.cloudflare.com/) (free plan) + D1 + cron triggers |
-| Frontend | React 19 + TypeScript (strict) + Vite + `vite-plugin-pwa` |
-| API | [Hono](https://hono.dev/) 4, bearer token on every route |
-| Database | Cloudflare D1 (SQLite) via [Drizzle ORM](https://orm.drizzle.team/) |
-| Notifications | `web-push` (VAPID) under `nodejs_compat` |
-| Testing | Vitest + `@cloudflare/vitest-pool-workers` |
-| Quality | TypeScript strict, ESLint, Prettier |
+| Layer                    | Technology                                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| Runtime                  | [Cloudflare Workers](https://workers.cloudflare.com/) (free plan) + D1 + cron triggers                        |
+| Frontend                 | React 19 + TypeScript (strict) + Vite + `vite-plugin-pwa`                                                     |
+| API                      | [Hono](https://hono.dev/) 4, bearer token on every route                                                      |
+| Database                 | Cloudflare D1 (SQLite) via [Drizzle ORM](https://orm.drizzle.team/)                                           |
+| Notifications            | `web-push` (VAPID) under `nodejs_compat`                                                                      |
+| Testing                  | Vitest + `@cloudflare/vitest-pool-workers`                                                                    |
+| Quality                  | TypeScript strict, ESLint, Prettier                                                                           |
 | Dev container (optional) | Docker Compose ([ADR-0012](documentation/60-decisions/ADR-0012-optional-docker-compose-local-dev-runtime.md)) |
 
 Exact pinned versions (no `^`/`~`) in [`package.json`](package.json) — upgrades are deliberate events, never accidental.
@@ -120,7 +120,7 @@ Exact pinned versions (no `^`/`~`) in [`package.json`](package.json) — upgrade
 - **Node.js 24+** (bundles npm)
 - **git**
 - A [Cloudflare](https://dash.cloudflare.com/sign-up) account (free plan) — only needed for deploys and remote migrations; local development doesn't need it
-- *(optional)* [Docker Desktop](https://www.docker.com/products/docker-desktop/), if you prefer the [containerized environment](documentation/40-engineering/dev-environment.md#the-dev-container--the-optional-second-door-adr-0012)
+- _(optional)_ [Docker Desktop](https://www.docker.com/products/docker-desktop/), if you prefer the [containerized environment](documentation/40-engineering/dev-environment.md#the-dev-container--the-optional-second-door-adr-0012)
 
 ### Step by step
 
@@ -175,15 +175,15 @@ Open **http://127.0.0.1:5173** — the app already works as a PWA (installable f
 
 ## 🧪 Essential commands
 
-| Command | What it does |
-|---|---|
-| `npm run dev` | Full development environment (HMR + real Worker + local D1) |
-| `npm test` | Runs the test suite (Vitest) |
-| `npm run check` | Quality gate: types + `tsc -b` + lint + formatting |
-| `npm run db:generate` | Generates a migration from a schema change (Drizzle) |
-| `npm run db:migrate` | Applies migrations to the local D1 database |
-| `npm run build` | Production build (client + Worker + service worker) |
-| `npm run deploy` | Build + `wrangler deploy` (assets + API + cron, one Worker) |
+| Command               | What it does                                                |
+| --------------------- | ----------------------------------------------------------- |
+| `npm run dev`         | Full development environment (HMR + real Worker + local D1) |
+| `npm test`            | Runs the test suite (Vitest)                                |
+| `npm run check`       | Quality gate: types + `tsc -b` + lint + formatting          |
+| `npm run db:generate` | Generates a migration from a schema change (Drizzle)        |
+| `npm run db:migrate`  | Applies migrations to the local D1 database                 |
+| `npm run build`       | Production build (client + Worker + service worker)         |
+| `npm run deploy`      | Build + `wrangler deploy` (assets + API + cron, one Worker) |
 
 Full list and the deploy runbook in [`documentation/40-engineering/dev-environment.md`](documentation/40-engineering/dev-environment.md).
 
