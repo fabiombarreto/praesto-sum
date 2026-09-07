@@ -11,6 +11,7 @@ import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { canWrite } from "../../shared/connectivity";
 import { useConnectivity } from "../hooks/useConnectivity";
+import { DataExportCard } from "./DataExportCard";
 import { GoogleConnectionCard } from "./GoogleConnectionCard";
 import { Banner } from "./ui/Banner";
 import { Button } from "./ui/Button";
@@ -102,6 +103,7 @@ export function SettingsScreen({
           </p>
         )}
         <GoogleConnectionCard onUnauthorized={onUnauthorized} canWrite={canWrite(connectivity)} />
+        <DataExportCard onUnauthorized={onUnauthorized} />
       </main>
     </div>
   );

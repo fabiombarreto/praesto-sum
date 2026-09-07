@@ -42,3 +42,8 @@ PRPs/reports/**/attempts/*/diff.patch
 # a3e0180..900d078). Not project code, not a dependency — vendor output that
 # happened to land in the repo root. Safe to delete at any time.
 /mermaidMarkdown.js
+
+# Wrangler dry-run bundle: the plan Validation Commands Level 3 writes here
+# (`wrangler deploy --dry-run --outdir dist-dry-run`), so every implement and
+# review pass recreates it. Not covered by `dist/` above.
+dist-dry-run/

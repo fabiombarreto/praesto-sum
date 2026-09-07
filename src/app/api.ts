@@ -6,6 +6,7 @@ import type {
   TaskDto,
   UpdateTaskInput,
 } from "../shared/api";
+import { exportFilename } from "../shared/content-disposition";
 import { EMPTY_FILTER, toQuery, type TaskFilter } from "../shared/task-filter";
 import { createTokenStore } from "../shared/token-store";
 import { durableTokenStorage, legacyTokenStorage } from "./token-storage";
@@ -205,4 +206,37 @@ export async function saveGoogleCalendars(
     method: "PUT",
     body: JSON.stringify({ calendarIds }),
   });
+}
+
+/**
+ * The blob-returning sibling of `request<T>()` (data-export phase 3, "The
+ * button") — the two export routes send a file body, not JSON, so this
+ * cannot route through `request<T>()`: that helper always calls
+ * `response.json()`, which would consume the body before `.blob()` could
+ * read it. Mirrors `request<T>()`'s token-attach/401-clear shape exactly;
+ * the filename decision itself lives entirely in `exportFilename` (`../shared
+ * /content-disposition`) — this function holds no filename literal of its
+ * own.
+ */
+export async function fetchExportFile(
+  path: "/api/export" | "/api/export.ics",
+): Promise<{ blob: Blob; filename: string }> {
+  const headers = new Headers();
+  const token = await readToken();
+  if (token !== null) headers.set("Authorization", `Bearer ${token}`);
+
+  const response = await fetch(path, { headers });
+
+  if (response.status === 401) {
+    await clearToken();
+    throw new ApiError(401, "Invalid or missing token");
+  }
+  if (!response.ok) {
+    throw new ApiError(response.status, `Request failed with status ${response.status}`);
+  }
+
+  const header = response.headers.get("Content-Disposition");
+  const filename = exportFilename(header, path.endsWith(".ics") ? "ics" : "json");
+  const blob = await response.blob();
+  return { blob, filename };
 }
