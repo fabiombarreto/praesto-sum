@@ -1,10 +1,54 @@
+import { readFileSync } from "node:fs";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
-export default defineConfig({
+/**
+ * The dev-only bearer token handed to the client so `vite dev` does not stop
+ * at the TokenGate (chore C17, 2026-09-05).
+ *
+ * ADR-0003 safeguard 4 ("token on every route") is UNCHANGED by this: the
+ * Worker still rejects every unauthenticated `/api/*` request, in dev exactly
+ * as in production. What this removes is only the local re-typing of a token
+ * the machine already holds — `.dev.vars` is the same file the Worker reads,
+ * so no new secret is introduced and nothing new is written to disk.
+ *
+ * THREE independent guards keep it out of production, because the failure mode
+ * (a live token inside a shipped bundle) is far worse than the friction it
+ * removes:
+ *   1. this function returns null unless Vite's mode is exactly "development",
+ *      so `vite build` never even opens the file;
+ *   2. `src/app/main.tsx` gates its only use behind `import.meta.env.DEV`,
+ *      which is statically replaced with `false` at build time and tree-shaken
+ *      away — the mechanism the DesignPlayground branch already documents;
+ *   3. `scripts/check-dev-token-absent.mjs` greps the built bundle for both the
+ *      placeholder name and the literal token value, and `npm run build` fails
+ *      if either survives.
+ */
+function devApiToken(mode: string): string | null {
+  if (mode !== "development") return null;
+  try {
+    const raw = readFileSync(".dev.vars", "utf8");
+    const line = raw.split(/\r?\n/).find((l) => l.trimStart().startsWith("API_BEARER_TOKEN"));
+    if (!line) return null;
+    const value = line.slice(line.indexOf("=") + 1).trim();
+    // .dev.vars values appear both bare and quoted; accept either shape.
+    const unquoted = value.replace(/^["']/, "").replace(/["']$/, "");
+    return unquoted.length > 0 ? unquoted : null;
+  } catch {
+    // A machine that has never run local dev has no .dev.vars. Not an error —
+    // the gate simply behaves exactly as it always did.
+    return null;
+  }
+}
+
+export default defineConfig(({ mode }) => ({
+  // Always defined so the identifier never dangles; null outside development.
+  define: {
+    __DEV_API_TOKEN__: JSON.stringify(devApiToken(mode)),
+  },
   // Vite 8 binds IPv6 (::1) by default; pinning IPv4 keeps curl/health checks
   // and e2e scripts deterministic on Windows. The dev container overrides the
   // host with `--host 0.0.0.0` on the command line, so this stays as written.
@@ -77,4 +121,4 @@ export default defineConfig({
       devOptions: { enabled: false },
     }),
   ],
-});
+}));
