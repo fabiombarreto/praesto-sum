@@ -67,6 +67,29 @@ Restrict the file to the owner's own Windows account:
 icacls "$env:USERPROFILE\.praesto\export-token.txt" /inheritance:r /grant:r "$($env:USERNAME):R"
 ```
 
+Applied and verified on 2026-09-07: `icacls` reports `DESKTOP-FABIO\Fabio:(R)` and nothing
+else — no inherited entries, no `SYSTEM`, no `Administrators`. The script reads the file fine
+under it, confirmed by a real run.
+
+### Replacing the token later — read this before you are locked out
+
+`:R` grants **read only, to you included**. That is correct for the script, which only reads,
+but it means you cannot overwrite this file with `Set-Content` when the production token is
+next rotated — and rotation is a live event here, not a hypothetical: chore C10 rotated this
+project's token on 2026-08-12 after it was exposed in a screenshot. The failure looks like an
+access-denied error on a file you own, which is confusing enough to waste an evening.
+
+Either grant yourself write back, replace the value, and re-restrict:
+
+```powershell
+icacls "$env:USERPROFILE\.praesto\export-token.txt" /grant "$($env:USERNAME):W"
+Set-Content -Path "$env:USERPROFILE\.praesto\export-token.txt" -Value "<the new token>" -NoNewline
+icacls "$env:USERPROFILE\.praesto\export-token.txt" /inheritance:r /grant:r "$($env:USERNAME):R"
+```
+
+…or simply delete the file and repeat step 2 from the top, which is fewer moving parts and
+leaves the same end state.
+
 ## 3. A manual test run
 
 ```powershell
