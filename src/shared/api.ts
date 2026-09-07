@@ -54,6 +54,80 @@ export interface GoogleConnectionDto {
   scope: string;
 }
 
+/** A Life Area, as the export sees it (FR-042). Mirrors `LifeArea` in `src/worker/db/schema.ts` field for field. */
+export interface LifeAreaDto {
+  id: string;
+  name: string;
+  description: string | null;
+  /** Epoch seconds. */
+  createdAt: number;
+  /** Epoch seconds. */
+  updatedAt: number;
+}
+
+/**
+ * A Recurrence Series, as the export sees it (FR-042, ADR-0006). Mirrors
+ * `RecurrenceSeries` in `src/worker/db/schema.ts` field for field.
+ */
+export interface RecurrenceSeriesDto {
+  id: string;
+  kind: "task" | "event";
+  freq: "daily" | "weekly" | "monthly" | "yearly";
+  interval: number;
+  /** JSON array of ISO weekday numbers (1 = Monday … 7 = Sunday), or `null`. */
+  byWeekday: string | null;
+  byMonthday: number | null;
+  /** Local calendar day. */
+  dtstart: string;
+  timezone: string;
+  anchorMode: "calendar" | "completion";
+  endKind: "never" | "until" | "count";
+  /** Local calendar day, or `null`. */
+  untilDate: string | null;
+  maxCount: number | null;
+  doneCount: number;
+  missedCount: number;
+  status: "active" | "ended";
+  title: string | null;
+  description: string | null;
+  priority: number | null;
+  lifeAreaId: string | null;
+  dateMode: "deadline" | "scheduled";
+  /** JSON array of reminder offsets in minutes, or `null`. */
+  reminderOffsets: string | null;
+  /** Epoch seconds. */
+  createdAt: number;
+  /** Epoch seconds. */
+  updatedAt: number;
+}
+
+/** A Reminder, as the export sees it (FR-042, FR-044). Mirrors `Reminder` in `src/worker/db/schema.ts` field for field. */
+export interface ReminderDto {
+  id: string;
+  taskId: string | null;
+  label: string | null;
+  /** Epoch seconds. */
+  fireAt: number;
+  originOffsetMinutes: number | null;
+  /** Epoch seconds, or `null` when not yet sent. */
+  sentAt: number | null;
+  /** Epoch seconds. */
+  createdAt: number;
+  /** Epoch seconds. */
+  updatedAt: number;
+}
+
+/**
+ * A Google calendar selection, as the export sees it (FR-042, FR-027). Only
+ * ids — never calendar contents, per ADR-0007. Mirrors
+ * `GoogleCalendarSelection` in `src/worker/db/schema.ts` field for field.
+ */
+export interface GoogleCalendarSelectionDto {
+  calendarId: string;
+  /** Epoch seconds. */
+  selectedAt: number;
+}
+
 /** An event's start or end. The two shapes stay DISTINCT rather than being flattened into one lossy field. */
 export type EventMoment =
   /** All-day: a local calendar day with no time and no zone at all. */

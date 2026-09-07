@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-24
+last_updated: 2026-09-05
 review_trigger: "a screen is added that the anatomy does not fit, a navigation destination of equal weight appears, or a platform behaviour a rule relies on changes"
 ---
 
@@ -58,7 +58,7 @@ Top to bottom, every screen that lists Tasks:
 |---|---|
 | 3 today-view-and-filters | This anatomy as is: groups, chip row, filter sheet |
 | 4 google-calendar-read | The agenda stack (step 4); calendar picker and disconnect in settings |
-| 5 data-export | A settings route with one action; result as a toast |
+| 5 data-export | A settings route with two download actions — *Baixar meus dados* (JSON) and *Baixar agenda (.ics)*; success as a toast, a failed download inline and persistent per guidelines §8 |
 | 6 push-channel-proven | A settings route (*Notificações*) with the toggle, priming sheet and a diagnostics sub-page |
 | 7 reminders | Reminder fields inside the detail sheet; standalone Reminders as rows with a bell glyph in *Hoje*; the live toast when one fires |
 | 8 text-search | The header search icon opens a search route with the field at the top |
@@ -69,6 +69,7 @@ Top to bottom, every screen that lists Tasks:
 
 | Date | What changed |
 |---|---|
+| 2026-09-05 | **data-export phase 3, owner's call.** §6's unit-5 row amended: a single combined download action becomes two — *Baixar meus dados* (JSON) and *Baixar agenda (.ics)* — because the owner chose two explicit controls over one action covering both files. The row's "result as a toast" wording covered only success; a failed export is not a transient nicety (ADR-0003's binding safeguard), so failure is now inline and persistent per guidelines §8's *Request error* rule, matching this repo's existing `GoogleConnectionCard` retry idiom. See `PRPs/plans/data-export-phase-3-the-button.plan.md` |
 | 2026-08-24 | **Owner's call, after seeing the built row.** §2.3's trailing *Filtros…* chip is cut: the header's filter button already opens the same sheet and already carries the active-count badge, so the chip was a second entrance to one room, and a non-toggle sitting in a row of toggles. The badge stays with the survivor, as the unit-3 PRD's own Open Question said it should. This is the rule being corrected by looking at the thing, which is what the review trigger at the top of this document exists for |
 | 2026-08-24 | **today-view-and-filters Phase 3 (Task 2).** §2.3 amended: the quick-filter row's time-of-day chip ***Com hora*** is retired and the row now offers *Para hoje* (final order: *Abertas*, *Para hoje*, *Alta prioridade*). A Task carries no time of day — `deadline` and `scheduledDate` are calendar days, enforced by `tasks_single_date_chk` — so the old chip named a filter the domain cannot express; it becomes expressible only when Event ships in unit 14. Proven by building the phase-3 chip row, which found the rule unimplementable as written. *The retired name is written here deliberately: a reader who meets `Com hora` in the PRD, the plans or the A3 sketches must be able to find this row by searching for it.* |
 | 2026-08-23 | **A5 retro (plan A6).** Five rules amended by what building the screens measured: §2.6 titles wrap to two lines (the guidelines sit above this document), §2.7 the empty state carries the *Nova tarefa* CTA (the approved microcopy postdated the "no duplicate button" line), §2.8 the toast is slotted into the open dialog's subtree rather than made a `popover="manual"` (which would itself be inert), §3 the centred-sheet breakpoint is Tailwind's 640 px and the `cancel` event must be mirrored alongside `close`, §4 the `:has()` rule is anchored on the shell, not `:root` |

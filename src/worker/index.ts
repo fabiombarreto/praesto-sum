@@ -1,5 +1,7 @@
 import { Hono } from "hono";
 import { requireToken } from "./auth";
+import { exportRoutes } from "./routes/export";
+import { icsRoutes } from "./routes/export-ics";
 import { googleRoutes } from "./routes/google";
 import { oauthCallbackRoutes } from "./routes/oauth-callback";
 import { taskRoutes } from "./routes/tasks";
@@ -19,6 +21,8 @@ app.use("/api/*", requireToken);
 app.get("/api/health", (c) => c.json({ ok: true }));
 app.route("/api/tasks", taskRoutes);
 app.route("/api/google", googleRoutes);
+app.route("/api/export", exportRoutes);
+app.route("/api/export.ics", icsRoutes);
 
 // UNAUTHENTICATED BY DESIGN, and the only such route in the project (unit 4
 // phase 2). It sits here, visibly below the `/api/*` middleware line and
