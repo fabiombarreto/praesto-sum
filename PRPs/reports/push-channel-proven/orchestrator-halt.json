@@ -1,0 +1,67 @@
+{
+  "outcome": "FAILED_PLAN_REVIEW_PRD_AC_GAP",
+  "phase_N": 1,
+  "halting_stage": "plan_review",
+  "plan_path": "PRPs/plans/push-channel-proven-phase-1-push-send-spike.plan.md",
+  "plan_review_attempts": 2,
+  "max_plan_review_retries": 2,
+  "failing_rubric_items": [
+    {
+      "rubric_id": "R8b",
+      "class": "blocking",
+      "reason": "PRD_AC_GAP. Phase 1's Implementation Phases row Description and Success Signal assign the behaviour 'the repo names the library it will use with the reason recorded', but the source PRD's ## Acceptance Criteria (test scenarios) section (AC-1..AC-10) defines no criterion for it. The plan has no local move: omitting AC-A4 fails R-COH-AC-TASK-DECOUPLED because Task 4 would deliver behaviour no AC enforces, and citing an unrelated PRD AC-N fails R8b. Re-authoring the plan cannot fix this."
+    }
+  ],
+  "resolved_on_this_attempt": [
+    "R3",
+    "R-COH-TASK-AC-MISSING",
+    "R8-informational-AC-A4-pertinence"
+  ],
+  "passing_note": "All other R1-R8 items and every R-COH-* deterministic check pass. R-COH-VALIDATE-ALWAYS-PASS verified line by line: every VALIDATE declares its precondition and exits non-zero on failure. No task requires the autonomous implementer to deploy, push to production, reach production over the network, or configure the machine; the device pass is explicitly excluded from every task and Level 3 stops at a local `wrangler dev --local` 401 check. The K=5 coherence pass returned zero findings.",
+  "blocked_on": "owner decision — amending an APPROVED, owner-validated PRD's Acceptance Criteria is not a mutation any agent in this pipeline may make unilaterally (interactivity boundary). The 2026-08-29 decision in docs/decisions.md sanctions ADDING a row to an APPROVED PRD's phase table under a dated amendment note, and explicitly leaves editing existing rows out of bounds; adding an acceptance criterion is an adjacent case that decision does not cover.",
+  "manual_recovery_paths": [
+    "Add the missing acceptance criterion to PRPs/prds/push-channel-proven.prd.md under a dated amendment note, then re-run /relay-execute — it resumes at phase 1 with the plan still DRAFT.",
+    "Decide instead that recording the library verdict needs no acceptance criterion, and have the plan annotate Task 4 as documentation/infrastructure the way Tasks 3 and 5 are annotated."
+  ],
+  "orchestrator_run_log": [
+    {
+      "phase": 1,
+      "stage": "plan",
+      "outcome": "DRAFT_WRITTEN",
+      "plan_path": "PRPs/plans/push-channel-proven-phase-1-push-send-spike.plan.md"
+    },
+    {
+      "phase": 1,
+      "stage": "plan_review",
+      "attempt": 1,
+      "outcome": "CHANGES_REQUESTED",
+      "failing": [
+        "R3",
+        "R-COH-TASK-AC-MISSING"
+      ]
+    },
+    {
+      "phase": 1,
+      "stage": "plan",
+      "attempt": 2,
+      "outcome": "DRAFT_CORRECTED"
+    },
+    {
+      "phase": 1,
+      "stage": "plan_review",
+      "attempt": 2,
+      "outcome": "CHANGES_REQUESTED",
+      "failing": [
+        "R8b"
+      ]
+    }
+  ],
+  "worktree_attempted": false,
+  "worktree_succeeded": null,
+  "fallback_reason": null,
+  "resolved": {
+    "on": "2026-09-07",
+    "how": "Owner chose to amend the PRD: AC-11 added under a dated amendment note. Plan review resumed and reached APPROVED on the fourth attempt.",
+    "note": "This file is retained as audit history. It does not reflect current state and gates nothing on resume."
+  }
+}

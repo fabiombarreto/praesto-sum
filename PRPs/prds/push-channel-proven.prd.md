@@ -153,6 +153,27 @@ ago.
   then the phone shows the notification, and tapping it opens Praesto on the route carried in the
   payload. *Verified by the owner on his device and recorded in the phase report — no automated
   tier can assert this (see the Decisions Log).*
+- **AC-11 The send-library verdict is recorded, not just reached:** Given the phase-1 spike has run,
+  when the repository is inspected, then exactly one send library is named as adopted with an exact
+  version pin (no `^`/`~`), the PRD's Decisions Log "Send library" row carries the verdict and states
+  that it was settled by running the library inside workerd rather than by reading about it, and — if
+  the adopted library is not `web-push` — an ADR exists that supersedes ADR-0005's naming of it. A
+  spike that reaches a conclusion nobody wrote down leaves the next reader to re-run it.
+
+> **Amendment — 2026-09-07.** AC-11 was added to this APPROVED PRD after the fact. **What was
+> found:** the plan-reviewer's `R8b` check, run against the phase-1 plan, showed that the
+> Implementation Phases row 1 assigns the behaviour *"the repo names the library it will use with
+> the reason recorded"* in both its Description and its Success signal, while `AC-1`..`AC-10`
+> defined no criterion for it — so the phase's central artefact, a recorded decision, was enforced
+> by nothing. The plan had no local move: omitting the criterion would leave a task delivering
+> behaviour no AC covers (`R-COH-AC-TASK-DECOUPLED`), and citing an unrelated AC fails `R8b`.
+> **Why the alternative was rejected:** the alternative was to annotate the task as documentation,
+> the way tasks that only wire a route or keep a derived doc truthful are annotated. That would
+> have closed the rubric failure while leaving the spike's whole point — the written verdict —
+> unenforced, so nothing would fail if it were never written. **Who decided:** the owner, on
+> 2026-09-07, choosing the amendment over the annotation. This extends the 2026-08-29 precedent
+> (a phase row may be added under a dated note) to an acceptance criterion; the same discipline
+> applies — additive only, never an edit to an existing `AC-N`.
 
 ## Open Questions
 
@@ -280,7 +301,7 @@ of `docs/context/methodology.md`, not a coverage gap.
 
 | # | Phase | Description | Status | Repo | Parallel | Depends | PRP Plan |
 |---|-------|-------------|--------|------|----------|---------|----------|
-| 1 | push-send-spike | Prove a real push leaves workerd and reaches the device; decide the send library; write the ADR if it is not `web-push` | pending | - | - | - | - |
+| 1 | push-send-spike | Prove a real push leaves workerd and reaches the device; decide the send library; write the ADR if it is not `web-push` | in-progress | - | - | - | PRPs/plans/push-channel-proven-phase-1-push-send-spike.plan.md |
 | 2 | subscription-lifecycle | `src/shared` payload builder + outcome mapper; subscribe / unsubscribe / test-push routes over `push_subscriptions`; 404/410 pruning, 429/5xx retention | pending | - | - | 1 | - |
 | 3 | cron-heartbeat | `scheduled()` stops being a stub and records every run; `cron_runs` table + drizzle-kit migration; `src/shared` freshness classifier; bearer-gated diagnostics endpoint | pending | - | - | 2 | - |
 | 4 | notifications-settings | `/settings` card + *Notificações* route: two-step priming, toggle, "bloqueadas" state, diagnostics sub-page, test-push control — pt-BR, Arcade tokens, §8 review checklist run | pending | - | - | 3 | - |
@@ -335,6 +356,7 @@ of `docs/context/methodology.md`, not a coverage gap.
 | How the exit signal is verified | Split explicitly in three: automatable by the agent (vitest over `src/shared` for AC-1..AC-6, workerd route tests for AC-7/AC-8, browser-pane DOM reads of the *Notificações* screen); owner's device pass, indelegable (AC-10 — the ring with the app closed, the tap opening the app, reading the diagnostics on the phone); and the diagnostics screen itself as the instrument that lets him judge the cron alone | Leave verification implicit and discover the device half mid-unit | Unit 5 already ran this split — the device half stayed with the owner, and chore C15 still carries two remainders precisely because they depend on the phone. Naming the boundary in the PRD is what keeps a task no autonomous implementer can perform out of the plan, as it kept `npm run deploy`, the Scheduled Task registration and the `icacls` out of unit 5's |
 | Scope boundary against unit 7 | `scheduled()` records that it ran and reads no Reminder | Fold the due-Reminder scan in, since the cron is being touched anyway | It would merge two failure modes into one symptom — "nothing arrived" could mean no reminder was due or the push was lost — which is the diagnosis problem this unit exists to remove. It would also make unit 7's own exit signal untestable in isolation |
 | Send library | Decided in phase 1 by running it, not by reading. `web-push@3.6.7` is the incumbent (ADR-0005 names it); a Web Crypto replacement requires an ADR | Adopt a Web Crypto library up front on the strength of the GitHub issue | The evidence is genuinely conflicting — the issue documents concrete blockers, Cloudflare's current guide still recommends `web-push` + `nodejs_compat`, and our `compatibility_date` is far newer than the issue. Deciding by experiment costs one short phase and settles it |
+| Acceptance criterion for the spike verdict (added 2026-09-07 by amendment) | Add AC-11 to this APPROVED PRD under a dated amendment note | Annotate the plan task as documentation, leaving the verdict unenforced by any AC | The plan-reviewer R8b check found that row 1 assigns "the repo names the library it will use with the reason recorded" while no AC-1..AC-10 covered it. Annotating the task would have cleared the rubric and left the phase's central artefact — a written decision — enforced by nothing, so a spike that concluded and never recorded its conclusion would still pass. Extends the 2026-08-29 phase-row precedent to acceptance criteria, additive only |
 | Where the logic lives | Payload build, outcome mapping and freshness classification in `src/shared` behind ports; only the `PushManager` / `Notification` / push-service calls are the exempt adapter | Test the whole thing through the routes | The 2026-08-11 methodology rule is explicit: "it touches the browser" is a reason to move logic somewhere testable, never to skip the test. It is also the only way AC-1..AC-6 are testable inside workerd, which has no Notification API |
 
 ---
