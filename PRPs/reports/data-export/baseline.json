@@ -1,0 +1,12 @@
+{
+  "captured_at": "2026-09-04T00:40:43Z",
+  "feature": "data-export",
+  "worktree": ".worktrees/data-export",
+  "branch": "feature/data-export",
+  "base_commit": "90ea2d3",
+  "test_files": 34,
+  "tests_passed": 598,
+  "tests_total": 598,
+  "command": "npm test",
+  "note": "Test-count baseline captured BEFORE any phase-1 work, so a later post-green review can compare against a real number instead of recording the check as unavailable. This is a COUNT baseline, not a coverage baseline: the project configures no coverage tooling (docs/context/testing.md), so a coverage-drop check remains genuinely unavailable and must still be recorded as such rather than inferred from this file. Prompted by the 2026-08-31 retrospective post-green review of google-calendar-read phase 4, which had to record coverage_drop_check as unavailable because no baseline artifact existed anywhere in the repo."
+}

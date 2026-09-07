@@ -1,0 +1,26 @@
+{
+  "feature": "data-export",
+  "phase": 1,
+  "outcome": "GREEN",
+  "attempts": 1,
+  "started_at": "2026-09-04T19:16:41Z",
+  "ended_at": "2026-09-04T19:17:07Z",
+  "worktree": ".worktrees/data-export",
+  "branch": "feature/data-export",
+  "base_commit": "90ea2d3",
+  "command": "npm test",
+  "test_files": 37,
+  "tests_passed": 617,
+  "tests_failed": 0,
+  "baseline": {
+    "ref": "PRPs/reports/data-export/baseline.json",
+    "test_files": 34,
+    "tests_passed": 598
+  },
+  "delta": {
+    "test_files": 3,
+    "tests": 19
+  },
+  "auto_correction_invoked": false,
+  "note": "GREEN on the first attempt, so the auto-correction loop never ran. The suite was authored test-first and was legitimately RED before the Implementer; the only post-approval repair was to test/export-completeness.test.ts's type-predicate annotation and to formatting, performed by the test-writer (the authorized author under R-X), with no assertion changed."
+}

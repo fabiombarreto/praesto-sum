@@ -1,0 +1,126 @@
+# TDD initial suite — phase 3 (data-export, "The button")
+# Source PRD: PRPs/prds/data-export.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/data-export-phase-3-the-button.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-09-05
+
+## Scope note
+
+`docs/context/methodology.md` keeps React component verification and
+browser-API glue MANUAL. Per the plan's own "decidable/manual split, stated
+explicitly" note, this phase authors exactly ONE test-first target:
+`src/shared/content-disposition.ts` (plan Task 1). No component test is
+authored for `DataExportCard.tsx`, `SettingsScreen.tsx`, `src/app/api.ts`'s
+`fetchExportFile`, or `src/app/download.ts` — those are exempt glue/
+presentation, verified on-device and recorded in
+`PRPs/reports/data-export/phase-3/device-verification.md` per plan Task 8.
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-9 / plan AC-A5 (parser slice: filename* preference, percent-decoding, path-traversal sanitization, missing/malformed-header null signal) | NEW_TEST_REQUIRED | test/content-disposition.test.ts |
+| AC-9 / plan AC-A6 (`exportFilename` fallback-name decision: parsed name wins when present, exact undated `praesto-export.<kind>` fallback otherwise) | NEW_TEST_REQUIRED | test/content-disposition.test.ts (added in the 2026-09-05 targeted-addition pass below — Task 2 was added to the plan by amendment after this suite's first authoring pass) |
+| AC-9 / plan AC-A1 (JSON download reaches the browser, no error state) | OUT_OF_PHASE_SCOPE | manual — plan Task 8, condition 1 |
+| AC-9 / plan AC-A2 (.ics download reaches the browser, no error state) | OUT_OF_PHASE_SCOPE | manual — plan Task 8, condition 2 |
+| AC-9 / plan AC-A3 (persistent inline failure, retry stays enabled, no bare status code) | OUT_OF_PHASE_SCOPE | manual — plan Task 8, condition 3-4 |
+| AC-9 / plan AC-A4 (guidelines checklist recorded, ui-layout-standard.md + ui-ux-plan.md amended) | OUT_OF_PHASE_SCOPE | manual — plan Task 8; documentation Tasks 6-7 |
+
+AC-A1 through AC-A4 are marked `OUT_OF_PHASE_SCOPE` for THIS test-file-authoring
+session in the sense that they carry no automated test — they are explicitly
+`(manual)`-tagged in the plan's own Acceptance Criteria section and are
+discharged by Task 8's device-verification record, not by this suite. AC-A5
+and AC-A6 (the decidable parser and its fallback-name wrapper) are in scope
+for `test-writer`.
+
+## Test files written this session
+
+- test/content-disposition.test.ts (new — 22 cases across 5 `describe` blocks:
+  plain `filename=` extraction incl. the exact `src/worker/routes/export.ts`
+  and `export-ics.ts` header shapes; `filename*` preference over `filename`
+  regardless of parameter order; percent-decoding of a non-ASCII byte sequence;
+  fall-through to the plain form on a percent-decode failure; path-traversal
+  sanitization to the last path segment for `../`, `..\`, a leading `/`, a bare
+  `..`/`.`, an empty result, and the same sanitization applied to the extended
+  form; null-return for a missing header, a header with no filename parameter
+  of any form, a header naming only an unrelated parameter, and a garbled
+  unbalanced-quote header without throwing)
+
+## 2026-09-05 targeted addition — `exportFilename` (plan AC-A6, Task 2)
+
+The plan was amended after this suite's first authoring pass to add Task 2
+(`exportFilename(header, kind)`), extracting `src/app/api.ts`'s previously
+untested `praesto-export.<ext>` fallback literal into the same pure module.
+This closes exactly the coverage gap `test-reviewer` had flagged: neither the
+parser's own suite (correctly scoped to `parseFilenameFromContentDisposition`'s
+`null`-vs-not behavior) nor Task 8's manual device pass (both real routes
+always send a header, per AC-6) ever exercised the fallback string itself.
+
+No existing test in `test/content-disposition.test.ts` was touched — only the
+import statement gained `exportFilename` alongside the existing
+`parseFilenameFromContentDisposition` import, and 7 new cases were appended in
+2 new `describe` blocks:
+
+- `exportFilename` — parsed name takes priority over the fallback (plan AC-A6):
+  2 cases (JSON and `.ics`) proving the parsed name wins over the fallback
+  when the header yields one — guards against an implementation that always
+  returns the fallback regardless of the parse result.
+- `exportFilename` — undated fallback on a missing or unparseable header
+  (plan AC-A6): 5 cases — exact-string fallback for `null` header (both
+  kinds), for a header with no filename parameter, for an unrelated-parameter
+  header, and a same-inputs-different-kind case pinning that the extension
+  tracks `kind` rather than both downloads colliding on one literal. Every
+  fallback assertion is an exact-string `.toBe(...)`, never a loose pattern,
+  per the amendment's own stated design: the fallback is deliberately undated
+  so a server-side header regression is visually obvious rather than blending
+  in as a plausible dated name.
+
+Outcome: `NEW_TEST_REQUIRED` for AC-A6, additive-only inside the existing file
+(see updated AC outcomes table above).
+
+## Lifecycle ledger
+
+(none — no update/delete this session; both the original authoring pass and
+this 2026-09-05 targeted addition only CREATEd new test cases. The addition
+appended two new `describe` blocks and widened one `import` statement; it
+did not update, weaken, or remove any existing test function.)
+
+## Verification performed
+
+**Original pass:** `npx tsc -b` was run against the worktree
+(`C:\repos\assistente-pessoal\.worktrees\data-export`) after writing the test
+file. It reported exactly one error:
+
+```
+test/content-disposition.test.ts(23,53): error TS2307: Cannot find module
+'../src/shared/content-disposition' or its corresponding type declarations.
+```
+
+This is the expected RED — `src/shared/content-disposition.ts` does not exist
+yet (test-first ordering). No other type error was reported: the test file
+itself makes no blind array-index access and no unguarded optional-property
+access, so it type-checks cleanly under this project's `strict` +
+`noUncheckedIndexedAccess` + `exactOptionalPropertyTypes` tsconfig.
+
+**2026-09-05 targeted-addition pass:** after adding the `exportFilename`
+cases, re-ran the same checks in the worktree:
+
+- `npx tsc -b` — reported exactly one error, the same expected unresolved-
+  import error as before (line number shifted to the new `import { ... }`
+  block, still `TS2307: Cannot find module '../src/shared/content-disposition'`).
+  No other type error — the added cases type-check cleanly under `strict` +
+  `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes`.
+- `npx prettier --check test/content-disposition.test.ts` — passes cleanly
+  (`All matched files use Prettier code style!`) after a `--write` pass that
+  changed only quote-style formatting of a few pre-existing lines (Prettier's
+  own idempotent normalization), touching no assertion or test semantics.
+- `npx vitest run` — 40 test files, 1 failed (`content-disposition.test.ts`,
+  failing at import/collection time on the same expected missing-module
+  error, 0 tests executed in it — correct RED, test-first ordering) and 39
+  passed with all 626 of their tests passing; none of those 39 pre-existing
+  files regressed.
+
+## Status
+
+*Approved: 2026-09-05*
+*Status: APPROVED*

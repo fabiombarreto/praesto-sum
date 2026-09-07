@@ -1,0 +1,285 @@
+{
+  "feature": "data-export",
+  "prd_path": "PRPs/prds/data-export.prd.md",
+  "started_at": "2026-09-04T18:20:00Z",
+  "ended_at": "2026-09-07T02:55:00Z",
+  "max_plan_review_retries": 2,
+  "max_tdd_review_retries": 2,
+  "max_orchestrator_minutes": 240,
+  "worktree_attempted": true,
+  "worktree_succeeded": true,
+  "fallback_reason": null,
+  "phases": [
+    {
+      "phase": 1,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "attempts": 2,
+      "plan_path": "PRPs/plans/completed/data-export-phase-1-the-dump-and-its-guard.plan.md",
+      "note": "Attempt 1 returned CHANGES_REQUESTED on R-COH-TASK-AC-MISSING, R-COH-VALIDATE-ALWAYS-PASS and R-COH-AC-TASK-DECOUPLED. A fourth change was made on the orchestrator's instruction rather than on a rubric finding: Task 6 instructed the Implementer to run `npm run deploy` against production, and its VALIDATE grepped the source PRD for a string that could only exist after that deploy plus a manual doc edit. The plan-reviewer examined it against every rubric item and reported honestly that no check covers a task requiring the Implementer to act outside its execution boundary, declining to invent an id. Recorded as a relay rubric gap, not a defect of this plan."
+    },
+    {
+      "phase": 1,
+      "stage": "worktree",
+      "outcome": "CREATED",
+      "worktree_path": ".worktrees/data-export",
+      "branch": "feature/data-export",
+      "base_commit": "90ea2d3",
+      "baseline": "598 tests / 34 files"
+    },
+    {
+      "phase": 1,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "mode": "test-first",
+      "suite_path": "PRPs/reports/data-export/test-suite.diff",
+      "test_files": 3,
+      "note": "R-RED-LEGITIMATE verified dynamically: failures confined to the plan's seam set (unresolved Task 1/Task 2 CREATE targets, 404 on the unmounted route). AC-1 passed even before implementation because `app.use(\"/api/*\", requireToken)` 401s before route matching."
+    },
+    {
+      "phase": 1,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 1,
+      "files_changed": [
+        "src/worker/db/export-manifest.ts",
+        "src/shared/export.ts",
+        "src/shared/api.ts",
+        "src/worker/dto.ts",
+        "src/worker/routes/export.ts",
+        "src/worker/index.ts"
+      ],
+      "note": "Level 1 failed on a type error INSIDE test/export-completeness.test.ts, which R-X forbade the Implementer from fixing. It stopped and reported with correct attribution instead of editing the test. The repair was routed to the test-writer, the authorized author, which changed a type-predicate annotation and formatting with no assertion touched. The type error was undetectable at test-review time: the production modules did not exist yet, so `tsc -b` failed earlier on unresolved imports and masked it \u2014 a structural property of test-first in a type-checked language, not a reviewer oversight."
+    },
+    {
+      "phase": 1,
+      "stage": "code_review",
+      "outcome": "APPROVED",
+      "note": "8/8 rubric plus 5 R-COH rows. Verified the security-relevant shape: src/worker/routes/export.ts imports only the five dumped tables, so no join, spread or dump-then-filter path to google_connections, push_subscriptions or oauth_states exists. The 'filter afterward' shape the PRD explicitly rejected was not built."
+    },
+    {
+      "phase": 1,
+      "stage": "test",
+      "outcome": "GREEN",
+      "tests": "617/617 across 37 files",
+      "auto_correction_invoked": false
+    },
+    {
+      "phase": 1,
+      "stage": "test_review",
+      "outcome": "APPROVED",
+      "concerns": 0,
+      "note": "Coverage-drop check recorded UNAVAILABLE with its reason (no coverage tooling configured); the 598->617 count comparison stated separately as itself and explicitly not used to infer coverage. Verified rather than accepted the test-writer's self-report on the post-approval repair."
+    },
+    {
+      "phase": 1,
+      "status": "complete",
+      "timestamp": "2026-09-04T19:45:00Z",
+      "plan_path": "PRPs/plans/completed/data-export-phase-1-the-dump-and-its-guard.plan.md"
+    },
+    {
+      "phase": 2,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "attempts": 2,
+      "plan_path": "PRPs/plans/completed/data-export-phase-2-the-calendar-file.plan.md",
+      "note": "Attempt 1 PASSED the full rubric and was approved. The orchestrator then reverted it to DRAFT deliberately -- not a defect report -- to bring RFC 5545 3.1 line folding into scope. The plan had deferred folding as a residual risk on the correct observation that neither AC-7 nor AC-8 names it; the plan-reviewer confirmed that is no rubric failure and recorded the deferral in the honest shape the process asks for. Two arguments carried the reversal: the 75-octet threshold is the MEDIAN case for accented pt-BR titles rather than an edge case, and the deferral's load-bearing premise (that Google's importer tolerates unfolded lines) was asserted without a citation in a plan otherwise disciplined about sourcing. The scope reading is that AC-7 already requires 'CRLF line endings per RFC 5545', and CRLF and folding are the same section of that RFC, so folding was inside AC-7 rather than an expansion of it."
+    },
+    {
+      "phase": 2,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "mode": "test-first",
+      "attempts": 2,
+      "suite_path": "PRPs/reports/data-export/test-suite-phase-2.diff",
+      "test_files": 2,
+      "note": "Approved once, then re-reviewed after a late addition, because the first verdict no longer described the file on disk. The addition closed a gap the test-reviewer had flagged as real while correctly noting it mapped to no rubric id: escapeIcsText was going untested, though the plan's own risk table had expected a title carrying RFC 5545 TEXT-reserved characters. An unescaped comma in SUMMARY can be read as a value separator, and 'Comprar pao, leite e cafe' is ordinary owner data. Neither the folding test nor the escape test covers their interaction, which is why the code review was asked to read the call order directly."
+    },
+    {
+      "phase": 2,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 1,
+      "files_changed": [
+        "src/shared/ics.ts",
+        "src/worker/routes/export-ics.ts",
+        "src/worker/index.ts"
+      ],
+      "note": "Level 1 failed on a noUncheckedIndexedAccess type error inside test/export-ics.test.ts, which R-X forbade the Implementer from fixing. It stopped and reported with correct attribution, exactly as in phase 1. SECOND occurrence of the same class: a test file authored test-first that runs green under vitest (transpile-only) but fails tsc -b, discoverable only after the seam exists because tsc fails earlier on unresolved imports. Phase 1 was exactOptionalPropertyTypes; phase 2 was noUncheckedIndexedAccess. Root cause is that the test pair is never told this project's strict tsconfig flags. Mitigated by instruction both times; the systemic fix -- recording the flags where the test pair reads them, e.g. docs/context/testing.md -- has NOT been done and is owed."
+    },
+    {
+      "phase": 2,
+      "stage": "code_review",
+      "outcome": "APPROVED",
+      "note": "Reviewed against the phase-1 boundary snapshot c68a0421, not the base commit, so phase 1's nine uncommitted files were not misattributed to this plan. Verified directly in src/shared/ics.ts that escaping happens at line-push time (104-112) and folding runs afterward (117), so folding always measures the escaped, octet-inflated value -- the one interaction neither test covers alone."
+    },
+    {
+      "phase": 2,
+      "stage": "test",
+      "outcome": "GREEN",
+      "tests": "626/626 across 39 files",
+      "auto_correction_invoked": false
+    },
+    {
+      "phase": 2,
+      "stage": "test_review",
+      "outcome": "APPROVED",
+      "concerns": 0,
+      "note": "Confirmed the post-approval repair used an explicit throw-on-undefined rather than a `!` assertion or `?? \"\"` fallback, so an absent line still fails loudly. Noted a real methodological limit: untracked files cannot be diffed, so the reviewer read them directly instead of reporting a vacuous empty diff as evidence of no change."
+    },
+    {
+      "phase": 2,
+      "status": "complete",
+      "timestamp": "2026-09-04T20:35:00Z",
+      "plan_path": "PRPs/plans/completed/data-export-phase-2-the-calendar-file.plan.md"
+    },
+    {
+      "phase": 3,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "attempts": 2,
+      "plan_path": "PRPs/plans/completed/data-export-phase-3-the-button.plan.md",
+      "note": "Approved on attempt 1, then reverted to DRAFT deliberately to close a gap the test-reviewer found while answering whether the manual/automatic line was drawn correctly: the fallback filename literal lived in src/app/api.ts, covered by neither tier, because the parser suite correctly tests only when the parser returns null and the manual conditions never exercise a missing header. The owner chose to close it; exportFilename() moved the decision into the pure module. The amendment renumbered six tasks, which the re-review verified reference-by-reference."
+    },
+    {
+      "phase": 3,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "mode": "test-first",
+      "attempts": 2,
+      "suite_path": "PRPs/reports/data-export/test-suite-phase-3.diff",
+      "test_files": 1,
+      "note": "FIRST phase of the three needing no post-hoc test repair. Phases 1 and 2 each shipped a test file that passed vitest (transpile-only) but failed tsc -b once the seam existed, discoverable only then because tsc failed earlier on unresolved imports. Root cause was that the test pair was never told this project's strict tsconfig flags; naming noUncheckedIndexedAccess and exactOptionalPropertyTypes up front, and requiring the writer to run tsc -b itself before reporting, removed the defect class."
+    },
+    {
+      "phase": 3,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 1,
+      "files_changed": [
+        "src/shared/content-disposition.ts",
+        "src/app/api.ts",
+        "src/app/download.ts",
+        "src/app/components/DataExportCard.tsx",
+        "src/app/components/SettingsScreen.tsx",
+        "documentation/40-engineering/ui-layout-standard.md",
+        "documentation/50-planning/ui-ux-plan.md"
+      ],
+      "note": "No test file touched at all -- unlike both earlier phases. Task 9 (manual browser verification) was left outstanding rather than simulated, as instructed."
+    },
+    {
+      "phase": 3,
+      "stage": "code_review",
+      "outcome": "APPROVED",
+      "attempts": 2,
+      "note": "Attempt 1 returned CHANGES_REQUESTED on R-L3 alone. The cause was environmental: the plan's Level 3 command assumes an `npx vite build` it never states, and no dist/ existed in the worktree. The reviewer recorded the failure literally rather than clearing it on its own reading, which was correct. After building, R-L3 passed, and on re-review the reviewer named the unstated precondition as a plan-authoring gap rather than stretching a rubric id to cover it -- the same discipline it showed on phase 1's Task 6."
+    },
+    {
+      "phase": 3,
+      "stage": "manual_verification",
+      "outcome": "COMPLETE",
+      "browser_tier": "assistant, from the live DOM: five named conditions plus the Tier A checklist; contrast 9.08:1 on the buttons and 5.67:1 on the inline error; the persistent-error check re-read at 7s, since the shared toast auto-dismisses at 4s and a snapshot taken immediately could not tell them apart",
+      "device_tier": "owner, 2026-09-05, deployed build 9e173429: 'Fiz os testes no meu celular. Tudo ok.' -- recorded as a summary pass, not itemised",
+      "unlocked_by": "chore C17, the dev-only TokenGate bypass; without it no automated tier reached the rendered screen, which is also why chore C15 had been open since 2026-08-31"
+    },
+    {
+      "phase": 3,
+      "stage": "test",
+      "outcome": "GREEN",
+      "tests": "653/653 across 40 files",
+      "auto_correction_invoked": false
+    },
+    {
+      "phase": 3,
+      "stage": "test_review",
+      "outcome": "APPROVED",
+      "concerns": 0,
+      "note": "The reviewer hit a real limitation of this session's own commit shape -- phases 1-3 were committed as ONE commit, so no per-phase diff exists -- said so plainly instead of fabricating one, and verified by arithmetic reconciliation across the three GREEN checkpoints instead: each phase's recorded delta (+19, +9, +27) matches the current per-file test counts exactly, which would not close if an earlier test had been silently removed."
+    },
+    {
+      "phase": 3,
+      "status": "complete",
+      "timestamp": "2026-09-05T23:15:00Z",
+      "plan_path": "PRPs/plans/completed/data-export-phase-3-the-button.plan.md"
+    },
+    {
+      "phase": 4,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "attempts": 1,
+      "plan_path": "PRPs/plans/completed/data-export-phase-4-the-unattended-copy.plan.md",
+      "note": "Approved first try. Settled the unit's sharpest residual risk -- where the Scheduled Task keeps the API token -- choosing an ACL-restricted file at ~/.praesto/export-token.txt over the Credential Manager and a task-level env var, and stating plainly that it defends against neither a local Administrator nor a screenshot, which is the channel chore C10 actually leaked through. The plan-reviewer flagged as non-blocking that the plan had not cited the existing precedent (chore C12: the Google refresh token already lives in that same directory); the citation was added afterwards, because a decision that looks novel invites re-litigation while one visibly consistent with prior art does not."
+    },
+    {
+      "phase": 4,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "mode": "test-first",
+      "attempts": 1,
+      "suite_path": "PRPs/reports/data-export/test-suite-phase-4.diff",
+      "test_files": 1,
+      "note": "Second phase running needing no type repair, after the strict tsconfig flags were named to the test pair up front. One formatting defect was reported and routed to the test-writer, which found the file already clean -- the cause of that state change was never established and is recorded as unexplained rather than guessed at."
+    },
+    {
+      "phase": 4,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 2,
+      "files_changed": [
+        "src/shared/snapshot-outcome.ts",
+        "scripts/pull-export-snapshot.mjs",
+        "scripts/mock-export-server.mjs",
+        "documentation/40-engineering/snapshot-task-runbook.md",
+        "tsconfig.base.json"
+      ],
+      "note": "Attempt 1 followed the plan faithfully, hit a real Node ESM limit, and applied the duplication fallback the plan's own Risk table pre-authorised. The OUTCOME was rejected, not the reasoning: six duplicated functions would have left 40 tests guarding code the weekly job never executes, with future divergence silent. Root cause fixed instead."
+    },
+    {
+      "phase": 4,
+      "stage": "code_review",
+      "outcome": "APPROVED",
+      "attempts": 2,
+      "note": "Attempt 1 failed R-SEM: the project-wide tsconfig flag had no Files-to-Change row and had not reached documentation/, which CLAUDE.md requires in the same session. That omission was the ORCHESTRATOR's, not the implementer's. Corrected in tech-stack.md beside the analogous baseUrl entry, plus the plan's table and a Notes paragraph recording the deviation from its own Risk table. On re-review the reviewer judged tech-stack.md the right home and an ADR unwarranted, with a criterion: a compiler-tooling footnote, not a decision with the product weight this project's ADRs carry."
+    },
+    {
+      "phase": 4,
+      "stage": "test",
+      "outcome": "GREEN",
+      "tests": "666/666 across 41 files",
+      "auto_correction_invoked": false
+    },
+    {
+      "phase": 4,
+      "stage": "test_review",
+      "outcome": "APPROVED",
+      "concerns": 0,
+      "note": "Verified the correction adapted the code to the tests rather than the reverse: content-disposition.ts shows zero diff lines, snapshot-outcome.ts's exported behaviour is untouched, and the only tsconfig change is the single flag."
+    },
+    {
+      "phase": 4,
+      "status": "complete",
+      "timestamp": "2026-09-07T02:55:00Z",
+      "plan_path": "PRPs/plans/completed/data-export-phase-4-the-unattended-copy.plan.md"
+    }
+  ],
+  "outcome": "ALL_PHASES_COMPLETE",
+  "phases_completed": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "phase_diff_bases": {
+    "1": "c68a04213e6bd9becb530b552d896dd7a43422e5",
+    "2": "8c4a619bd654e6b33b6b468065604d289ce5d79f"
+  },
+  "lane_durations_ms": {},
+  "total_duration_ms": null,
+  "outstanding_for_owner": [
+    "Write the PRODUCTION bearer token into ~/.praesto/export-token.txt and restrict it with icacls (runbook step 2)",
+    "Register the Windows Scheduled Task via the runbook's schtasks command (plan Task 5, reserved for the owner)",
+    "Chore C6 -- prove the restore: rebuild a throwaway D1 from the first snapshot and compare per-table row counts",
+    "The unit's exit signal: two consecutive weekly snapshots on the PC that nobody triggered by hand",
+    "Chore C15's two device-dependent remnants: the empty-calendar-list state and the phone half of its item 12"
+  ]
+}

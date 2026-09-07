@@ -167,10 +167,10 @@ The split this project always applies still holds: the serializers and the guard
 
 | # | Phase | Description | Status | Repo | Parallel | Depends | PRP Plan |
 |---|-------|-------------|--------|------|----------|---------|----------|
-| 1 | The dump and its guard | `GET /api/export`, the five-table JSON document, the self-describing envelope, the named exclusion constant with reasons, and the schema-enumerating completeness test. Measures the real dump size and CPU against production data and records it. AC-1..AC-6 | pending | - | - | - | - |
-| 2 | The calendar file | The `.ics` serializer as a pure module in `src/shared/`: dated Tasks to all-day `VEVENT`s, RFC 5545 minimums, CRLF, the UID decision. AC-7, AC-8 | pending | - | - | 1 | - |
-| 3 | The button | The download control on the existing `/settings` screen, in the layout standard's settings anatomy, with the pt-BR copy and the §8 failure state. Runs the mandatory UI/UX review checklist. AC-9 | pending | - | - | 2 | - |
-| 4 | The unattended copy | The local pull script and its Windows Scheduled Task, writing dated snapshots to the owner's PC, failing loudly and writing nothing when the token is wrong. Discharges FR-043 and absorbs chore C5. AC-10, AC-11 | pending | - | - | 2 | - |
+| 1 | The dump and its guard | `GET /api/export`, the five-table JSON document, the self-describing envelope, the named exclusion constant with reasons, and the schema-enumerating completeness test. Measures the real dump size and CPU against production data and records it. AC-1..AC-6 | complete | - | - | - | PRPs/plans/completed/data-export-phase-1-the-dump-and-its-guard.plan.md |
+| 2 | The calendar file | The `.ics` serializer as a pure module in `src/shared/`: dated Tasks to all-day `VEVENT`s, RFC 5545 minimums, CRLF, the UID decision. AC-7, AC-8 | complete | - | - | 1 | PRPs/plans/completed/data-export-phase-2-the-calendar-file.plan.md |
+| 3 | The button | The download control on the existing `/settings` screen, in the layout standard's settings anatomy, with the pt-BR copy and the §8 failure state. Runs the mandatory UI/UX review checklist. AC-9 | complete | - | - | 2 | PRPs/plans/completed/data-export-phase-3-the-button.plan.md |
+| 4 | The unattended copy | The local pull script and its Windows Scheduled Task, writing dated snapshots to the owner's PC, failing loudly and writing nothing when the token is wrong. Discharges FR-043 and absorbs chore C5. AC-10, AC-11 | complete | - | - | 2 | PRPs/plans/completed/data-export-phase-4-the-unattended-copy.plan.md |
 
 #### Phase-status lifecycle
 

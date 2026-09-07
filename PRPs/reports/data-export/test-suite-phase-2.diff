@@ -1,0 +1,132 @@
+# TDD initial suite — phase 2 (data-export: "The calendar file")
+# Source PRD: PRPs/prds/data-export.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/data-export-phase-2-the-calendar-file.plan.md
+# Mode: test-first (docs/context/methodology.md: tdd: true) — suite authored
+#   BEFORE the Implementer runs; a RED result (module/route do not exist yet)
+#   is the expected, correct outcome for test-reviewer's R-RED-LEGITIMATE check.
+# Target worktree: C:\repos\assistente-pessoal\.worktrees\data-export
+#   (branch feature/data-export, base 90ea2d3 — phase 1's code is uncommitted
+#   there: src/shared/export.ts, src/worker/routes/export.ts,
+#   src/worker/db/export-manifest.ts, and the TaskDto/export additions to
+#   src/shared/api.ts / src/worker/dto.ts)
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-09-04
+
+## Scope
+
+This phase's plan (`## Acceptance Criteria`) maps to exactly two PRD ACs:
+AC-A1 → PRD AC-7, AC-A2 → PRD AC-8. AC-1..AC-6 shipped in phase 1 (their
+suites — test/export.test.ts, test/export-completeness.test.ts,
+test/export-envelope.test.ts — are APPROVED and untouched this session).
+AC-9..AC-11 belong to phases 3/4 and are out of this phase's scope.
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-7 The `.ics` is minimally valid (RFC 5545 minimums, CRLF, line folding §3.1) | NEW_TEST_REQUIRED | test/export-ics.test.ts (pure serializer: BEGIN/VERSION/PRODID/END, per-VEVENT UID+DTSTAMP, CRLF discipline, §3.1 fold round-trip incl. a UTF-8-boundary-straddling pt-BR title); test/export-ics-route.test.ts (route-level: auth gate inherited from `requireToken`, `Content-Type: text/calendar; charset=utf-8`, dated `Content-Disposition` filename, minimally valid body over a real D1-persisted Task) |
+| AC-8 Dated Tasks become all-day events; undated ones are absent | NEW_TEST_REQUIRED | test/export-ics.test.ts (pure: exactly two VEVENTs for a deadline Task + a scheduledDate Task, correct `DTSTART;VALUE=DATE` each, undated Task appears nowhere; plus a `deadline` >`scheduledDate` precedence case mirroring `dayItemFromTask`'s rule); test/export-ics-route.test.ts (route: same selection proven against real D1 rows) |
+| AC-1..AC-6 (phase 1) | OUT_OF_PHASE_SCOPE | (already shipped; phase 1's suites unchanged) |
+| AC-9 One tap from the settings screen | OUT_OF_PHASE_SCOPE | (deferred to phase 3) |
+| AC-10 The unattended pull fails loudly | OUT_OF_PHASE_SCOPE | (deferred to phase 4) |
+| AC-11 The snapshot is dated and does not overwrite | OUT_OF_PHASE_SCOPE | (deferred to phase 4) |
+
+## Test files written this session
+
+- C:\repos\assistente-pessoal\.worktrees\data-export\test\export-ics.test.ts (NEW)
+- C:\repos\assistente-pessoal\.worktrees\data-export\test\export-ics-route.test.ts (NEW)
+
+Both import from paths that do not exist yet in the worktree
+(`../src/shared/ics`, and the not-yet-mounted `GET /api/export.ics` route) —
+confirmed absent by Glob before writing (no `src/shared/ics.ts`, no
+`src/worker/routes/export-ics.ts` in the worktree). This is the expected
+test-first RED state: `test/export-ics.test.ts` is expected to fail to
+import/compile, and `test/export-ics-route.test.ts`'s requests are expected
+to 404 (route unmounted), until the Implementer completes the plan's three
+tasks.
+
+## What each new file pins (traceability to the plan's stated risk)
+
+The plan's own risk table names the sharpest hazard: "a test that only checks
+'no line exceeds 75 octets' would pass on output that folded mid-character
+and corrupted the text." `test/export-ics.test.ts`'s folding test avoids that
+trap directly:
+
+1. A deterministically-constructed pt-BR title ("...suspensão...") whose
+   75th content-line octet is proven (self-checked against the fixture, via
+   `TextEncoder`, before trusting the rest of the assertion) to fall on a
+   UTF-8 continuation byte — i.e. INSIDE the 2-byte "ã", not on a boundary.
+2. Asserts no physical line exceeds 75 octets (necessary, not sufficient).
+3. Asserts folding actually occurred (continuation lines exist) — otherwise
+   the 75-octet check alone passes vacuously on a builder that never folds.
+4. Asserts continuation lines begin with exactly one space.
+5. Asserts the ROUND TRIP: reconstructing the logical SUMMARY line from its
+   physical parts (stripping CRLF + the one leading space per continuation)
+   reproduces the original title byte-for-byte, accents intact — the
+   assertion a mid-character split cannot pass.
+
+## Lifecycle ledger
+
+(none — no update/delete this session across the original authoring pass or
+this addendum; all changes are pure CREATEs/UPDATEs to the same two
+originally-created test files. Phase 1's three APPROVED suites —
+test/export.test.ts, test/export-completeness.test.ts,
+test/export-envelope.test.ts — were read for precedent only and were not
+modified.)
+
+## Addendum (2026-09-04): closed a review-flagged gap, not a rubric citation
+
+test-reviewer's pass on the original two files found no rubric violation but
+flagged, correctly, that no fixture exercised RFC 5545 §3.3.11 TEXT escaping
+(`,`, `;`, `\`) even though the plan's own risk table named it alongside line
+folding as part of the same content-line rules AC-7 invokes. Neither AC-7 nor
+AC-8's PRD prose names escaping explicitly, so this maps to no rubric id —
+it is a scope gap closed proactively, not a CHANGES_REQUESTED response.
+
+Added ONE new test to the existing `describe("buildTasksIcs — AC-7 minimal
+RFC 5545 validity", ...)` block in `test/export-ics.test.ts` (escaping is the
+same RFC content-line discipline that block's other two tests already cover,
+alongside CRLF and folding):
+
+- **"escapes RFC 5545 TEXT-reserved characters in SUMMARY — comma, semicolon
+  and backslash — and round-trips back to the original title"** — a pt-BR
+  title (`"Comprar pão, leite e café; salvar em C:\backup"`) carrying one
+  comma, one semicolon and one backslash. Asserts each is emitted
+  backslash-escaped in SUMMARY; asserts the SUMMARY content line does NOT
+  fold (explicit assertion, not just a sized-to-avoid-folding comment, per
+  the instruction that escaping and folding must not silently interact in
+  one fixture); and asserts a round trip — unescaping the emitted value
+  (via a test-local `unescapeIcsText` oracle, never imported from the SUT)
+  reproduces the original title exactly, the same fidelity standard the
+  existing folding test already holds itself to.
+- No newline character was added to the fixture — RFC 5545 also requires
+  `\n`-escaping of embedded newlines, but the task's own instruction made
+  that conditional ("if you include a newline"), and keeping the fixture to
+  exactly the three characters test-reviewer named keeps the failure surface
+  legible if this test ever goes red for the wrong reason.
+
+Verified RED for the right reason before recording this addendum: `npx
+vitest run test/export-ics.test.ts` fails with `Error: Cannot find module
+'../src/shared/ics'` (0 tests ran) — the same missing-module RED every
+sibling test in this file already produces, not a defect in the new test
+body itself.
+
+No other file touched: `test/export-ics-route.test.ts`, phase 1's three
+APPROVED suites, and all production code are unchanged.
+
+## Pre-emission self-check (per B7 Phase 3)
+
+- Ledger completeness: no UPDATE/DELETE performed this session (original
+  pass or this addendum) → ledger's sole row is the "(none)" default above.
+  Confirmed.
+- Coverage completeness: both in-scope ACs (AC-7, AC-8) have an explicit
+  NEW_TEST_REQUIRED outcome with concrete file paths; every other PRD AC is
+  recorded OUT_OF_PHASE_SCOPE. The addendum's added test closes a
+  review-observed gap within the already-in-scope AC-7 fold/escape content-
+  line rules — no new AC surfaced, no AC left silently unaddressed.
+  Confirmed.
+
+## Status
+
+*Approved: 2026-09-04*
+*Status: APPROVED*

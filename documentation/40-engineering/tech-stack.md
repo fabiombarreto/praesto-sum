@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-24
+last_updated: 2026-09-07
 review_trigger: "a stack-related ADR is accepted, or any technology/version in use changes"
 ---
 
@@ -34,6 +34,7 @@ Version constraints discovered at scaffold time (do not "fix" them casually):
 - **`@vitejs/plugin-react` 6.x requires Vite 8** — they move together.
 - **`@base-ui/react` is the package, never `@base-ui-components/react`** (frozen at 1.0.0-rc.0); pin ≥ 1.7.0. **`shadcn init` is not run** — its generated theme would compete with `tokens.css` (ADR-0011).
 - **TypeScript 6 rejects tsconfig `baseUrl`** that the shadcn Vite guide still adds — the project uses relative imports, no alias.
+- **`allowImportingTsExtensions: true` is set in `tsconfig.base.json`, and exactly one import in the tree uses it** (2026-09-07, unit 5 phase 4). Node 24 runs TypeScript directly by stripping types, but its ESM resolver demands an exact extension on every relative specifier — so a `.mjs` script cannot load `src/shared/snapshot-outcome.ts` while that module imports `./content-disposition` extensionlessly, as every other module in `src/shared/` correctly does. The flag is legal here only because `noEmit: true` is already set in the same file; TypeScript refuses it otherwise. **The extensioned import in `src/shared/snapshot-outcome.ts` is load-bearing: "tidying" it back to the extensionless house style silently breaks `scripts/pull-export-snapshot.mjs`,** which is the unattended weekly backup and therefore the failure nobody would notice. The alternative was duplicating the module's logic into the script, which the phase-4 plan had pre-authorised as a risk mitigation; it was rejected because it would have left forty tests guarding code the scheduled job never executes. The flag's blast radius is the whole project — every tsconfig extends this base — and that cost was accepted deliberately in exchange for the running code and the tested code being the same code.
 - **Tailwind's source scan is scoped to `src/`** (`@import "tailwindcss" source(none)` + explicit `@source` lines in `src/app/styles.css`). Left automatic, v4 scans the whole repository — and this one keeps its pipeline records under `PRPs/`, where prose quotes class strings. On 2026-08-23 that had put 144 rules into the production bundle that matched nothing in `src/`, including a superseded focus rule and a `[box-shadow:...]` class with a literal ellipsis lifted from a review log. Scoping the scan cut the shipped CSS by 24 % gzip and removed a whole class of surprise.
 
 ## Pending stack decisions

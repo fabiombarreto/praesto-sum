@@ -1,0 +1,75 @@
+# TDD initial suite — phase 1
+# Source PRD: PRPs/prds/data-export.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/data-export-phase-1-the-dump-and-its-guard.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-09-04
+
+## Mode
+
+test-first (`docs/context/methodology.md`: `tdd: true`, `test_frameworks: ["vitest"]`).
+This suite runs BEFORE the Implementer. A RED result against the not-yet-created
+`src/worker/db/export-manifest.ts`, `src/shared/export.ts`, `src/worker/routes/export.ts`,
+and the not-yet-added `dto.ts`/`api.ts` DTO exports is the expected and correct
+outcome of this session.
+
+## Worktree note
+
+Test files were written into the target worktree
+`C:\repos\assistente-pessoal\.worktrees\data-export` (branch `feature/data-export`,
+base `90ea2d3`) — NOT into the main repo's `test/` directory — because that is
+where the Implementer will work and where the suite will actually run. This
+manifest itself is written to the artifact plane (`PRPs/reports/data-export/`)
+per the calling command's routing.
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-1 (route authenticated by construction) | NEW_TEST_REQUIRED | test/export.test.ts — describe "GET /api/export — AC-1 authenticated by construction" |
+| AC-2 (every data-bearing table is present) | NEW_TEST_REQUIRED | test/export.test.ts — describe "GET /api/export — AC-2 every data-bearing table is present" |
+| AC-3 (no credential material leaves the Worker) | NEW_TEST_REQUIRED | test/export.test.ts — describe "GET /api/export — AC-3 no credential material leaves the Worker" |
+| AC-4 (completeness guard cannot be silently disarmed) | NEW_TEST_REQUIRED | test/export-completeness.test.ts |
+| AC-5 (the document describes itself) | NEW_TEST_REQUIRED | test/export-envelope.test.ts (pure-builder half) + test/export.test.ts (route-level half, describe "AC-5") |
+| AC-6 (download names itself by date) | NEW_TEST_REQUIRED | test/export.test.ts — describe "GET /api/export — AC-6 the download names itself by date" |
+| AC-7, AC-8 (.ics) | OUT_OF_PHASE_SCOPE | deferred to phase 2 |
+| AC-9 (settings button) | OUT_OF_PHASE_SCOPE | deferred to phase 3 |
+| AC-10, AC-11 (unattended pull) | OUT_OF_PHASE_SCOPE | deferred to phase 4 |
+
+Existing-coverage scan: `test/**/*.test.ts` in the worktree (33 files, none named
+`export*`) was globbed and read for idiom before writing anything; no existing
+test covers any export-route or export-manifest behavior — every in-scope AC is
+`NEW_TEST_REQUIRED`, none is `EXISTING_TEST_COVERS`.
+
+## Notes on two ACs called out by the calling command
+
+- **AC-3** is written as a leak test, not an absence test: `test/export.test.ts`
+  seeds `google_connections.refresh_token` and `push_subscriptions.p256dh`/`auth`
+  with sentinel strings, fetches the export, and asserts the RAW response TEXT
+  contains none of the three sentinel strings, in addition to asserting the
+  three excluded table names carry no key in the parsed body.
+- **AC-4** is written with the exclusion half as the point: alongside the
+  real-schema enumeration assertion (`drizzle-orm`'s `is()`/`SQLiteTable`/
+  `getTableConfig` over every exported value of `src/worker/db/schema.ts`),
+  `test/export-completeness.test.ts` also proves the checking logic itself
+  (`findUnaccountedTables` / `findUnreasonedExclusions`, written in the test
+  file, not in production code) against small FIXTURE lists — one fixture with
+  an unclassified table name, one fixture with a whitespace-only exclusion
+  reason — so the guard's discriminative power is proven independently of
+  whether today's real schema happens to already be complete.
+
+## Test files written this session
+
+- `test/export-completeness.test.ts` (worktree) — AC-4
+- `test/export-envelope.test.ts` (worktree) — AC-5 pure-builder half
+- `test/export.test.ts` (worktree) — AC-1, AC-2, AC-3, AC-5 route half, AC-6
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no update/delete this session) | — | — | — |
+
+## Status
+
+*Approved: 2026-09-04*
+*Status: APPROVED*

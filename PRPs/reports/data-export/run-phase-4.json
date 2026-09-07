@@ -1,0 +1,28 @@
+{
+  "feature": "data-export",
+  "phase": 4,
+  "outcome": "GREEN",
+  "attempts": 1,
+  "branch": "main",
+  "diff_base": "HEAD (phases 1-3 committed)",
+  "command": "npm test",
+  "test_files": 41,
+  "tests_passed": 666,
+  "tests_failed": 0,
+  "previous_phase_state": {
+    "test_files": 40,
+    "tests_passed": 653
+  },
+  "delta": {
+    "test_files": 1,
+    "tests": 13
+  },
+  "auto_correction_invoked": false,
+  "implementer_attempts": 2,
+  "note": "Implementer attempt 1 followed the plan faithfully and hit a real Node ESM limit; the plan's own Risk table pre-authorised duplicating the logic into the .mjs, and it did so with a clear comment. The OUTCOME was rejected, not the reasoning: the duplication reached six functions, leaving 40 tests exercising originals the weekly job never runs, with any future divergence silent. Root cause fixed instead (allowImportingTsExtensions + one explicit .ts extension), the copies deleted, and the script now imports the real modules -- the code that runs unattended is the code the suite covers. Code review then failed R-SEM on attempt 1 because the project-wide tsconfig flag had no Files-to-Change row and had not reached documentation/; that omission was the orchestrator's, not the implementer's, and was corrected in tech-stack.md plus the plan's table and Notes before attempt 2 approved.",
+  "outstanding_for_owner": [
+    "Task 5: register the Windows Scheduled Task via the runbook's schtasks command",
+    "Write the PRODUCTION bearer token into ~/.praesto/export-token.txt and restrict it with icacls",
+    "The unit's exit signal: two consecutive weekly snapshots nobody triggered by hand"
+  ]
+}
