@@ -107,5 +107,43 @@ execution boundary, exactly like the API token itself: no agent enters the token
 registers the task on your behalf.
 
 ```powershell
-schtasks /create /tn "Praesto Weekly Export Snapshot" /tr "node C:\repos\assistente-pessoal\scripts\pull-export-snapshot.mjs" /sc weekly /d SUN /st 09:00 /rl LIMITED
+$node   = 'C:\Program Files\nodejs\node.exe'
+$script = 'C:\repos\assistente-pessoal\scripts\pull-export-snapshot.mjs'
+
+$action    = New-ScheduledTaskAction -Execute $node -Argument ('"' + $script + '"')
+$trigger   = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Sunday -At "09:00"
+$principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Limited
+$settings  = New-ScheduledTaskSettingsSet -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Minutes 10)
+
+Register-ScheduledTask -TaskName 'Praesto Weekly Export Snapshot' -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force
 ```
+
+### Why this is not the `schtasks` one-liner this runbook first carried
+
+Both defects below were found by running the original command, on 2026-09-07, not by
+reading it. Recorded so the next person does not rediscover them.
+
+- **The absolute path to `node.exe` is load-bearing; a bare `node` is not safe here.**
+  This machine has two Node installations, and the machine `PATH` lists the nvm
+  directory ahead of `C:\Program Files\nodejs`. A Scheduled Task does not inherit an
+  interactive shell's `PATH`, and nvm rewrites what `C:\Program Files\nodejs` points at.
+  Both installs are currently v24 and both support the type-stripping the script needs
+  to import `snapshot-outcome.ts` — but a future `nvm use 20` would silently point the
+  task at a Node that cannot run it, and the job would fail every Sunday with nobody
+  watching. That is precisely the failure mode this whole phase exists to prevent.
+- **`schtasks /tr` could not express the path.** Its action is a single string, and the
+  node path contains a space, so the executable and its argument cannot be quoted
+  separately. Invoked through a shell it fails with `Argumento/opcao invalido`.
+  `Register-ScheduledTask` takes `-Execute` and `-Argument` as distinct parameters and
+  sidesteps the problem entirely.
+
+Two settings the original command also lacked: `-StartWhenAvailable`, so a Sunday with
+the PC switched off is caught up at the next opportunity rather than skipping the week
+in silence, and a ten-minute execution limit.
+
+**Registered and verified on 2026-09-07.** `Get-ScheduledTask` reports
+`Execute: C:\Program Files\nodejs\node.exe`, the quoted script path as its argument,
+Sunday 09:00, `UserId Fabio / Interactive / Limited`, `StartWhenAvailable True`,
+`NextRunTime 13/09/2026 09:00`. `LastTaskResult 267011` (`0x41303`) at registration
+means "has not yet run" — the expected value for a task that has never fired, not an
+error.
