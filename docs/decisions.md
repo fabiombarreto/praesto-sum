@@ -145,6 +145,15 @@ Atualizado pelo Docs Updater após cada aprovação de implementação.
 
 ---
 
+## [2026-09-07] Send library swapped: `@block65/webcrypto-web-push` replaces `web-push`
+
+**Context:** `push-channel-proven` phase 1 (push-send-spike) ran `web-push@3.6.7` inside workerd under `compatibility_date 2026-08-01` to settle whether it works, per ADR-0005's own conditional wording. `sendNotification()` neither resolved nor rejected — it hung until the Workers runtime killed the request as hung, rather than throwing a catchable error.
+**Decision:** Adopt `@block65/webcrypto-web-push@2.0.0`, pinned exact, as the sole Web Push send library; `web-push` and `@types/web-push` are removed from `package.json` entirely.
+**Reason:** A hang with no thrown error is a decisive "does not work" verdict, and worse than the documented `crypto.createECDH`/`https.request` blockers because there is nothing to catch. `@block65/webcrypto-web-push` builds the request with only Web Crypto and returns it for the caller's own `fetch`, and it completed against the same unreachable endpoint well inside every timeout.
+**Areas affected:** notifications, push · Source: `documentation/60-decisions/ADR-0013-swap-web-push-for-webcrypto-web-push.md`
+
+---
+
 <!-- Template for future entries:
 
 ## [YYYY-MM-DD] Title of the decision

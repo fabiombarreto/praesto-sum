@@ -1,0 +1,271 @@
+# TDD initial suite — phase 4 (notifications-settings)
+# Source PRD: PRPs/prds/push-channel-proven.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/push-channel-proven-phase-4-notifications-settings.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-09-07
+
+## Mode
+
+`docs/context/methodology.md`: `tdd: true`, `test_frameworks: ["vitest"]` -> **mode = test-first**.
+This suite runs BEFORE the Implementer. Every new `src/shared` module it imports
+(`notification-permission.ts`, `push-key-encode.ts`, `diagnostics-copy.ts`,
+`notifications-settings.ts`, `push-payload-parse.ts`) does not exist yet — each new test
+file is RED for the right reason (module-not-found) until the Implementer's corresponding
+plan task lands.
+`src/shared/app-route.ts` DOES exist (two members today); the UPDATE below is RED for a
+narrower reason (the two new `AppRoute` members do not resolve yet).
+
+**Revision (2026-09-07, `test-reviewer` R-AC-COVERAGE):** `src/shared/push-payload-parse.ts`
+was added to this list after the first review round. It did not exist in the first draft
+because AC-A4 was originally (incorrectly) classified `NO_TEST_REQUIRED` — see the AC
+outcomes table and its note below for the corrected reasoning. The plan is being amended in
+parallel to add the CREATE task this test file's import assumes; the two must match exactly.
+
+`phase_type: feature` (not `foundation`) — the test-first track is not self-skipped.
+
+## Scope boundary applied (per the calling instructions and `docs/context/methodology.md`)
+
+This phase's plan (`## Files to Change`) lists five React components, one `App.tsx`
+update, one `SettingsScreen.tsx` update, one server route, one `src/sw.ts` update and one
+docs update alongside the four new `src/shared` modules and the `app-route.ts` extension.
+Per the project's mandatory browser-API split, ONLY the four new `src/shared` modules and
+the `app-route.ts` extension carry decidable logic reachable by this test tier:
+
+- `src/app/push-subscribe.ts` (Task 9) is the exempt thin adapter — every branch it could
+  contain lives in `notifications-settings.ts` instead, per the task's own doc comment.
+- `src/app/components/*.tsx` (Tasks 10-13) and `App.tsx`/`SettingsScreen.tsx` (Tasks 14-15)
+  are React glue with no automated tier here (`docs/context/methodology.md`'s explicit,
+  standing carve-out) — verified manually on the owner's device, recorded in the phase
+  report alongside AC-10's device pass and the UI/UX guidelines checklist.
+- `src/worker/routes/push.ts`'s new `GET /vapid-key` handler (Task 6) is infrastructure
+  with no AC of its own (per the plan's own Task 6 entry) and is validated by the
+  Implementer's own grep-based VALIDATE, not by the test pair — the plan's Notes section
+  explicitly names only Tasks 1-5 as the test pair's responsibility.
+- `src/sw.ts` (Task 7) retains only the GLUE half of the payload work: the
+  `event.data.json()`/`.text()` try-catch and the `self.addEventListener("push", ...)`
+  wiring. It is still NOT importable outside a real `ServiceWorkerGlobalScope` (it calls
+  `self.__WB_MANIFEST`, `self.addEventListener(...)` and other `self`-scoped APIs at module
+  top level) and that residual glue is still exempt — no automated tier can construct a
+  `PushEvent`. **Revised 2026-09-07** (`test-reviewer` R-AC-COVERAGE): the DECIDABLE half —
+  normalizing an already-parsed JSON value into the payload shape, with fallback defaults —
+  is NOT glue, and this draft's first round wrongly exempted it by conflating it with the
+  literal `self.*` calls it happened to be colocated with. Per `docs/context/methodology.md`'s
+  "Browser-API work" rule, that decision belongs in `src/shared/` behind a port: the plan is
+  being amended in parallel to extract it into a pure `src/shared/push-payload-parse.ts`
+  export, and this session adds `test/push-payload-parse.test.ts` against that exact
+  contract (see AC-A4's revised outcome row below). This is a NEW_TEST_REQUIRED outcome, not
+  the sanctioned no-test-required path — that path stays reserved for what genuinely cannot
+  be asserted by any tier, which is PRD AC-10's own physical device pass, not this function.
+- `docs/api-reference.md` (Task 16) delivers no PRD-observable behaviour of its own.
+
+## AC outcomes
+
+Only the PRD ACs the plan's own `## Acceptance Criteria` section maps to phase 4
+(AC-A1..AC-A4, referencing PRD AC-9, AC-8, AC-7, AC-10) are in scope. PRD AC-1..AC-6 and
+AC-11 were delivered and already tested in phases 1-3 (`test/push-payload.test.ts`,
+`test/push-outcome.test.ts`, `test/cron-freshness` coverage, `test/push-send-library-verdict.test.ts`,
+etc.) and are out of this phase's scope.
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| PRD AC-1..AC-6, AC-11 | OUT_OF_PHASE_SCOPE | delivered in phases 1-3, already tested there |
+| AC-A1 (PRD AC-9) | NEW_TEST_REQUIRED | test/notification-permission.test.ts |
+| AC-A1 (PRD AC-9) | NEW_TEST_REQUIRED | test/notifications-settings.test.ts |
+| AC-A1 (PRD AC-9, infrastructure — plan Task 2's own "Delivers" line) | NEW_TEST_REQUIRED | test/push-key-encode.test.ts |
+| AC-A2 (PRD AC-8) | EXISTING_TEST_COVERS (partial — see note) | test/diagnostics-copy.test.ts (`pushOutcomeLabel` describe block) |
+| AC-A3 (PRD AC-7) | NEW_TEST_REQUIRED | test/diagnostics-copy.test.ts |
+| AC-A4 (PRD AC-10, decidable slice) | NEW_TEST_REQUIRED (revised 2026-09-07, was NO_TEST_REQUIRED) | test/push-payload-parse.test.ts |
+| AC-A4 (PRD AC-10, glue-only residual) | NO_TEST_REQUIRED — sanctioned exemption, narrowed | none (see "Scope boundary applied" above; only `src/sw.ts`'s `event.data.json()`/`.text()` try-catch and `self.addEventListener` wiring remain exempt glue, never the parsing decision itself) |
+
+**AC-A2 note.** PRD AC-8's own observable ("the screen names, per endpoint, whether the
+push service accepted it; given zero stored subscriptions, says so explicitly") is split by
+the plan's own Task 10 design: the per-endpoint LABEL (`pushOutcomeLabel`) is the one piece
+extracted into `src/shared/diagnostics-copy.ts` and is fully covered by
+`test/diagnostics-copy.test.ts`'s `pushOutcomeLabel` block (also written for AC-A3, so this
+row maps to that same file rather than a duplicate). The MESSAGE-ASSEMBLY logic (choosing
+"Nenhuma inscrição salva." for the zero-subscription case vs. one line per result) is
+inline in `NotificationsCard.tsx`'s click handler per the plan's own Task 10 prose, not
+extracted to `src/shared` — that slice is React glue with no automated tier here, verified
+manually alongside the rest of the card. Server-side AC-8 (the route's own `{ok, results}`
+response, the zero-subscription `ok:false` body) is already covered by
+`test/push-test-route.test.ts` (phase 2) and is unchanged by this phase.
+
+## Test files written this session
+
+- test/notification-permission.test.ts (NEW)
+- test/push-key-encode.test.ts (NEW — AC-A1 infrastructure: the encode/decode pair
+  `push-subscribe.ts`'s adapter needs; no PRD AC of its own beyond AC-9's enabling flow,
+  same as Task 2's own "Delivers: AC-A1" line)
+- test/diagnostics-copy.test.ts (NEW)
+- test/notifications-settings.test.ts (NEW)
+- test/push-payload-parse.test.ts (NEW — added 2026-09-07 in response to `test-reviewer`
+  R-AC-COVERAGE; covers AC-A4's decidable payload-normalization slice: the nested
+  `{data: {route}}` shape round-tripped against the real `buildNotificationPayload` output,
+  every documented fallback for malformed/missing input, and the legacy flat `url` field
+  never being mistaken for a route)
+- test/notifications-load.test.ts (NEW — added 2026-09-07, second round, in response to
+  `test-reviewer` R-TRIVIAL-ASSERT; pins the actual defect-fix contract for
+  `src/shared/notifications-load.ts`'s `loadNotificationsSettings` orchestrator: the `loaded`
+  event ordering relative to an injected, deliberately never-settling subscription-check port,
+  using a manually-deferred promise to also prove the port IS awaited when its result is
+  genuinely needed)
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| UPDATE | EXISTING_TEST_UPDATED | test/app-route.test.ts (all `describe` blocks below "routeFromPath and pathOf agree") | Driving AC: AC-A1/AC-A3 infrastructure (plan Task 5). `AppRoute` grows from two members to four; the update is purely ADDITIVE — five new `describe` blocks covering `/settings/notifications` and `/settings/notifications/diagnostics` (both directions, both trailing-slash forms, the most-specific-first resolution, the round trip). No existing assertion (today/settings mapping) was touched, narrowed, or removed. |
+
+## Revision (2026-09-07) — defect fix: `/settings/notifications` hangs on the loading skeleton
+
+**Trigger.** Running `documentation/40-engineering/ui-ux-guidelines.md`'s review checklist
+against the RENDERED `/settings/notifications` screen (phase 4's own closing step, recorded
+as manual) found the card stuck on `aria-busy="true"`/`aria-label="Carregando"` forever.
+Root cause, confirmed by executing in the page: zero service-worker registrations, so
+`navigator.serviceWorker.ready` never resolves — and it never rejects either, so there is no
+error path. `NotificationsCard.tsx`'s `load()` does
+`const subscribed = (await getCurrentDeviceEndpoint()) !== null;` before dispatching ANY
+state, and `getCurrentDeviceEndpoint()` awaits that promise — so the reducer can never leave
+`kind: "loading"`, no matter what `Notification.permission` reads. This defeats PRD AC-9's
+`denied` ("bloqueadas", the way back) branch specifically, since that branch needs no
+subscription lookup at all, and violates guidelines §8's "a request failure is shown inline
+next to the action that failed, never a silent indefinite wait" for the general case.
+
+**Scope discipline applied.** Per this project's "Browser-API work" split
+(`docs/context/methodology.md`), only the decidable half is testable/fixable in
+`src/shared`; `NotificationsCard.tsx`'s async orchestration is glue, verified on the device,
+and is NOT itself under test here. What this session adds is the type-and-behavior contract
+the fix must satisfy at the reducer boundary — the exact shape the glue's rewritten `load()`
+can now legally construct without waiting on the hung/failed lookup.
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-9 (defect-fix delta) | EXISTING_TEST_UPDATED (additive) | test/notifications-settings.test.ts — `'loaded'` group: `blocked`/`explainer`/`enabled` all reachable from an event object that OMITS `subscribed` entirely (today's `NotificationsSettingsEvent["loaded"]["subscribed"]` is mandatory: `boolean`, which is exactly what forces the component to await the subscription lookup before it can construct a legal `loaded` event) |
+| AC-9 (defect-fix delta — background subscription-check failure) | EXISTING_TEST_COVERS | test/notifications-settings.test.ts — pre-existing `'toggle-failed'` group, specifically "toggle-failed records the message and clears the in-flight state, without touching subscribed". **Revised 2026-09-07** (`test-reviewer` R-DUPLICATE): the first round's dedicated `'subscription-check-failed'` event (four tests) was dropped. The reducer's `toggle-failed` guard checks only `state.kind === "enabled"`, never the current `togglingSubscription` value, so a background lookup failure dispatched as `{type: "toggle-failed", message}` from an `enabled` state with `togglingSubscription: false` produces exactly the same `{...state, togglingSubscription: false, subscriptionError: event.message}` shape the pre-existing test already asserts, including the same no-op on `explainer`/`blocked`. There is no distinct decidable behaviour to name a second event for — a comment in `test/notifications-settings.test.ts` (where the removed group stood) records this mapping and the reasoning; no second test was written because it would be a proven duplicate (R-DUPLICATE) of the pre-existing coverage cited here |
+| AC-9 (defect-fix delta) | NO_TEST_REQUIRED — sanctioned exemption | the ~10 s "Ainda carregando…" skeleton-threshold line (guidelines §8) has no decidable counterpart proposed: it is a bare component `setTimeout` with no branching reachable from `src/shared`. Modeling it here would mean inventing a shared module the fix does not need. Left to manual device/browser-pane verification, same carve-out as AC-10 |
+| `src/shared/notification-permission.ts` | EXISTING_TEST_COVERS (unchanged) | test/notification-permission.test.ts — the permission→view classifier is already synchronous and fully covered; the defect was never in this module (it correctly ignores nothing — the bug was the CALLER never reaching it in time) |
+
+**Root-cause note on why the runtime, not just the type-check, is discriminating.** The
+reducer's internal `classify()` helper already tolerates `subscribed: boolean | undefined`
+(it is called that way from the existing `permission-changed` branch) — so the `blocked`/
+`explainer`/`enabled-default-false` assertions above pass at the JS runtime level against
+today's `reduceNotificationsSettings` unchanged. The genuinely broken contract is the
+TYPE-LEVEL one: `NotificationsSettingsEvent`'s `"loaded"` member currently requires
+`subscribed: boolean`, so a `load()` rewrite that dispatches `{type: "loaded", permission}`
+immediately (with no unrelated await ahead of it) cannot compile until that field is made
+optional — the same discipline `permission-changed` already has. **Correction (2026-09-07,
+`test-reviewer`):** the first round's self-report claimed 8 `tsc -b` errors against that
+round's content; the reviewer independently measured **7**, and that lower count was
+correct — the note above is amended accordingly. Re-verified fresh against THIS revision
+(after dropping `subscription-check-failed` and its four tests): `npx tsc -b` now fails
+with **3** errors, all in `test/notifications-settings.test.ts` — "missing property
+`subscribed`" on each of the three `loaded` literals in the "must not require a resolved
+subscription lookup" group (lines 284, 292, 300). Those three are the sole surviving RED
+source; the four `subscription-check-failed`-shaped errors the earlier counts included are
+gone along with the tests that produced them. `npx vitest run --project worker
+test/notifications-settings.test.ts` reports **25 tests, all passing** at the runtime level
+— the defect is exclusively a compile-time RED now, which this project's own precedent
+(phase 4's original Notes: "in unit 5 two suites passed under vitest and only broke `tsc -b`
+once the seam existed") treats as an equally legitimate signal to a runtime assertion
+failure. `npx eslint test/notifications-settings.test.ts` / `npx prettier --check
+test/notifications-settings.test.ts` are both clean on the revised content.
+
+**Revision (2026-09-07, `test-reviewer` R-DUPLICATE — blocking).** The first round's
+`'subscription-check-failed'` event and its four tests were dropped: the reducer's
+`toggle-failed` guard checks only `state.kind === "enabled"`, never the current
+`togglingSubscription` value, so a background subscription-lookup failure dispatched as
+`{type: "toggle-failed", message}` produces the exact same state shape the new tests
+asserted, including the identical no-op on `explainer`/`blocked` — no distinct decidable
+behaviour existed to justify a second event. The requirement (a hung/failed background
+subscription check still leaves the `enabled` view actionable, not stuck loading) is now
+covered by the PRE-EXISTING `toggle-failed` test cited in the AC outcomes table above; a
+comment left in place of the removed group records the mapping and the reasoning. No test
+was added in its place, since doing so from a different starting `togglingSubscription`
+value would still assert the identical property and be a proven duplicate. The three
+`'loaded' omits subscribed` tests are untouched — they are the property that actually fixes
+the defect (a view needing no subscription lookup must be reachable without one) and are
+unaffected by this revision.
+
+**No existing assertion touched, narrowed, or removed.** Every one of the 22 pre-existing
+tests in `test/notifications-settings.test.ts` (and all of `test/notification-permission.test.ts`)
+is untouched byte-for-byte. This session's net change to `test/notifications-settings.test.ts`
+relative to before the defect-fix work is purely additive: one new `describe` block (the
+three "loaded omits subscribed" tests) appended after the file's last pre-existing block, plus
+a comment (no executable test) documenting the R-DUPLICATE-driven removal.
+
+## Revision (2026-09-07) — `test-reviewer` R-TRIVIAL-ASSERT (blocking), second round
+
+**Finding, accepted as correct.** The three "loaded omits subscribed" tests added in the prior
+round proved only that `reduceNotificationsSettings` TOLERATES a `loaded` event without
+`subscribed` — a tolerance the runtime already had before that round (all three passed
+unchanged; the only new RED was a `tsc -b` type mismatch). They never asserted the actual
+defect: `NotificationsCard.tsx:47-48` awaits `getCurrentDeviceEndpoint()` (which awaits
+`navigator.serviceWorker.ready`, a promise that can hang forever and never rejects) BEFORE
+dispatching any state. An implementer could satisfy every assertion those three tests made by
+loosening the event's TYPE alone while leaving `load()`'s await ORDER untouched, and the hang
+would remain. Type permits omission != component actually dispatches without waiting.
+
+**Fix applied — new decidable seam.** Per `docs/context/methodology.md`'s "Browser-API work"
+split (the same move already applied once this phase for `src/sw.ts`'s payload parsing, see
+`test/push-payload-parse.test.ts`), `load()`'s two-step sequence is pulled out into a new pure,
+DOM-free orchestrator, `src/shared/notifications-load.ts` exporting
+`loadNotificationsSettings(permission, checkSubscribed, dispatch)`, where `checkSubscribed` is
+an INJECTED `() => Promise<boolean>` port. `NotificationsCard.tsx` becomes the thin adapter
+supplying the real port (wrapping `getCurrentDeviceEndpoint()`) and the real
+`Notification.permission` value; the plan is being amended in parallel to add this module as a
+CREATE task and to rewrite `load()`/the `permissions.query` `handleChange` listener to call it,
+matching this contract exactly.
+
+Contract pinned by `test/notifications-load.test.ts` (new):
+1. Dispatches `{ type: "loaded", permission }` SYNCHRONOUSLY, before any `await` — proven with a
+   subscription-check port that deliberately NEVER SETTLES (the exact shape of the real hang),
+   so no type-only fix can satisfy the assertion.
+2. For `denied`/`default` permissions, NEVER calls `checkSubscribed` at all — asserted via
+   `expect(checkSubscribed).not.toHaveBeenCalled()`, and the dispatched event is replayed
+   through the real `reduceNotificationsSettings` to confirm it lands on `blocked` /
+   `explainer` respectively (effect check, not a was-called-only assertion).
+3. For a `granted` permission, DOES call and await `checkSubscribed` when its result is
+   genuinely needed for the enabled/subscribed distinction — proven with a manually-deferred
+   promise: `dispatch` is asserted to have fired only once (the initial `loaded`) before the
+   port resolves, and twice (adding `permission-changed` with `subscribed: true`) only after it
+   is explicitly resolved and awaited. This guards against overcorrecting into never checking.
+4. If `checkSubscribed` rejects for a `granted` permission, dispatches the EXISTING
+   `toggle-failed` event (reusing the prior round's R-DUPLICATE-driven mapping — no new event
+   type introduced) and the replayed reducer state lands on an ACTIONABLE `enabled` view, not
+   `failed` and not stuck `loading`.
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-9 (defect-fix delta, ordering) | NEW_TEST_REQUIRED | test/notifications-load.test.ts |
+
+## Lifecycle ledger (continued)
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| DELETE | REDUNDANT_TEST_REMOVED | test/notifications-settings.test.ts — describe("reduceNotificationsSettings — 'loaded' must not require a resolved subscription lookup for views that need none (defect fix, PRD AC-9)") (3 tests) | Proven duplicate of test/notifications-load.test.ts's "reaches a no-subscription-needed view without ever waiting on the port" and "DOES await the port when the result is genuinely needed" describe blocks: both dispatch the identical `loaded`-without-`subscribed` event shapes and replay them through the same real `reduceNotificationsSettings`, asserting the same blocked / explainer / enabled-default-false outcomes, while additionally pinning the ordering property the removed tests never checked. No discriminative assertion of the removed tests survives uncovered. Survivor: test/notifications-load.test.ts (see above). |
+
+**Anti-weakening check.** The behavior the removed tests covered (a `loaded` event omitting
+`subscribed` must still reach the correct view) is NOT dropped — it is asserted, byte-for-byte
+identical in event shape and expected outcome, by the survivor tests, which additionally close
+the gap the reviewer identified. This is a proven-duplicate removal (R-DUPLICATE self-check),
+not a narrowing of live AC-9 coverage.
+
+**Verification note (measured, not estimated).** `src/shared/notifications-load.ts` does not
+exist in this working tree. `npx tsc -b` fails with exactly **one** error attributable to this
+session's new file — `test/notifications-load.test.ts(59,43): error TS2307: Cannot find module
+'../src/shared/notifications-load'` — and **zero** errors in `test/notifications-settings.test.ts`
+after the `REDUNDANT_TEST_REMOVED` edit. `npx vitest run --project worker
+test/notifications-load.test.ts test/notifications-settings.test.ts` reports: `notifications-load.test.ts`
+fails to collect (0 tests run) with the identical module-not-found error thrown from inside the
+workerd runner; `notifications-settings.test.ts` **passes all 22 tests** (down from 25 before this
+round's removal of the 3 superseded tests, confirming the removal is reflected and nothing else
+regressed). `npx eslint test/notifications-load.test.ts test/notifications-settings.test.ts` and
+`npx prettier --check` on the same two files are both clean (exit 0). No production code was
+written or modified by this session; `NotificationsCard.tsx` remains exactly as the Implementer
+last left it (still containing the unfixed `load()`), to be rewritten against this contract once
+the plan amendment lands.
+
+## Status
+
+*Approved: 2026-09-07*
+*Status: APPROVED*

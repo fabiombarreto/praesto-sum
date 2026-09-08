@@ -1,8 +1,11 @@
 import type {
   CreateTaskInput,
+  DiagnosticsDto,
   GoogleCalendarDto,
   GoogleConnectionDto,
   GoogleEventsDto,
+  PushSubscriptionDto,
+  SubscribePushInput,
   TaskDto,
   UpdateTaskInput,
 } from "../shared/api";
@@ -206,6 +209,45 @@ export async function saveGoogleCalendars(
     method: "PUT",
     body: JSON.stringify({ calendarIds }),
   });
+}
+
+/**
+ * The five push/diagnostics wrappers phase 4 (`notifications-settings`)
+ * needs. Each is a one-liner over `request<T>()`, exactly like the five
+ * Google wrappers above: no local types beyond `sendTestPush`'s inline
+ * return shape, no error re-mapping — a failure already arrives as
+ * `ApiError`.
+ */
+export async function fetchVapidPublicKey(): Promise<{ publicKey: string }> {
+  return request<{ publicKey: string }>("/api/push/vapid-key");
+}
+
+export async function subscribeToPush(
+  input: SubscribePushInput,
+): Promise<{ subscription: PushSubscriptionDto }> {
+  return request<{ subscription: PushSubscriptionDto }>("/api/push/subscriptions", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function unsubscribeFromPush(endpoint: string): Promise<void> {
+  await request<void>("/api/push/subscriptions", {
+    method: "DELETE",
+    body: JSON.stringify({ endpoint }),
+  });
+}
+
+export async function sendTestPush(): Promise<{
+  ok: boolean;
+  error?: string;
+  results: { endpoint: string; outcome: import("../shared/push-outcome").PushOutcome }[];
+}> {
+  return request("/api/push/test", { method: "POST" });
+}
+
+export async function fetchDiagnostics(): Promise<DiagnosticsDto> {
+  return request<DiagnosticsDto>("/api/diagnostics");
 }
 
 /**

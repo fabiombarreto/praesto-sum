@@ -9,19 +9,23 @@
 
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
+import type { AppRoute } from "../../shared/app-route";
 import { canWrite } from "../../shared/connectivity";
 import { useConnectivity } from "../hooks/useConnectivity";
 import { DataExportCard } from "./DataExportCard";
 import { GoogleConnectionCard } from "./GoogleConnectionCard";
+import { NotificationsEntryCard } from "./NotificationsEntryCard";
 import { Banner } from "./ui/Banner";
 import { Button } from "./ui/Button";
 
 export function SettingsScreen({
   onUnauthorized,
   back,
+  navigate,
 }: {
   onUnauthorized: () => void;
   back: () => void;
+  navigate: (route: AppRoute) => void;
 }) {
   const { state: connectivity } = useConnectivity();
   const [justConnected, setJustConnected] = useState(false);
@@ -104,6 +108,7 @@ export function SettingsScreen({
         )}
         <GoogleConnectionCard onUnauthorized={onUnauthorized} canWrite={canWrite(connectivity)} />
         <DataExportCard onUnauthorized={onUnauthorized} />
+        <NotificationsEntryCard onOpenNotifications={() => navigate("notifications")} />
       </main>
     </div>
   );

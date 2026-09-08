@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import type { ShareTarget } from "../shared/share-target";
 import { readToken } from "./api";
+import { NotificationsDiagnosticsScreen } from "./components/NotificationsDiagnosticsScreen";
+import { NotificationsScreen } from "./components/NotificationsScreen";
 import { SettingsScreen } from "./components/SettingsScreen";
 import { TodayScreen } from "./components/TodayScreen";
 import { TokenGate, type TokenGateReason } from "./components/TokenGate";
@@ -73,9 +75,22 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
     setAuthorized(false);
   }
 
-  return route === "settings" ? (
-    <SettingsScreen onUnauthorized={onUnauthorized} back={back} />
-  ) : (
+  if (route === "settings") {
+    return <SettingsScreen onUnauthorized={onUnauthorized} back={back} navigate={navigate} />;
+  }
+  if (route === "notifications") {
+    return (
+      <NotificationsScreen
+        onUnauthorized={onUnauthorized}
+        back={back}
+        onOpenDiagnostics={() => navigate("notifications-diagnostics")}
+      />
+    );
+  }
+  if (route === "notifications-diagnostics") {
+    return <NotificationsDiagnosticsScreen onUnauthorized={onUnauthorized} back={back} />;
+  }
+  return (
     <TodayScreen
       onUnauthorized={onUnauthorized}
       initialShare={initialShare}

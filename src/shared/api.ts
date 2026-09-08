@@ -254,6 +254,58 @@ export function isTaskPriority(value: unknown): value is TaskPriority {
   return typeof value === "string" && (TASK_PRIORITIES as readonly string[]).includes(value);
 }
 
+/**
+ * A stored Web Push subscription, as the wire sees it (FR-041, phase 2
+ * subscription-lifecycle). Never `p256dh`/`auth` — those are the
+ * subscription's cryptographic keys, not display data.
+ */
+export interface PushSubscriptionDto {
+  id: string;
+  endpoint: string;
+  deviceLabel: string | null;
+  /** Epoch seconds. */
+  createdAt: number;
+  /** Epoch seconds. */
+  lastSeenAt: number;
+}
+
+/** `POST /api/push/subscriptions`'s request body shape. */
+export interface SubscribePushInput {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+  deviceLabel?: string | null;
+}
+
+/**
+ * A cron invocation's recorded outcome (unit 6 phase 3, PRD AC-5). Enforced
+ * twice, like every other domain enum: this union, and a `cron_runs_outcome_chk`
+ * CHECK in the schema.
+ */
+export type CronOutcome = "success" | "failure";
+
+/** `cron_runs`, as the wire sees it (PRD AC-5, AC-7). */
+export interface CronRunDto {
+  /** Epoch seconds. */
+  instant: number;
+  outcome: CronOutcome;
+  durationMs: number;
+  errorMessage: string | null;
+}
+
+/** `GET /api/diagnostics`'s full response shape (PRD AC-7). */
+export interface DiagnosticsDto {
+  /** `null` exactly when no cron has ever run. */
+  lastRun: CronRunDto | null;
+  freshness: import("./cron-freshness").CronFreshness;
+  subscriptionCount: number;
+  /** `null` exactly when `POST /api/push/test` has never been called. */
+  lastDispatch: {
+    /** Epoch seconds. */
+    instant: number;
+    results: { endpoint: string; outcome: import("./push-outcome").PushOutcome }[];
+  } | null;
+}
+
 /** `YYYY-MM-DD`, and a real date on the calendar (rejects 2026-02-31). */
 export function isCalendarDate(value: unknown): value is string {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;

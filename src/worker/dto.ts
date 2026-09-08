@@ -1,15 +1,19 @@
 import type {
+  CronRunDto,
   GoogleCalendarSelectionDto,
   GoogleConnectionDto,
   LifeAreaDto,
+  PushSubscriptionDto,
   ReminderDto,
   RecurrenceSeriesDto,
   TaskDto,
 } from "../shared/api";
 import type {
+  CronRun,
   GoogleCalendarSelection,
   GoogleConnection,
   LifeArea,
+  PushSubscription,
   Reminder,
   RecurrenceSeries,
   Task,
@@ -122,6 +126,21 @@ export function toReminderDto(row: Reminder): ReminderDto {
 }
 
 /**
+ * Maps a stored Web Push subscription row for the wire (FR-041, phase 2
+ * subscription-lifecycle). Never maps `p256dh` or `auth` — those are the
+ * subscription's cryptographic keys and must never cross the wire.
+ */
+export function toPushSubscriptionDto(row: PushSubscription): PushSubscriptionDto {
+  return {
+    id: row.id,
+    endpoint: row.endpoint,
+    deviceLabel: row.deviceLabel,
+    createdAt: toEpochSeconds(row.createdAt) ?? 0,
+    lastSeenAt: toEpochSeconds(row.lastSeenAt) ?? 0,
+  };
+}
+
+/**
  * Maps a Google calendar selection row for the FR-042 export. Only the id —
  * never calendar contents, per ADR-0007.
  */
@@ -131,5 +150,15 @@ export function toGoogleCalendarSelectionDto(
   return {
     calendarId: row.calendarId,
     selectedAt: toEpochSeconds(row.selectedAt) ?? 0,
+  };
+}
+
+/** Maps a cron run row for the diagnostics response (PRD AC-5, AC-7). */
+export function toCronRunDto(row: CronRun): CronRunDto {
+  return {
+    instant: toEpochSeconds(row.startedAt) ?? 0,
+    outcome: row.outcome,
+    durationMs: row.durationMs,
+    errorMessage: row.errorMessage,
   };
 }

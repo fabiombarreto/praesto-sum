@@ -1,9 +1,13 @@
 import { Hono } from "hono";
 import { requireToken } from "./auth";
+import { runCronHeartbeat } from "./cron";
 import { exportRoutes } from "./routes/export";
 import { icsRoutes } from "./routes/export-ics";
 import { googleRoutes } from "./routes/google";
 import { oauthCallbackRoutes } from "./routes/oauth-callback";
+import { diagnosticsRoutes } from "./routes/diagnostics";
+import { pushRoutes } from "./routes/push";
+import { pushSpikeRoutes } from "./routes/push-spike";
 import { taskRoutes } from "./routes/tasks";
 
 /**
@@ -23,6 +27,9 @@ app.route("/api/tasks", taskRoutes);
 app.route("/api/google", googleRoutes);
 app.route("/api/export", exportRoutes);
 app.route("/api/export.ics", icsRoutes);
+app.route("/api/push-spike", pushSpikeRoutes);
+app.route("/api/push", pushRoutes);
+app.route("/api/diagnostics", diagnosticsRoutes);
 
 // UNAUTHENTICATED BY DESIGN, and the only such route in the project (unit 4
 // phase 2). It sits here, visibly below the `/api/*` middleware line and
@@ -48,14 +55,9 @@ export default {
 
   async scheduled(
     _controller: ScheduledController,
-    _env: Env,
+    env: Env,
     _ctx: ExecutionContext,
   ): Promise<void> {
-    // Phase 1 will run two jobs here (ADR-0006 + FR-041):
-    //   1. Due-Reminder scan → Web Push dispatch.
-    //   2. Recurrence sweep → mark superseded occurrences `missed`, materialize
-    //      the next one, and repair any active series with no open occurrence.
-    // Both are idempotent by design; the unique indexes in the schema are the
-    // structural guard.
+    await runCronHeartbeat(env);
   },
 } satisfies ExportedHandler<Env>;

@@ -20,6 +20,11 @@
 | POST | `/api/tasks/:id/complete` | Open → done, stamps `completedAt`. Not open → 404 |
 | POST | `/api/tasks/:id/reopen` | Done → open, clears `completedAt`. Not done → 404 |
 | DELETE | `/api/tasks/:id` | 204, or 404 when absent |
+| POST | `/api/push/subscriptions` | Upsert by `endpoint` (FR-041). `endpoint`, `keys.p256dh`, `keys.auth` required; `deviceLabel` optional. 201 `{ subscription }` on insert, 200 `{ subscription }` on update (existing row's keys/`lastSeenAt` refreshed, row count unchanged) — the DTO never carries `p256dh`/`auth`. Invalid body → 400 |
+| DELETE | `/api/push/subscriptions` | Remove by `endpoint`. 204, or 404 when absent |
+| POST | `/api/push/test` | Dispatch to every stored subscription, pruning any that come back `gone` (404/410). `{ ok: true, results: [{ endpoint, outcome }] }`, where `outcome` is `PushOutcome` (`delivered`/`gone`/`retryable`) verbatim; zero stored subscriptions → `{ ok: false, error: "no stored subscriptions", results: [] }`. Also persists its outcome as the `push_dispatch_attempts` singleton row (upsert), which `GET /api/diagnostics` reads as the last dispatch attempt — not persisted when there were zero stored subscriptions |
+| GET | `/api/diagnostics` | `{ lastRun: CronRunDto \| null, freshness: "fresh"\|"stale"\|"unknown", subscriptionCount: number, lastDispatch: { instant, results } \| null }`. `lastRun` is the most recent `cron_runs` row (`null` if the cron has never run); `freshness` classifies its instant against now (`fresh` under 10 minutes, `stale` at 10 minutes or more, `unknown` when `lastRun` is `null`); `lastDispatch` is the last `POST /api/push/test` outcome (`null` if never attempted) |
+| GET | `/api/push/vapid-key` | `{ publicKey: string }` — the VAPID public key the browser hands `pushManager.subscribe()`; bearer-gated like every other route |
 
 ## Task read contract (frozen at unit 2)
 
@@ -65,7 +70,7 @@ Ordered by the delivery units in `documentation/50-planning/roadmap.md` — that
 | 2 `task-detail-and-dates` | Remaining: urgency ordering + `?limit=N` on the list query (phase 3), then the detail screen (phase 4). `PATCH /api/tasks/:id` and the `priority` enum have shipped — see Implemented above | FR-005, FR-006 |
 | 3 `today-view-and-filters` | `from`, `to` and `priority` filters on the list query. **Grouping is NOT an API concern** — the today/overdue/upcoming/undated groups are a client-side stable partition over the order this contract already produces (`PRPs/prds/today-view-and-filters.prd.md`, 2026-08-23) | FR-007 |
 | 4 `data-export` | `GET /api/export` — full JSON dump + `.ics` | FR-042, FR-043 |
-| 5 `push-channel-proven` | Subscription registration, a test-push route, cron diagnostics | FR-041 |
+| 5 `push-channel-proven` | Client subscription UI (server-side subscription registration, test-push route and cron diagnostics have shipped — see Implemented above) | FR-041 |
 | 6 `reminders` | Reminder CRUD (standalone and attached), due-scan job | FR-044, FR-025 |
 | 7 `text-search` | Text search over Tasks | FR-040 |
 | 8 `recurring-tasks` | Series CRUD + occurrence materialization | FR-009 |
@@ -75,4 +80,4 @@ Ordered by the delivery units in `documentation/50-planning/roadmap.md` — that
 | 12 `life-areas` | Life Area CRUD and area filters | FR-008 |
 | 13–17 (Phase 2) | Events, day/week range queries, event exceptions, event reminders, Task↔Event links | FR-020..026, FR-010 |
 
-Cron (not HTTP): `scheduled()` in `src/worker/index.ts` — currently an empty stub. It will run the due-Reminder scan, the recurrence sweep (materialize next occurrence, mark superseded ones `missed`) and the export snapshot job.
+Cron (not HTTP): `scheduled()` in `src/worker/index.ts` now calls `runCronHeartbeat` (`src/worker/cron.ts`), which records every run — success or failure — as a `cron_runs` row, readable via `GET /api/diagnostics`. It still reads no Reminder; the due-Reminder scan, the recurrence sweep (materialize next occurrence, mark superseded ones `missed`) and the export snapshot job are unit 7+'s scope.

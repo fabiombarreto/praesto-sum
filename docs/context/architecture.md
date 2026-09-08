@@ -8,7 +8,7 @@
 - **Database:** Cloudflare D1 (SQLite-class, managed) — the single canonical copy of all data. Access via Drizzle ORM (`drizzle-orm/d1`).
 - **Frontend:** React 19 single-page application, TypeScript strict, bundled by Vite with `@cloudflare/vite-plugin`; PWA via `vite-plugin-pwa` in `injectManifest` mode with a hand-owned `src/sw.ts` (ADR-0004/0005). **UI layer (ADR-0010/0011):** owned shadcn-style components under `src/app/components/ui/` over Base UI primitives, Tailwind v4 reading `src/app/tokens.css` (the identity's machine truth) via `src/app/styles.css`; Lucide icons.
 - **API:** Hono 4 in the Worker — bearer-token middleware on every route (single user, no accounts).
-- **Notifications:** Web Push (`web-push` library under `nodejs_compat`), fired by the Workers cron trigger.
+- **Notifications:** Web Push (`@block65/webcrypto-web-push`, built on Web Crypto + native `fetch` — replaces `web-push`, which hung indefinitely inside workerd; ADR-0013), fired by the Workers cron trigger.
 
 ## Architectural pattern
 
