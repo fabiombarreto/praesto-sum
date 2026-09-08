@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-24
+last_updated: 2026-09-08
 review_trigger: "a setup step changes, fails on a fresh machine, the scaffold validates the planned commands, or a new way of running the project locally is added"
 ---
 
@@ -27,7 +27,7 @@ review_trigger: "a setup step changes, fails on a fresh machine, the scaffold va
 1. Install Node.js 24 LTS (bundles npm).
 2. `git clone` the repository.
 3. `npm ci` (exact versions from the committed lockfile).
-4. Copy `.dev.vars.example` → `.dev.vars` and fill the secrets. `API_BEARER_TOKEN` is any string you choose — you paste the same value into the PWA once per device. VAPID keys: `npx web-push generate-vapid-keys --json`.
+4. Copy `.dev.vars.example` → `.dev.vars` and fill the secrets. `API_BEARER_TOKEN` is any string you choose — you paste the same value into the PWA once per device. VAPID keys: `node scripts/generate-vapid.mjs` — it writes the values straight into the target files and prints only lengths and a public-key prefix, so the private key never reaches scrollback (chore C10). Do **not** use `npx web-push generate-vapid-keys`: `web-push` was removed from this project in unit 6 (ADR-0013), and the script now generates the pair with Node's built-in `webcrypto` instead.
 5. `npm run db:migrate` (applies `migrations/` to the local D1 under `.wrangler/`).
 6. `npm run dev` — one process: Vite HMR + real workerd + local D1, at `http://127.0.0.1:5173`.
 

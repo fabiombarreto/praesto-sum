@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-24
+last_updated: 2026-09-08
 review_trigger: "an ADR is created or changes state, or a pending decision is added, reordered or resolved"
 ---
 
@@ -41,3 +41,4 @@ Decision 4 was resolved on 2026-08-04 by [ADR-0007](ADR-0007-google-calendar-bid
 | [ADR-0010](ADR-0010-visual-identity-direction-arcade.md) | Visual identity — direction A "Arcade" | accepted | 2026-08-20 |
 | [ADR-0011](ADR-0011-ui-library-shadcn-style-base-ui-tailwind.md) | UI library — shadcn-style owned components over Base UI + Tailwind v4 | accepted | 2026-08-21 |
 | [ADR-0012](ADR-0012-optional-docker-compose-local-dev-runtime.md) | Offer Docker Compose as an optional second way to run the local dev server | accepted | 2026-08-24 |
+| [ADR-0013](ADR-0013-swap-web-push-for-webcrypto-web-push.md) | Swap `web-push` for `@block65/webcrypto-web-push` — supersedes ADR-0005's naming of `web-push` | accepted | 2026-09-07 |

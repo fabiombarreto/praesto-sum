@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-09-07
+last_updated: 2026-09-08
 review_trigger: "any document is created, renamed, merged or changes status"
 ---
 
@@ -11,7 +11,7 @@ review_trigger: "any document is created, renamed, merged or changes status"
 
 ## What is this project
 
-A personal assistant built by its single user — the owner — to organize personal life: calendar and tasks (to-dos) first, other life areas later. The project is documentation-first: everything is defined here before implementation starts. Phase 0 closed on 2026-08-03 with the full document set validated and decisions 1–3 resolved as ADRs; Phase 1 (MVP Tasks) is now in progress. All four foundational decisions are resolved. Delivery units were **on hold from 2026-08-18 to 2026-08-23** while the [UI/UX plan](50-planning/ui-ux-plan.md) gave the app its visual foundation — guidelines, layout standard, visual identity and UI library, then a design pass over every screen, deployed and verified by the owner on both devices. That plan is now `deprecated`, its decisions 5–7 resolved as ADR-0009, ADR-0010 and ADR-0011, and delivery resumed. **Units 1–5 are `shipped`**, and unit 5 `data-export`'s close on 2026-09-07 reaches milestone M1, "usable and portable": the owner captures, edits and dates his tasks, sees his real Google commitments beside them, and can take 100% of the data away — with the restore proved rather than assumed ([C6](../PRPs/reports/data-export/c6-restore-drill.md)), and the safeguard in place before the first autonomous writer rather than after it. **Unit 6 `push-channel-proven` is now `in-progress`** — its PRD was APPROVED on 2026-09-07, opening the work toward milestone M2 ("the assistant acts on its own"): `scheduled()` stops being a stub and the phone rings with the app closed. Two decisions the roadmap had deliberately reserved for that PRD were taken there rather than by omission — the browser test tier was **rejected at its own trigger** (no tier can automate push delivery, so it cannot catch the one defect class it was wanted for) and re-armed with a trigger it can serve, and the exit signal's verification was split explicitly into what an agent can automate, what only the owner's Android phone can prove, and what the diagnostics screen must show for him to judge the cron alone. See the [roadmap](50-planning/roadmap.md).
+A personal assistant built by its single user — the owner — to organize personal life: calendar and tasks (to-dos) first, other life areas later. The project is documentation-first: everything is defined here before implementation starts. Phase 0 closed on 2026-08-03 with the full document set validated and decisions 1–3 resolved as ADRs; Phase 1 (MVP Tasks) is now in progress. All four foundational decisions are resolved. Delivery units were **on hold from 2026-08-18 to 2026-08-23** while the [UI/UX plan](50-planning/ui-ux-plan.md) gave the app its visual foundation — guidelines, layout standard, visual identity and UI library, then a design pass over every screen, deployed and verified by the owner on both devices. That plan is now `deprecated`, its decisions 5–7 resolved as ADR-0009, ADR-0010 and ADR-0011, and delivery resumed. **Units 1–5 are `shipped`**, and unit 5 `data-export`'s close on 2026-09-07 reaches milestone M1, "usable and portable": the owner captures, edits and dates his tasks, sees his real Google commitments beside them, and can take 100% of the data away — with the restore proved rather than assumed ([C6](../PRPs/reports/data-export/c6-restore-drill.md)), and the safeguard in place before the first autonomous writer rather than after it. **Unit 6 `push-channel-proven` is `in-progress`, and as of 2026-09-08 it is deployed to production (`e5b1fa64`) with `scheduled()` no longer a stub** — but it does not close on a deploy: its exit signal is the owner's phone ringing with the app closed, which is owed. Its PRD was APPROVED on 2026-09-07 and the work goes to milestone M2 ("the assistant acts on its own"), which needs unit 7 as well. Two decisions the roadmap had deliberately reserved for that PRD were taken there rather than by omission — the browser test tier was **rejected at its own trigger** (no tier can automate push delivery, so it cannot catch the one defect class it was wanted for) and re-armed with a trigger it can serve, and the exit signal's verification was split explicitly into what an agent can automate, what only the owner's Android phone can prove, and what the diagnostics screen must show for him to judge the cron alone. See the [roadmap](50-planning/roadmap.md).
 
 > **Praesto Sum** — Latin for "I am ready, at your service" ([ADR-0002](60-decisions/ADR-0002-name-the-project-praesto-sum.md)). Short form for the future repository and CLI: **praesto**.
 
@@ -76,15 +76,15 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 20-requirements/constraints.md | active | 2026-08-04 |
 | 30-architecture/architecture-overview.md | draft | 2026-09-03 |
 | 30-architecture/domain-model.md | draft | 2026-08-15 |
-| 40-engineering/tech-stack.md | active | 2026-09-07 |
+| 40-engineering/tech-stack.md | active | 2026-09-08 |
 | 40-engineering/engineering-conventions.md | active | 2026-08-30 |
-| 40-engineering/dev-environment.md | active | 2026-08-15 |
+| 40-engineering/dev-environment.md | active | 2026-09-08 |
 | 40-engineering/testing-strategy.md | active | 2026-08-12 |
 | 40-engineering/ui-ux-guidelines.md | active | 2026-08-30 |
 | 40-engineering/ui-layout-standard.md | active | 2026-08-23 |
-| 50-planning/roadmap.md | active | 2026-09-07 |
+| 50-planning/roadmap.md | active | 2026-09-08 |
 | 50-planning/ui-ux-plan.md | deprecated | 2026-08-23 |
-| 60-decisions/index.md | active | 2026-08-21 |
+| 60-decisions/index.md | active | 2026-09-08 |
 | 60-decisions/ADR-0001-write-all-artifacts-in-english.md | accepted | 2026-08-02 |
 | 60-decisions/ADR-0002-name-the-project-praesto-sum.md | accepted | 2026-08-03 |
 | 60-decisions/ADR-0003-store-canonical-data-in-cloudflare-d1.md | accepted | 2026-08-03 |
@@ -97,6 +97,7 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 60-decisions/ADR-0010-visual-identity-direction-arcade.md | accepted | 2026-08-20 |
 | 60-decisions/ADR-0011-ui-library-shadcn-style-base-ui-tailwind.md | accepted | 2026-08-21 |
 | 60-decisions/ADR-0012-optional-docker-compose-local-dev-runtime.md | accepted | 2026-08-24 |
+| 60-decisions/ADR-0013-swap-web-push-for-webcrypto-web-push.md | accepted | 2026-09-07 |
 
 ## How AI assistants should use this folder
 

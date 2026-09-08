@@ -9,7 +9,7 @@ One Cloudflare Worker serves the React PWA's static assets, the Hono JSON API un
 ## Request paths
 
 - **Interactive:** PWA (React SPA) → `fetch` with bearer token → Hono route → Drizzle → D1 → JSON back → React state.
-- **Scheduled:** cron trigger → `scheduled()` → scan due Reminders in D1 → `web-push` (nodejs_compat) → installed PWA's `src/sw.ts` shows the notification. Also runs the export-snapshot job (FR-043).
+- **Scheduled:** cron trigger → `scheduled()` → (unit 7) scan due Reminders in D1 → `@block65/webcrypto-web-push` → installed PWA's `src/sw.ts` shows the notification. Since unit 6 the job also records every run into `cron_runs` from a `finally` block, so a crashed run leaves a trace instead of silence. Not `web-push`, which hangs inside workerd (ADR-0013). Also runs the export-snapshot job (FR-043).
 
 ## Where to add things
 

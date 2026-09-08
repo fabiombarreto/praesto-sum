@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-09-07
+last_updated: 2026-09-08
 review_trigger: "a stack-related ADR is accepted, or any technology/version in use changes"
 ---
 
@@ -22,7 +22,7 @@ The stack is fully decided ([ADR-0003](../60-decisions/ADR-0003-store-canonical-
 | UI components & styling | Owned shadcn-style components (`src/app/components/ui/`) over Base UI primitives — **except the sheet, which is a native `<dialog>` opened with `showModal()`** (A5 phase 3: Android back and `Esc` become close requests for free; Base UI stays for `Button`, `Checkbox` and `Toggle`); Tailwind CSS v4 via the Vite plugin reading `src/app/tokens.css` through `@theme inline reference`, its source scan scoped to `src/` (see below); `cva` + `clsx` + `tailwind-merge`; Lucide icons | @base-ui/react 1.7.0 · tailwindcss 4.3.3 · @tailwindcss/vite 4.3.3 · class-variance-authority 0.7.1 · clsx 2.1.1 · tailwind-merge 3.6.0 · lucide-react 1.33.0 | [ADR-0011](../60-decisions/ADR-0011-ui-library-shadcn-style-base-ui-tailwind.md) (identity: [ADR-0010](../60-decisions/ADR-0010-visual-identity-direction-arcade.md)) |
 | Fonts | Two self-hosted latin-subset WOFF2 files under `public/fonts/`, fetched once by `scripts/fetch-fonts.mjs` (zero dependencies) and precached by the service worker; never a CDN | Inter variable 400–700 (48,256 B) · Unbounded 800 (21,828 B) — 70,084 B together, inside the ≤ 100 KB budget | [ADR-0010](../60-decisions/ADR-0010-visual-identity-direction-arcade.md) (guidelines §5.3) |
 | API | Hono (bearer-token middleware; `scheduled()` cron in the same Worker) | hono 4.12.34 | [ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md) |
-| Integrations | Web Push via `web-push` + `nodejs_compat`; external calendar TBD — decision 4 in [60-decisions/index.md](../60-decisions/index.md) | web-push 3.6.7 | [ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md) (push) |
+| Integrations | Web Push via `@block65/webcrypto-web-push` (Web Crypto + native `fetch`). **Not `web-push`** — unit 6's phase-1 spike found that its `sendNotification()` neither resolves nor rejects inside workerd, hanging until the runtime kills the request; it was removed along with `@types/web-push` | @block65/webcrypto-web-push 2.0.0 | [ADR-0013](../60-decisions/ADR-0013-swap-web-push-for-webcrypto-web-push.md), superseding [ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md)'s naming of `web-push` |
 | Tooling | npm (`save-exact`), Vitest + `@cloudflare/vitest-pool-workers`, Prettier, ESLint flat config | vitest 4.1.10 · @cloudflare/vitest-pool-workers 0.20.1 · prettier 3.9.6 · eslint 10.8.0 · typescript-eslint 8.66.0 | [ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md) |
 | Local dev runtime (**optional**) | Docker Compose — `Dockerfile` + `compose.yaml` running the same `vite dev` + workerd + local D1 under `restart: unless-stopped`. A *second door*, never a replacement: `npm run dev` on the host is unchanged and stays the default, and nothing here reaches production | base image `node:24.15.0-bookworm-slim` (exact tag, Debian not Alpine — workerd is glibc-linked) | [ADR-0012](../60-decisions/ADR-0012-optional-docker-compose-local-dev-runtime.md) |
 
