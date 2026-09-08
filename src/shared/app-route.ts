@@ -22,7 +22,7 @@
  * (`src/app/main.tsx`) is the in-repo precedent.
  */
 
-export type AppRoute = "today" | "settings";
+export type AppRoute = "today" | "settings" | "notifications" | "notifications-diagnostics";
 
 /** Strips at most one trailing slash; the root path `/` itself is untouched. */
 function withoutTrailingSlash(pathname: string): string {
@@ -30,9 +30,16 @@ function withoutTrailingSlash(pathname: string): string {
 }
 
 export function routeFromPath(pathname: string): AppRoute {
-  return withoutTrailingSlash(pathname) === "/settings" ? "settings" : "today";
+  const path = withoutTrailingSlash(pathname);
+  if (path === "/settings/notifications/diagnostics") return "notifications-diagnostics";
+  if (path === "/settings/notifications") return "notifications";
+  if (path === "/settings") return "settings";
+  return "today";
 }
 
 export function pathOf(route: AppRoute): string {
-  return route === "settings" ? "/settings" : "/";
+  if (route === "notifications-diagnostics") return "/settings/notifications/diagnostics";
+  if (route === "notifications") return "/settings/notifications";
+  if (route === "settings") return "/settings";
+  return "/";
 }

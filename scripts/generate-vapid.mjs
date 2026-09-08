@@ -21,12 +21,35 @@
  * `wrangler secret bulk <file>`. Point it OUTSIDE the repository, and delete it
  * once the secrets are uploaded.
  */
-// web-push 3.6.7 is CommonJS, so its functions arrive on the default export;
-// a named import fails at module-instantiation time under ESM.
-import webpush from "web-push";
+// `web-push` was removed from this project's dependencies (ADR-0013 — the
+// phase-1 spike proved it hangs indefinitely inside workerd) so its
+// `generateVAPIDKeys()` no longer resolves here. VAPID key generation is a
+// P-256 ECDH key pair, base64url-encoded exactly like `web-push` produced:
+// the raw uncompressed public point (65 bytes) and the raw private scalar
+// (32 bytes, which is also exactly what a JWK's `d` member already is).
+// Node's built-in Web Crypto (`node:crypto`'s `webcrypto`) generates it
+// without any external dependency.
+import { webcrypto } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
-const { generateVAPIDKeys } = webpush;
+function base64UrlEncode(bytes) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return Buffer.from(binary, "binary")
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+async function generateVAPIDKeys() {
+  const keyPair = await webcrypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, [
+    "deriveBits",
+  ]);
+  const publicKeyBytes = new Uint8Array(await webcrypto.subtle.exportKey("raw", keyPair.publicKey));
+  const privateJwk = await webcrypto.subtle.exportKey("jwk", keyPair.privateKey);
+  return { publicKey: base64UrlEncode(publicKeyBytes), privateKey: privateJwk.d };
+}
 
 const args = process.argv.slice(2);
 const argOf = (name) => {
@@ -48,7 +71,7 @@ if (!/^(mailto:|https:\/\/)/.test(subject)) {
   process.exit(1);
 }
 
-const keys = generateVAPIDKeys();
+const keys = await generateVAPIDKeys();
 const values = {
   VAPID_SUBJECT: subject,
   VAPID_PUBLIC_KEY: keys.publicKey,

@@ -7,16 +7,14 @@ import {
 } from "workbox-precaching";
 import { NavigationRoute, registerRoute } from "workbox-routing";
 
-declare const self: ServiceWorkerGlobalScope;
+import {
+  parsePushPayload,
+  fallbackPushPayload,
+  resolvePushNotificationOptions,
+  type PushPayload,
+} from "./shared/push-payload-parse";
 
-interface PushPayload {
-  title: string;
-  body: string;
-  /** In-app path to open on click, e.g. "/tasks/42". */
-  url?: string;
-  /** Collapse key: a newer notification with the same tag replaces the old one. */
-  tag?: string;
-}
+declare const self: ServiceWorkerGlobalScope;
 
 // --- Precache -------------------------------------------------------------
 // `self.__WB_MANIFEST` is replaced at build time by vite-plugin-pwa. Its type
@@ -47,21 +45,17 @@ self.addEventListener("message", (event: ExtendableMessageEvent) => {
 });
 
 // --- Web Push -------------------------------------------------------------
-// Optional fields are spread conditionally rather than passed as `undefined`,
-// which is what keeps `exactOptionalPropertyTypes: true` viable project-wide.
+// This is the thin, exempt adapter (`docs/context/methodology.md`,
+// "Browser-API work"): the `event.data.json()`/`event.data.text()`
+// try-catch and nothing else. Every shaping decision — fallback defaults,
+// the nested `{data: {route}}` parse — lives in
+// `src/shared/push-payload-parse.ts`.
 function parsePush(event: PushEvent): PushPayload {
-  const fallback: PushPayload = { title: "Praesto Sum", body: "Voce tem um lembrete." };
-  if (!event.data) return fallback;
+  if (!event.data) return fallbackPushPayload();
   try {
-    const parsed = event.data.json() as Partial<PushPayload>;
-    return {
-      title: parsed.title ?? fallback.title,
-      body: parsed.body ?? fallback.body,
-      ...(parsed.url === undefined ? {} : { url: parsed.url }),
-      ...(parsed.tag === undefined ? {} : { tag: parsed.tag }),
-    };
+    return parsePushPayload(event.data.json());
   } catch {
-    return { ...fallback, body: event.data.text() };
+    return fallbackPushPayload(event.data.text());
   }
 }
 
@@ -73,18 +67,18 @@ self.addEventListener("push", (event: PushEvent) => {
   event.waitUntil(
     self.registration.showNotification(payload.title, {
       body: payload.body,
-      icon: "/icons/icon-192.png",
-      badge: "/icons/badge-72.png",
-      data: { url: payload.url ?? "/" },
-      ...(payload.tag === undefined ? {} : { tag: payload.tag }),
+      ...resolvePushNotificationOptions(payload),
     }),
   );
 });
 
 self.addEventListener("notificationclick", (event: NotificationEvent) => {
   event.notification.close();
-  const data = event.notification.data as { url?: string } | undefined;
-  const target = new URL(data?.url ?? "/", self.location.origin);
+  // `resolvePushNotificationOptions` guarantees `data.route` is always a
+  // resolved string by the time it reaches `showNotification`, so there is
+  // nothing left to fall back on here.
+  const data = event.notification.data as { route: string };
+  const target = new URL(data.route, self.location.origin);
 
   event.waitUntil(
     (async () => {

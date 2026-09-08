@@ -68,7 +68,11 @@ export default defineConfig(async () => {
             // failure is a FILE-level load error, so its tests never run and
             // never appear in the "Tests N passed" line, which is how it was
             // reported green twice before review caught it.
-            exclude: ["test/docs-consistency.test.ts", "test/source-invariants.test.ts"],
+            exclude: [
+              "test/docs-consistency.test.ts",
+              "test/source-invariants.test.ts",
+              "test/push-send-library-verdict.test.ts",
+            ],
             // Coverage note: @vitest/coverage-v8 does NOT work inside workerd
             // (node:inspector is unavailable). Only @vitest/coverage-istanbul works,
             // and it must be pinned to the exact vitest version.
@@ -83,7 +87,11 @@ export default defineConfig(async () => {
             // `source-invariants` covers PRD AC-13's universal negative —
             // "no Calendar mutation exists ANYWHERE" — which no per-call
             // assertion can reach.
-            include: ["test/docs-consistency.test.ts", "test/source-invariants.test.ts"],
+            include: [
+              "test/docs-consistency.test.ts",
+              "test/source-invariants.test.ts",
+              "test/push-send-library-verdict.test.ts",
+            ],
           },
         },
       ],

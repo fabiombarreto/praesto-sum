@@ -101,9 +101,20 @@ describe("AC-4 — the completeness guard cannot be silently disarmed", () => {
     );
   });
 
-  it("excludes exactly the three infrastructure tables, each with a written reason", () => {
+  it("excludes exactly the five infrastructure tables, each with a written reason", () => {
+    // `cron_runs` and `push_dispatch_attempts` (unit 6 push-channel-proven,
+    // phase 3) joined the original three as of this session: both are
+    // operational telemetry about the assistant's own execution (when the
+    // scheduler ran, whether a dispatch was accepted), not content the owner
+    // authored — the FR-042 promise is about his data, not the system's logs.
     expect(EXCLUDED_TABLES.map((entry) => entry.name).sort()).toEqual(
-      ["google_connections", "oauth_states", "push_subscriptions"].sort(),
+      [
+        "google_connections",
+        "oauth_states",
+        "push_subscriptions",
+        "cron_runs",
+        "push_dispatch_attempts",
+      ].sort(),
     );
     for (const entry of EXCLUDED_TABLES) {
       expect(entry.reason.trim().length).toBeGreaterThan(0);

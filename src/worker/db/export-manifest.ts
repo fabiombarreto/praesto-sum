@@ -42,4 +42,16 @@ export const EXCLUDED_TABLES: ReadonlyArray<{ readonly name: string; readonly re
     name: "oauth_states",
     reason: "single-use nonces, worthless once consumed or expired, carrying no user data",
   },
+  {
+    // cron_runs (unit 6 push-channel-proven, phase 3).
+    name: "cron_runs",
+    reason:
+      "records when the scheduler itself fired and whether that tick succeeded, not anything the owner authored; it is operational telemetry about this Worker's own execution, outside the FR-042 promise about the owner's data",
+  },
+  {
+    // push_dispatch_attempts (unit 6 push-channel-proven, phase 3).
+    name: "push_dispatch_attempts",
+    reason:
+      "records the outcome of the last push-notification dispatch attempt, i.e. whether the system's own delivery succeeded, not content the owner would recognize or want to carry to another tool; it stays out of the FR-042 export for the same reason cron_runs does",
+  },
 ];

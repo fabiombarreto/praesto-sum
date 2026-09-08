@@ -1,0 +1,38 @@
+{
+  "feature": "push-channel-proven",
+  "prd_path": "PRPs/prds/push-channel-proven.prd.md",
+  "started_at": "2026-09-07T18:28:30Z",
+  "ended_at": "2026-09-08T00:00:00Z",
+  "max_plan_review_retries": 2,
+  "max_tdd_review_retries": 2,
+  "max_orchestrator_minutes": 240,
+  "outcome": "ALL_PHASES_COMPLETE",
+  "phases_completed": [1, 2, 3, 4],
+  "worktree_attempted": true,
+  "worktree_succeeded": true,
+  "fallback_reason": null,
+  "phase_diff_bases": {
+    "1": "4e9a14c86fa392144199d3db5fefd901b9d4b749",
+    "2": "c6c6e2f9371494aabcb5f40aec30df1947792ea8",
+    "3": "2d470bfa9698d862e253b62cefaa6e146e18d584"
+  },
+  "test_totals": { "before": 666, "after": 809, "files_before": 41, "files_after": 56 },
+  "phases": [
+    {"phase": 1, "slug": "push-send-spike", "status": "complete",
+     "plan_reviews": 4, "code_reviews": 2, "test_reviews": 2,
+     "note": "Two of the four plan-review rounds exposed PRD defects, not plan defects: an AC gap (resolved by the owner-approved AC-11 amendment) and, ironically, that amendment's own wording making a plan VALIDATE vacuous."},
+    {"phase": 2, "slug": "subscription-lifecycle", "status": "complete",
+     "plan_reviews": 1, "code_reviews": 1, "test_reviews": 1,
+     "note": "Approved first try at every gate. A Level 1 prettier failure on a test file was resolved by the command layer's formatter_cmd, not by the implementer, per the R-X x Level 1 deadlock rule."},
+    {"phase": 3, "slug": "cron-heartbeat", "status": "complete",
+     "plan_reviews": 2, "code_reviews": 1, "test_reviews": 3,
+     "note": "Adding two schema tables tripped unit 5's export-completeness guard, working exactly as designed. The AC-5 throw-path test was found not to run at all, then found to pass regardless of implementation; fixed and proved discriminating by experiment."},
+    {"phase": 4, "slug": "notifications-settings", "status": "complete",
+     "plan_reviews": 3, "code_reviews": 2, "test_reviews": 2,
+     "note": "A test-side coverage gap was ruled against the project's own Browser-API rule and closed with a production change (extracting the payload parser). The plan was amended under a dated note."}
+  ],
+  "owner_owed": [
+    "PRD AC-10 device pass: the phone rings with the app closed, and tapping the notification opens Praesto on the payload's route. Not automatable by any tier.",
+    "Deploy to production and apply migration 0004 remotely. Never performed by the pipeline."
+  ]
+}

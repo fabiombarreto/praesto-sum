@@ -143,7 +143,13 @@ describe("GET /api/export — AC-5 the document describes itself", () => {
     expect(body.timezone).toBe("America/Sao_Paulo");
 
     expect(body.excludedTables.map((entry) => entry.name).sort()).toEqual(
-      ["google_connections", "oauth_states", "push_subscriptions"].sort(),
+      [
+        "cron_runs",
+        "google_connections",
+        "oauth_states",
+        "push_dispatch_attempts",
+        "push_subscriptions",
+      ].sort(),
     );
     for (const entry of body.excludedTables) {
       expect(entry.reason.trim().length).toBeGreaterThan(0);

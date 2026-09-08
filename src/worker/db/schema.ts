@@ -376,6 +376,44 @@ export const googleCalendarSelections = sqliteTable(
   (t) => [check("google_calendar_selections_id_not_empty", sql`length(trim(${t.calendarId})) > 0`)],
 );
 
+/**
+ * One row per cron invocation (unit 6 phase 3, PRD AC-5). Written
+ * unconditionally by `runCronHeartbeat` (`src/worker/cron.ts`), success or
+ * failure, so a crashed run is never invisible.
+ */
+export const cronRuns = sqliteTable(
+  "cron_runs",
+  {
+    id: text("id").primaryKey(),
+    startedAt: integer("started_at", { mode: "timestamp" }).notNull(),
+    outcome: text("outcome", { enum: ["success", "failure"] }).notNull(),
+    durationMs: integer("duration_ms").notNull(),
+    errorMessage: text("error_message"),
+  },
+  (t) => [
+    check("cron_runs_outcome_chk", sql`${t.outcome} in ('success', 'failure')`),
+    index("cron_runs_started_at_idx").on(t.startedAt),
+  ],
+);
+
+/** The one and only dispatch-attempt row's id. One owner, one last attempt. */
+export const PUSH_DISPATCH_ATTEMPT_ID = "default";
+
+/**
+ * The most recent `POST /api/push/test` outcome (unit 6 phase 3, PRD AC-7).
+ * Singleton row, mirroring `googleConnections`'s CHECK-pinned single row.
+ */
+export const pushDispatchAttempts = sqliteTable(
+  "push_dispatch_attempts",
+  {
+    id: text("id").primaryKey().default(PUSH_DISPATCH_ATTEMPT_ID),
+    attemptedAt: integer("attempted_at", { mode: "timestamp" }).notNull(),
+    /** JSON-encoded `{ endpoint: string; outcome: PushOutcome }[]` from the last `POST /api/push/test`. */
+    results: text("results").notNull(),
+  },
+  (t) => [check("push_dispatch_attempts_singleton", sql`${t.id} = 'default'`)],
+);
+
 // Types flow OUT of the schema — never hand-duplicated (docs/anti-patterns.md).
 export type LifeArea = typeof lifeAreas.$inferSelect;
 export type NewLifeArea = typeof lifeAreas.$inferInsert;
@@ -393,3 +431,7 @@ export type GoogleConnection = typeof googleConnections.$inferSelect;
 export type NewGoogleConnection = typeof googleConnections.$inferInsert;
 export type GoogleCalendarSelection = typeof googleCalendarSelections.$inferSelect;
 export type NewGoogleCalendarSelection = typeof googleCalendarSelections.$inferInsert;
+export type CronRun = typeof cronRuns.$inferSelect;
+export type NewCronRun = typeof cronRuns.$inferInsert;
+export type PushDispatchAttempt = typeof pushDispatchAttempts.$inferSelect;
+export type NewPushDispatchAttempt = typeof pushDispatchAttempts.$inferInsert;
