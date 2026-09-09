@@ -139,7 +139,8 @@ Atualizado pelo Docs Updater após cada aprovação de implementação.
 ## [2026-08-29] The phase-lifecycle "2026-05-04" citation points at relay's decisions log, not this one
 
 **Context:** Every PRD generated from the relay template carries a "Phase-status lifecycle" section citing `docs/decisions.md, 2026-05-04`. A reviewer went looking for that entry in THIS project and found none — the earliest entry here is 2026-08-02.
-**Decision:** Read that citation as pointing at the **relay plugin's own** `docs/decisions.md` (`C:epos\PRPs-agentic-eng`), not this project's. Nothing is missing here; the boilerplate simply reads as local when it is not.
+**Decision:** Read that citation as pointing at the **relay plugin's own** `docs/decisions.md` (`C:
+epos\PRPs-agentic-eng`), not this project's. Nothing is missing here; the boilerplate simply reads as local when it is not.
 **Reason:** Recorded so the next reader does not repeat the search, and so nobody "fixes" it by inventing a local entry that never existed. The wording is relay's to clarify upstream, not this project's to patch.
 **Areas affected:** all (documentation) · Source: plan-reviewer verdict, unit 4 phase 4, 2026-08-29
 
@@ -151,6 +152,8 @@ Atualizado pelo Docs Updater após cada aprovação de implementação.
 **Decision:** Adopt `@block65/webcrypto-web-push@2.0.0`, pinned exact, as the sole Web Push send library; `web-push` and `@types/web-push` are removed from `package.json` entirely.
 **Reason:** A hang with no thrown error is a decisive "does not work" verdict, and worse than the documented `crypto.createECDH`/`https.request` blockers because there is nothing to catch. `@block65/webcrypto-web-push` builds the request with only Web Crypto and returns it for the caller's own `fetch`, and it completed against the same unreachable endpoint well inside every timeout.
 **Areas affected:** notifications, push · Source: `documentation/60-decisions/ADR-0013-swap-web-push-for-webcrypto-web-push.md`
+
+*(Ratified by the owner on 2026-09-09.* The ADR was written during unit 6's phase-1 spike and carried `status: accepted` from the moment an agent wrote it, which is not the same as the owner having accepted it — in this project an ADR is owner-validated. He read it and agreed on 2026-09-09, so the status is now true of the record as well as written in it. *The ADR itself was not edited*: it is append-only, and this note follows the same convention ADR-0004's dated notes did.)*
 
 ---
 
