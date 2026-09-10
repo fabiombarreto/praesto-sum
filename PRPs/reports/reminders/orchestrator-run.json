@@ -321,5 +321,6 @@
     "The phase-3 UI/UX checklist is 9/9 on static read, but items 5 (focus/Esc/focus-return) and 9 (no cross-origin request) were NOT measured live — the implementer had no browser pane. Flagged in the checklist itself.",
     "Rule 6(b) of the roadmap — the whole-order review of the remaining units — was recorded as owed at unit 6's close, to run at unit 7's close.",
     "docs-reviewer flagged two judgement calls for the operator: the docs-updater edited CLAUDE.md, which was outside its stated docs/-only brief (edit verified accurate); and docs/decisions.md gained its first two entries sourced to an APPROVED PRD's Decisions Log rather than to an owner-ratified ADR."
-  ]
+  ],
+  "pr_url": "https://github.com/fabiombarreto/praesto-sum/pull/2"
 }

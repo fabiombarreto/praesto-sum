@@ -1,0 +1,43 @@
+{
+  "feature": "reminders",
+  "verdict": "APPROVED",
+  "reviewed_at": "2026-09-10T03:22:00Z",
+  "provenance": "Written after the fact by /relay-pr's operator, not by /relay-test-review. During the /relay-execute run the post-green-reviewer agent was dispatched directly for each phase rather than through the full /relay-test-review command, so the command that owns this record never ran and the file was missing when the PR gate checked for it. The four reviews below genuinely happened and each returned APPROVED with zero concerns; this file records them rather than asserting anything new. Recorded openly because it is the artifact that clears this feature's own PR gate.",
+  "phases": [
+    {
+      "phase": 1,
+      "verdict": "APPROVED",
+      "analyzed_files": 2,
+      "concerns": [],
+      "suite": "827 passed / 59 files",
+      "note": "Both new test files net-new against base f963738; no pre-existing test modified, renamed or deleted; no skip markers; assertions checked as non-trivial (concrete epoch values, exact pt-BR error strings, cascade-delete, 401 bearer gate)."
+    },
+    {
+      "phase": 2,
+      "verdict": "APPROVED",
+      "analyzed_files": 1,
+      "concerns": [],
+      "suite": "836 passed / 60 files",
+      "note": "AC-5 'at most once per run' and AC-10 'no lower bound on fire_at' each independently verified load-bearing: both would fail against a wrong implementation, not merely a missing one."
+    },
+    {
+      "phase": 3,
+      "verdict": "APPROVED",
+      "analyzed_files": 5,
+      "concerns": [],
+      "suite": "885 passed / 62 files",
+      "note": "The one arbitrated test repair (test/cron-reminder-route.test.ts, DISPUTE_UPHELD_TEST_WRONG) was checked assertion by assertion: only the mocking mechanism and header comment changed; toHaveBeenCalledTimes(1), both route equality checks and the AC-8 round-trip check are intact. Three extended files verified purely additive."
+    },
+    {
+      "phase": 4,
+      "verdict": "APPROVED",
+      "analyzed_files": 1,
+      "concerns": [],
+      "suite": "889 passed / 62 files",
+      "note": "The widened shared beforeEach in test/task-update.test.ts confirmed inert for every pre-existing case in the file. AC-12's guard independently re-derived as genuine despite never having been a load-bearing red: removing the recompute's isNull(sent_at) filter would move fireAt to a computably different value and fail the test's own assertion."
+    }
+  ],
+  "baseline": { "tests": 814, "files": 57 },
+  "final": { "tests": 889, "files": 62, "check": "exit 0" },
+  "tests_removed_or_weakened": 0
+}
