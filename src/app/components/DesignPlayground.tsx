@@ -375,6 +375,15 @@ export function DesignPlayground() {
             onDeleteConfirm={() => {
               if (sheetTask !== null) dispatchSheet({ type: "deleted", taskId: sheetTask.id });
             }}
+            reminder={null}
+            reminderDraft={null}
+            onOpenReminder={() => {}}
+            onCloseReminder={() => {}}
+            onReminderDraftChange={() => {}}
+            onReminderSave={() => {}}
+            onReminderDeleteRequest={() => {}}
+            onReminderDeleteCancel={() => {}}
+            onReminderDeleteConfirm={() => {}}
           />
           <div className="rounded-card border border-line bg-surface-1 px-4">
             <ConfirmView

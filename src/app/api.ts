@@ -1,12 +1,15 @@
 import type {
+  CreateReminderInput,
   CreateTaskInput,
   DiagnosticsDto,
   GoogleCalendarDto,
   GoogleConnectionDto,
   GoogleEventsDto,
   PushSubscriptionDto,
+  ReminderDto,
   SubscribePushInput,
   TaskDto,
+  UpdateReminderInput,
   UpdateTaskInput,
 } from "../shared/api";
 import { exportFilename } from "../shared/content-disposition";
@@ -157,6 +160,36 @@ export async function reopenTask(id: string): Promise<TaskDto> {
 
 export async function deleteTask(id: string): Promise<void> {
   await request<void>(`/api/tasks/${id}`, { method: "DELETE" });
+}
+
+/**
+ * The four Reminder CRUD wrappers reminders phase 3's UI calls through —
+ * one-liners over `request<T>()` exactly like the Google/push wrappers
+ * below: no local types, no error re-mapping.
+ */
+export async function listReminders(): Promise<ReminderDto[]> {
+  const body = await request<{ reminders: ReminderDto[] }>("/api/reminders");
+  return body.reminders;
+}
+
+export async function createReminder(input: CreateReminderInput): Promise<ReminderDto> {
+  const body = await request<{ reminder: ReminderDto }>("/api/reminders", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return body.reminder;
+}
+
+export async function updateReminder(id: string, input: UpdateReminderInput): Promise<ReminderDto> {
+  const body = await request<{ reminder: ReminderDto }>(`/api/reminders/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+  return body.reminder;
+}
+
+export async function deleteReminder(id: string): Promise<void> {
+  await request<void>(`/api/reminders/${id}`, { method: "DELETE" });
 }
 
 /**

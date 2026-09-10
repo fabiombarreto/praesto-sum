@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import {
   EDITABLE_TASK_FIELDS,
@@ -8,9 +8,9 @@ import {
   MAX_TASK_LIMIT,
   type CreateTaskInput,
 } from "../../shared/api";
-import { todayIn } from "../../shared/dates";
+import { offsetToInstant, todayIn } from "../../shared/dates";
 import { createDb } from "../db/client";
-import { tasks } from "../db/schema";
+import { reminders, tasks } from "../db/schema";
 import { toTaskDto } from "../dto";
 
 /**
@@ -260,6 +260,40 @@ taskRoutes.patch("/:id", async (c) => {
   const [row] = await db.update(tasks).set(patch).where(eq(tasks.id, existing.id)).returning();
 
   if (row === undefined) return c.json({ error: "Update returned no row" }, 500);
+
+  // Reminders phase 4, AC-11/AC-12 — a deadline that actually moved to a new
+  // non-null value recomputes every relative (originOffsetMinutes non-null),
+  // unsent (sentAt IS NULL) Reminder linked to this Task, reusing the exact
+  // `offsetToInstant` formula `src/worker/routes/reminders.ts` already uses
+  // for the same computation. The `isNull(reminders.sentAt)` clause means an
+  // already-sent Reminder is never selected here, so AC-12 (never resurrect
+  // a delivered notification) holds structurally, not via a runtime check.
+  if (
+    Object.hasOwn(body, "deadline") &&
+    row.deadline !== null &&
+    row.deadline !== existing.deadline
+  ) {
+    const relativeReminders = await db
+      .select()
+      .from(reminders)
+      .where(
+        and(
+          eq(reminders.taskId, row.id),
+          isNotNull(reminders.originOffsetMinutes),
+          isNull(reminders.sentAt),
+        ),
+      );
+    for (const reminder of relativeReminders) {
+      if (reminder.originOffsetMinutes === null) continue;
+      await db
+        .update(reminders)
+        .set({
+          fireAt: new Date(offsetToInstant(row.deadline, reminder.originOffsetMinutes) * 1000),
+        })
+        .where(eq(reminders.id, reminder.id));
+    }
+  }
+
   return c.json({ task: toTaskDto(row) });
 });
 

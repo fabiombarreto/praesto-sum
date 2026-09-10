@@ -41,7 +41,13 @@
 // yet resolve the two new paths added below.
 
 import { describe, expect, it } from "vitest";
-import { pathOf, routeFromPath, type AppRoute } from "../src/shared/app-route";
+import {
+  pathOf,
+  routeFromPath,
+  taskIdFromRoute,
+  taskRouteOf,
+  type AppRoute,
+} from "../src/shared/app-route";
 
 describe("routeFromPath", () => {
   it("maps the root path to today", () => {
@@ -128,6 +134,83 @@ describe("routeFromPath and pathOf agree — the two new routes round-trip too",
 
   it("round-trips notifications-diagnostics", () => {
     const route: AppRoute = "notifications-diagnostics";
+    expect(routeFromPath(pathOf(route))).toBe(route);
+  });
+});
+
+// --- UPDATE (reminders phase 3, per-Task route) ----------------------------
+// PRPs/prds/reminders.prd.md AC-8 The payload deep-links to the Task, not to
+// the home screen (via plan AC-A1). Source plan:
+// PRPs/plans/reminders-phase-3-per-task-route-and-reminder-ui.plan.md
+// (Task 1 — src/shared/app-route.ts: widen AppRoute with a template-literal
+// `` `task/${string}` `` member; add taskRouteOf/taskIdFromRoute; extend
+// routeFromPath to match `/tasks/:id` before falling through to `today`,
+// checking the most specific path first, the same convention already used
+// for the three settings routes above).
+//
+// This file is RED again for a NEW reason once Task 1 lands and before it:
+// today `taskRouteOf`/`taskIdFromRoute` do not exist at all (a compile-time
+// import error on the two names added to the import above), and
+// `routeFromPath`/`pathOf` do not recognise a `/tasks/:id` path or a `task/`
+// route at all — every assertion below fails for one of those two reasons
+// until Task 1 lands. Every assertion ABOVE this point is untouched: the
+// existing four-member contract keeps exactly its prior shape and expectation.
+
+describe("taskRouteOf / taskIdFromRoute", () => {
+  it("taskRouteOf builds a task/<id> route from a Task id", () => {
+    expect(taskRouteOf("abc-123")).toBe("task/abc-123");
+  });
+
+  it("taskIdFromRoute recovers the id from a task/<id> route", () => {
+    expect(taskIdFromRoute(taskRouteOf("abc-123"))).toBe("abc-123");
+  });
+
+  it("taskIdFromRoute returns null for every non-Task route", () => {
+    expect(taskIdFromRoute("today")).toBeNull();
+    expect(taskIdFromRoute("settings")).toBeNull();
+    expect(taskIdFromRoute("notifications")).toBeNull();
+    expect(taskIdFromRoute("notifications-diagnostics")).toBeNull();
+  });
+});
+
+describe("routeFromPath — the Task route (PRD AC-8 via plan AC-A1)", () => {
+  it("maps /tasks/:id to the corresponding Task route", () => {
+    expect(routeFromPath("/tasks/abc-123")).toBe(taskRouteOf("abc-123"));
+  });
+
+  it("accepts a trailing slash on a Task path", () => {
+    expect(routeFromPath("/tasks/abc-123/")).toBe(taskRouteOf("abc-123"));
+  });
+
+  it("resolves the bare /tasks path (no id segment) to today, not to an empty Task route", () => {
+    expect(routeFromPath("/tasks/")).toBe("today");
+    expect(routeFromPath("/tasks")).toBe("today");
+  });
+
+  it("resolves a Task path with a further nested segment to today — there is exactly one segment", () => {
+    expect(routeFromPath("/tasks/abc-123/extra")).toBe("today");
+  });
+});
+
+describe("pathOf — the Task route (PRD AC-8 via plan AC-A1)", () => {
+  it("maps a Task route back to /tasks/:id", () => {
+    expect(pathOf(taskRouteOf("abc-123"))).toBe("/tasks/abc-123");
+  });
+});
+
+describe("routeFromPath and pathOf agree — the Task route round-trips (AC-8's own headline contract)", () => {
+  it("round-trips a Task path: pathOf(routeFromPath(p)) === p", () => {
+    const p = "/tasks/abc-123";
+    expect(pathOf(routeFromPath(p))).toBe(p);
+  });
+
+  it("round-trips a Task path built from a UUID-shaped id", () => {
+    const p = "/tasks/3f6e6b0a-8c1a-4e2d-9a4f-2b6a7c8d9e0f";
+    expect(pathOf(routeFromPath(p))).toBe(p);
+  });
+
+  it("round-trips a Task AppRoute value itself, not just its path", () => {
+    const route: AppRoute = taskRouteOf("abc-123");
     expect(routeFromPath(pathOf(route))).toBe(route);
   });
 });

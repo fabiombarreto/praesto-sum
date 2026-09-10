@@ -238,6 +238,50 @@ export const EDITABLE_TASK_FIELDS: readonly string[] = [
  */
 export const MAX_TASK_LIMIT = 500;
 
+/**
+ * `POST /api/reminders` body. Mirrors `CreateTaskInput`'s create-vs-update
+ * split: absent and explicit-`null` mean the same thing on create.
+ *
+ * Either `label` (non-empty, standalone) or `taskId` (Task-linked) must be
+ * present — the route enforces that, this type only describes the shape.
+ * `fireAt` is an absolute epoch-seconds instant; `originOffsetMinutes` is an
+ * alternative to `fireAt` for a Task-linked Reminder, resolved server-side via
+ * `offsetToInstant` against the Task's `deadline` (AC-3) — never trusted
+ * verbatim as a client-supplied instant.
+ */
+export interface CreateReminderInput {
+  taskId?: string | null;
+  label?: string | null;
+  fireAt?: number;
+  originOffsetMinutes?: number | null;
+}
+
+/**
+ * Partial update of an existing Reminder. Declared separately from
+ * `CreateReminderInput` for the same reason as `UpdateTaskInput`: an ABSENT
+ * key leaves the field untouched, while an explicit `null` clears it — a
+ * distinction TypeScript cannot express, so the route enforces it with
+ * `Object.hasOwn` against the raw parsed body.
+ */
+export interface UpdateReminderInput {
+  taskId?: string | null;
+  label?: string | null;
+  fireAt?: number;
+  originOffsetMinutes?: number | null;
+}
+
+/**
+ * The closed set of keys `PATCH /api/reminders/:id` accepts. Anything else —
+ * the server-owned fields (`id`, `sentAt`, `createdAt`, `updatedAt`), or a
+ * typo — is rejected with 400 rather than silently ignored.
+ */
+export const EDITABLE_REMINDER_FIELDS: readonly string[] = [
+  "taskId",
+  "label",
+  "fireAt",
+  "originOffsetMinutes",
+];
+
 export interface ApiErrorBody {
   error: string;
 }

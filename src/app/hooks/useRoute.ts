@@ -55,6 +55,17 @@ export function useRoute(): {
     setRoute(next);
   }, []);
 
+  useEffect(() => {
+    function handleMessage(event: MessageEvent): void {
+      const data = event.data as { type?: unknown; url?: unknown };
+      if (data.type === "NOTIFICATION_CLICK" && typeof data.url === "string") {
+        navigate(routeFromPath(data.url));
+      }
+    }
+    navigator.serviceWorker?.addEventListener("message", handleMessage);
+    return () => navigator.serviceWorker?.removeEventListener("message", handleMessage);
+  }, [navigate]);
+
   const back = useCallback(() => {
     // The marker travels WITH the entry, so this reads the entry actually on
     // screen — including one reached by the browser's forward button, which a

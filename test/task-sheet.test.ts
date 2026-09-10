@@ -278,6 +278,106 @@ describe("reduceTaskSheet — saved / deleted", () => {
   });
 });
 
+// --- UPDATE (reminders phase 3, Task-linked Reminder editor view) ----------
+// PRPs/prds/reminders.prd.md AC-8 (via plan AC-A3, "without ever opening a
+// second, stacked dialog") and the plan's Task 7 rationale ("A
+// `confirm-reminder` view distinct from `confirm` is the whole point of this
+// task, not a refinement of it"). Source plan:
+// PRPs/plans/reminders-phase-3-per-task-route-and-reminder-ui.plan.md
+// (Task 7 — src/shared/task-sheet.ts: widen SheetView to four members; add
+// open-reminder/close-reminder/request-delete-reminder/cancel-delete-reminder).
+//
+// This file is RED again for a NEW reason once Task 7 lands and before it:
+// today `SheetView` has only two members and `TaskSheetEvent` has no
+// `*-reminder` variants at all, so every event object below fails to satisfy
+// `TaskSheetEvent`'s type and `reduceTaskSheet` never returns a `"reminder"`
+// or `"confirm-reminder"` view. Every assertion ABOVE this point is
+// untouched: the existing `"detail"`/`"confirm"` contract keeps exactly its
+// prior shape and expectation.
+//
+// The single assertion that matters most here is `cancel-delete-reminder`
+// landing on `"reminder"` and NOT on `"detail"` — the one difference from the
+// Task-delete pair, and the exact discrimination whose absence would let a
+// reminder deletion fall through to the Task's own delete confirmation and
+// callbacks (see the plan's own Task 7/Task 12 rationale).
+
+describe("reduceTaskSheet — open-reminder / close-reminder (PRD AC-8 via plan AC-A3)", () => {
+  it("open-reminder switches to the reminder view without touching the draft", () => {
+    const opened = openedWith(rent, { title: "Pagar o aluguel de setembro" });
+    const editingReminder = reduceTaskSheet(opened, { type: "open-reminder" });
+    expect(editingReminder.view).toBe("reminder");
+    expect(editingReminder.taskId).toBe("task-1");
+    expect(editingReminder.drafts).toBe(opened.drafts);
+  });
+
+  it("close-reminder returns to the detail view with the draft intact", () => {
+    const opened = openedWith(rent, { title: "Pagar o aluguel de setembro" });
+    const editingReminder = reduceTaskSheet(opened, { type: "open-reminder" });
+    const back = reduceTaskSheet(editingReminder, { type: "close-reminder" });
+    expect(back.view).toBe("detail");
+    expect(back.taskId).toBe("task-1");
+    expect(back.drafts["task-1"]).toBe(opened.drafts["task-1"]);
+  });
+
+  it("both are no-ops while the sheet is closed", () => {
+    expect(reduceTaskSheet(INITIAL_TASK_SHEET_STATE, { type: "open-reminder" })).toBe(
+      INITIAL_TASK_SHEET_STATE,
+    );
+    expect(reduceTaskSheet(INITIAL_TASK_SHEET_STATE, { type: "close-reminder" })).toBe(
+      INITIAL_TASK_SHEET_STATE,
+    );
+  });
+
+  it("always lands in the detail view on a fresh open, even when the previous view was the reminder editor", () => {
+    const editingReminder = reduceTaskSheet(openedWith(rent), { type: "open-reminder" });
+    const reopened = reduceTaskSheet(editingReminder, { type: "open", task: passport });
+    expect(reopened.view).toBe("detail");
+  });
+});
+
+describe("reduceTaskSheet — request-delete-reminder / cancel-delete-reminder (the two-confirmations discrimination)", () => {
+  it("request-delete-reminder switches to confirm-reminder, NOT to the Task's own confirm view", () => {
+    const editingReminder = reduceTaskSheet(openedWith(rent), { type: "open-reminder" });
+    const confirming = reduceTaskSheet(editingReminder, { type: "request-delete-reminder" });
+    expect(confirming.view).toBe("confirm-reminder");
+    expect(confirming.view).not.toBe("confirm");
+    expect(confirming.taskId).toBe("task-1");
+  });
+
+  it("cancel-delete-reminder lands on reminder, NOT on detail — the defect this plan closes", () => {
+    const editingReminder = reduceTaskSheet(openedWith(rent), { type: "open-reminder" });
+    const confirming = reduceTaskSheet(editingReminder, { type: "request-delete-reminder" });
+    const back = reduceTaskSheet(confirming, { type: "cancel-delete-reminder" });
+    expect(back.view).toBe("reminder");
+    expect(back.view).not.toBe("detail");
+    expect(back.taskId).toBe("task-1");
+  });
+
+  it("request-delete-reminder can be reached directly from the reminder editor without touching the draft", () => {
+    const opened = openedWith(rent, { description: "Transferência no dia 5" });
+    const editingReminder = reduceTaskSheet(opened, { type: "open-reminder" });
+    const confirming = reduceTaskSheet(editingReminder, { type: "request-delete-reminder" });
+    expect(confirming.drafts).toBe(opened.drafts);
+  });
+
+  it("both are no-ops while the sheet is closed", () => {
+    expect(reduceTaskSheet(INITIAL_TASK_SHEET_STATE, { type: "request-delete-reminder" })).toBe(
+      INITIAL_TASK_SHEET_STATE,
+    );
+    expect(reduceTaskSheet(INITIAL_TASK_SHEET_STATE, { type: "cancel-delete-reminder" })).toBe(
+      INITIAL_TASK_SHEET_STATE,
+    );
+  });
+
+  it("the Task's own request-delete/cancel-delete pair is untouched by the new reminder pair", () => {
+    const opened = openedWith(rent, { title: "Pagar o aluguel de setembro" });
+    const confirmingTaskDelete = reduceTaskSheet(opened, { type: "request-delete" });
+    expect(confirmingTaskDelete.view).toBe("confirm");
+    const backToDetail = reduceTaskSheet(confirmingTaskDelete, { type: "cancel-delete" });
+    expect(backToDetail.view).toBe("detail");
+  });
+});
+
 describe("reduceTaskSheet — purity", () => {
   it("never mutates the state, the drafts or the changes it is given", () => {
     const opened = openedWith(rent);

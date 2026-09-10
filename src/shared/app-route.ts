@@ -22,15 +22,34 @@
  * (`src/app/main.tsx`) is the in-repo precedent.
  */
 
-export type AppRoute = "today" | "settings" | "notifications" | "notifications-diagnostics";
+export type AppRoute =
+  "today" | "settings" | "notifications" | "notifications-diagnostics" | `task/${string}`;
 
 /** Strips at most one trailing slash; the root path `/` itself is untouched. */
 function withoutTrailingSlash(pathname: string): string {
   return pathname !== "/" && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
 }
 
+/** Builds the Task-linked route for a given Task id. */
+export function taskRouteOf(taskId: string): AppRoute {
+  return `task/${taskId}`;
+}
+
+/** Recovers the Task id from a Task-linked route, or `null` for every other route. */
+export function taskIdFromRoute(route: AppRoute): string | null {
+  if (!route.startsWith("task/")) return null;
+  return route.slice("task/".length);
+}
+
+const TASK_PATH_PATTERN = /^\/tasks\/([^/]+)$/;
+
 export function routeFromPath(pathname: string): AppRoute {
   const path = withoutTrailingSlash(pathname);
+  const taskMatch = TASK_PATH_PATTERN.exec(path);
+  if (taskMatch !== null) {
+    const taskId = taskMatch[1];
+    if (taskId !== undefined && taskId !== "") return taskRouteOf(taskId);
+  }
   if (path === "/settings/notifications/diagnostics") return "notifications-diagnostics";
   if (path === "/settings/notifications") return "notifications";
   if (path === "/settings") return "settings";
@@ -38,6 +57,7 @@ export function routeFromPath(pathname: string): AppRoute {
 }
 
 export function pathOf(route: AppRoute): string {
+  if (route.startsWith("task/")) return `/tasks/${taskIdFromRoute(route)}`;
   if (route === "notifications-diagnostics") return "/settings/notifications/diagnostics";
   if (route === "notifications") return "/settings/notifications";
   if (route === "settings") return "/settings";
