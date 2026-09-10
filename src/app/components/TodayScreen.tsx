@@ -8,11 +8,17 @@
 
 import { useEffect, useReducer, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import type { TaskDto } from "../../shared/api";
+import type { ReminderDto, TaskDto } from "../../shared/api";
 import { canWrite } from "../../shared/connectivity";
-import { todayIn } from "../../shared/dates";
+import { instantToLocalParts, todayIn } from "../../shared/dates";
 import { googleFailureMessage } from "../../shared/google-failure-copy";
 import { classifyRequestFailure } from "../../shared/request-failure";
+import {
+  buildCreateReminderInput,
+  buildUpdateReminderInput,
+  draftFromReminder,
+  type ReminderDraft,
+} from "../../shared/reminder-edit";
 import type { ShareTarget } from "../../shared/share-target";
 import { buildTaskPatch } from "../../shared/task-edit";
 import {
@@ -29,10 +35,14 @@ import { currentDraft, INITIAL_TASK_SHEET_STATE, reduceTaskSheet } from "../../s
 import {
   ApiError,
   completeTask,
+  createReminder,
   createTask,
+  deleteReminder,
   deleteTask,
+  listReminders,
   listTasks,
   reopenTask,
+  updateReminder,
   updateTask,
 } from "../api";
 import { useConnectivity } from "../hooks/useConnectivity";
@@ -41,6 +51,8 @@ import { CaptureDeck } from "./CaptureDeck";
 import { EmptyState } from "./EmptyState";
 import { FilterChips } from "./FilterChips";
 import { FilterSheet } from "./FilterSheet";
+import { ReminderRow } from "./ReminderRow";
+import { ReminderSheet } from "./ReminderSheet";
 import { TaskGroup } from "./TaskGroup";
 import { TaskRow } from "./TaskRow";
 import { TaskSheet } from "./TaskSheet";
@@ -165,6 +177,20 @@ export function TodayScreen({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const captureRef = useRef<HTMLInputElement>(null);
 
+  // Reminders (reminders phase 3) — never folded into `tasks`/`busy`/
+  // `sheetError`, the same isolation `events` already keeps from the Task
+  // state, except for the Task-linked editor (Task 13), which deliberately
+  // shares the Task sheet's own `busy`/`sheetError` since it renders inside
+  // that same dialog.
+  const [reminders, setReminders] = useState<ReminderDto[] | null>(null);
+  const [reminderSheetState, setReminderSheetState] = useState<{
+    reminder: ReminderDto | null;
+    draft: ReminderDraft;
+    view: "form" | "confirm";
+  } | null>(null);
+  const [reminderSheetError, setReminderSheetError] = useState<string | null>(null);
+  const [taskReminderDraft, setTaskReminderDraft] = useState<ReminderDraft | null>(null);
+
   const today = todayIn(new Date());
   const now = new Date();
 
@@ -183,6 +209,12 @@ export function TodayScreen({
     today,
   );
   const sheetTask = tasks?.find((task) => task.id === sheet.taskId) ?? null;
+  const sheetTaskReminder =
+    sheetTask === null ? null : ((reminders ?? []).find((r) => r.taskId === sheetTask.id) ?? null);
+  // Already-sent or Task-linked Reminders do not belong on the standalone list.
+  const standaloneReminders = (reminders ?? []).filter(
+    (r) => r.taskId === null && r.sentAt === null,
+  );
 
   /** A 401 routes to the token gate; otherwise reports the failure kind and returns its message (`null` on the 401 route, since the caller is about to unmount). */
   function handleFailure(cause: unknown): string | null {
@@ -225,6 +257,30 @@ export function TodayScreen({
     }
   }
 
+  /**
+   * Fetches every Reminder — standalone and Task-linked alike (reminders
+   * phase 3, AC-A2/AC-A3). Returns the freshly fetched array (or `null` on
+   * failure) so a caller — `saveSheet`'s reminders phase 4 recompute check —
+   * can compare against a value guaranteed fresh, never against this
+   * function's own same-closure, necessarily-stale `reminders` state.
+   */
+  async function refreshReminders(): Promise<ReminderDto[] | null> {
+    try {
+      const next = await listReminders();
+      setReminders(next);
+      return next;
+    } catch (cause) {
+      if (cause instanceof ApiError && cause.status === 401) {
+        onUnauthorized();
+        return null;
+      }
+      // A failed Reminder fetch must not blank the Task list or the agenda —
+      // the same isolation `refreshEvents` already keeps.
+      setReminders(null);
+      return null;
+    }
+  }
+
   async function refresh(): Promise<void> {
     try {
       const next = await listTasks(filter);
@@ -259,6 +315,36 @@ export function TodayScreen({
       await action();
       setSheetError(null);
       await refresh();
+    } catch (cause) {
+      const message = handleFailure(cause);
+      if (message !== null) setSheetError(message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** The standalone-`ReminderSheet`'s own mutation path — mirrors `runSheet`, with `refreshReminders()` in place of `refresh()` and its own error slot. */
+  async function runReminderSheet(action: () => Promise<unknown>): Promise<void> {
+    setBusy(true);
+    try {
+      await action();
+      setReminderSheetError(null);
+      await refreshReminders();
+    } catch (cause) {
+      const message = handleFailure(cause);
+      if (message !== null) setReminderSheetError(message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** The Task-linked Reminder editor's mutation path — mirrors `runSheet` exactly, sharing the Task sheet's own `busy`/`sheetError` since it renders inside that same dialog (Task 13). */
+  async function runTaskReminder(action: () => Promise<unknown>): Promise<void> {
+    setBusy(true);
+    try {
+      await action();
+      setSheetError(null);
+      await refreshReminders();
     } catch (cause) {
       const message = handleFailure(cause);
       if (message !== null) setSheetError(message);
@@ -401,12 +487,28 @@ export function TodayScreen({
       dispatchSheet({ type: "close" });
       return;
     }
+    // Captured BEFORE the save, from state — the "before" side of the
+    // reminders phase 4 AC-A3 comparison.
+    const previousReminderFireAt = sheetTaskReminder?.fireAt ?? null;
     void runSheet(async () => {
       await updateTask(sheetTask.id, changes);
       // The dispatch sits AFTER the awaited call, so a failed save leaves
       // the sheet open with the draft intact and the message under *Salvar*.
       dispatchSheet({ type: "saved", taskId: sheetTask.id });
-      showToast({ key: "task-saved", text: "Tarefa salva" });
+      // The "after" side: refetched fresh, never read from this closure's
+      // own (necessarily stale) `reminders` state (reminders phase 4, AC-A3).
+      const nextReminders = await refreshReminders();
+      const updatedReminder = (nextReminders ?? []).find((r) => r.taskId === sheetTask.id) ?? null;
+      if (
+        previousReminderFireAt !== null &&
+        updatedReminder !== null &&
+        updatedReminder.fireAt !== previousReminderFireAt
+      ) {
+        const { day, time } = instantToLocalParts(updatedReminder.fireAt);
+        showToast({ key: "reminder-recomputed", text: `Lembrete reagendado para ${day} ${time}` });
+      } else {
+        showToast({ key: "task-saved", text: "Tarefa salva" });
+      }
     });
   }
 
@@ -418,6 +520,46 @@ export function TodayScreen({
       dispatchSheet({ type: "deleted", taskId: id });
       // No action on the toast — the delete is irreversible (guidelines §8).
       showToast({ key: "task-deleted", text: "Tarefa excluída" });
+    });
+  }
+
+  // --- Standalone Reminders (reminders phase 3, plan AC-A2) -----------------
+
+  function openReminderSheet(existing: ReminderDto | null): void {
+    setReminderSheetError(null);
+    setReminderSheetState({ reminder: existing, draft: draftFromReminder(existing), view: "form" });
+  }
+
+  function saveReminderSheet(): void {
+    if (reminderSheetState === null) return;
+    const { reminder, draft } = reminderSheetState;
+    void runReminderSheet(async () => {
+      if (reminder === null) {
+        await createReminder(buildCreateReminderInput(draft, null));
+      } else {
+        await updateReminder(reminder.id, buildUpdateReminderInput(reminder, draft));
+      }
+      setReminderSheetState(null);
+      showToast({ key: "reminder-saved", text: "Lembrete salvo" });
+    });
+  }
+
+  function requestDeleteReminderSheet(): void {
+    setReminderSheetState((prev) => (prev === null ? prev : { ...prev, view: "confirm" }));
+  }
+
+  function cancelDeleteReminderSheet(): void {
+    setReminderSheetState((prev) => (prev === null ? prev : { ...prev, view: "form" }));
+  }
+
+  function confirmDeleteReminderSheet(): void {
+    if (reminderSheetState === null || reminderSheetState.reminder === null) return;
+    const id = reminderSheetState.reminder.id;
+    void runReminderSheet(async () => {
+      await deleteReminder(id);
+      setReminderSheetState(null);
+      // No action on the toast — the delete is irreversible (guidelines §8).
+      showToast({ key: "reminder-deleted", text: "Lembrete excluído" });
     });
   }
 
@@ -436,6 +578,7 @@ export function TodayScreen({
     // agenda — refetching Google on a chip tap would spend a request to
     // produce the identical list.
     void refreshEvents();
+    void refreshReminders();
   }, []);
 
   useEffect(() => {
@@ -446,6 +589,7 @@ export function TodayScreen({
       // owner did, so coming back to the app is exactly when it is worth
       // re-reading (guidelines §12.4 — there is no manual refresh gesture).
       void refreshEvents();
+      void refreshReminders();
     }
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -627,6 +771,43 @@ export function TodayScreen({
             the agenda, and a zero-Task day must not either. */}
         {agendaRegion}
 
+        {/* Never collapsible (a due Reminder should never hide) and, unlike
+            `TaskGroup`, never hidden at zero rows: the "Novo lembrete" header
+            action is how the owner reaches the very first Reminder, so the
+            section itself (not `TaskGroup`'s own zero-count guard) decides
+            whether to render — mirroring the agenda region's own pattern of
+            owning its section rather than depending on `TaskGroup` alone. */}
+        <section aria-label="Lembretes">
+          <div className="flex min-h-12 w-full items-center gap-2 rounded-control">
+            <h2 className="m-0 font-text text-t2 font-semibold text-ink">Lembretes</h2>
+            {standaloneReminders.length > 0 && (
+              <span className="font-data text-t1 font-semibold text-muted tabular-nums">
+                {standaloneReminders.length}
+              </span>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              className="ml-auto"
+              onClick={() => openReminderSheet(null)}
+              disabled={!writable}
+            >
+              Novo lembrete
+            </Button>
+          </div>
+          {standaloneReminders.length > 0 && (
+            <ul className="m-0 flex list-none flex-col gap-2 p-0">
+              {standaloneReminders.map((reminder) => (
+                <ReminderRow
+                  key={reminder.id}
+                  reminder={reminder}
+                  onOpen={() => openReminderSheet(reminder)}
+                />
+              ))}
+            </ul>
+          )}
+        </section>
+
         {tasks === null && loadError === null && <Skeleton slow={slow} />}
 
         {tasks === null && loadError !== null && (
@@ -733,6 +914,45 @@ export function TodayScreen({
           dispatchSheet({ type: "cancel-delete" });
         }}
         onDeleteConfirm={deleteSheetTask}
+        reminder={sheetTaskReminder}
+        reminderDraft={taskReminderDraft}
+        onOpenReminder={() => {
+          setTaskReminderDraft(draftFromReminder(sheetTaskReminder));
+          dispatchSheet({ type: "open-reminder" });
+        }}
+        onCloseReminder={() => {
+          setTaskReminderDraft(null);
+          dispatchSheet({ type: "close-reminder" });
+        }}
+        onReminderDraftChange={(changes) =>
+          setTaskReminderDraft((prev) => (prev === null ? prev : { ...prev, ...changes }))
+        }
+        onReminderSave={() => {
+          if (sheetTask === null || taskReminderDraft === null) return;
+          void runTaskReminder(async () => {
+            if (sheetTaskReminder === null) {
+              await createReminder(buildCreateReminderInput(taskReminderDraft, sheetTask.id));
+            } else {
+              await updateReminder(
+                sheetTaskReminder.id,
+                buildUpdateReminderInput(sheetTaskReminder, taskReminderDraft),
+              );
+            }
+            setTaskReminderDraft(null);
+            dispatchSheet({ type: "close-reminder" });
+            showToast({ key: "reminder-saved", text: "Lembrete salvo" });
+          });
+        }}
+        onReminderDeleteRequest={() => dispatchSheet({ type: "request-delete-reminder" })}
+        onReminderDeleteCancel={() => dispatchSheet({ type: "cancel-delete-reminder" })}
+        onReminderDeleteConfirm={() => {
+          if (sheetTaskReminder === null) return;
+          void runTaskReminder(async () => {
+            await deleteReminder(sheetTaskReminder.id);
+            dispatchSheet({ type: "close-reminder" });
+            showToast({ key: "reminder-deleted", text: "Lembrete excluído" });
+          });
+        }}
       />
 
       {/* Never stack sheets (layout standard §3): gated on the same
@@ -742,6 +962,27 @@ export function TodayScreen({
         onOpenChange={setFiltersOpen}
         filter={filter}
         onChange={setFilter}
+      />
+
+      {/* Never stack sheets (layout standard §3): the Task sheet and the
+          standalone Reminder sheet can never both be open. */}
+      <ReminderSheet
+        open={reminderSheetState !== null && sheet.taskId === null}
+        reminder={reminderSheetState?.reminder ?? null}
+        draft={reminderSheetState?.draft ?? null}
+        view={reminderSheetState?.view ?? "form"}
+        busy={busy}
+        error={reminderSheetError}
+        onDraftChange={(changes) =>
+          setReminderSheetState((prev) =>
+            prev === null ? prev : { ...prev, draft: { ...prev.draft, ...changes } },
+          )
+        }
+        onClose={() => setReminderSheetState(null)}
+        onSave={saveReminderSheet}
+        onDeleteRequest={requestDeleteReminderSheet}
+        onDeleteCancel={cancelDeleteReminderSheet}
+        onDeleteConfirm={confirmDeleteReminderSheet}
       />
     </div>
   );

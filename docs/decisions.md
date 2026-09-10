@@ -157,6 +157,24 @@ epos\PRPs-agentic-eng`), not this project's. Nothing is missing here; the boiler
 
 ---
 
+## [2026-09-10] The due-Reminder sweep claims before it sends
+
+**Context:** Unit 7 `reminders` needed a sweep ordering giving "none duplicated, none silent" over a network boundary where exactly-once delivery is not achievable. Send-then-mark (at-least-once) can duplicate; a plain claim-then-send (at-most-once) can go silent on a crash.
+**Decision:** `runScheduledJob` claims each due Reminder with a conditional `UPDATE ... WHERE sent_at IS NULL AND fire_at <= now` before dispatching, and releases the claim (resets `sent_at` to null) only when the push outcome is retryable (429/5xx); a delivered or fully-`gone` outcome leaves the claim set. No lower bound on `fire_at`, so a Reminder that came due while the scheduler was down still fires exactly once.
+**Reason:** Duplicates become structurally impossible; the only remaining silence is a hard crash between claim and dispatch, which `runCronHeartbeat`'s `finally`-block `cron_runs` row already makes visible rather than silent. Rejected alternatives (send-then-mark; a lease column with expiry; a separate work-item table) are recorded with their trade-offs in the PRD.
+**Areas affected:** reminders · Source: `PRPs/prds/reminders.prd.md` Decisions Log ("Sweep ordering"), PRD AC-5/AC-6/AC-10
+
+---
+
+## [2026-09-10] A relative Task Reminder resolves against end-of-day local, and is recomputed when the deadline moves
+
+**Context:** A Task carries only a local calendar day (`deadline`/`scheduledDate`), never a time of day, so "1 h before the deadline" has nothing to count back from. Unit 7 `reminders` also had to decide what happens to a relative Reminder when the Task's deadline is later edited — Apple Reminders shifts it silently, which its own community documents as a trap.
+**Decision:** A Task-linked relative Reminder's offset is counted back from end-of-day local (23:59 `America/Sao_Paulo`), computed by one pure, clock-free helper (`offsetToInstant` + `END_OF_DAY_LOCAL_MINUTES`, `src/shared/dates.ts`) with the resulting instant shown to the owner before saving. When the Task's `deadline` changes, `PATCH /api/tasks/:id` recomputes `fireAt` for that Task's relative, unsent Reminders and reports the new time on screen; absolute Reminders and already-sent Reminders (`sentAt` set) are left untouched.
+**Reason:** Refusing relative reminders on date-only Tasks (Todoist's answer) would make FR-025 unusable for most of the owner's Tasks; silently shifting (Apple) or freezing the old instant would each misrepresent a plan that changed. Showing the recomputed instant keeps the arithmetic honest and matches the project's existing honest-mirror principle for `missed` Tasks. Marked `TBD — needs validation` in the PRD: whether 23:59 is the right meaning once the owner has lived with it for a week is an open question, deliberately deferred to real use, not decided here.
+**Areas affected:** reminders, tasks · Source: `PRPs/prds/reminders.prd.md` Decisions Log ("Meaning of a deadline for a relative reminder", "Behavior when a Task's deadline moves"), PRD AC-3/AC-11/AC-12/AC-14, Open Questions
+
+---
+
 <!-- Template for future entries:
 
 ## [YYYY-MM-DD] Title of the decision

@@ -26,7 +26,7 @@
 import type { TaskDto } from "./api";
 import { dateModeOf, type TaskDraft } from "./task-edit";
 
-export type SheetView = "detail" | "confirm";
+export type SheetView = "detail" | "confirm" | "reminder" | "confirm-reminder";
 
 export interface TaskSheetState {
   taskId: string | null;
@@ -45,6 +45,10 @@ export type TaskSheetEvent =
   | { type: "edit"; changes: Partial<TaskDraft> }
   | { type: "request-delete" }
   | { type: "cancel-delete" }
+  | { type: "open-reminder" }
+  | { type: "close-reminder" }
+  | { type: "request-delete-reminder" }
+  | { type: "cancel-delete-reminder" }
   | { type: "close" }
   | { type: "saved"; taskId: string }
   | { type: "deleted"; taskId: string };
@@ -97,6 +101,21 @@ export function reduceTaskSheet(state: TaskSheetState, event: TaskSheetEvent): T
     case "cancel-delete":
       if (state.taskId === null) return state;
       return { ...state, view: "detail" };
+    case "open-reminder":
+      if (state.taskId === null) return state;
+      return { ...state, view: "reminder" };
+    case "close-reminder":
+      if (state.taskId === null) return state;
+      return { ...state, view: "detail" };
+    case "request-delete-reminder":
+      if (state.taskId === null) return state;
+      return { ...state, view: "confirm-reminder" };
+    case "cancel-delete-reminder":
+      // Returns to the reminder editor, NOT to the Task's own detail view —
+      // the one difference from the Task-delete pair, and the mechanism that
+      // keeps the two deletions from being confused for each other.
+      if (state.taskId === null) return state;
+      return { ...state, view: "reminder" };
     case "close":
       if (state.taskId === null) return state;
       return { ...state, taskId: null, view: "detail" };

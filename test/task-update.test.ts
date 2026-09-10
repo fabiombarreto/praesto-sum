@@ -3,6 +3,8 @@
 // PRPs/prds/task-detail-and-dates.prd.md AC-3 dates-stay-exclusive
 // PRPs/prds/task-detail-and-dates.prd.md AC-5 occurrence-edit-detaches
 // PRPs/prds/task-detail-and-dates.prd.md AC-9 unknown-field-is-rejected
+// PRPs/prds/reminders.prd.md AC-11 deadline-edit-recomputes-relative-reminders
+// PRPs/prds/reminders.prd.md AC-12 an-already-sent-reminder-is-not-resurrected
 //
 // Phase 2 adds PATCH /api/tasks/:id. Its whole difficulty is semantic: a
 // partial update must distinguish "I did not mention this field" from "I am
@@ -12,16 +14,28 @@
 //
 // `detached` is deliberately absent from the wire contract (PRD Decisions
 // Log), so AC-5 is asserted by reading the stored row rather than the DTO.
+//
+// AC-11/AC-12 (reminders phase 4, test-first): written BEFORE the Implementer
+// extends `PATCH /:id` with the recompute step (`src/worker/routes/tasks.ts`
+// today never reads or writes the `reminders` table), so this describe block
+// is expected to be RED for the right reason — the relative Reminder's
+// `fireAt` will NOT have moved — until that plan's Task 1 lands. The two new
+// describe blocks below reuse this file's own `create`/`patchOk` helpers plus
+// `test/reminders.test.ts`'s own black-box `POST /api/reminders` + `GET
+// /api/reminders` conventions, so the recompute is observed the same way a
+// real client would see it, never by importing `offsetToInstant` into the
+// test itself.
 
 import { env, exports } from "cloudflare:workers";
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect } from "vitest";
-import type { TaskDto } from "../src/shared/api";
+import type { ReminderDto, TaskDto } from "../src/shared/api";
 import { createDb } from "../src/worker/db/client";
-import { recurrenceSeries, tasks } from "../src/worker/db/schema";
+import { recurrenceSeries, reminders, tasks } from "../src/worker/db/schema";
 import { DRAIN_BUDGET_MS, isolatedIt as it, resetTaskTables } from "./isolation";
 
 const BASE = "https://example.com/api/tasks";
+const REMINDERS_BASE = "https://example.com/api/reminders";
 
 function auth(init: RequestInit = {}): RequestInit {
   const headers = new Headers(init.headers);
@@ -52,6 +66,21 @@ async function patchOk(id: string, body: unknown): Promise<TaskDto> {
   return ((await res.json()) as { task: TaskDto }).task;
 }
 
+async function createReminder(body: unknown): Promise<ReminderDto> {
+  const res = await exports.default.fetch(
+    REMINDERS_BASE,
+    auth({ method: "POST", body: JSON.stringify(body) }),
+  );
+  expect(res.status).toBe(201);
+  return ((await res.json()) as { reminder: ReminderDto }).reminder;
+}
+
+async function listReminders(): Promise<ReminderDto[]> {
+  const res = await exports.default.fetch(REMINDERS_BASE, auth());
+  expect(res.status).toBe(200);
+  return ((await res.json()) as { reminders: ReminderDto[] }).reminders;
+}
+
 // Storage isolation is per test FILE, so wipe the tables between tests instead
 // of reset() (which would also drop the schema). The wipe first waits for work
 // an abandoned — timed-out — test left in flight, so a row it is still writing
@@ -63,7 +92,15 @@ async function patchOk(id: string, body: unknown): Promise<TaskDto> {
 // make — so on a machine already slow enough to blow a 5 s test budget the
 // default 10 s hook budget is too tight. Blowing this one means the machine
 // gave up, never that the contract moved.
-beforeEach(resetTaskTables, DRAIN_BUDGET_MS);
+// Extended (AC-11/AC-12): this file's own tests never touch `reminders`, but
+// the new describe blocks below do, so the shared drain barrier is reused and
+// `reminders` is additionally wiped every test — mirroring
+// test/reminders.test.ts's own `beforeEach`, since the barrier itself only
+// knows about `tasks`/`recurrenceSeries`.
+beforeEach(async () => {
+  await resetTaskTables();
+  await createDb(env).delete(reminders);
+}, DRAIN_BUDGET_MS);
 
 describe("Task update — the edit persists (FR-002, PRD AC-1)", () => {
   it("changes one field and leaves every other field untouched", async () => {
@@ -361,5 +398,84 @@ describe("Task update — non-editable fields are rejected, not ignored (PRD AC-
     expect(after.status).toBe("done");
     expect(after.completedAt).not.toBeNull();
     expect(after.description).toBe("a late note");
+  });
+});
+
+describe("Task update — editing the deadline recomputes relative Reminders (reminders.prd.md AC-11)", () => {
+  it("moves a relative Reminder's fireAt with the deadline, leaving an absolute-linked Reminder on the same Task unchanged", async () => {
+    const task = await create({ title: "Entregar relatório", deadline: "2026-09-20" });
+
+    const relative = await createReminder({ taskId: task.id, originOffsetMinutes: 60 });
+    // An absolute-time Reminder linked to the same Task (originOffsetMinutes
+    // null): AC-11 requires this one to keep its fireAt untouched.
+    const absoluteFireAt = Math.floor(Date.UTC(2026, 8, 20, 12, 0, 0) / 1000);
+    const absolute = await createReminder({ taskId: task.id, fireAt: absoluteFireAt });
+    expect(absolute.originOffsetMinutes).toBeNull();
+
+    await patchOk(task.id, { deadline: "2026-09-25" });
+
+    // 2026-09-25T23:59 local (-03:00, no DST since 2019) minus 60 minutes is
+    // 22:59 local the same day -> 2026-09-26T01:59:00Z. Computed independently
+    // of `offsetToInstant`, mirroring test/reminders.test.ts's own AC-3 check.
+    const expectedRecomputedFireAt = Math.floor(Date.UTC(2026, 8, 26, 1, 59, 0) / 1000);
+
+    const list = await listReminders();
+    const relativeAfter = list.find((r) => r.id === relative.id);
+    const absoluteAfter = list.find((r) => r.id === absolute.id);
+
+    expect(relativeAfter?.fireAt).toBe(expectedRecomputedFireAt);
+    expect(absoluteAfter?.fireAt).toBe(absoluteFireAt);
+  });
+
+  it("does not recompute a relative Reminder's fireAt when the deadline is resubmitted unchanged", async () => {
+    const task = await create({ title: "Sem mudança", deadline: "2026-09-20" });
+    const relative = await createReminder({ taskId: task.id, originOffsetMinutes: 60 });
+
+    // Same date, not a real edit — AC-11's own scope is "the deadline is
+    // changed"; resubmitting it must not trigger a spurious recompute.
+    await patchOk(task.id, { deadline: "2026-09-20" });
+
+    const list = await listReminders();
+    const relativeAfter = list.find((r) => r.id === relative.id);
+    expect(relativeAfter?.fireAt).toBe(relative.fireAt);
+  });
+
+  it("leaves a relative Reminder's fireAt unchanged when an unrelated field is edited", async () => {
+    const task = await create({ title: "Outro campo", deadline: "2026-09-20" });
+    const relative = await createReminder({ taskId: task.id, originOffsetMinutes: 60 });
+
+    await patchOk(task.id, { priority: "high" });
+
+    const list = await listReminders();
+    const relativeAfter = list.find((r) => r.id === relative.id);
+    expect(relativeAfter?.fireAt).toBe(relative.fireAt);
+  });
+});
+
+describe("Task update — an already-sent Reminder is not resurrected by a deadline edit (reminders.prd.md AC-12)", () => {
+  it("keeps sentAt set and does not recompute fireAt for an already-sent, relative Reminder when its Task's deadline is edited", async () => {
+    const task = await create({ title: "Já lembrado", deadline: "2026-09-20" });
+    const sent = await createReminder({ taskId: task.id, originOffsetMinutes: 60 });
+
+    // No route sets `sentAt` (only the cron sweep does, phase 2) — simulate a
+    // delivered Reminder the same way the cron would leave it: `sentAt` set,
+    // `fireAt` at its already-computed value.
+    const sentAtEpoch = Math.floor(Date.UTC(2026, 8, 19, 12, 0, 0) / 1000);
+    await createDb(env)
+      .update(reminders)
+      .set({ sentAt: new Date(sentAtEpoch * 1000) })
+      .where(eq(reminders.id, sent.id));
+
+    await patchOk(task.id, { deadline: "2026-09-25" });
+
+    const list = await listReminders();
+    const after = list.find((r) => r.id === sent.id);
+
+    // A past notification is never re-delivered because a date moved: the
+    // recompute's own SELECT excludes any row with sentAt set, so neither
+    // sentAt nor fireAt may have moved — a changed fireAt here would mean the
+    // already-sent row was silently made eligible to fire again.
+    expect(after?.sentAt).toBe(sentAtEpoch);
+    expect(after?.fireAt).toBe(sent.fireAt);
   });
 });

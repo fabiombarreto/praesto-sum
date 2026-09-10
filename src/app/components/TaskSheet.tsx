@@ -11,12 +11,15 @@
 // fade — instead of popping empty, or reverting the fields to the Task's
 // pre-edit values, for ~300 ms.
 
-import { Trash2 } from "lucide-react";
+import { Bell, Trash2 } from "lucide-react";
 import { useRef } from "react";
 import type { ReactNode } from "react";
-import type { TaskDto, TaskPriority } from "../../shared/api";
+import type { ReminderDto, TaskDto, TaskPriority } from "../../shared/api";
+import { instantToLocalParts } from "../../shared/dates";
+import type { ReminderDraft } from "../../shared/reminder-edit";
 import type { TaskDateMode, TaskDraft } from "../../shared/task-edit";
 import { draftFromTask, type SheetView } from "../../shared/task-sheet";
+import { ReminderForm } from "./ReminderForm";
 import { Button } from "./ui/Button";
 import { Chip, ChipGroup } from "./ui/Chip";
 import { ConfirmView } from "./ui/ConfirmView";
@@ -36,6 +39,15 @@ export function TaskSheet({
   onDeleteRequest,
   onDeleteCancel,
   onDeleteConfirm,
+  reminder,
+  reminderDraft,
+  onOpenReminder,
+  onCloseReminder,
+  onReminderDraftChange,
+  onReminderSave,
+  onReminderDeleteRequest,
+  onReminderDeleteCancel,
+  onReminderDeleteConfirm,
 }: {
   task: TaskDto | null;
   open: boolean;
@@ -50,6 +62,16 @@ export function TaskSheet({
   onDeleteRequest: () => void;
   onDeleteCancel: () => void;
   onDeleteConfirm: () => void;
+  /** The Task's own linked Reminder, if any (reminders phase 3, plan AC-A3). */
+  reminder: ReminderDto | null;
+  reminderDraft: ReminderDraft | null;
+  onOpenReminder: () => void;
+  onCloseReminder: () => void;
+  onReminderDraftChange: (changes: Partial<ReminderDraft>) => void;
+  onReminderSave: () => void;
+  onReminderDeleteRequest: () => void;
+  onReminderDeleteCancel: () => void;
+  onReminderDeleteConfirm: () => void;
 }) {
   const lastTask = useRef<TaskDto | null>(null);
   if (task !== null) lastTask.current = task;
@@ -141,6 +163,36 @@ export function TaskSheet({
             <Chip value="low">Baixa</Chip>
           </ChipGroup>
 
+          <p className="m-0 font-data text-t1 font-semibold text-muted">Lembrete</p>
+          {reminder === null ? (
+            <Button
+              type="button"
+              variant="ghost"
+              className="self-start text-muted"
+              onClick={onOpenReminder}
+              disabled={busy}
+            >
+              <Bell className="size-5" aria-hidden="true" />
+              Adicionar lembrete
+            </Button>
+          ) : (
+            <div className="flex items-center gap-3">
+              <span className="font-text text-t2 text-ink">
+                {instantToLocalParts(reminder.fireAt).day}{" "}
+                {instantToLocalParts(reminder.fireAt).time}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                className="text-muted"
+                onClick={onOpenReminder}
+                disabled={busy}
+              >
+                Editar
+              </Button>
+            </div>
+          )}
+
           <div className="flex gap-2">
             <Button
               type="button"
@@ -173,6 +225,31 @@ export function TaskSheet({
             Excluir
           </Button>
         </form>
+      ) : view === "reminder" ? (
+        reminderDraft === null ? null : (
+          <ReminderForm
+            draft={reminderDraft}
+            taskId={shown.id}
+            busy={busy}
+            error={error}
+            existing={reminder !== null}
+            onDraftChange={onReminderDraftChange}
+            onSubmit={onReminderSave}
+            onCancel={onCloseReminder}
+            onDeleteRequest={onReminderDeleteRequest}
+          />
+        )
+      ) : view === "confirm-reminder" ? (
+        <ConfirmView
+          title="Excluir este lembrete?"
+          body="Não dá para desfazer."
+          cancelLabel="Cancelar"
+          confirmLabel="Excluir"
+          busy={busy}
+          error={error}
+          onCancel={onReminderDeleteCancel}
+          onConfirm={onReminderDeleteConfirm}
+        />
       ) : (
         <ConfirmView
           title="Excluir esta tarefa?"
