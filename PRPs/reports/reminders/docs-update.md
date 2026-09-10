@@ -1,61 +1,143 @@
 # Docs Update — reminders
 
-**PR:** none — pre-merge run at the end of the four-phase orchestrated implementation on branch `feature/reminders` (worktree `C:/repos/assistente-pessoal/.worktrees/reminders`), diffed against base commit `f963738`
-**Merged at:** not yet merged (2026-09-10, this docs-update run)
-**Source PRD:** C:/repos/assistente-pessoal/PRPs/prds/reminders.prd.md (APPROVED, all four Implementation Phases `complete`)
-**Effective configuration:** diff_source=worktree (`git -C <target_root> diff f963738`), non_interactive=false, docs_sync=true
+**PR:** 2 (https://github.com/fabiombarreto/praesto-sum/pull/2, MERGED at 2026-09-10T17:07:37Z)
+**Merged at:** 2026-09-10
+**Source PRD:** PRPs/prds/reminders.prd.md
+**Effective configuration:** diff_source=pr, non_interactive=false, docs_sync=true
+
+## Context for this pass
+
+A docs-sync pass for this feature already ran **pre-merge**, at the end of
+the four-phase orchestrated implementation (see the prior manifest content
+this file replaces, preserved in git history at commit `e014f1f` and
+reviewed to `APPROVED` in `PRPs/reports/reminders/docs-review.jsonl`,
+timestamp `2026-09-10T03:35:53Z`, rubric D-R1..D-R8 all `passed: true`).
+That pass edited four files — `docs/domain/areas/reminders.md`,
+`docs/context/architecture.md`, `docs/decisions.md` and `CLAUDE.md` — and
+those edits are already part of the diff `gh pr diff 2` shows, since they
+were committed on `feature/reminders` before the PR merged.
+
+This post-merge pass's job is to catch only what the pre-merge pass could
+not know or got wrong: anything that changed between that pass and the
+merge, or a doc that is now stale for a reason the earlier pass missed.
+
+**What changed between the pre-merge pass and the merge:** two commits,
+`ca4cde3` ("record the unit 7 pipeline artifacts") and `9cee40b` ("repair
+the malformed review logs and close out the PR artifacts"). Both touch
+only `PRPs/reports/reminders/*`, `PRPs/prds/reminders.*`,
+`PRPs/plans/completed/reminders-*` and `PRPs/plans/reminders-*.jsonl` —
+pipeline artifacts entirely outside the `docs/` knowledge base and outside
+this agent's write scope regardless. Confirmed via `git show --stat` on
+both commits: no `docs/`, `CLAUDE.md`, or `documentation/` path appears in
+either. So nothing in the knowledge base could have gone stale *because of*
+those two commits — there is no new hunk to react to.
+
+**Verification performed on the current (merged) state, not just diff
+presence**, per this run's explicit instruction:
+
+- `docs/domain/areas/reminders.md` — read in full. Business rules,
+  delivery architecture, and Open Questions/Resolved sections accurately
+  describe the merged `src/worker/cron.ts`, `src/worker/routes/tasks.ts`
+  and `src/shared/dates.ts` behavior (claim-before-send, deadline
+  recomputation, closed-Task suppression, deep link). No drift found.
+- `docs/context/architecture.md` — read the "Current implementation
+  state" section. "Reminder endpoints" and "Web Push dispatch" are
+  correctly described as shipped; `scheduled()` is correctly no longer
+  called a stub for Reminders. No drift found.
+- `docs/decisions.md` — read the two 2026-09-10 entries. Both accurately
+  describe the merged sweep ordering and recomputation behavior, and the
+  `TBD — needs validation` caveat is preserved. No drift found. Per this
+  run's instruction, I did NOT add a third PRD-sourced entry on this pass
+  even though three PRD Decisions Log rows remain unpromoted (see the
+  prior manifest's "Candidate Decisions" section, still valid and still
+  the operator's call, given the live governance question already raised
+  about PRD-sourced entries in `decisions.md`).
+- `CLAUDE.md` — read the status line. It reads "Suite is 889 tests / 62
+  files. Unit 7 `reminders` is `in-progress`" with an accurate summary of
+  what shipped and what remains (the owner's device proof). I ran `npm
+  test` against the current merged `main` and confirmed 889/62 exactly.
+  This file is accurate; per this run's instruction, left untouched.
+- `docs/KNOWLEDGE_BASE.md` — the Reminders index line ("attached or
+  standalone; server-side cron + Web Push; silent-failure mitigations")
+  is unchanged from before this feature and was already flagged as thin
+  by the pre-merge pass. No new `docs/` file was added by this feature, so
+  this agent's authorization to touch this file (new-file index entries
+  only) still does not cover a wording refresh. Left untouched, re-flagged
+  below.
+- `docs/anti-patterns.md`, `docs/context/methodology.md`,
+  `docs/context/conventions.md`, `docs/context/constraints.md` — read;
+  nothing in the merged diff (including the two post-pass commits)
+  contradicts, extends, or makes any of them stale.
+- `documentation/` tree — read only to confirm scope. Untouched, per the
+  hard constraint that this tree is owner-validated and out of this
+  agent's write scope entirely.
 
 ## Files Edited
 
-### `docs/domain/areas/reminders.md`
-
-**Change type:** additive
-**Rationale:** The unit shipped standalone and Task-linked Reminders (absolute and relative-to-deadline) end to end, added the deadline-recompute rule (PATCH /api/tasks/:id recomputes relative, unsent Reminders and leaves absolute/sent ones alone), and added closed-Task suppression (done/missed Tasks do not ring, row still marked sent). The "Business rules" section only recorded the standalone case and the bare trigger-time rule; it now names all three shipped rules with their PRD AC citations. The "Delivery architecture" paragraph described a bare scan-and-send with "Push failure is SILENT" as the operative fact; that was true before this unit gave the sweep a real claim-before-send/retry/prune shape (`runScheduledJob`, `src/worker/cron.ts`, phase 2) and a per-Task deep link (phase 3) — the paragraph now describes the actual mechanism. Every added sentence traces to a specific hunk in `src/worker/cron.ts`, `src/worker/routes/tasks.ts`, or `src/shared/dates.ts`, or to the PRD's Acceptance Criteria (AC-3, AC-5–AC-12, AC-14) that those hunks implement. The pre-existing "Open Questions" and "Resolved" sections were left untouched — none of the diff resolves or invalidates them.
-
----
-
-### `docs/context/architecture.md`
-
-**Change type:** additive/corrective
-**Rationale:** The "Current implementation state (Phase 1)" section's "Not built yet" line still listed "Web Push dispatch" (shipped in unit 6, already stale before this diff) and "Reminder endpoints" (shipped by this unit's phase 1 — `src/worker/routes/reminders.ts` — and phase 2's real `runScheduledJob`) as outstanding, and still called `scheduled()` "an empty stub" for Reminders. This is a PRESERVE-ENTIRELY file (`docs/context/*`), so the edit is narrow: it removes only the two clauses this unit's merged diff makes false, adds one sentence naming what shipped and where, and leaves every other clause (recurrence, export, search, Life Area endpoints — all still genuinely unbuilt or out of this unit's scope) byte-identical. I did not attempt a wholesale refresh of this section's other staleness (e.g. export already shipped in unit 5 pre-dating this diff) — that is out of this run's scope per the PRESERVE-ENTIRELY rule and is noted below under "Files Scanned" for awareness.
-
----
-
-### `docs/decisions.md`
-
-**Change type:** additive
-**Rationale:** Two entries added, both citing the PRD's own Decisions Log as source (the PRD is APPROVED — owner-validated — and its Decisions Log states these choices explicitly and concretely, matching the one permitted exception to PRESERVE-ENTIRELY: a surgical, additive edit for something the merged diff or PRD states explicitly, not something inferred). No new ADR exists for either, and none was invented here — the PRD Decisions Log entries were themselves not elevated to ADR status by this unit, matching the dispatching instruction that this unit produced no new ADR. (1) "The due-Reminder sweep claims before it sends" — the claim-before-send + retryable-release ordering (PRD "Sweep ordering" row, AC-5/AC-6/AC-10), a load-bearing correctness decision the sweep code (`src/worker/cron.ts`) implements verbatim. (2) "A relative Task Reminder resolves against end-of-day local, and is recomputed when the deadline moves" — merges the PRD's "Meaning of a deadline for a relative reminder" and "Behavior when a Task's deadline moves" rows (AC-3/AC-11/AC-12/AC-14), since both concern the same `offsetToInstant` convention and its one recomputation point, and recorded the still-open "TBD — needs validation" caveat from the PRD's own Open Questions so this entry does not overclaim finality. I judged these two as decisions worth surfacing at the relay-facing decisions.md tier (they are cross-phase, load-bearing, and already fully argued in an APPROVED PRD) and left the remaining PRD Decisions Log rows ("Reminders for closed Tasks", "Storage model", "Per-Task deep link", "Database change") as candidates below rather than also writing them in, since they are narrower / more implementation-detail-shaped and a reasonable reviewer could judge them redundant with the domain doc's business-rules update above.
-
----
-
-### `CLAUDE.md`
-
-**Change type:** additive
-**Rationale:** The status line said "Suite is 814 tests / 57 files. Unit 7 `reminders` is `next`" — both now false: the suite is 889 tests / 62 files per the run's own numbers, and the roadmap row was moved from `next` to `in-progress` by this unit's own phase 4 (per the dispatching instructions, `documentation/50-planning/roadmap.md`'s unit 7 row already changed in the diff). The sentence was rewritten to say what shipped (CRUD, sweep, deep link, recomputation — all four PRD phases `complete`) and what remains (the owner's on-device proof), mirroring this file's existing style of narrating exactly what changed and what the next concrete step is. No other CLAUDE.md content was touched.
-
----
+None. Every file the merged diff could plausibly affect was already
+brought current by the pre-merge docs-sync pass, and the two commits that
+landed after that pass (`ca4cde3`, `9cee40b`) touch only `PRPs/` pipeline
+artifacts, not `docs/`, `CLAUDE.md`, or `documentation/`. This is the
+expected, correct outcome for a feature whose docs-sync already ran and
+was reviewed to `APPROVED` before merge.
 
 ## Candidate Decisions (for operator review)
 
-The following PRD Decisions Log rows were observed but NOT written into `docs/decisions.md` — narrower or more implementation-shaped than the two entries added above, and arguably already covered by the `docs/domain/areas/reminders.md` business-rules update. Review and promote any that should stand alone:
-
-- **Reminders for closed Tasks are suppressed, not deleted, and marked sent so the sweep does not reconsider them every tick** (PRD Decisions Log row "Reminders for closed Tasks"; AC-9). Currently only recorded as a business rule in `docs/domain/areas/reminders.md`.
-- **Storage model: no new table or column — the existing `reminders` table and `reminders_due_idx` are reused as designed, with rule expansion deliberately deferred to ADR-0006's units 9/17** (PRD Decisions Log row "Storage model"). This is closer to an architecture note than a decision the project could have gone another way on inside this unit's scope, but the operator may want it recorded so a future reader does not re-litigate "why no migration in this unit".
-- **The per-Task deep link (`AppRoute` variant, codec, `sw.ts`, SPA listener) was scoped as new end-to-end work, not merely a device-proof of existing code** (PRD Decisions Log row "Per-Task deep link"). Recorded in the PRD as correcting a roadmap residual that understated the gap — the operator may want that correction reflected wherever the roadmap's residual language is quoted elsewhere in `docs/`.
+No new candidates from this pass. The three PRD Decisions Log rows the
+pre-merge pass already surfaced and deliberately did not promote —
+"Reminders for closed Tasks are suppressed, not deleted", "Storage model:
+no new table or column", and "Per-Task deep link scoped as new end-to-end
+work" — remain open for operator review; see the git history of this file
+at commit `e014f1f` for their full text. I did not re-list them here
+verbatim to avoid duplicating a still-current record; nothing changed
+about their status on this pass.
 
 ## Deferred Questions
 
-None. `non_interactive` was not set to `true` for this run, and no genuinely ambiguous docs decision arose that required asking the operator — every edit above traces to an explicit hunk in the merged diff or an explicit row in the APPROVED PRD's Decisions Log, and every inferred/ambiguous item was routed to "Candidate Decisions" above instead of being asked about or written in.
+None. `non_interactive` was not set to `true`, and no genuinely ambiguous
+docs decision arose on this pass — there was nothing new to decide.
 
 ## Files Scanned — No Edit Required
 
-- `docs/context/methodology.md` — read for the `docs_sync`/`figma_track` frontmatter (both confirmed: `docs_sync: true`, `figma_track: false`). No edit needed; `figma_track: false` means Step 3.5's component-map upgrade path does not apply to this feature and produces no manifest line, per that step's own gate.
-- `docs/context/conventions.md`, `docs/context/constraints.md` — read; nothing in the merged diff contradicts, extends, or makes anything in either file stale.
-- `docs/anti-patterns.md` — read; this unit introduced no new forbidden pattern and no exception to an existing one. Reusing the existing `reminders` table rather than adding a column/table is consistent with (not an exception to) the existing "hand-duplicated entity types" and "version ranges" entries; nothing new to record.
-- `docs/KNOWLEDGE_BASE.md` — read; its one-line summary of `docs/domain/areas/reminders.md` ("attached or standalone; server-side cron + Web Push; silent-failure mitigations") is now a little thin next to the domain doc's updated content, but this unit added no new `docs/` file, and the Explicit Write Scope for this file is authorized only for "new `docs/` file added" index entries — updating an existing summary's wording is outside that authorization, so it was left as-is and is flagged here for the operator's awareness rather than edited.
-- `docs/architecture.md` (developer view, `docs/` root, distinct from `docs/context/architecture.md`) and `docs/api-reference.md` — both are now visibly stale (the developer-view doc still narrates the sweep as "(unit 7) scan due Reminders" future work; the API reference's "Not built yet" table still lists unit 6 `reminders`'s Reminder CRUD and due-scan job as unbuilt, and the Implemented table has no `/api/reminders` rows at all). **Neither file appears in this agent's Explicit Write Scope table**, so both were left untouched rather than edited. Flagging for the operator: these two files need a manual or a future-authorized update to add the `/api/reminders` routes (GET/POST/PATCH/DELETE) to the Implemented table and to correct the cron narrative — they are read-only for this agent under the current contract.
-- `documentation/` tree — read only to understand scope (`documentation/50-planning/roadmap.md`'s unit 7 row and `docs/domain/areas/reminders.md`'s stale `web-push` reference were already corrected as explicit phase-4 plan tasks per the dispatching instructions). Confirmed via `git diff --stat` that `documentation/50-planning/roadmap.md` is the only `documentation/` file the merged diff touches, and it was not touched by this agent, per the hard constraint that `documentation/` is owner-validated and out of this agent's write scope entirely.
-- `src/*`, `test/*` — read only via `git diff` to ground every docs edit in a specific hunk; not edited, per scope.
+- `docs/domain/areas/reminders.md` — verified current and accurate against
+  the merged code; no edit needed (see "Verification performed" above).
+- `docs/context/architecture.md` — verified current and accurate; no edit
+  needed.
+- `docs/decisions.md` — verified current and accurate; deliberately not
+  extended with a third PRD-sourced entry per this run's explicit
+  instruction not to widen that governance question further.
+- `CLAUDE.md` — verified accurate (889 tests / 62 files confirmed by
+  running `npm test`); left untouched per this run's explicit instruction,
+  since it is outside the derived `docs/` knowledge base and is already
+  correct.
+- `docs/KNOWLEDGE_BASE.md` — Reminders index line is thin relative to the
+  domain doc's content but this feature added no new `docs/` file, so a
+  wording refresh is outside this agent's authorization for this file;
+  re-flagging the pre-merge pass's note for the operator.
+- `docs/anti-patterns.md` — no new forbidden pattern or exception
+  introduced by anything in the merged diff, including the two post-pass
+  commits.
+- `docs/context/methodology.md`, `docs/context/conventions.md`,
+  `docs/context/constraints.md` — read; nothing stale.
+- `docs/architecture.md` (developer view) and `docs/api-reference.md` —
+  still stale per the pre-merge pass's note (no `/api/reminders` rows in
+  the API reference's Implemented table; the developer-view doc still
+  narrates the sweep as future work). Neither file is in this agent's
+  Explicit Write Scope. Re-flagging for the operator or a future-authorized
+  update — unchanged since the pre-merge pass, since nothing in the two
+  post-pass commits touches this staleness.
+- `documentation/50-planning/roadmap.md` — touched by the merged diff
+  (unit 7 row) but entirely out of this agent's write scope (owner-
+  validated tree). Not read for content beyond confirming it was the only
+  `documentation/` file in scope of the original feature diff.
+- `PRPs/reports/reminders/*`, `PRPs/plans/*reminders*` — read only to
+  understand what changed between the pre-merge pass and the merge; not
+  edited, as they are pipeline artifacts outside the `docs/` knowledge
+  base (and outside this agent's write scope other than this manifest).
+- `src/*`, `test/*` — not re-diffed line-by-line on this pass beyond
+  confirming via `git show --stat` that the two post-pass commits touch no
+  source or test files (they do not — both are docs/pipeline-artifact-only
+  commits per their own `--stat` output).
 
 ---
 *Generated: 2026-09-10*
