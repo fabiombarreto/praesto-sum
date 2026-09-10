@@ -1,0 +1,53 @@
+# TDD initial suite — reminders phase 3 (per-Task route and Reminder UI)
+# Source PRD: PRPs/prds/reminders.prd.md (Acceptance Criteria — in-scope: AC-8)
+# Source plan: PRPs/plans/reminders-phase-3-per-task-route-and-reminder-ui.plan.md (AC-A1..AC-A5)
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-09-09
+
+## Scope note
+
+This phase splits along `docs/context/methodology.md`'s "Browser-API work"
+rule: React components (`TaskSheet.tsx`, `TodayScreen.tsx`, `ReminderForm`,
+`ReminderSheet`, `ReminderRow`) are verified manually and carry no test file
+of their own — that is the documented no-test-required path, not a gap. This
+suite covers exactly the decidable half the plan puts in `src/shared/`, plus
+the one testable Worker-side change (the sweep's payload `route` field).
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-A1 (PRD AC-8) — Task `AppRoute` variant + codec | NEW_TEST_REQUIRED | `test/app-route.test.ts` (extended — see `## Test files written this session`) |
+| AC-A1 (PRD AC-8) — sweep payload points at the Task's path | NEW_TEST_REQUIRED | `test/cron-reminder-route.test.ts` (new file) |
+| AC-A2 (PRD AC-1) — standalone Reminder create/edit/delete, shared draft/patch logic | NEW_TEST_REQUIRED | `test/reminder-edit.test.ts` (new file) — the `ReminderSheet`/`ReminderForm`/`ReminderRow` UI wiring itself is the manually-verified half (`docs/context/methodology.md`), no test file |
+| AC-A3 (PRD AC-3) — Task-linked Reminder editor state machine (no second stacked dialog) | NEW_TEST_REQUIRED | `test/task-sheet.test.ts` (extended) |
+| AC-A3 (PRD AC-3) — Task-linked absolute/offset resolution, shared draft/patch logic | NEW_TEST_REQUIRED | `test/reminder-edit.test.ts` (new file, shared with AC-A2) |
+| AC-A4 (PRD AC-2) — client-side "must say what it is about" mirror | NEW_TEST_REQUIRED | `test/reminder-edit.test.ts` ("trims the label, turning an empty/whitespace-only value into null") — the `Salvar`-disabled UI wiring itself is manually verified, no test file |
+| AC-A5 (PRD AC-8) — SPA notification-tap listener's decidable half (route codec) | EXISTING_TEST_COVERS | `test/app-route.test.ts` — the same Task-route round-trip assertions AC-A1 requires (`describe("routeFromPath and pathOf agree — the Task route round-trips...")`) already pin the exact codec contract AC-A5 reuses; the `useRoute.ts` `message`-listener adapter itself is the exempt glue half, device-verified in phase 4 per the plan's own Risks table |
+
+## Test files written this session
+
+- `test/app-route.test.ts` — UPDATED (additive extension, matching the file's own established "ADDITIVE" convention from a prior phase): added `taskRouteOf`/`taskIdFromRoute` imports and four new `describe` blocks covering the Task route (`/tasks/:id` <-> `task/${id}`), the bare-`/tasks` and nested-path edge cases, and the AC-8 headline round-trip (`pathOf(routeFromPath(p)) === p`) for a Task path. Every pre-existing assertion (today/settings/notifications/notifications-diagnostics round-trips, the unrecognised-path default) is untouched — this is also where AC-A5's "existing routes still round-trip unchanged" requirement is independently satisfied by the pre-existing, unmodified test cases.
+- `test/task-sheet.test.ts` — UPDATED (additive extension, no existing test modified): added two new `describe` blocks covering `open-reminder`/`close-reminder` and `request-delete-reminder`/`cancel-delete-reminder`, including the no-op-when-`taskId`-null guard on each of the four new events and, as the headline assertion, that `cancel-delete-reminder` lands on `"reminder"` and NOT on `"detail"` — the exact discrimination the plan names as the defect three prior revisions exist to close. A final check confirms the pre-existing Task-delete pair (`request-delete`/`cancel-delete`) is untouched by the new reminder pair.
+- `test/dates.test.ts` — UPDATED (additive extension, no existing test modified): added coverage for the newly-exported `offsetMinutesAt` (fixed -180 min for America/Sao_Paulo, 0 for UTC) and the two new functions `instantToLocalParts`/`localPartsToInstant` — conversion both ways, timezone defaulting and overriding, a local-day-boundary crossing case, a clock-independence check (mirroring the existing `offsetToInstant` fixture style), and a round-trip check between the two new functions.
+- `test/reminder-edit.test.ts` — CREATE: `draftFromReminder` (create-seed default, restoring each of the three live Reminder shapes — Task-linked offset, standalone absolute, Task-linked absolute — and the null-label-to-empty-string mapping), `buildCreateReminderInput` (standalone absolute path, label trim-to-null, the "offset with no Task target falls back to fireAt" guard, and the Task-linked offset-vs-absolute branch), and `buildUpdateReminderInput` (empty patch on no change, single-field diffs, and the two mode-transition special cases — offset-to-absolute clears `originOffsetMinutes`, absolute-to-offset emits the new `originOffsetMinutes`).
+- `test/cron-reminder-route.test.ts` — CREATE: two tests against `runScheduledJob`, mocking only `sendPush` (the documented thin/exempt network adapter) to capture the plaintext payload argument before encryption — a Task-linked Reminder's dispatched payload carries `pathOf(taskRouteOf(taskId))` and round-trips through `routeFromPath`/`pathOf`; a standalone Reminder's payload still carries `"/"`.
+
+## Lifecycle ledger
+
+Every change to a pre-existing test file except the one repair row below is
+a pure addition of new imports and new `describe` blocks, with every prior
+test's body and expectation left byte-for-byte untouched — the same
+"ADDITIVE" convention `test/app-route.test.ts` and `test/task-sheet.test.ts`
+already established for an earlier phase's own extension of these same
+files. The create-only sentinel that previously stood here is no longer
+accurate: `test/cron-reminder-route.test.ts` was UPDATED post-approval
+(2026-09-09) to repair an arbitrated test-contract dispute, recorded below.
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| UPDATE | EXISTING_TEST_UPDATED | `test/cron-reminder-route.test.ts` (both `it` blocks under `describe("runScheduledJob — AC-A1 (PRD AC-8)...")`) | Implementer raised TEST_CONTRACT_DISPUTE against this file; `code-reviewer` arbitrated **DISPUTE_UPHELD_TEST_WRONG** after an independent throwaway repro: the original `vi.mock("../src/worker/push/send", () => ({ sendPush: ... }))` factory does not intercept `cron.ts`'s own already-bound `import { sendPush } from "./push/send"` under this project's `@cloudflare/vitest-pool-workers` pool, so `runScheduledJob` called the REAL `sendPush`, which threw on the fixture's non-base64 `p256dh`/`auth` values; `classifyPushOutcome` swallowed the throw as retryable and `sendPushMock` was legitimately never called — a failure unrelated to the AC-8 route assertions. Repair changed ONLY the mocking mechanism: replaced the `vi.mock` factory with `import * as sendModule from "../src/worker/push/send"` + `vi.spyOn(sendModule, "sendPush")`, mirroring `test/cron-heartbeat.test.ts`'s documented, verified-working pattern for this same pool. Typing the spy against `sendPush`'s real signature also cleared a pre-existing TS2556 compile defect (`sendPushMock(...args)` spread-argument error) that was independently blocking `npm run check`. No assertion was touched — `toHaveBeenCalledTimes(1)`, both `route` equality checks, and the AC-8 round-trip check are byte-for-byte unchanged, and the suite still fails red against a `cron.ts` hardcoding `route: "/"` (confirmed during arbitration). The file's own "Mocking discipline" header comment was rewritten to state this finding and cite `test/cron-heartbeat.test.ts` as precedent, replacing the now-false claim that the cross-module `vi.mock` was safe and effective here. Verified post-repair: `npx vitest run test/cron-reminder-route.test.ts` passes 2/2; `tsc -b` and `eslint .` both pass. `npm run check`'s final `prettier --check .` step still fails, but solely on a pre-existing, unrelated formatting drift in `test/reminder-edit.test.ts` — explicitly out of this repair's scope (directive: touch only `test/cron-reminder-route.test.ts`) and not introduced by this change. |
+
+## Status
+
+*Status: APPROVED*

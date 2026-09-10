@@ -1,0 +1,78 @@
+# TDD initial suite — phase 2
+# Source PRD: PRPs/prds/reminders.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/reminders-phase-2-the-due-reminder-sweep.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-09-09
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-5 | NEW_TEST_REQUIRED | test/cron-sweep.test.ts (describe "AC-A1 (PRD AC-5)") |
+| AC-6 | NEW_TEST_REQUIRED | test/cron-sweep.test.ts (describe "AC-A2 (PRD AC-6)") |
+| AC-7 | NEW_TEST_REQUIRED | test/cron-sweep.test.ts (describe "AC-A3 (PRD AC-7)") |
+| AC-9 | NEW_TEST_REQUIRED | test/cron-sweep.test.ts (describe "AC-A4 (PRD AC-9)") |
+| AC-10 | NEW_TEST_REQUIRED | test/cron-sweep.test.ts (describe "AC-A5 (PRD AC-10)") |
+| AC-1 | OUT_OF_PHASE_SCOPE | delivered by phase 1 (complete); not referenced by this phase's plan |
+| AC-2 | OUT_OF_PHASE_SCOPE | delivered by phase 1 (complete) |
+| AC-3 | OUT_OF_PHASE_SCOPE | delivered by phase 1 (complete) |
+| AC-4 | OUT_OF_PHASE_SCOPE | delivered by phase 1 (complete) |
+| AC-8 | OUT_OF_PHASE_SCOPE | deferred to phase 3 (per-Task route and Reminder UI) |
+| AC-11 | OUT_OF_PHASE_SCOPE | deferred to phase 4 (deadline recomputation) |
+| AC-12 | OUT_OF_PHASE_SCOPE | deferred to phase 4 (deadline recomputation) |
+| AC-13 | OUT_OF_PHASE_SCOPE | delivered by phase 1 (complete) |
+| AC-14 | OUT_OF_PHASE_SCOPE | delivered by phase 1 (complete) |
+
+## Existing-coverage scan (Phase 1.5)
+
+Scanned `test/*.ts` (57 existing files) for any test already covering
+`runScheduledJob`'s dispatch/claim/prune/release behavior. `test/cron-heartbeat.test.ts`
+covers `runCronHeartbeat`'s own wrapper (timing, catch, `cron_runs` row) by
+mocking `runScheduledJob` itself — it deliberately never exercises the sweep's
+real body. `test/push-test-route.test.ts` and `test/push-subscribe-route.test.ts`
+cover the `/api/push/*` routes' own dispatch/prune loop, not the cron path. No
+existing test seeds a due `Reminder` row or calls `runScheduledJob` for real.
+Zero overlap found — every in-scope AC required a new test.
+
+## Test files written this session
+
+- test/cron-sweep.test.ts (new file — 5 describe blocks, 9 `it`/`it.each` cases,
+  covering AC-5, AC-6 (3 sub-cases: retryable / delivered / all-gone), AC-7,
+  AC-9 (done + missed via `it.each`), and AC-10)
+
+## Lifecycle ledger
+
+(none — no update/delete this session)
+
+## Notes for the reviewer
+
+- `runScheduledJob` (`src/worker/cron.ts`) is today `export async function
+  runScheduledJob(_env: Env): Promise<void> {}` — an empty placeholder. Every
+  test in `test/cron-sweep.test.ts` is RED for the right reason right now:
+  no row is ever claimed, no `fetch` call is ever made (so every `calls`
+  assertion fails at `toHaveLength`), and `sentAt` never moves.
+- Mocking mechanism mirrors `test/push-test-route.test.ts` exactly:
+  `vi.stubGlobal("fetch", ...)` substitutes only the outbound push service's
+  HTTP response; `sendPush`'s real sign/encrypt path runs against
+  structurally-real P-256 keys generated via `crypto.subtle`, matching the
+  existing repo idiom. No mock of the SUT, no mock of a concrete type where
+  an interface exists, no chained mocks, no `was_called`-only assertion —
+  every assertion pairs a call-count check with an effect check (`sentAt`
+  state, `push_subscriptions` row survival).
+- Reminders and Tasks are seeded via direct D1 insert (not through
+  `/api/reminders` / `/api/tasks`) because the routes do not expose setting
+  a past `fireAt`, a pre-set `sentAt`, or a `done`/`missed` Task status
+  directly — this is necessary Given-state setup, not an implementation leak;
+  every assertion is against the sweep's own observable outputs (dispatch
+  call count, `sentAt`, `push_subscriptions` survival), never against an
+  internal method name.
+- AC-5's first case (`Promise.all([runScheduledJob(env), runScheduledJob(env)])`)
+  is the direct encoding of the AC's own "a second runScheduledJob in the
+  same window sends nothing" — two overlapping ticks must not double-dispatch
+  the same due row.
+- No production code was written or modified. `src/worker/cron.ts` is
+  untouched by this session.
+
+## Status
+
+*Status: APPROVED*

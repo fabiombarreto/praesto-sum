@@ -1,0 +1,1175 @@
+diff --git a/src/app/api.ts b/src/app/api.ts
+index f257217..56d9471 100644
+--- a/src/app/api.ts
++++ b/src/app/api.ts
+@@ -1,12 +1,15 @@
+ import type {
++  CreateReminderInput,
+   CreateTaskInput,
+   DiagnosticsDto,
+   GoogleCalendarDto,
+   GoogleConnectionDto,
+   GoogleEventsDto,
+   PushSubscriptionDto,
++  ReminderDto,
+   SubscribePushInput,
+   TaskDto,
++  UpdateReminderInput,
+   UpdateTaskInput,
+ } from "../shared/api";
+ import { exportFilename } from "../shared/content-disposition";
+@@ -159,6 +162,36 @@ export async function deleteTask(id: string): Promise<void> {
+   await request<void>(`/api/tasks/${id}`, { method: "DELETE" });
+ }
+ 
++/**
++ * The four Reminder CRUD wrappers reminders phase 3's UI calls through —
++ * one-liners over `request<T>()` exactly like the Google/push wrappers
++ * below: no local types, no error re-mapping.
++ */
++export async function listReminders(): Promise<ReminderDto[]> {
++  const body = await request<{ reminders: ReminderDto[] }>("/api/reminders");
++  return body.reminders;
++}
++
++export async function createReminder(input: CreateReminderInput): Promise<ReminderDto> {
++  const body = await request<{ reminder: ReminderDto }>("/api/reminders", {
++    method: "POST",
++    body: JSON.stringify(input),
++  });
++  return body.reminder;
++}
++
++export async function updateReminder(id: string, input: UpdateReminderInput): Promise<ReminderDto> {
++  const body = await request<{ reminder: ReminderDto }>(`/api/reminders/${id}`, {
++    method: "PATCH",
++    body: JSON.stringify(input),
++  });
++  return body.reminder;
++}
++
++export async function deleteReminder(id: string): Promise<void> {
++  await request<void>(`/api/reminders/${id}`, { method: "DELETE" });
++}
++
+ /**
+  * FR-027 — the owner's Google commitments for the API's window.
+  *
+diff --git a/src/app/components/DesignPlayground.tsx b/src/app/components/DesignPlayground.tsx
+index 2fb9a67..7ef1867 100644
+--- a/src/app/components/DesignPlayground.tsx
++++ b/src/app/components/DesignPlayground.tsx
+@@ -375,6 +375,15 @@ export function DesignPlayground() {
+             onDeleteConfirm={() => {
+               if (sheetTask !== null) dispatchSheet({ type: "deleted", taskId: sheetTask.id });
+             }}
++            reminder={null}
++            reminderDraft={null}
++            onOpenReminder={() => {}}
++            onCloseReminder={() => {}}
++            onReminderDraftChange={() => {}}
++            onReminderSave={() => {}}
++            onReminderDeleteRequest={() => {}}
++            onReminderDeleteCancel={() => {}}
++            onReminderDeleteConfirm={() => {}}
+           />
+           <div className="rounded-card border border-line bg-surface-1 px-4">
+             <ConfirmView
+diff --git a/src/app/components/ReminderForm.tsx b/src/app/components/ReminderForm.tsx
+new file mode 100644
+index 0000000..3c6e364
+--- /dev/null
++++ b/src/app/components/ReminderForm.tsx
+@@ -0,0 +1,155 @@
++// The dialog-agnostic pt-BR Reminder create/edit form (reminders phase 3,
++// plan AC-A2/AC-A3/AC-A4) — shared by both entry points: inline inside the
++// already-open `TaskSheet` (Task-linked) and inside its own `ReminderSheet`
++// (standalone). Mirrors `TaskSheet.tsx`'s own form block: field order,
++// `Cancelar`/`Salvar` footer, inline error, delete affordance.
++//
++// This component owns no requests and no draft of its own — the caller
++// (`TodayScreen`, `TaskSheet`) owns the draft and the requests, exactly the
++// division of labour `TaskSheet.tsx`'s own header comment states.
++
++import { Trash2 } from "lucide-react";
++import type { ReminderTimeMode, ReminderDraft } from "../../shared/reminder-edit";
++import { Button } from "./ui/Button";
++import { Chip, ChipGroup } from "./ui/Chip";
++
++export function ReminderForm({
++  draft,
++  taskId,
++  busy,
++  error,
++  existing,
++  onDraftChange,
++  onSubmit,
++  onCancel,
++  onDeleteRequest,
++}: {
++  draft: ReminderDraft;
++  taskId: string | null;
++  busy: boolean;
++  error: string | null;
++  existing: boolean;
++  onDraftChange: (changes: Partial<ReminderDraft>) => void;
++  onSubmit: () => void;
++  onCancel: () => void;
++  onDeleteRequest?: () => void;
++}) {
++  // A standalone Reminder MUST name what it is about (AC-2/AC-A4's
++  // client-side mirror); a Task-linked one already has the Task as context.
++  const saveDisabled = taskId === null && draft.label.trim() === "";
++
++  return (
++    <form
++      className="flex flex-col gap-4"
++      onSubmit={(event) => {
++        event.preventDefault();
++        onSubmit();
++      }}
++    >
++      <label htmlFor="reminder-label" className="m-0 font-data text-t1 font-semibold text-muted">
++        Lembrete de quê?
++      </label>
++      <input
++        id="reminder-label"
++        type="text"
++        value={draft.label}
++        onChange={(event) => onDraftChange({ label: event.target.value })}
++        disabled={busy}
++        className="min-h-12 rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
++      />
++
++      {taskId !== null && (
++        <ChipGroup
++          multiple={false}
++          label="Quando"
++          value={[draft.timeMode]}
++          onValueChange={(next) =>
++            onDraftChange({ timeMode: (next[0] as ReminderTimeMode | undefined) ?? "absolute" })
++          }
++        >
++          <Chip value="absolute">Hora exata</Chip>
++          <Chip value="offset">Antes do prazo</Chip>
++        </ChipGroup>
++      )}
++
++      {taskId !== null && draft.timeMode === "offset" ? (
++        <>
++          <label
++            htmlFor="reminder-offset"
++            className="m-0 font-data text-t1 font-semibold text-muted"
++          >
++            Minutos antes do prazo
++          </label>
++          <input
++            id="reminder-offset"
++            type="number"
++            min={1}
++            value={draft.offsetMinutes}
++            onChange={(event) => onDraftChange({ offsetMinutes: Number(event.target.value) })}
++            disabled={busy}
++            className="min-h-12 rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
++          />
++        </>
++      ) : (
++        <>
++          <label htmlFor="reminder-day" className="m-0 font-data text-t1 font-semibold text-muted">
++            Data
++          </label>
++          <input
++            id="reminder-day"
++            type="date"
++            value={draft.absoluteDay}
++            onChange={(event) => onDraftChange({ absoluteDay: event.target.value })}
++            disabled={busy}
++            className="min-h-12 rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
++          />
++          <label htmlFor="reminder-time" className="m-0 font-data text-t1 font-semibold text-muted">
++            Hora
++          </label>
++          <input
++            id="reminder-time"
++            type="time"
++            value={draft.absoluteTime}
++            onChange={(event) => onDraftChange({ absoluteTime: event.target.value })}
++            disabled={busy}
++            className="min-h-12 rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
++          />
++        </>
++      )}
++
++      <div className="flex gap-2">
++        <Button
++          type="button"
++          variant="secondary"
++          className="flex-1"
++          onClick={onCancel}
++          disabled={busy}
++        >
++          Cancelar
++        </Button>
++        <Button type="submit" variant="primary" className="flex-1" disabled={busy || saveDisabled}>
++          Salvar
++        </Button>
++      </div>
++
++      {error !== null && (
++        <p role="alert" className="m-0 font-text text-t2 text-overdue">
++          {error}
++        </p>
++      )}
++
++      {existing && onDeleteRequest !== undefined && (
++        <Button
++          type="button"
++          variant="ghost"
++          className="mt-4 self-start text-muted"
++          onClick={onDeleteRequest}
++          disabled={busy}
++        >
++          <Trash2 className="size-5" aria-hidden="true" />
++          Excluir
++        </Button>
++      )}
++    </form>
++  );
++}
+diff --git a/src/app/components/ReminderRow.tsx b/src/app/components/ReminderRow.tsx
+new file mode 100644
+index 0000000..3da05cf
+--- /dev/null
++++ b/src/app/components/ReminderRow.tsx
+@@ -0,0 +1,35 @@
++// The bell-glyph row for a standalone Reminder on *Hoje* (reminders phase 3,
++// plan AC-A2 display) — layout standard §6: "standalone Reminders as rows
++// with a bell glyph in *Hoje*". Adapts `EventRow`'s leading-glyph-plus-title
++// row shape with `Bell` and, unlike a read-only Google event, a filled
++// `bg-surface-2` background — a Reminder is the owner's own item.
++//
++// No completion control (a Reminder has no open/done state) and no trailing
++// edit icon (unlike `TaskRow`'s pencil): tapping the row opens `ReminderSheet`
++// directly, since a Reminder's only fields are exactly what that sheet edits.
++
++import { Bell } from "lucide-react";
++import type { ReminderDto } from "../../shared/api";
++import { instantToLocalParts, todayIn } from "../../shared/dates";
++
++export function ReminderRow({ reminder, onOpen }: { reminder: ReminderDto; onOpen: () => void }) {
++  const { day, time } = instantToLocalParts(reminder.fireAt);
++  const today = todayIn(new Date());
++  const meta = day === today ? time : `${day} ${time}`;
++
++  return (
++    <li>
++      <button
++        type="button"
++        onClick={onOpen}
++        className="flex min-h-16 w-full items-center gap-3 rounded-card bg-surface-2 px-3 py-2 text-left shadow-row"
++      >
++        <Bell className="size-4 flex-none text-faint" aria-hidden="true" />
++        <span className="line-clamp-2 min-w-0 flex-1 font-text text-t2 text-ink">
++          {reminder.label}
++        </span>
++        <span className="flex-none font-data text-t1 text-muted tabular-nums">{meta}</span>
++      </button>
++    </li>
++  );
++}
+diff --git a/src/app/components/ReminderSheet.tsx b/src/app/components/ReminderSheet.tsx
+new file mode 100644
+index 0000000..839fa30
+--- /dev/null
++++ b/src/app/components/ReminderSheet.tsx
+@@ -0,0 +1,78 @@
++// The standalone-Reminder dialog (reminders phase 3, plan AC-A2): wraps
++// `ReminderForm` (create/edit) and `ConfirmView` (delete confirmation)
++// inside `Sheet`, the same shape `TaskSheet.tsx` already uses for its own
++// two views. This component owns no requests and no reducer of its own —
++// the caller (`TodayScreen`) owns the open/closed state, the draft and the
++// requests, exactly the division of labour `TaskSheet.tsx`'s own header
++// comment states.
++
++import type { ReminderDto } from "../../shared/api";
++import type { ReminderDraft } from "../../shared/reminder-edit";
++import { ReminderForm } from "./ReminderForm";
++import { ConfirmView } from "./ui/ConfirmView";
++import { Sheet } from "./ui/Sheet";
++
++export function ReminderSheet({
++  open,
++  reminder,
++  draft,
++  view,
++  busy,
++  error,
++  onDraftChange,
++  onClose,
++  onSave,
++  onDeleteRequest,
++  onDeleteCancel,
++  onDeleteConfirm,
++}: {
++  open: boolean;
++  reminder: ReminderDto | null;
++  draft: ReminderDraft | null;
++  view: "form" | "confirm";
++  busy: boolean;
++  error: string | null;
++  onDraftChange: (changes: Partial<ReminderDraft>) => void;
++  onClose: () => void;
++  onSave: () => void;
++  onDeleteRequest: () => void;
++  onDeleteCancel: () => void;
++  onDeleteConfirm: () => void;
++}) {
++  if (draft === null) return null;
++
++  return (
++    <Sheet
++      open={open}
++      onOpenChange={(next) => {
++        if (!next) onClose();
++      }}
++      title={reminder === null ? "Novo lembrete" : "Editar lembrete"}
++    >
++      {view === "form" ? (
++        <ReminderForm
++          draft={draft}
++          taskId={null}
++          busy={busy}
++          error={error}
++          existing={reminder !== null}
++          onDraftChange={onDraftChange}
++          onSubmit={onSave}
++          onCancel={onClose}
++          onDeleteRequest={onDeleteRequest}
++        />
++      ) : (
++        <ConfirmView
++          title="Excluir este lembrete?"
++          body="Não dá para desfazer."
++          cancelLabel="Cancelar"
++          confirmLabel="Excluir"
++          busy={busy}
++          error={error}
++          onCancel={onDeleteCancel}
++          onConfirm={onDeleteConfirm}
++        />
++      )}
++    </Sheet>
++  );
++}
+diff --git a/src/app/components/TaskSheet.tsx b/src/app/components/TaskSheet.tsx
+index ae90f8f..f3bf8dc 100644
+--- a/src/app/components/TaskSheet.tsx
++++ b/src/app/components/TaskSheet.tsx
+@@ -11,12 +11,15 @@
+ // fade — instead of popping empty, or reverting the fields to the Task's
+ // pre-edit values, for ~300 ms.
+ 
+-import { Trash2 } from "lucide-react";
++import { Bell, Trash2 } from "lucide-react";
+ import { useRef } from "react";
+ import type { ReactNode } from "react";
+-import type { TaskDto, TaskPriority } from "../../shared/api";
++import type { ReminderDto, TaskDto, TaskPriority } from "../../shared/api";
++import { instantToLocalParts } from "../../shared/dates";
++import type { ReminderDraft } from "../../shared/reminder-edit";
+ import type { TaskDateMode, TaskDraft } from "../../shared/task-edit";
+ import { draftFromTask, type SheetView } from "../../shared/task-sheet";
++import { ReminderForm } from "./ReminderForm";
+ import { Button } from "./ui/Button";
+ import { Chip, ChipGroup } from "./ui/Chip";
+ import { ConfirmView } from "./ui/ConfirmView";
+@@ -36,6 +39,15 @@ export function TaskSheet({
+   onDeleteRequest,
+   onDeleteCancel,
+   onDeleteConfirm,
++  reminder,
++  reminderDraft,
++  onOpenReminder,
++  onCloseReminder,
++  onReminderDraftChange,
++  onReminderSave,
++  onReminderDeleteRequest,
++  onReminderDeleteCancel,
++  onReminderDeleteConfirm,
+ }: {
+   task: TaskDto | null;
+   open: boolean;
+@@ -50,6 +62,16 @@ export function TaskSheet({
+   onDeleteRequest: () => void;
+   onDeleteCancel: () => void;
+   onDeleteConfirm: () => void;
++  /** The Task's own linked Reminder, if any (reminders phase 3, plan AC-A3). */
++  reminder: ReminderDto | null;
++  reminderDraft: ReminderDraft | null;
++  onOpenReminder: () => void;
++  onCloseReminder: () => void;
++  onReminderDraftChange: (changes: Partial<ReminderDraft>) => void;
++  onReminderSave: () => void;
++  onReminderDeleteRequest: () => void;
++  onReminderDeleteCancel: () => void;
++  onReminderDeleteConfirm: () => void;
+ }) {
+   const lastTask = useRef<TaskDto | null>(null);
+   if (task !== null) lastTask.current = task;
+@@ -141,6 +163,36 @@ export function TaskSheet({
+             <Chip value="low">Baixa</Chip>
+           </ChipGroup>
+ 
++          <p className="m-0 font-data text-t1 font-semibold text-muted">Lembrete</p>
++          {reminder === null ? (
++            <Button
++              type="button"
++              variant="ghost"
++              className="self-start text-muted"
++              onClick={onOpenReminder}
++              disabled={busy}
++            >
++              <Bell className="size-5" aria-hidden="true" />
++              Adicionar lembrete
++            </Button>
++          ) : (
++            <div className="flex items-center gap-3">
++              <span className="font-text text-t2 text-ink">
++                {instantToLocalParts(reminder.fireAt).day}{" "}
++                {instantToLocalParts(reminder.fireAt).time}
++              </span>
++              <Button
++                type="button"
++                variant="ghost"
++                className="text-muted"
++                onClick={onOpenReminder}
++                disabled={busy}
++              >
++                Editar
++              </Button>
++            </div>
++          )}
++
+           <div className="flex gap-2">
+             <Button
+               type="button"
+@@ -173,6 +225,31 @@ export function TaskSheet({
+             Excluir
+           </Button>
+         </form>
++      ) : view === "reminder" ? (
++        reminderDraft === null ? null : (
++          <ReminderForm
++            draft={reminderDraft}
++            taskId={shown.id}
++            busy={busy}
++            error={error}
++            existing={reminder !== null}
++            onDraftChange={onReminderDraftChange}
++            onSubmit={onReminderSave}
++            onCancel={onCloseReminder}
++            onDeleteRequest={onReminderDeleteRequest}
++          />
++        )
++      ) : view === "confirm-reminder" ? (
++        <ConfirmView
++          title="Excluir este lembrete?"
++          body="Não dá para desfazer."
++          cancelLabel="Cancelar"
++          confirmLabel="Excluir"
++          busy={busy}
++          error={error}
++          onCancel={onReminderDeleteCancel}
++          onConfirm={onReminderDeleteConfirm}
++        />
+       ) : (
+         <ConfirmView
+           title="Excluir esta tarefa?"
+diff --git a/src/app/components/TodayScreen.tsx b/src/app/components/TodayScreen.tsx
+index 0a611c8..7e784bc 100644
+--- a/src/app/components/TodayScreen.tsx
++++ b/src/app/components/TodayScreen.tsx
+@@ -8,11 +8,17 @@
+ 
+ import { useEffect, useReducer, useRef, useState } from "react";
+ import type { ReactNode } from "react";
+-import type { TaskDto } from "../../shared/api";
++import type { ReminderDto, TaskDto } from "../../shared/api";
+ import { canWrite } from "../../shared/connectivity";
+ import { todayIn } from "../../shared/dates";
+ import { googleFailureMessage } from "../../shared/google-failure-copy";
+ import { classifyRequestFailure } from "../../shared/request-failure";
++import {
++  buildCreateReminderInput,
++  buildUpdateReminderInput,
++  draftFromReminder,
++  type ReminderDraft,
++} from "../../shared/reminder-edit";
+ import type { ShareTarget } from "../../shared/share-target";
+ import { buildTaskPatch } from "../../shared/task-edit";
+ import {
+@@ -29,10 +35,14 @@ import { currentDraft, INITIAL_TASK_SHEET_STATE, reduceTaskSheet } from "../../s
+ import {
+   ApiError,
+   completeTask,
++  createReminder,
+   createTask,
++  deleteReminder,
+   deleteTask,
++  listReminders,
+   listTasks,
+   reopenTask,
++  updateReminder,
+   updateTask,
+ } from "../api";
+ import { useConnectivity } from "../hooks/useConnectivity";
+@@ -41,6 +51,8 @@ import { CaptureDeck } from "./CaptureDeck";
+ import { EmptyState } from "./EmptyState";
+ import { FilterChips } from "./FilterChips";
+ import { FilterSheet } from "./FilterSheet";
++import { ReminderRow } from "./ReminderRow";
++import { ReminderSheet } from "./ReminderSheet";
+ import { TaskGroup } from "./TaskGroup";
+ import { TaskRow } from "./TaskRow";
+ import { TaskSheet } from "./TaskSheet";
+@@ -165,6 +177,20 @@ export function TodayScreen({
+   const [filtersOpen, setFiltersOpen] = useState(false);
+   const captureRef = useRef<HTMLInputElement>(null);
+ 
++  // Reminders (reminders phase 3) — never folded into `tasks`/`busy`/
++  // `sheetError`, the same isolation `events` already keeps from the Task
++  // state, except for the Task-linked editor (Task 13), which deliberately
++  // shares the Task sheet's own `busy`/`sheetError` since it renders inside
++  // that same dialog.
++  const [reminders, setReminders] = useState<ReminderDto[] | null>(null);
++  const [reminderSheetState, setReminderSheetState] = useState<{
++    reminder: ReminderDto | null;
++    draft: ReminderDraft;
++    view: "form" | "confirm";
++  } | null>(null);
++  const [reminderSheetError, setReminderSheetError] = useState<string | null>(null);
++  const [taskReminderDraft, setTaskReminderDraft] = useState<ReminderDraft | null>(null);
++
+   const today = todayIn(new Date());
+   const now = new Date();
+ 
+@@ -183,6 +209,12 @@ export function TodayScreen({
+     today,
+   );
+   const sheetTask = tasks?.find((task) => task.id === sheet.taskId) ?? null;
++  const sheetTaskReminder =
++    sheetTask === null ? null : ((reminders ?? []).find((r) => r.taskId === sheetTask.id) ?? null);
++  // Already-sent or Task-linked Reminders do not belong on the standalone list.
++  const standaloneReminders = (reminders ?? []).filter(
++    (r) => r.taskId === null && r.sentAt === null,
++  );
+ 
+   /** A 401 routes to the token gate; otherwise reports the failure kind and returns its message (`null` on the 401 route, since the caller is about to unmount). */
+   function handleFailure(cause: unknown): string | null {
+@@ -225,6 +257,22 @@ export function TodayScreen({
+     }
+   }
+ 
++  /** Fetches every Reminder — standalone and Task-linked alike (reminders phase 3, AC-A2/AC-A3). */
++  async function refreshReminders(): Promise<void> {
++    try {
++      const next = await listReminders();
++      setReminders(next);
++    } catch (cause) {
++      if (cause instanceof ApiError && cause.status === 401) {
++        onUnauthorized();
++        return;
++      }
++      // A failed Reminder fetch must not blank the Task list or the agenda —
++      // the same isolation `refreshEvents` already keeps.
++      setReminders(null);
++    }
++  }
++
+   async function refresh(): Promise<void> {
+     try {
+       const next = await listTasks(filter);
+@@ -267,6 +315,36 @@ export function TodayScreen({
+     }
+   }
+ 
++  /** The standalone-`ReminderSheet`'s own mutation path — mirrors `runSheet`, with `refreshReminders()` in place of `refresh()` and its own error slot. */
++  async function runReminderSheet(action: () => Promise<unknown>): Promise<void> {
++    setBusy(true);
++    try {
++      await action();
++      setReminderSheetError(null);
++      await refreshReminders();
++    } catch (cause) {
++      const message = handleFailure(cause);
++      if (message !== null) setReminderSheetError(message);
++    } finally {
++      setBusy(false);
++    }
++  }
++
++  /** The Task-linked Reminder editor's mutation path — mirrors `runSheet` exactly, sharing the Task sheet's own `busy`/`sheetError` since it renders inside that same dialog (Task 13). */
++  async function runTaskReminder(action: () => Promise<unknown>): Promise<void> {
++    setBusy(true);
++    try {
++      await action();
++      setSheetError(null);
++      await refreshReminders();
++    } catch (cause) {
++      const message = handleFailure(cause);
++      if (message !== null) setSheetError(message);
++    } finally {
++      setBusy(false);
++    }
++  }
++
+   function submitCapture(): void {
+     const trimmed = title.trim();
+     if (trimmed === "" || busy) return;
+@@ -421,6 +499,46 @@ export function TodayScreen({
+     });
+   }
+ 
++  // --- Standalone Reminders (reminders phase 3, plan AC-A2) -----------------
++
++  function openReminderSheet(existing: ReminderDto | null): void {
++    setReminderSheetError(null);
++    setReminderSheetState({ reminder: existing, draft: draftFromReminder(existing), view: "form" });
++  }
++
++  function saveReminderSheet(): void {
++    if (reminderSheetState === null) return;
++    const { reminder, draft } = reminderSheetState;
++    void runReminderSheet(async () => {
++      if (reminder === null) {
++        await createReminder(buildCreateReminderInput(draft, null));
++      } else {
++        await updateReminder(reminder.id, buildUpdateReminderInput(reminder, draft));
++      }
++      setReminderSheetState(null);
++      showToast({ key: "reminder-saved", text: "Lembrete salvo" });
++    });
++  }
++
++  function requestDeleteReminderSheet(): void {
++    setReminderSheetState((prev) => (prev === null ? prev : { ...prev, view: "confirm" }));
++  }
++
++  function cancelDeleteReminderSheet(): void {
++    setReminderSheetState((prev) => (prev === null ? prev : { ...prev, view: "form" }));
++  }
++
++  function confirmDeleteReminderSheet(): void {
++    if (reminderSheetState === null || reminderSheetState.reminder === null) return;
++    const id = reminderSheetState.reminder.id;
++    void runReminderSheet(async () => {
++      await deleteReminder(id);
++      setReminderSheetState(null);
++      // No action on the toast — the delete is irreversible (guidelines §8).
++      showToast({ key: "reminder-deleted", text: "Lembrete excluído" });
++    });
++  }
++
+   useEffect(() => {
+     // Runs on mount AND on every filter change (the chip row, the sheet and
+     // *Limpar filtros* all only call `setFilter` — this is the one place
+@@ -436,6 +554,7 @@ export function TodayScreen({
+     // agenda — refetching Google on a chip tap would spend a request to
+     // produce the identical list.
+     void refreshEvents();
++    void refreshReminders();
+   }, []);
+ 
+   useEffect(() => {
+@@ -446,6 +565,7 @@ export function TodayScreen({
+       // owner did, so coming back to the app is exactly when it is worth
+       // re-reading (guidelines §12.4 — there is no manual refresh gesture).
+       void refreshEvents();
++      void refreshReminders();
+     }
+     document.addEventListener("visibilitychange", handleVisibilityChange);
+     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+@@ -627,6 +747,43 @@ export function TodayScreen({
+             the agenda, and a zero-Task day must not either. */}
+         {agendaRegion}
+ 
++        {/* Never collapsible (a due Reminder should never hide) and, unlike
++            `TaskGroup`, never hidden at zero rows: the "Novo lembrete" header
++            action is how the owner reaches the very first Reminder, so the
++            section itself (not `TaskGroup`'s own zero-count guard) decides
++            whether to render — mirroring the agenda region's own pattern of
++            owning its section rather than depending on `TaskGroup` alone. */}
++        <section aria-label="Lembretes">
++          <div className="flex min-h-12 w-full items-center gap-2 rounded-control">
++            <h2 className="m-0 font-text text-t2 font-semibold text-ink">Lembretes</h2>
++            {standaloneReminders.length > 0 && (
++              <span className="font-data text-t1 font-semibold text-muted tabular-nums">
++                {standaloneReminders.length}
++              </span>
++            )}
++            <Button
++              type="button"
++              variant="ghost"
++              className="ml-auto"
++              onClick={() => openReminderSheet(null)}
++              disabled={!writable}
++            >
++              Novo lembrete
++            </Button>
++          </div>
++          {standaloneReminders.length > 0 && (
++            <ul className="m-0 flex list-none flex-col gap-2 p-0">
++              {standaloneReminders.map((reminder) => (
++                <ReminderRow
++                  key={reminder.id}
++                  reminder={reminder}
++                  onOpen={() => openReminderSheet(reminder)}
++                />
++              ))}
++            </ul>
++          )}
++        </section>
++
+         {tasks === null && loadError === null && <Skeleton slow={slow} />}
+ 
+         {tasks === null && loadError !== null && (
+@@ -733,6 +890,45 @@ export function TodayScreen({
+           dispatchSheet({ type: "cancel-delete" });
+         }}
+         onDeleteConfirm={deleteSheetTask}
++        reminder={sheetTaskReminder}
++        reminderDraft={taskReminderDraft}
++        onOpenReminder={() => {
++          setTaskReminderDraft(draftFromReminder(sheetTaskReminder));
++          dispatchSheet({ type: "open-reminder" });
++        }}
++        onCloseReminder={() => {
++          setTaskReminderDraft(null);
++          dispatchSheet({ type: "close-reminder" });
++        }}
++        onReminderDraftChange={(changes) =>
++          setTaskReminderDraft((prev) => (prev === null ? prev : { ...prev, ...changes }))
++        }
++        onReminderSave={() => {
++          if (sheetTask === null || taskReminderDraft === null) return;
++          void runTaskReminder(async () => {
++            if (sheetTaskReminder === null) {
++              await createReminder(buildCreateReminderInput(taskReminderDraft, sheetTask.id));
++            } else {
++              await updateReminder(
++                sheetTaskReminder.id,
++                buildUpdateReminderInput(sheetTaskReminder, taskReminderDraft),
++              );
++            }
++            setTaskReminderDraft(null);
++            dispatchSheet({ type: "close-reminder" });
++            showToast({ key: "reminder-saved", text: "Lembrete salvo" });
++          });
++        }}
++        onReminderDeleteRequest={() => dispatchSheet({ type: "request-delete-reminder" })}
++        onReminderDeleteCancel={() => dispatchSheet({ type: "cancel-delete-reminder" })}
++        onReminderDeleteConfirm={() => {
++          if (sheetTaskReminder === null) return;
++          void runTaskReminder(async () => {
++            await deleteReminder(sheetTaskReminder.id);
++            dispatchSheet({ type: "close-reminder" });
++            showToast({ key: "reminder-deleted", text: "Lembrete excluído" });
++          });
++        }}
+       />
+ 
+       {/* Never stack sheets (layout standard §3): gated on the same
+@@ -743,6 +939,27 @@ export function TodayScreen({
+         filter={filter}
+         onChange={setFilter}
+       />
++
++      {/* Never stack sheets (layout standard §3): the Task sheet and the
++          standalone Reminder sheet can never both be open. */}
++      <ReminderSheet
++        open={reminderSheetState !== null && sheet.taskId === null}
++        reminder={reminderSheetState?.reminder ?? null}
++        draft={reminderSheetState?.draft ?? null}
++        view={reminderSheetState?.view ?? "form"}
++        busy={busy}
++        error={reminderSheetError}
++        onDraftChange={(changes) =>
++          setReminderSheetState((prev) =>
++            prev === null ? prev : { ...prev, draft: { ...prev.draft, ...changes } },
++          )
++        }
++        onClose={() => setReminderSheetState(null)}
++        onSave={saveReminderSheet}
++        onDeleteRequest={requestDeleteReminderSheet}
++        onDeleteCancel={cancelDeleteReminderSheet}
++        onDeleteConfirm={confirmDeleteReminderSheet}
++      />
+     </div>
+   );
+ }
+diff --git a/src/app/hooks/useRoute.ts b/src/app/hooks/useRoute.ts
+index 85f76f2..75f4d4b 100644
+--- a/src/app/hooks/useRoute.ts
++++ b/src/app/hooks/useRoute.ts
+@@ -55,6 +55,17 @@ export function useRoute(): {
+     setRoute(next);
+   }, []);
+ 
++  useEffect(() => {
++    function handleMessage(event: MessageEvent): void {
++      const data = event.data as { type?: unknown; url?: unknown };
++      if (data.type === "NOTIFICATION_CLICK" && typeof data.url === "string") {
++        navigate(routeFromPath(data.url));
++      }
++    }
++    navigator.serviceWorker?.addEventListener("message", handleMessage);
++    return () => navigator.serviceWorker?.removeEventListener("message", handleMessage);
++  }, [navigate]);
++
+   const back = useCallback(() => {
+     // The marker travels WITH the entry, so this reads the entry actually on
+     // screen — including one reached by the browser's forward button, which a
+diff --git a/src/shared/app-route.ts b/src/shared/app-route.ts
+index a62d6ba..e2dd5b1 100644
+--- a/src/shared/app-route.ts
++++ b/src/shared/app-route.ts
+@@ -22,15 +22,34 @@
+  * (`src/app/main.tsx`) is the in-repo precedent.
+  */
+ 
+-export type AppRoute = "today" | "settings" | "notifications" | "notifications-diagnostics";
++export type AppRoute =
++  "today" | "settings" | "notifications" | "notifications-diagnostics" | `task/${string}`;
+ 
+ /** Strips at most one trailing slash; the root path `/` itself is untouched. */
+ function withoutTrailingSlash(pathname: string): string {
+   return pathname !== "/" && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
+ }
+ 
++/** Builds the Task-linked route for a given Task id. */
++export function taskRouteOf(taskId: string): AppRoute {
++  return `task/${taskId}`;
++}
++
++/** Recovers the Task id from a Task-linked route, or `null` for every other route. */
++export function taskIdFromRoute(route: AppRoute): string | null {
++  if (!route.startsWith("task/")) return null;
++  return route.slice("task/".length);
++}
++
++const TASK_PATH_PATTERN = /^\/tasks\/([^/]+)$/;
++
+ export function routeFromPath(pathname: string): AppRoute {
+   const path = withoutTrailingSlash(pathname);
++  const taskMatch = TASK_PATH_PATTERN.exec(path);
++  if (taskMatch !== null) {
++    const taskId = taskMatch[1];
++    if (taskId !== undefined && taskId !== "") return taskRouteOf(taskId);
++  }
+   if (path === "/settings/notifications/diagnostics") return "notifications-diagnostics";
+   if (path === "/settings/notifications") return "notifications";
+   if (path === "/settings") return "settings";
+@@ -38,6 +57,7 @@ export function routeFromPath(pathname: string): AppRoute {
+ }
+ 
+ export function pathOf(route: AppRoute): string {
++  if (route.startsWith("task/")) return `/tasks/${taskIdFromRoute(route)}`;
+   if (route === "notifications-diagnostics") return "/settings/notifications/diagnostics";
+   if (route === "notifications") return "/settings/notifications";
+   if (route === "settings") return "/settings";
+diff --git a/src/shared/dates.ts b/src/shared/dates.ts
+index 6f2a434..8ce86cb 100644
+--- a/src/shared/dates.ts
++++ b/src/shared/dates.ts
+@@ -52,7 +52,7 @@ export const END_OF_DAY_LOCAL_MINUTES = 23 * 60 + 59;
+  * against a `Date.UTC` reconstruction of that same rendering, which is the
+  * only way to recover the offset without hard-coding one.
+  */
+-function offsetMinutesAt(instant: Date, timeZone: string): number {
++export function offsetMinutesAt(instant: Date, timeZone: string): number {
+   const parts = new Intl.DateTimeFormat("en-US", {
+     timeZone,
+     hourCycle: "h23",
+@@ -137,3 +137,75 @@ export function offsetToInstant(
+ 
+   return Math.floor(instantMs / 1000);
+ }
++
++/**
++ * Splits an epoch-seconds instant into its local calendar day (`YYYY-MM-DD`)
++ * and time (`HH:mm`) in `timeZone` — the inverse shape `localPartsToInstant`
++ * consumes for the absolute-Reminder date/time inputs. Reads no ambient
++ * clock beyond the `epochSeconds` handed in.
++ */
++export function instantToLocalParts(
++  epochSeconds: number,
++  timeZone: string = PRAESTO_TIMEZONE,
++): { day: string; time: string } {
++  const instant = new Date(epochSeconds * 1000);
++  const parts = new Intl.DateTimeFormat("en-CA", {
++    timeZone,
++    hourCycle: "h23",
++    year: "numeric",
++    month: "2-digit",
++    day: "2-digit",
++    hour: "2-digit",
++    minute: "2-digit",
++  }).formatToParts(instant);
++
++  const lookup = new Map(parts.map((part) => [part.type, part.value]));
++  const year = lookup.get("year");
++  const month = lookup.get("month");
++  const day = lookup.get("day");
++  const hour = lookup.get("hour");
++  const minute = lookup.get("minute");
++  if (
++    year === undefined ||
++    month === undefined ||
++    day === undefined ||
++    hour === undefined ||
++    minute === undefined
++  ) {
++    throw new Error(`Intl.DateTimeFormat did not return the expected parts for ${timeZone}`);
++  }
++
++  return { day: `${year}-${month}-${day}`, time: `${hour}:${minute}` };
++}
++
++/**
++ * Converts a local calendar `day` (`YYYY-MM-DD`) plus a local `time`
++ * (`HH:mm`) into the epoch-seconds instant they name in `timeZone` — the
++ * absolute-Reminder counterpart to `offsetToInstant`'s relative one, sharing
++ * the exact same two-pass DST-refinement technique.
++ */
++export function localPartsToInstant(
++  day: string,
++  time: string,
++  timeZone: string = PRAESTO_TIMEZONE,
++): number {
++  const [yearText, monthText, dayText] = day.split("-");
++  const year = Number(yearText);
++  const month = Number(monthText);
++  const date = Number(dayText);
++  const [hourText, minuteText] = time.split(":");
++  const hours = Number(hourText);
++  const minutes = Number(minuteText);
++
++  const wallClockAsIfUtc = Date.UTC(year, month - 1, date, hours, minutes, 0);
++
++  const firstPassOffset = offsetMinutesAt(new Date(wallClockAsIfUtc), timeZone);
++  let instantMs = wallClockAsIfUtc - firstPassOffset * 60_000;
++
++  const secondPassOffset = offsetMinutesAt(new Date(instantMs), timeZone);
++  if (secondPassOffset !== firstPassOffset) {
++    instantMs = wallClockAsIfUtc - secondPassOffset * 60_000;
++  }
++
++  return Math.floor(instantMs / 1000);
++}
+diff --git a/src/shared/reminder-edit.ts b/src/shared/reminder-edit.ts
+new file mode 100644
+index 0000000..815c6ec
+--- /dev/null
++++ b/src/shared/reminder-edit.ts
+@@ -0,0 +1,134 @@
++/**
++ * The decidable half of editing a Reminder (both shapes: standalone and
++ * Task-linked). Mirrors `src/shared/task-edit.ts`'s split — the draft/patch
++ * diffing decision lives here, pure and test-first, rather than inside a
++ * React component (`docs/context/methodology.md`, "Browser-API work: split
++ * the logic out, then the glue is exempt").
++ *
++ * This module deliberately narrows the same precedence
++ * `src/worker/routes/reminders.ts` already enforces server-side — an offset
++ * with a Task target, else a finite absolute instant — so the owner never
++ * submits a request the route would 400 (PRD AC-2/AC-3 via plan AC-A4).
++ *
++ * No DOM globals, no runtime dependency: compiles into both targets like
++ * every other `src/shared/` module.
++ */
++
++import {
++  isCalendarDate,
++  type CreateReminderInput,
++  type ReminderDto,
++  type UpdateReminderInput,
++} from "./api";
++import { instantToLocalParts, localPartsToInstant } from "./dates";
++
++/** Which of the two mutually exclusive time inputs the draft currently uses. */
++export type ReminderTimeMode = "absolute" | "offset";
++
++/**
++ * The current value of every control on the Reminder edit surface. Every
++ * field is required: a form always has a value, even when that value is
++ * empty (mirrors `TaskDraft`'s own convention).
++ */
++export interface ReminderDraft {
++  label: string;
++  timeMode: ReminderTimeMode;
++  absoluteDay: string;
++  absoluteTime: string;
++  offsetMinutes: number;
++}
++
++const TIME_PATTERN = /^\d{2}:\d{2}$/;
++
++/** Seeds a fresh draft for create (`reminder === null`), or restores an existing row for edit. */
++export function draftFromReminder(reminder: ReminderDto | null): ReminderDraft {
++  if (reminder === null) {
++    return {
++      label: "",
++      timeMode: "absolute",
++      absoluteDay: "",
++      absoluteTime: "",
++      offsetMinutes: 60,
++    };
++  }
++
++  const { day, time } = instantToLocalParts(reminder.fireAt);
++
++  return {
++    label: reminder.label ?? "",
++    timeMode: reminder.originOffsetMinutes !== null ? "offset" : "absolute",
++    absoluteDay: day,
++    absoluteTime: time,
++    offsetMinutes: reminder.originOffsetMinutes ?? 60,
++  };
++}
++
++/**
++ * Builds the create request for a fresh Reminder — either shape.
++ *
++ * An offset with no Task target is meaningless, so `originOffsetMinutes` is
++ * only ever set when `taskId !== null` AND `timeMode === "offset"`; every
++ * other combination resolves to an absolute `fireAt` via
++ * `localPartsToInstant`, guarded against a half-typed date/time.
++ */
++export function buildCreateReminderInput(
++  draft: ReminderDraft,
++  taskId: string | null,
++): CreateReminderInput {
++  const input: CreateReminderInput = {};
++
++  const label = draft.label.trim();
++  input.label = label === "" ? null : label;
++
++  if (taskId !== null) input.taskId = taskId;
++
++  if (draft.timeMode === "offset" && taskId !== null) {
++    input.originOffsetMinutes = draft.offsetMinutes;
++    return input;
++  }
++
++  if (isCalendarDate(draft.absoluteDay) && TIME_PATTERN.test(draft.absoluteTime)) {
++    input.fireAt = localPartsToInstant(draft.absoluteDay, draft.absoluteTime);
++  }
++
++  return input;
++}
++
++/**
++ * The minimal patch that turns `original` into `draft` — only the keys
++ * whose value actually changed, the same "only the changed keys" diff
++ * contract `buildTaskPatch` established.
++ *
++ * Moving from offset mode back to an absolute time explicitly clears
++ * `originOffsetMinutes` to `null` — an absent key would leave the server's
++ * existing offset in place, silently reintroducing offset behaviour the
++ * owner just turned off.
++ */
++export function buildUpdateReminderInput(
++  original: ReminderDto,
++  draft: ReminderDraft,
++): UpdateReminderInput {
++  const patch: UpdateReminderInput = {};
++
++  const label = draft.label.trim();
++  const nextLabel = label === "" ? null : label;
++  if (nextLabel !== original.label) patch.label = nextLabel;
++
++  if (draft.timeMode === "offset") {
++    if (draft.offsetMinutes !== original.originOffsetMinutes) {
++      patch.originOffsetMinutes = draft.offsetMinutes;
++    }
++    return patch;
++  }
++
++  // Absolute mode: clear a previously-set offset, and emit fireAt only when
++  // the resolved instant actually changed.
++  if (original.originOffsetMinutes !== null) patch.originOffsetMinutes = null;
++
++  if (isCalendarDate(draft.absoluteDay) && TIME_PATTERN.test(draft.absoluteTime)) {
++    const fireAt = localPartsToInstant(draft.absoluteDay, draft.absoluteTime);
++    if (fireAt !== original.fireAt) patch.fireAt = fireAt;
++  }
++
++  return patch;
++}
+diff --git a/src/shared/task-sheet.ts b/src/shared/task-sheet.ts
+index 64de211..58a4aaf 100644
+--- a/src/shared/task-sheet.ts
++++ b/src/shared/task-sheet.ts
+@@ -26,7 +26,7 @@
+ import type { TaskDto } from "./api";
+ import { dateModeOf, type TaskDraft } from "./task-edit";
+ 
+-export type SheetView = "detail" | "confirm";
++export type SheetView = "detail" | "confirm" | "reminder" | "confirm-reminder";
+ 
+ export interface TaskSheetState {
+   taskId: string | null;
+@@ -45,6 +45,10 @@ export type TaskSheetEvent =
+   | { type: "edit"; changes: Partial<TaskDraft> }
+   | { type: "request-delete" }
+   | { type: "cancel-delete" }
++  | { type: "open-reminder" }
++  | { type: "close-reminder" }
++  | { type: "request-delete-reminder" }
++  | { type: "cancel-delete-reminder" }
+   | { type: "close" }
+   | { type: "saved"; taskId: string }
+   | { type: "deleted"; taskId: string };
+@@ -97,6 +101,21 @@ export function reduceTaskSheet(state: TaskSheetState, event: TaskSheetEvent): T
+     case "cancel-delete":
+       if (state.taskId === null) return state;
+       return { ...state, view: "detail" };
++    case "open-reminder":
++      if (state.taskId === null) return state;
++      return { ...state, view: "reminder" };
++    case "close-reminder":
++      if (state.taskId === null) return state;
++      return { ...state, view: "detail" };
++    case "request-delete-reminder":
++      if (state.taskId === null) return state;
++      return { ...state, view: "confirm-reminder" };
++    case "cancel-delete-reminder":
++      // Returns to the reminder editor, NOT to the Task's own detail view —
++      // the one difference from the Task-delete pair, and the mechanism that
++      // keeps the two deletions from being confused for each other.
++      if (state.taskId === null) return state;
++      return { ...state, view: "reminder" };
+     case "close":
+       if (state.taskId === null) return state;
+       return { ...state, taskId: null, view: "detail" };
+diff --git a/src/worker/cron.ts b/src/worker/cron.ts
+index fc976c1..a28fdd6 100644
+--- a/src/worker/cron.ts
++++ b/src/worker/cron.ts
+@@ -4,6 +4,7 @@ import { createDb } from "./db/client";
+ import { cronRuns, pushSubscriptions, reminders, tasks, type Task } from "./db/schema";
+ import { classifyPushOutcome, type PushOutcome } from "../shared/push-outcome";
+ import { buildNotificationPayload } from "../shared/push-payload";
++import { pathOf, taskRouteOf } from "../shared/app-route";
+ import { sendPush } from "./push/send";
+ 
+ /**
+@@ -57,7 +58,7 @@ export async function runScheduledJob(env: Env): Promise<void> {
+       buildNotificationPayload({
+         title: "Praesto",
+         body: reminder.label ?? task?.title ?? "Lembrete",
+-        route: "/",
++        route: reminder.taskId !== null ? pathOf(taskRouteOf(reminder.taskId)) : "/",
+         tag: `reminder-${reminder.id}`,
+       }),
+     );

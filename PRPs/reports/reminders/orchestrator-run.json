@@ -1,0 +1,325 @@
+{
+  "feature": "reminders",
+  "prd_path": "PRPs/prds/reminders.prd.md",
+  "started_at": "2026-09-09T22:10:00Z",
+  "ended_at": "2026-09-10T03:40:00Z",
+  "max_plan_review_retries": 2,
+  "max_tdd_review_retries": 2,
+  "max_orchestrator_minutes": 240,
+  "lane_runtime_safe": "absent — serial execution (nobody has decided yet, as distinct from a decision against it)",
+  "phases": [
+    {
+      "phase": 1,
+      "stage": "plan",
+      "outcome": "CHANGES_REQUESTED",
+      "attempt": 1,
+      "failing_rubric_items": [
+        "R-COH-TASK-AC-MISSING",
+        "R-COH-OTHER-INTERNAL-CONTRADICTION"
+      ]
+    },
+    {
+      "phase": 1,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "attempt": 2,
+      "plan_path": "PRPs/plans/reminders-phase-1-reminder-api-and-the-time-contract.plan.md"
+    },
+    {
+      "phase": 1,
+      "stage": "worktree",
+      "outcome": "CREATED",
+      "repo": null,
+      "worktree_path": "C:/repos/assistente-pessoal/.worktrees/reminders",
+      "worktree_attempted": true,
+      "worktree_succeeded": true,
+      "fallback_reason": null
+    },
+    {
+      "phase": 1,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "mode": "test-first",
+      "suite_path": "PRPs/reports/reminders/test-suite.diff",
+      "red_legitimate": true
+    },
+    {
+      "phase": 1,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempt": 1,
+      "diff": "PRPs/reports/reminders/phase-1/attempts/1/diff.patch"
+    },
+    {
+      "phase": 1,
+      "stage": "test",
+      "outcome": "GREEN",
+      "tests": "827 passed / 59 files",
+      "check": "exit 0",
+      "runner_note": "relay test-runner returned ABORT_INFRA at its own .claude/settings.json pre-flight (the file does not exist in this project); the command ran npm test and npm run check directly and owns run.json"
+    },
+    {
+      "phase": 1,
+      "stage": "test_review",
+      "outcome": "APPROVED",
+      "concerns": []
+    },
+    {
+      "phase": 1,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/reminders-phase-1-reminder-api-and-the-time-contract.plan.md",
+      "timestamp": "2026-09-09T22:45:00Z"
+    },
+    {
+      "phase": 2,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "attempt": 1,
+      "plan_path": "PRPs/plans/reminders-phase-2-the-due-reminder-sweep.plan.md"
+    },
+    {
+      "phase": 2,
+      "stage": "worktree",
+      "outcome": "CREATED",
+      "note": "idempotent re-use of .worktrees/reminders"
+    },
+    {
+      "phase": 2,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "mode": "test-first",
+      "suite_path": "PRPs/reports/reminders/phase-2/test-suite.diff",
+      "red_legitimate": true
+    },
+    {
+      "phase": 2,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempt": 1,
+      "diff": "PRPs/reports/reminders/phase-2/attempts/1/diff.patch"
+    },
+    {
+      "phase": 2,
+      "stage": "test",
+      "outcome": "GREEN",
+      "tests": "836 passed / 60 files",
+      "check": "exit 0",
+      "run_json": "PRPs/reports/reminders/phase-2/run.json"
+    },
+    {
+      "phase": 2,
+      "stage": "test_review",
+      "outcome": "APPROVED",
+      "concerns": []
+    },
+    {
+      "phase": 2,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/reminders-phase-2-the-due-reminder-sweep.plan.md",
+      "timestamp": "2026-09-09T23:12:00Z"
+    },
+    {
+      "phase": 3,
+      "stage": "plan",
+      "outcome": "CHANGES_REQUESTED",
+      "attempt": 1,
+      "failing_rubric_items": [
+        "R8 (via R8b)",
+        "R-COH-TASK-AC-MISSING"
+      ]
+    },
+    {
+      "phase": 3,
+      "stage": "plan",
+      "outcome": "CHANGES_REQUESTED",
+      "attempt": 2,
+      "failing_rubric_items": [
+        "R-COH-AC-TASK-DECOUPLED"
+      ]
+    },
+    {
+      "phase": 3,
+      "stage": "plan",
+      "outcome": "CHANGES_REQUESTED",
+      "attempt": 3,
+      "failing_rubric_items": [
+        "R-COH-OTHER-INTERNAL-CONTRADICTION"
+      ]
+    },
+    {
+      "phase": 3,
+      "stage": "plan",
+      "outcome": "HALT:FAILED_PLAN_REVIEW_BUDGET_EXCEEDED",
+      "plan_review_attempts": 3,
+      "max_plan_review_retries": 2
+    },
+    {
+      "phase": 3,
+      "stage": "plan",
+      "outcome": "CHANGES_REQUESTED",
+      "attempt": 4,
+      "context": "hand-invoked /relay-plan-review after the orchestrator halted",
+      "failing_rubric_items": [
+        "R-COH-PATTERN-TASK-DRIFT"
+      ],
+      "note": "substantive fix verified end to end; stale 'third view' prose in three places"
+    },
+    {
+      "phase": 3,
+      "stage": "plan",
+      "outcome": "CHANGES_REQUESTED",
+      "attempt": 5,
+      "failing_rubric_items": [
+        "R-COH-PATTERN-TASK-DRIFT"
+      ],
+      "note": "two Patterns-to-Mirror captions naming the wrong task number"
+    },
+    {
+      "phase": 3,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "attempt": 6,
+      "plan_path": "PRPs/plans/reminders-phase-3-per-task-route-and-reminder-ui.plan.md",
+      "note": "all 12 SOURCE-block captions swept and confirmed correct; K=5 zero findings; 0 open advisories"
+    },
+    {
+      "phase": 3,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "mode": "test-first",
+      "suite_path": "PRPs/reports/reminders/phase-3/test-suite.diff",
+      "note": "re-approved after an arbitrated repair; see dispute in phase-3/run.json"
+    },
+    {
+      "phase": 3,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempt": 2,
+      "diff": "PRPs/reports/reminders/phase-3/attempts/2/diff.patch",
+      "note": "attempt 1 ran during a client crash and reported nothing; its work was verified by running the suite rather than assumed, then finished by attempt 2"
+    },
+    {
+      "phase": 3,
+      "stage": "dispute",
+      "outcome": "DISPUTE_UPHELD_TEST_WRONG",
+      "against": "test/cron-reminder-route.test.ts"
+    },
+    {
+      "phase": 3,
+      "stage": "test",
+      "outcome": "GREEN",
+      "tests": "885 passed / 62 files",
+      "check": "exit 0",
+      "run_json": "PRPs/reports/reminders/phase-3/run.json"
+    },
+    {
+      "phase": 3,
+      "stage": "test_review",
+      "outcome": "APPROVED",
+      "concerns": []
+    },
+    {
+      "phase": 3,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/reminders-phase-3-per-task-route-and-reminder-ui.plan.md",
+      "timestamp": "2026-09-10T02:50:00Z"
+    },
+    {
+      "phase": 4,
+      "stage": "plan",
+      "outcome": "CHANGES_REQUESTED",
+      "attempt": 1,
+      "failing_rubric_items": [
+        "R2"
+      ],
+      "note": "an extra top-level ## Device Verification heading between Risks and Notes; folded into a ### subsection of Notes"
+    },
+    {
+      "phase": 4,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "attempt": 2,
+      "plan_path": "PRPs/plans/reminders-phase-4-deadline-recomputation-and-the-device-proof.plan.md"
+    },
+    {
+      "phase": 4,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "mode": "test-first",
+      "suite_path": "PRPs/reports/reminders/phase-4/test-suite.diff"
+    },
+    {
+      "phase": 4,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempt": 1,
+      "diff": "PRPs/reports/reminders/phase-4/attempts/1/diff.patch"
+    },
+    {
+      "phase": 4,
+      "stage": "test",
+      "outcome": "GREEN",
+      "tests": "889 passed / 62 files",
+      "check": "exit 0",
+      "run_json": "PRPs/reports/reminders/phase-4/run.json"
+    },
+    {
+      "phase": 4,
+      "stage": "test_review",
+      "outcome": "APPROVED",
+      "concerns": []
+    },
+    {
+      "phase": 4,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/reminders-phase-4-deadline-recomputation-and-the-device-proof.plan.md",
+      "timestamp": "2026-09-10T03:22:00Z"
+    },
+    {
+      "stage": "docs_sync",
+      "outcome": "APPROVED",
+      "manifest": "PRPs/reports/reminders/docs-update.md",
+      "files": 4,
+      "note": "deferred from per-phase to one pass at the end, as recorded in deviations"
+    }
+  ],
+  "outcome": "ALL_PHASES_COMPLETE",
+  "phases_completed": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "worktree_attempted": true,
+  "worktree_succeeded": true,
+  "fallback_reason": null,
+  "phase_diff_bases": {
+    "1": "a7f42f4070c20bf253595c77df3738adcbdc1ed5",
+    "2": "997ca844548393e233f0a203c097545700358fb4",
+    "3": "406380bdd30c2eb62ccd08d018e2b6eca0746c47",
+    "4": "a953c5de1ec0d0dc24e5f9a90994d5494e538eb6"
+  },
+  "deviations": [
+    "Docs-sync (relay-implement Phase A.3.5) is deferred from per-phase to once, after the final phase. Running the docs-updater/docs-reviewer pair four times over the same files for one delivery unit produces churn and gives the pair a partial change set each time; one pass at the end sees the whole unit. Recorded here rather than performed silently.",
+    "The implemented -> tested -> complete transitions were written as a single Status-cell edit after test-review APPROVED, rather than two sequential edits. Same end state; both writes are idempotent status bookkeeping."
+  ],
+  "lane_durations_ms": {},
+  "total_duration_ms": null,
+  "halt_ref": "PRPs/reports/reminders/orchestrator-halt.json",
+  "halt_resolved": true,
+  "final_suite": {
+    "tests": 889,
+    "files": 62,
+    "baseline": {
+      "tests": 814,
+      "files": 57
+    },
+    "check": "exit 0"
+  },
+  "open_items": [
+    "The on-device proof is the OWNER's step and is deliberately not a Step-by-Step Task: a Task-linked reminder tapped on his Android phone with the app closed, and again with it open, landing on that Task. Until it passes, the roadmap's unit 7 row stays in-progress and M2 is NOT reached.",
+    "The phase-3 UI/UX checklist is 9/9 on static read, but items 5 (focus/Esc/focus-return) and 9 (no cross-origin request) were NOT measured live — the implementer had no browser pane. Flagged in the checklist itself.",
+    "Rule 6(b) of the roadmap — the whole-order review of the remaining units — was recorded as owed at unit 6's close, to run at unit 7's close.",
+    "docs-reviewer flagged two judgement calls for the operator: the docs-updater edited CLAUDE.md, which was outside its stated docs/-only brief (edit verified accurate); and docs/decisions.md gained its first two entries sourced to an APPROVED PRD's Decisions Log rather than to an owner-ratified ADR."
+  ]
+}

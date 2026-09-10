@@ -1,0 +1,72 @@
+# TDD initial suite — phase 4
+# Source PRD: PRPs/prds/reminders.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/reminders-phase-4-deadline-recomputation-and-the-device-proof.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-09-10
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-11 (plan AC-A1) | NEW_TEST_REQUIRED | .worktrees/reminders/test/task-update.test.ts — describe "Task update — editing the deadline recomputes relative Reminders (reminders.prd.md AC-11)" (3 cases: moves relative fireAt / leaves absolute-linked fireAt untouched; no-op on unchanged deadline resubmission; no-op on an unrelated field edit) |
+| AC-12 (plan AC-A2) | NEW_TEST_REQUIRED | .worktrees/reminders/test/task-update.test.ts — describe "Task update — an already-sent Reminder is not resurrected by a deadline edit (reminders.prd.md AC-12)" |
+| AC-A3 (PRD AC-11, "say so on screen" toast) | OUT_OF_PHASE_SCOPE | React component/glue verification is manual per docs/context/methodology.md's explicit UI carve-out (also named as excluded by the calling command: "the React toast... component verification is manual by written decision"). No test file authored for it — Task 3's `tsc -b` + content-grep VALIDATE is the plan's own gate for this piece, not the TDD suite. |
+| Every other PRD AC (AC-1..AC-10, AC-13, AC-14) | OUT_OF_PHASE_SCOPE | Delivered and tested in phases 1-3, already `complete` per the plan's Dependencies row; not referenced by this phase's plan AC-A items |
+
+## Test files written this session
+
+- C:/repos/assistente-pessoal/.worktrees/reminders/test/task-update.test.ts (UPDATED — new describe blocks appended; no existing test's assertions were changed)
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no update/delete of any existing test's contract this session) | — | — | — |
+
+Note: `test/task-update.test.ts`'s shared `beforeEach` hook was widened to
+additionally wipe the `reminders` table (mirroring `test/reminders.test.ts`'s
+own `beforeEach`), because the two new describe blocks are the first tests in
+this file to write `reminders` rows. This is infrastructure scaffolding for
+the new tests, not a change to any existing test's assertions or contract —
+every pre-existing `it(...)` in the file is untouched and none of them read
+or write the `reminders` table, so the wipe is inert for them. Recorded here
+for transparency even though it does not meet the UPDATE/DELETE bar (no test
+body, assertion, or precondition of a prior test was touched).
+
+## Notes for test-reviewer (B8)
+
+- Mode: test-first (`tdd: true`). The suite is expected to be RED for the
+  right reason: `src/worker/routes/tasks.ts`'s `PATCH /:id` handler does not
+  read or write the `reminders` table today (confirmed by reading
+  `src/worker/routes/tasks.ts:190-264` in full before authoring), so the new
+  AC-11 assertions (`relativeAfter?.fireAt` equal to the recomputed value)
+  will fail against the current tree, and the AC-12 assertion is a negative
+  check (`fireAt`/`sentAt` unchanged) that already passes today only because
+  nothing touches `reminders` at all — it is included to pin the guarantee
+  once the recompute exists, not because it is red today. Both describe
+  blocks share the same discriminative shape: they assert against a value
+  computed independently in the test (`Date.UTC(...)` arithmetic mirroring
+  `test/reminders.test.ts`'s own AC-3 pattern), never by importing
+  `offsetToInstant` into the test file itself, so the test cannot pass by
+  merely calling the same helper the implementation calls with the wrong
+  argument.
+- No mocks: every test drives the real `/api/tasks` and `/api/reminders`
+  routes end to end against the ephemeral D1 inside workerd, exactly like
+  every other test in this file and in `test/reminders.test.ts`. `sentAt` is
+  set via one direct Drizzle `update` (no route exposes it — only the phase 2
+  cron sweep does), matching the calling command's own note that "you most
+  likely need no mocking at all — it is a DB-level assertion through the API
+  route."
+- `Task-linked absolute Reminder` (originOffsetMinutes null) is created via
+  `POST /api/reminders` with `taskId` + `fireAt` (no `originOffsetMinutes`),
+  matching phase 1's own `reminderRoutes.post` contract
+  (`src/worker/routes/reminders.ts:53-65`).
+- TS strictness: no `any`; `ReminderDto | undefined` from `.find(...)` is
+  read via optional chaining (`relativeAfter?.fireAt`), matching this file's
+  own existing `row?.title` idiom used throughout its pre-existing tests —
+  chosen deliberately to stay consistent with the `noUncheckedIndexedAccess`
+  guard this project's `npm run check` enforces.
+
+## Status
+
+*Status: APPROVED*

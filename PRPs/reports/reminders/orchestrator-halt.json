@@ -1,0 +1,59 @@
+{
+  "outcome": "FAILED_PLAN_REVIEW_BUDGET_EXCEEDED",
+  "phase_N": 3,
+  "plan_path": "PRPs/plans/reminders-phase-3-per-task-route-and-reminder-ui.plan.md",
+  "plan_review_attempts": 3,
+  "max_plan_review_retries": 2,
+  "stuck_loop_detected": false,
+  "stuck_loop_note": "Not a stuck loop — the failing rubric-item set was different on every attempt, so the plan-writer made real progress each round. Each full re-run simply surfaced a deeper defect than the last. The budget, not the loop, is what stopped this.",
+  "failing_rubric_items_by_attempt": [
+    {
+      "attempt": 1,
+      "ids": [
+        "R8 (via R8b)",
+        "R-COH-TASK-AC-MISSING"
+      ],
+      "summary": "AC-A6 cited no PRD AC token; Tasks 3, 6, 7, 9, 11, 12 carried no in-body AC citation or infrastructure annotation. Both fixed."
+    },
+    {
+      "attempt": 2,
+      "ids": [
+        "R-COH-AC-TASK-DECOUPLED"
+      ],
+      "summary": "Task 12 added seven required props to TaskSheet.tsx that no task instructed TodayScreen's sole call site to pass — tsc -b would break and AC-A3's path was unreachable. Fixed by a new Task 13."
+    },
+    {
+      "attempt": 3,
+      "ids": [
+        "R-COH-OTHER-INTERNAL-CONTRADICTION"
+      ],
+      "summary": "OPEN. The Reminder-delete affordance routes through the Task-delete confirm view. See below."
+    }
+  ],
+  "open_defect": {
+    "id": "R-COH-OTHER-INTERNAL-CONTRADICTION",
+    "severity": "would ship a data-destroying bug that no VALIDATE in the plan can catch",
+    "detail": "Task 12 leaves TaskSheet's `view === \"confirm\"` branch unchanged — still hard-coded to title=\"Excluir esta tarefa?\" with onCancel={onDeleteCancel} / onConfirm={onDeleteConfirm}, the Task-deletion callbacks (verified at TaskSheet.tsx:176-186). Task 13 nonetheless wires onReminderDeleteRequest / onReminderDeleteCancel to dispatch that same \"request-delete\" / \"cancel-delete\" pair, and onReminderDeleteConfirm to call deleteReminder(). Nothing wires the three reminder-delete callbacks into anything TaskSheet actually renders — not into ReminderForm's own onDeleteRequest prop, not into the ConfirmView. Built literally as written, tapping \"Excluir\" on a Task-linked Reminder either does nothing, or shows \"Excluir esta tarefa?\" and deletes the whole TASK instead of the reminder. tsc -b cannot catch it: tsconfig.base.json sets neither noUnusedParameters nor noUnusedLocals, so the unused callbacks compile clean.",
+    "required_fix": "Task 12 must give the \"confirm\" branch a way to distinguish which delete is in flight and bind reminder-specific copy and callbacks (onReminderDeleteConfirm / onReminderDeleteCancel) to it, and must explicitly wire ReminderForm's onDeleteRequest to onReminderDeleteRequest inside the \"reminder\" view branch."
+  },
+  "phases_completed": [
+    1,
+    2
+  ],
+  "partial_state_note": "Phases 1 and 2 are complete, code-reviewed, tested GREEN and post-green-reviewed; their plans are archived under PRPs/plans/completed/ and their PRD rows read `complete`. Phase 3's row is `in-progress` with its DRAFT plan at the path above. Phase 4 is untouched at `pending`. All code lives uncommitted in the worktree at .worktrees/reminders on branch feature/reminders.",
+  "manual_recovery_paths": [
+    "Apply the required_fix above to Task 12 of the DRAFT plan by hand, then run /relay-plan-review on it. On APPROVED, re-run /relay-execute PRPs/prds/reminders.prd.md — it resumes at phase 3.",
+    "Or hand-edit PRD row 3's Status cell back to `pending` and re-run /relay-execute to regenerate the phase-3 plan from scratch."
+  ],
+  "orchestrator_run_log_ref": "PRPs/reports/reminders/orchestrator-run.json",
+  "halted_at": "2026-09-09T23:50:00Z",
+  "resolution": {
+    "resolved_at": "2026-09-10T00:30:00Z",
+    "how": "Hand-fixed outside the orchestrator, then /relay-plan-review run standalone until APPROVED (attempts 4, 5 and 6 of the review; the budget cap applies to the orchestrator's own retry loop, not to hand-invoked review).",
+    "substantive_fix": "Task 7 now adds a `confirm-reminder` view and a `request-delete-reminder`/`cancel-delete-reminder` event pair to src/shared/task-sheet.ts, so which deletion is in flight is discriminated in the reducer — inside src/shared, where test/task-sheet.test.ts reaches it — rather than in untested React glue. Task 12 renders a separate ConfirmView with its own pt-BR copy and its own callbacks, and wires ReminderForm's onDeleteRequest to onReminderDeleteRequest. Task 13 dispatches the reminder's own events. Task 12's VALIDATE gained three grep assertions that fail both when the task never ran AND under the conflated wiring, which tsc -b cannot catch.",
+    "further_defects_found_while_fixing": "Three review rounds each surfaced a stale Patterns-to-Mirror caption (a wrong view count, then two wrong task attributions). All corrected; attempt 6 swept all 12 SOURCE-block captions at once and confirmed none remain wrong.",
+    "plan_status": "APPROVED",
+    "next": "Re-run /relay-execute PRPs/prds/reminders.prd.md to resume at phase 3."
+  },
+  "outcome_note": "Resolved. This halt record is kept for the audit trail; the condition it describes no longer holds."
+}

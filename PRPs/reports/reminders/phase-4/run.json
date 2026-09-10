@@ -1,0 +1,16 @@
+{
+  "feature": "reminders",
+  "phase": 4,
+  "framework": "vitest",
+  "code_root": "C:/repos/assistente-pessoal/.worktrees/reminders",
+  "diff_base": "406380bdd30c2eb62ccd08d018e2b6eca0746c47",
+  "outcome": "GREEN",
+  "attempts": 1,
+  "commands": [
+    { "command": "npm test", "exit_code": 0, "test_files": 62, "tests_passed": 889, "tests_failed": 0 },
+    { "command": "npm run check", "exit_code": 0 }
+  ],
+  "delta_vs_phase_3": { "tests": "+4", "files": "0" },
+  "ac12_note": "AC-12's test passed even before implementation, since nothing touched reminders then — it was never a load-bearing red. Both the code-reviewer and the post-green reviewer independently re-derived that it is nonetheless a genuine guard now: the recompute selects on isNull(reminders.sentAt), so removing or weakening that filter would move the sent Reminder's fireAt to a computably different value and fail the test's own assertion.",
+  "ran_at": "2026-09-10T03:22:00Z"
+}
