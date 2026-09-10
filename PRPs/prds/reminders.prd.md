@@ -154,6 +154,23 @@ time — none duplicated, none silent.
   then the payload's nested `{ data: { route } }` carries the path of Task `T`,
   and `routeFromPath` parses that path back into the corresponding `AppRoute`
   variant — `pathOf(routeFromPath(p)) === p` holds for it.
+- **AC-8b The app actually opens that Task:** Given the app loaded at Task `T`'s
+  path — cold, as a notification tap with the app closed does — when the Task
+  list has loaded, then `T`'s own detail sheet is open on screen. And given the
+  app already open on *Hoje*, when the service worker posts the
+  `NOTIFICATION_CLICK` message for `T`'s path, then the route becomes `T`'s path
+  and `T`'s sheet opens. Closing that sheet and letting the list refresh leaves
+  it closed.
+
+  **Added 2026-09-10, after the owner's device proof failed.** AC-8 as written
+  above was satisfied in full — the payload carried the right path and the codec
+  round-tripped — and every notification still opened the home screen, because
+  `App.tsx` had no branch for the `task/<id>` route and fell through to
+  `TodayScreen`. `taskIdFromRoute` was exported and tested and never called by
+  anything. An acceptance criterion that stops at the codec cannot see that gap;
+  the rendering below it is React glue, which this project verifies manually, so
+  nothing else was going to catch it either. Unit 18 inherits this criterion
+  when Event reminders arrive.
 - **AC-9 A closed Task's Reminder does not ring:** Given a Reminder attached to a
   Task whose status is `done` or `missed`, when the sweep runs after its
   `fireAt`, then no push is dispatched for it and `sentAt` is set so it is not

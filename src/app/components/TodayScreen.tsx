@@ -131,10 +131,17 @@ const AGENDA = {
 export function TodayScreen({
   onUnauthorized,
   initialShare,
+  initialTaskId,
   onOpenSettings,
 }: {
   onUnauthorized: () => void;
   initialShare: ShareTarget | null;
+  /**
+   * The Task a notification tap arrived on, from `App.tsx`'s
+   * `taskIdFromRoute(route)` — `null` for every other route. Its sheet opens
+   * once the Task list has loaded (see the effect below).
+   */
+  initialTaskId: string | null;
   /** Threaded from `App.tsx` (plan Task 8) so `TodayHeader`'s settings icon button (Task 7) can navigate. */
   onOpenSettings: () => void;
 }) {
@@ -153,6 +160,25 @@ export function TodayScreen({
   const [slow, setSlow] = useState(false);
   const [sheet, dispatchSheet] = useReducer(reduceTaskSheet, INITIAL_TASK_SHEET_STATE);
   const [sheetError, setSheetError] = useState<string | null>(null);
+  /**
+   * The Task id the deep-link effect below has already acted on. Keyed by id
+   * rather than a plain "did it run" boolean for two reasons, both real:
+   *
+   * - Without a guard at all, every `refresh()` would re-open the sheet the
+   *   owner had just closed. The Task list is re-fetched on reconnect, after
+   *   every mutation and on a timer, so an unguarded effect makes the
+   *   notification's Task impossible to dismiss.
+   * - With a boolean guard, the FIRST notification tapped while the app is
+   *   open would work and every later one would silently do nothing, because
+   *   the flag never clears. Keying on the id keeps a repeat tap on a
+   *   DIFFERENT Task working.
+   *
+   * Residual, accepted: tapping a notification for the Task already on screen
+   * after closing its sheet re-opens nothing, since neither the route nor this
+   * id changes. The app is already on that Task's route, so the owner is where
+   * the notification meant to put them.
+   */
+  const handledDeepLinkTaskId = useRef<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [overdueCollapsed, setOverdueCollapsed] = useState(() =>
     readCollapsed(OVERDUE_COLLAPSED_KEY, false),
@@ -190,6 +216,25 @@ export function TodayScreen({
   } | null>(null);
   const [reminderSheetError, setReminderSheetError] = useState<string | null>(null);
   const [taskReminderDraft, setTaskReminderDraft] = useState<ReminderDraft | null>(null);
+
+  // The other half of the notification deep link: `App.tsx` resolves
+  // `/tasks/<id>` into `initialTaskId`, and this opens that Task's sheet as
+  // soon as the list it lives in has loaded. `tasks` is `null` until the first
+  // fetch returns, so this cannot run on mount — it waits, which is why the
+  // dependency is `tasks` and not `[]`.
+  //
+  // A Task that no longer exists (completed and swept, or deleted from another
+  // device between the push and the tap) simply leaves the owner on *Hoje*.
+  // That is the honest outcome: there is nothing to open, and inventing an
+  // error for a reminder that did its job would be noise.
+  useEffect(() => {
+    if (initialTaskId === null || handledDeepLinkTaskId.current === initialTaskId) return;
+    if (tasks === null) return;
+    const target = tasks.find((task) => task.id === initialTaskId);
+    handledDeepLinkTaskId.current = initialTaskId;
+    if (target === undefined) return;
+    dispatchSheet({ type: "open", task: target });
+  }, [initialTaskId, tasks]);
 
   const today = todayIn(new Date());
   const now = new Date();

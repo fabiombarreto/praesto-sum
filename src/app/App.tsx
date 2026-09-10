@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { taskIdFromRoute } from "../shared/app-route";
 import type { ShareTarget } from "../shared/share-target";
 import { readToken } from "./api";
 import { NotificationsDiagnosticsScreen } from "./components/NotificationsDiagnosticsScreen";
@@ -90,10 +91,17 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
   if (route === "notifications-diagnostics") {
     return <NotificationsDiagnosticsScreen onUnauthorized={onUnauthorized} back={back} />;
   }
+  // A notification for a Task-linked Reminder lands on `/tasks/<id>`
+  // (`src/worker/cron.ts` builds the payload; `src/sw.ts` opens it). The route
+  // resolved here is what makes that tap open the Task rather than the home
+  // screen — without this the `task/<id>` route fell through to `TodayScreen`
+  // and every notification looked like it opened the home. Found on the
+  // owner's device, 2026-09-10.
   return (
     <TodayScreen
       onUnauthorized={onUnauthorized}
       initialShare={initialShare}
+      initialTaskId={taskIdFromRoute(route)}
       onOpenSettings={() => navigate("settings")}
     />
   );
