@@ -1,0 +1,21 @@
+# Usage-metrics shards — git attribute rules.
+#
+# -diff: git renders a binary-file notice instead of shard content in every
+# diff. This is the anti-Goodhart guard for the one channel a prompt-scanning
+# grep cannot see. Three commands read working-tree diffs with an LLM in the
+# loop, and without this rule a phase that touches these files would feed
+# metric values straight into a reviewer's context:
+#   - /relay-implement writes `git diff <base_commit>` into
+#     PRPs/reports/<feature>/phase-<N>/attempts/<i>/diff.patch, then hands it to
+#     the code-reviewer, the test-runner and the visual-verifier
+#   - /relay-commit current-branch mode reviews `git diff` and `git diff --staged`
+#   - /relay-qa-report diff mode derives cases from `git status --porcelain` + `git diff`
+# Removing this line silently reopens all three.
+#
+# text eol=lf: the checkout-layer complement to the materializer's own literal
+# '\n' line endings. Without it a Windows checkout reintroduces CRLF (git warns
+# "LF will be replaced by CRLF the next time Git touches it"), which breaks the
+# byte-identical-regeneration guarantee at a layer the script cannot control.
+
+*.tsv -diff
+*.tsv text eol=lf

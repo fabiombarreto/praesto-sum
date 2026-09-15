@@ -1,0 +1,10 @@
+proj	ts	feat	phase	stage	outcome	halt	bud_prr	bud_min	natt	ms	suite_ms	corr_ms
+assistente-pessoal	2026-09-04T19:17:07Z	data-export	-	test	GREEN	-	-	-	-	-	-	-
+assistente-pessoal	2026-09-04T19:45:00Z	data-export	1	complete	complete	-	2	240	-	-	-	-
+assistente-pessoal	2026-09-04T20:35:00Z	data-export	2	complete	complete	-	2	240	-	-	-	-
+assistente-pessoal	2026-09-05T23:15:00Z	data-export	3	complete	complete	-	2	240	-	-	-	-
+assistente-pessoal	2026-09-07T02:55:00Z	data-export	4	complete	complete	-	2	240	-	-	-	-
+assistente-pessoal	2026-09-09T22:45:00Z	reminders	1	complete	complete	-	2	240	-	-	-	-
+assistente-pessoal	2026-09-09T23:12:00Z	reminders	2	complete	complete	-	2	240	-	-	-	-
+assistente-pessoal	2026-09-10T02:50:00Z	reminders	3	complete	complete	-	2	240	-	-	-	-
+assistente-pessoal	2026-09-10T03:22:00Z	reminders	4	complete	complete	-	2	240	-	-	-	-
