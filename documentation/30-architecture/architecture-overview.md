@@ -1,6 +1,6 @@
 ---
 status: draft
-last_updated: 2026-09-03
+last_updated: 2026-09-16
 review_trigger: "a pending technical decision is resolved (new ADR accepted), or stack/component/data/integration changes"
 ---
 
@@ -87,6 +87,13 @@ every later unit plugs into it:
   machine, the toast rules and the sheet's draft state. That module set is the reason a UI this
   size carries 313 tests without a browser tier: the components are glue, and the glue is
   verified by hand ([testing strategy](../40-engineering/testing-strategy.md)).
+- **The build identifies itself** (2026-09-16): `vite.config.ts` injects `__APP_VERSION__` — the
+  build date plus the short commit, or `dev` under `vite dev` — through the same `define`
+  mechanism `__DEV_API_TOKEN__` already used, and the settings screen shows it in its corner.
+  `package.json` carries no `version` field on purpose: a number bumped by hand answers "is this
+  the build I just deployed?" with a stale yes, while the commit cannot be wrong. The formatting
+  of the three cases (a real stamp, a development build, a stamp `git` could not resolve) is
+  decidable and therefore lives in `src/shared/app-version.ts`, not in the component.
 - **State is local and explicit.** No store library: `useState`/`useReducer` in the screen, one
   module-level `useSyncExternalStore` source for toasts so `main.tsx` can raise the
   service-worker update prompt without owning React state. Reads refetch on `visibilitychange`

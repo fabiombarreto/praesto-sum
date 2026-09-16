@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
@@ -44,10 +45,37 @@ function devApiToken(mode: string): string | null {
   }
 }
 
+/**
+ * The build stamp the settings screen shows: the build date and the short
+ * commit it was built from, or `dev` under `vite dev`.
+ *
+ * A date alone would not say WHICH build, and a `package.json` version would
+ * have to be bumped by hand to stay true. The commit is the only value that is
+ * always right without anyone remembering anything.
+ *
+ * `git` may legitimately be missing — a tarball checkout has no `.git` — so a
+ * failure returns an empty string and `formatAppVersion()` renders "versão
+ * desconhecida". A build must never fail over a label.
+ */
+function buildStamp(mode: string): string {
+  if (mode === "development") return "dev";
+  const date = new Date().toISOString().slice(0, 10);
+  try {
+    const sha = execFileSync("git", ["rev-parse", "--short", "HEAD"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+    return sha.length === 0 ? date : `${date} · ${sha}`;
+  } catch {
+    return date;
+  }
+}
+
 export default defineConfig(({ mode }) => ({
   // Always defined so the identifier never dangles; null outside development.
   define: {
     __DEV_API_TOKEN__: JSON.stringify(devApiToken(mode)),
+    __APP_VERSION__: JSON.stringify(buildStamp(mode)),
   },
   // Vite 8 binds IPv6 (::1) by default; pinning IPv4 keeps curl/health checks
   // and e2e scripts deterministic on Windows. The dev container overrides the
