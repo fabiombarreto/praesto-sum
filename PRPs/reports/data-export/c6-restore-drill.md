@@ -53,3 +53,20 @@ condition being checked rather than assumed. Until today the export had been tes
 666 tests — but never once read back into a schema.
 
 *Status: PASS, with the empty-table limitation recorded and self-closing at the next trigger*
+
+## Re-run — 2026-09-15
+
+Snapshot `praesto-2026-09-14.json`, the first written by the Scheduled Task rather than by hand.
+Five migrations applied. **PASS.**
+
+| Table | Snapshot | Restored | Fields |
+|---|---|---|---|
+| tasks | 14 | 14 | every field identical |
+| reminders | 6 | 6 | every field identical |
+| life_areas, recurrence_series, google_calendar_selections | 0 | 0 | not exercised |
+
+The limitation recorded above is now closed for `reminders`: its epoch instants and its nullable
+`task_id`, `origin_offset_minutes` and `sent_at` columns round-tripped on real rows, both Task-linked
+and standalone. `recurrence_series` is still the one to watch.
+
+*Status: PASS — reminders exercised; recurrence_series, life_areas and google_calendar_selections still empty*

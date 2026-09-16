@@ -1,0 +1,19 @@
+# Defensive re-include for the usage-metrics shards.
+#
+# Why this is needed: a target repository carrying a blanket `*.tsv` or `*.csv`
+# ignore — routine in data and ML projects — would otherwise track zero bytes
+# here, silently voiding the entire tracked-by-default rationale that makes the
+# artifact portable. The failure mode is invisible: materialization succeeds,
+# the files exist locally, and a clone gets nothing.
+#
+# Why it works: the root .gitignore documents the trap that "git never descends
+# into an excluded DIRECTORY, so a `!` re-include under `.claude/` or
+# `PRPs/reports/` would silently do nothing". That trap applies only to a
+# parent DIRECTORY exclusion. A filename-pattern rule such as `*.tsv` leaves
+# this directory itself traversable, so git still reads this nested file and
+# the re-inclusion below takes effect.
+
+!*.tsv
+
+# Materializer scratch: atomic writes land here briefly before the rename.
+*.tsv.tmp

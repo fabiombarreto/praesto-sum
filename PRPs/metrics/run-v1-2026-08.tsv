@@ -1,0 +1,7 @@
+proj	ts	feat	phase	stage	outcome	halt	bud_prr	bud_min	natt	ms	suite_ms	corr_ms
+assistente-pessoal	2026-08-15T21:55:52Z	task-detail-and-dates	-	test	GREEN	-	-	-	-	-	-	-
+assistente-pessoal	2026-08-15T21:57:00Z	task-detail-and-dates	1	complete	complete	-	2	240	-	-	-	-
+assistente-pessoal	2026-08-15T22:10:00Z	task-detail-and-dates	2	complete	complete	-	2	240	-	-	-	-
+assistente-pessoal	2026-08-15T22:26:00Z	task-detail-and-dates	3	complete	complete	-	2	240	-	-	-	-
+assistente-pessoal	2026-08-15T22:53:00Z	task-detail-and-dates	4	complete	complete	-	2	240	-	-	-	-
+assistente-pessoal	2026-08-23T04:43:29Z	ui-design-pass	4	test	GREEN	-	-	-	1	10685	10685	0
