@@ -33,10 +33,10 @@ Derived from [dev-environment.md](../documentation/40-engineering/dev-environmen
 "Versioning and releases" section, which is authoritative and carries the reasoning.
 
 - **The number is `version` in `package.json`; the `v<version>` git tag is what makes it true.**
-  A number in a file is a claim; `git show v0.8.0` is the answer to "what was 0.8.0?".
+  A number in a file is a claim; `git show v0.7.1` is the answer to "what was 0.7.1?".
 - **Scheme `0.MINOR.PATCH`** — MINOR moves when a roadmap delivery unit ships, PATCH when a fix or
   chore is deployed between units, MAJOR becomes `1.0.0` when Phase 1's exit criterion is met.
-  Started at `0.8.0` on 2026-09-16 (units 1–7 shipped, unit 8 in flight). Earlier deploys are not
+  Started at `0.7.1` on 2026-09-16: units 1–7 shipped, and the first tagged release carries chores C18/C19 rather than a unit; unit 8 `text-search` ships as `0.8.0`. Earlier deploys are not
   retro-tagged; the roadmap records them by Cloudflare version id.
 - **Cutting a release:** `npm run check` + `npm test` green → bump `version` → commit → `git tag
   v<version>` → `git push origin v<version>` → `npm run deploy` → record the Cloudflare version id
@@ -47,7 +47,7 @@ Derived from [dev-environment.md](../documentation/40-engineering/dev-environmen
   deliberately not a release passes `PRAESTO_SKIP_VERSION_TAG=1`, which prints what it let through.
 - **Where it shows:** `vite.config.ts` reads it into `__APP_VERSION__` as `<version> · <commit>`
   (` · dev` under `vite dev`); `src/shared/app-version.ts` formats it; the settings screen shows it
-  in its corner — *versão 0.8.0 · 3ba3413*. The commit says whether the build really is the tagged
+  in its corner — *versão 0.7.1 · <commit>*. The commit says whether the build really is the tagged
   one. Inside the dev container `git` cannot reach the repository, so only the version shows there.
 
 ## Running it in Docker (optional second door — ADR-0012)

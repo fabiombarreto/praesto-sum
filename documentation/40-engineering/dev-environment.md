@@ -138,12 +138,14 @@ public API and one user):
 
 | Part | Moves when | Example |
 |---|---|---|
-| MINOR | A delivery unit of the [roadmap](../50-planning/roadmap.md) ships | unit 8 `text-search` → `0.8.0` |
-| PATCH | A fix or a chore is deployed between units | the version line itself → `0.8.1` |
+| MINOR | A delivery unit of the [roadmap](../50-planning/roadmap.md) ships | unit 8 `text-search` → `0.8.0` (not yet: it is unmerged) |
+| PATCH | A fix or a chore is deployed between units | chores C18 + C19, this release → `0.7.1` |
 | MAJOR | Phase 1's exit criterion is met — the owner manages his daily Tasks in Praesto instead of the scattered notes | `1.0.0` |
 
-The first number is `0.8.0`, set on 2026-09-16: units 1–7 are shipped and unit 8
-is the one in flight. Earlier deploys are not retro-tagged — the roadmap's
+The first number is `0.7.1`, set on 2026-09-16: units 1–7 are shipped, and this
+first tagged release carries the chore pair C18/C19 that follows them rather than
+a unit. Unit 8 `text-search` ships as `0.8.0` when it lands. Earlier deploys are
+not retro-tagged — the roadmap's
 Delivery history already records them by Cloudflare version id, and inventing
 tags for commits nobody released under that number would be worse than the gap.
 
@@ -168,7 +170,7 @@ deliberately not a release — proving a hotfix in production, say — passes
 **Where the number shows up.** `vite.config.ts` reads it at build time into
 `__APP_VERSION__` as `<version> · <commit>` (` · dev` appended under `vite dev`),
 `src/shared/app-version.ts` formats it, and the settings screen shows it in its
-corner: *versão 0.8.0 · 3ba3413*. The commit is the tiebreaker — it says whether
+corner: *versão 0.7.1 · <commit>*. The commit is the tiebreaker — it says whether
 the build in front of you really is the tagged one.
 
 ### Remote migration over existing data
