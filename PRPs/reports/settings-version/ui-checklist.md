@@ -38,9 +38,11 @@ Run 2026-09-16 in the browser pane against this worktree's own dev server.
     covered by `test/app-version.test.ts` instead. The offline banner above it was not re-simulated
     because this change does not touch it.
 12. **Checked at 375 px and at 1280 px / the column cap.** ✔ — 375 × 812 and the pane's desktop
-    width both checked: the line stays right-aligned in the corner, on one line, with no
-    horizontal overflow. The phone's own safe areas and keyboard overlap were NOT checked — that
-    needs the owner's device, and nothing here can overlap a keyboard (the screen has no input).
+    width both checked in the browser: the line stays right-aligned in the corner, on one line,
+    with no horizontal overflow. **The device half is closed:** on 2026-09-17 the owner ran the
+    manual pass on his Android phone and his Windows PC against production `0.7.1 · b534c50` and
+    confirmed the implementation — the line reads right in the corner, is not tappable, and the
+    screen behaves as before. Nothing here can overlap a keyboard anyway: the screen has no input.
 13. **`vite build` size report read against §11; Lighthouse when the screen is new.** ✔ (partial) —
     `npm run build` ran clean; the added payload is one short string plus a five-line pure
     function. Lighthouse not re-run: the screen is not new and the change cannot move a metric.
@@ -50,5 +52,6 @@ Run 2026-09-16 in the browser pane against this worktree's own dev server.
     and this is it.
 
 **Result: 13 ✔, 1 ✘ (item 14, screenshots — the written reason above stands in for the file).**
-Owed to the owner: the phone pass (item 12's device half), which is the same thing every other
-unit records as his own step.
+Nothing is owed: the owner confirmed the device pass on 2026-09-17 against the deployed
+`0.7.1 · b534c50`, which closes item 12's device half — the one item these runs normally leave
+open for him.
