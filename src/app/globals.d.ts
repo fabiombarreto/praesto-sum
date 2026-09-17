@@ -19,8 +19,10 @@ declare const __DEV_API_TOKEN__: string | null;
 
 /**
  * `__APP_VERSION__` carries the build stamp the settings screen shows in its
- * corner: the build date and the short commit it was built from
- * (`2026-09-16 · 85f109b`), with ` · dev` appended under `vite dev`. It answers
+ * corner: `package.json`'s `version` and the short commit it was built from
+ * (`0.8.0 · 3ba3413`), with ` · dev` appended under `vite dev`. The number is
+ * only as good as its `v<version>` git tag, which
+ * `scripts/check-version-tag.mjs` requires at deploy time. It answers
  * one question
  * — is the app in front of me the build I just deployed? — which a
  * `package.json` version nobody remembers to bump answers wrongly.

@@ -54,7 +54,7 @@ Tier 2 index: one entry per doc, 1-2 lines each. Details live in the target file
 
 **Architecture (dev view)** — the system in one paragraph, request paths, where to add things. → docs/architecture.md
 
-**Development** — setup, day-to-day commands (planned, validate at scaffold), the optional Docker dev container (ADR-0012: `npm run docker:up`/`down`/`status`; `npm run dev` on the host is unchanged and still the default), the feature loop. → docs/development.md
+**Development** — setup, day-to-day commands (planned, validate at scaffold), **versioning and releases** (`version` in `package.json` + a `v<version>` git tag, scheme `0.MINOR.PATCH`, the `check-version-tag` deploy guard, and the version line on the settings screen — added 2026-09-16), the optional Docker dev container (ADR-0012: `npm run docker:up`/`down`/`status`; `npm run dev` on the host is unchanged and still the default), the feature loop. → docs/development.md
 
 **API reference** — planned `/api/*` surface; fill with the real contract as routes land. → docs/api-reference.md
 

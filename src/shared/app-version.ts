@@ -8,10 +8,13 @@
  * pure: no DOM, no clock, no dependency — every decidable case is asserted in
  * `test/app-version.test.ts`.
  *
- * Why a build stamp rather than a semantic version: `package.json` carries no
- * `version` field, and a number nobody remembers to bump answers the only
- * question this line exists for — "is the app in front of me the build I just
- * deployed?" — with a stale yes. The date plus the short commit answers it.
+ * The stamp is `<version> · <commit>`: the number from `package.json`, and the
+ * commit that build came from. The number alone would be a claim — anybody can
+ * type it — so the `v<version>` git tag is what makes it answerable six months
+ * later, and `scripts/check-version-tag.mjs` refuses a deploy whose commit
+ * carries no matching tag. The commit in the stamp is the tiebreaker: it says
+ * whether the build in front of you really is the tagged one. Full rules:
+ * `documentation/40-engineering/dev-environment.md`, "Versioning and releases".
  *
  * A development build carries the same date and commit, plus a `dev` marker
  * (2026-09-16, at the owner's request): the first version of this line read

@@ -58,17 +58,17 @@ function devApiToken(mode: string): string | null {
  * desconhecida". A build must never fail over a label.
  */
 function buildStamp(mode: string): string {
-  // The owner's own calendar day, not UTC: an ISO timestamp rolls over at 21:00
-  // in São Paulo, so an evening build would be stamped tomorrow. `todayIn` in
-  // `src/shared/dates.ts` answers exactly this for the domain's dates and owns
-  // the `PRAESTO_TIMEZONE` definition, but this file belongs to
-  // `tsconfig.node.json` and importing across that project boundary is a
-  // compile error by design — so the zone is repeated here, and only here, with
-  // that file named as its source. "sv-SE" is the shortest locale that formats
-  // as YYYY-MM-DD.
-  const date = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(
-    new Date(),
-  );
+  // `package.json`'s `version` is the number, and the `v<version>` git tag is
+  // what makes it answerable later — `scripts/check-version-tag.mjs` refuses a
+  // deploy whose commit carries no matching tag. The commit below is the
+  // tiebreaker: it says whether this build really is the tagged one.
+  let version = "";
+  try {
+    version = JSON.parse(readFileSync("package.json", "utf8")).version ?? "";
+  } catch {
+    // A missing or unreadable package.json is not worth failing a build over;
+    // the commit alone still identifies the build.
+  }
   let sha = "";
   try {
     sha = execFileSync("git", ["rev-parse", "--short", "HEAD"], {
@@ -81,7 +81,7 @@ function buildStamp(mode: string): string {
     // outside the bind mount. The date alone still identifies the build well
     // enough, and a build must never fail over a label.
   }
-  const parts = sha.length === 0 ? [date] : [date, sha];
+  const parts = [version, sha].filter((part) => part.length > 0);
   // Development keeps the date and the commit and adds a marker, rather than
   // replacing them (owner's request, 2026-09-16): a line that reads only
   // "versão de desenvolvimento" hides the number it exists to show.
