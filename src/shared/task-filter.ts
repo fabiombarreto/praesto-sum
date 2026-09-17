@@ -16,12 +16,14 @@
 
 import type { TaskPriority, TaskStatus } from "./api";
 
-/** The whole filter state: four independent, nullable dimensions. `null` means "not set". */
+/** The whole filter state: five independent, nullable dimensions. `null` means "not set". */
 export interface TaskFilter {
   status: TaskStatus | null;
   priority: TaskPriority | null;
   from: string | null;
   to: string | null;
+  /** Text search (PRD AC-1..AC-9, text-search unit, phase 1). */
+  q: string | null;
 }
 
 /** The filter a screen starts with — every dimension unset. Never seeded from storage (layout standard §2.3). */
@@ -30,6 +32,7 @@ export const EMPTY_FILTER: TaskFilter = {
   priority: null,
   from: null,
   to: null,
+  q: null,
 };
 
 /** The three quick-filter chips of layout standard §2.3, each backed by exactly one `TaskFilter` dimension. */
@@ -39,10 +42,12 @@ export type QuickChip = "open" | "today" | "high";
  * The query string `listTasks` sends: `""` when every dimension is `null` —
  * the case that keeps an unfiltered load byte-identical to the request the
  * screen issued before filters existed — otherwise `?` plus the set
- * parameters in the FIXED order `status`, `from`, `to`, `priority`, built
- * with `URLSearchParams` so every value is encoded rather than concatenated
- * raw. The fixed order is what makes the output assertable and keeps two
- * callers building the same filter from ever producing two different URLs.
+ * parameters in the FIXED order `status`, `from`, `to`, `priority`, `q`,
+ * built with `URLSearchParams` so every value is encoded rather than
+ * concatenated raw. The fixed order is what makes the output assertable and
+ * keeps two callers building the same filter from ever producing two
+ * different URLs. `q` sits last so no existing assertion's expected string
+ * changes.
  */
 export function toQuery(filter: TaskFilter): string {
   const params = new URLSearchParams();
@@ -50,6 +55,7 @@ export function toQuery(filter: TaskFilter): string {
   if (filter.from !== null) params.set("from", filter.from);
   if (filter.to !== null) params.set("to", filter.to);
   if (filter.priority !== null) params.set("priority", filter.priority);
+  if (filter.q !== null) params.set("q", filter.q);
   return params.size === 0 ? "" : `?${params.toString()}`;
 }
 

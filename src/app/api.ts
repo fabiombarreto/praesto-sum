@@ -118,12 +118,16 @@ export async function checkHealth(): Promise<void> {
 export async function listTasks(
   filter: TaskFilter = EMPTY_FILTER,
   limit?: number,
+  signal?: AbortSignal,
 ): Promise<TaskDto[]> {
   const base = toQuery(filter);
   const query =
     limit === undefined ? base : `${base}${base === "" ? "?" : "&"}limit=${String(limit)}`;
 
-  const body = await request<{ tasks: TaskDto[] }>(`/api/tasks${query}`);
+  const body = await request<{ tasks: TaskDto[] }>(
+    `/api/tasks${query}`,
+    signal === undefined ? undefined : { signal },
+  );
   return body.tasks;
 }
 

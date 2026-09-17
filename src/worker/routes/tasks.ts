@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull, sql, type SQL } from "drizzle-orm";
 import { Hono } from "hono";
 import {
   EDITABLE_TASK_FIELDS,
@@ -9,6 +9,7 @@ import {
   type CreateTaskInput,
 } from "../../shared/api";
 import { offsetToInstant, todayIn } from "../../shared/dates";
+import { buildSearchClauses } from "../../shared/search";
 import { createDb } from "../db/client";
 import { reminders, tasks } from "../db/schema";
 import { toTaskDto } from "../dto";
@@ -83,6 +84,16 @@ taskRoutes.get("/", async (c) => {
     return c.json({ error: `Unknown priority: ${priority}` }, 400);
   }
 
+  // `q` search (PRD AC-1..AC-9): validated here, in the same pre-DB block as
+  // every other filter, so an invalid query never reaches the database.
+  const q = c.req.query("q");
+  let qClauses: SQL[] = [];
+  if (q !== undefined) {
+    const result = buildSearchClauses(q, sql`${tasks.title}`, sql`${tasks.description}`);
+    if (!result.ok) return c.json({ error: result.error }, 400);
+    qClauses = result.clauses;
+  }
+
   const today = todayIn(new Date());
   const dueDate = sql`coalesce(${tasks.deadline}, ${tasks.scheduledDate})`;
   const urgencyBucket = sql`case
@@ -104,6 +115,7 @@ taskRoutes.get("/", async (c) => {
       : priority === "normal"
         ? sql`(${tasks.priority} = 'normal' or ${tasks.priority} is null)`
         : eq(tasks.priority, priority),
+    ...qClauses,
   ].filter((clause) => clause !== undefined);
 
   const db = createDb(c.env);

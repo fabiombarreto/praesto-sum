@@ -4,6 +4,7 @@ import type { ShareTarget } from "../shared/share-target";
 import { readToken } from "./api";
 import { NotificationsDiagnosticsScreen } from "./components/NotificationsDiagnosticsScreen";
 import { NotificationsScreen } from "./components/NotificationsScreen";
+import { SearchScreen } from "./components/SearchScreen";
 import { SettingsScreen } from "./components/SettingsScreen";
 import { TodayScreen } from "./components/TodayScreen";
 import { TokenGate, type TokenGateReason } from "./components/TokenGate";
@@ -91,6 +92,9 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
   if (route === "notifications-diagnostics") {
     return <NotificationsDiagnosticsScreen onUnauthorized={onUnauthorized} back={back} />;
   }
+  if (route === "search") {
+    return <SearchScreen onUnauthorized={onUnauthorized} back={back} />;
+  }
   // A notification for a Task-linked Reminder lands on `/tasks/<id>`
   // (`src/worker/cron.ts` builds the payload; `src/sw.ts` opens it). The route
   // resolved here is what makes that tap open the Task rather than the home
@@ -102,6 +106,7 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
       onUnauthorized={onUnauthorized}
       initialShare={initialShare}
       initialTaskId={taskIdFromRoute(route)}
+      onOpenSearch={() => navigate("search")}
       onOpenSettings={() => navigate("settings")}
     />
   );
