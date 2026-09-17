@@ -34,7 +34,8 @@ the argument for not letting the order slip again.
    `TodayScreen`'s handler called `onOpenSearch()` without
    `event.preventDefault()`, though its own comment cites GitHub's shortcut,
    which prevents it for exactly this reason. Fixed; re-verified: `/` now opens
-   the screen with the field focused and **empty**. The rest of the item passes —
+   the screen with the field focused and **empty**, and the owner confirmed the
+   same on his own PC on 2026-09-17, after `v0.8.1` was deployed. The rest of the item passes —
    the field takes focus on open, `Esc` returns to *Hoje*, and `/` is correctly
    ignored while focus is already in a text field (verified by typing into the
    capture deck).
