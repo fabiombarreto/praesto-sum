@@ -1,6 +1,6 @@
 ---
 status: draft
-last_updated: 2026-09-16
+last_updated: 2026-09-17
 review_trigger: "a pending technical decision is resolved (new ADR accepted), or stack/component/data/integration changes"
 ---
 
@@ -203,7 +203,7 @@ the PWA and every later unit code against.
 | Risk | Why it is real now | Mitigation |
 |---|---|---|
 | Documentation rot | The project is documentation-only; docs that drift from reality poison every future session | Maintenance map and audit ritual in the [README](../README.md); `review_trigger` on every doc |
-| Google OAuth durability | An app in "Testing" publishing status gets refresh tokens expiring every 7 days, which would break QA-002; official docs contradict each other on whether publishing a sensitive scope needs verification first | **Half settled by chore C11 (2026-08-11):** the app is published *In production* with both sensitive Calendar scopes and no verification submission, so the fallback path (own domain, chore C13) is not needed. The token's actual survival past day 7 is still unproven — chore **C12 on or after 2026-08-19** re-runs the spike with the same refresh token and closes this row either way |
+| Google OAuth durability | An app in "Testing" publishing status gets refresh tokens expiring every 7 days, which would break QA-002; official docs contradict each other on whether publishing a sensitive scope needs verification first | **Settled by chores C11 and C12.** C11 (2026-08-11): the app is published *In production* with both sensitive Calendar scopes and no verification submission, so the fallback path (own domain, chore C13) is not needed. C12 (2026-08-25): the same refresh token, minted 2026-08-11T13:06Z, still exchanged for an access token on day **14** — a published app does not issue the 7-day tokens *Testing* does, and **QA-002 holds**. Chore **C13 was withdrawn on 2026-09-17** on that pair of results. What this does *not* claim is a guarantee: it rests on Google's current posture for a published app with sensitive scopes, so the row is settled, not immortal — a verification demand or a second user reopens C13 |
 | Silent damage to the owner's real Google calendar | Write-back acts on data that lives outside D1 and that Praesto cannot restore on its own | [ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md): scope never wider than `calendar.events`, deterministic insert ids, `If-Match` on writes, full re-sync as upsert with zero deletions, and a proven restore (chore C6) before every migration over real data |
 
 ## Key decisions

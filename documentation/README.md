@@ -75,7 +75,7 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 20-requirements/functional-requirements.md | active | 2026-08-12 |
 | 20-requirements/quality-attributes.md | active | 2026-08-03 |
 | 20-requirements/constraints.md | active | 2026-08-04 |
-| 30-architecture/architecture-overview.md | draft | 2026-09-16 |
+| 30-architecture/architecture-overview.md | draft | 2026-09-17 |
 | 30-architecture/domain-model.md | draft | 2026-08-15 |
 | 40-engineering/tech-stack.md | active | 2026-09-08 |
 | 40-engineering/engineering-conventions.md | active | 2026-08-30 |
@@ -83,7 +83,7 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 40-engineering/testing-strategy.md | active | 2026-08-12 |
 | 40-engineering/ui-ux-guidelines.md | active | 2026-08-30 |
 | 40-engineering/ui-layout-standard.md | active | 2026-08-23 |
-| 50-planning/roadmap.md | active | 2026-09-16 |
+| 50-planning/roadmap.md | active | 2026-09-17 |
 | 50-planning/ui-ux-plan.md | deprecated | 2026-08-23 |
 | 60-decisions/index.md | active | 2026-09-08 |
 | 60-decisions/ADR-0001-write-all-artifacts-in-english.md | accepted | 2026-08-02 |
