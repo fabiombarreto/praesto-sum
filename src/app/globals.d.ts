@@ -16,3 +16,21 @@
  * artifact rather than trusting the intent.
  */
 declare const __DEV_API_TOKEN__: string | null;
+
+/**
+ * `__APP_VERSION__` carries the build stamp the settings screen shows in its
+ * corner: `package.json`'s `version` and the short commit it was built from
+ * (`0.8.0 · 3ba3413`), with ` · dev` appended under `vite dev`. The number is
+ * only as good as its `v<version>` git tag, which
+ * `scripts/check-version-tag.mjs` requires at deploy time. It answers
+ * one question
+ * — is the app in front of me the build I just deployed? — which a
+ * `package.json` version nobody remembers to bump answers wrongly.
+ *
+ * It is a plain string, never `null`. When `git` cannot be reached — a tarball
+ * checkout with no `.git` — `buildStamp()` in `vite.config.ts` falls back to the
+ * date alone rather than failing the build over a label. `formatAppVersion()` in
+ * `src/shared/app-version.ts` handles the remaining degenerate cases (an empty
+ * or absent stamp becomes "versão desconhecida", never an empty line).
+ */
+declare const __APP_VERSION__: string;

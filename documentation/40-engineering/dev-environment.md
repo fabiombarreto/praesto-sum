@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-09-08
+last_updated: 2026-09-16
 review_trigger: "a setup step changes, fails on a fresh machine, the scaffold validates the planned commands, or a new way of running the project locally is added"
 ---
 
@@ -119,7 +119,59 @@ Not yet implemented: the export snapshot of FR-042 (`db:snapshot`) — it lands 
 | 5 | `npm run check` and `npm test` | Both green *before* anything touches production. Non-negotiable. |
 | 6 | Read the pending SQL in `migrations/` | Confirm no `PRAGMA foreign_keys=OFF/ON` (see Known issues). `0000_neat_the_fallen.sql` is clean: `CREATE TABLE`/`CREATE INDEX` only. `0001_violet_pretty_boy.sql` recreates `tasks` and was hand-rewritten to `PRAGMA defer_foreign_keys=ON`. |
 | 7 | `npm run db:migrate:remote` | Applies to **production** and auto-confirms in a non-interactive shell. The first run executed 17 commands. **If the pending migration rewrites an existing table, do the Remote migration steps below instead of running this bare.** |
-| 8 | `npm run deploy` | Ends with the URL and `schedule: */5 * * * *`. |
+| 7b | Bump `version` in `package.json` if this deploy is a release, then `git commit` and `git tag v<version>` | See [Versioning and releases](#versioning-and-releases) below. Step 8 refuses to deploy a version whose tag does not point at the commit being deployed. |
+| 8 | `npm run deploy` | Ends with the URL and `schedule: */5 * * * *`. Runs `scripts/check-version-tag.mjs` between the build and `wrangler deploy`. |
+
+### Versioning and releases
+
+> Added 2026-09-16, at the owner's request, after the settings screen started
+> showing the build it is running. Until then the project had three identifiers
+> and no version: the Cloudflare version id of each deploy (copied by hand into
+> the roadmap), the git commit, and nothing else.
+
+**The number lives in `package.json`, and the git tag is what makes it true.**
+A number in a file is a claim anybody can type; `git show v0.8.0` is the answer
+to "what was 0.8.0?" six months from now, with nobody having to remember.
+
+**The scheme** (`0.MINOR.PATCH`, and deliberately not full SemVer — there is no
+public API and one user):
+
+| Part | Moves when | Example |
+|---|---|---|
+| MINOR | A delivery unit of the [roadmap](../50-planning/roadmap.md) ships | unit 8 `text-search` → `0.8.0` (not yet: it is unmerged) |
+| PATCH | A fix or a chore is deployed between units | chores C18 + C19, this release → `0.7.1` |
+| MAJOR | Phase 1's exit criterion is met — the owner manages his daily Tasks in Praesto instead of the scattered notes | `1.0.0` |
+
+The first number is `0.7.1`, set on 2026-09-16: units 1–7 are shipped, and this
+first tagged release carries the chore pair C18/C19 that follows them rather than
+a unit. Unit 8 `text-search` ships as `0.8.0` when it lands. Earlier deploys are
+not retro-tagged — the roadmap's
+Delivery history already records them by Cloudflare version id, and inventing
+tags for commits nobody released under that number would be worse than the gap.
+
+**Cutting a release**, in order:
+
+1. `npm run check` and `npm test` green.
+2. Bump `version` in `package.json`.
+3. Commit it — the tag must point at the commit that carries the number.
+4. `git tag v<version>` and `git push origin v<version>`.
+5. `npm run deploy`.
+6. Record the Cloudflare version id beside the tag in the roadmap's Delivery
+   history, so the two identifiers stay connected.
+
+**The guard.** `npm run deploy` runs `scripts/check-version-tag.mjs` after the
+build and before `wrangler deploy`. It fails when no `v<version>` tag points at
+`HEAD`, printing the exact `git tag` command, and says so when the working tree
+is dirty as well. It never creates the tag: tagging is a decision, and the guard
+only refuses to let the decision be skipped in silence. A deploy that is
+deliberately not a release — proving a hotfix in production, say — passes
+`PRAESTO_SKIP_VERSION_TAG=1`, which prints what it let through.
+
+**Where the number shows up.** `vite.config.ts` reads it at build time into
+`__APP_VERSION__` as `<version> · <commit>` (` · dev` appended under `vite dev`),
+`src/shared/app-version.ts` formats it, and the settings screen shows it in its
+corner: *versão 0.7.1 · <commit>*. The commit is the tiebreaker — it says whether
+the build in front of you really is the tagged one.
 
 ### Remote migration over existing data
 

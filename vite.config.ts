@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
@@ -44,10 +45,55 @@ function devApiToken(mode: string): string | null {
   }
 }
 
+/**
+ * The build stamp the settings screen shows: the build date and the short
+ * commit it was built from, or `dev` under `vite dev`.
+ *
+ * A date alone would not say WHICH build, and a `package.json` version would
+ * have to be bumped by hand to stay true. The commit is the only value that is
+ * always right without anyone remembering anything.
+ *
+ * `git` may legitimately be missing — a tarball checkout has no `.git` — so a
+ * failure returns an empty string and `formatAppVersion()` renders "versão
+ * desconhecida". A build must never fail over a label.
+ */
+function buildStamp(mode: string): string {
+  // `package.json`'s `version` is the number, and the `v<version>` git tag is
+  // what makes it answerable later — `scripts/check-version-tag.mjs` refuses a
+  // deploy whose commit carries no matching tag. The commit below is the
+  // tiebreaker: it says whether this build really is the tagged one.
+  let version = "";
+  try {
+    version = JSON.parse(readFileSync("package.json", "utf8")).version ?? "";
+  } catch {
+    // A missing or unreadable package.json is not worth failing a build over;
+    // the commit alone still identifies the build.
+  }
+  let sha = "";
+  try {
+    sha = execFileSync("git", ["rev-parse", "--short", "HEAD"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    // `git` may legitimately be out of reach: a tarball checkout has no `.git`,
+    // and inside the dev container the worktree's `.git` is a file pointing
+    // outside the bind mount. The date alone still identifies the build well
+    // enough, and a build must never fail over a label.
+  }
+  const parts = [version, sha].filter((part) => part.length > 0);
+  // Development keeps the date and the commit and adds a marker, rather than
+  // replacing them (owner's request, 2026-09-16): a line that reads only
+  // "versão de desenvolvimento" hides the number it exists to show.
+  if (mode === "development") parts.push("dev");
+  return parts.join(" · ");
+}
+
 export default defineConfig(({ mode }) => ({
   // Always defined so the identifier never dangles; null outside development.
   define: {
     __DEV_API_TOKEN__: JSON.stringify(devApiToken(mode)),
+    __APP_VERSION__: JSON.stringify(buildStamp(mode)),
   },
   // Vite 8 binds IPv6 (::1) by default; pinning IPv4 keeps curl/health checks
   // and e2e scripts deterministic on Windows. The dev container overrides the
