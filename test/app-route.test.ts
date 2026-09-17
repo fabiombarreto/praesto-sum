@@ -170,6 +170,9 @@ describe("taskRouteOf / taskIdFromRoute", () => {
     expect(taskIdFromRoute("settings")).toBeNull();
     expect(taskIdFromRoute("notifications")).toBeNull();
     expect(taskIdFromRoute("notifications-diagnostics")).toBeNull();
+    // text-search phase 2 (PRD AC-12 via plan AC-A1) — "search" joins the
+    // flat-literal routes; it is not a Task route either.
+    expect(taskIdFromRoute("search")).toBeNull();
   });
 });
 
@@ -211,6 +214,59 @@ describe("routeFromPath and pathOf agree — the Task route round-trips (AC-8's 
 
   it("round-trips a Task AppRoute value itself, not just its path", () => {
     const route: AppRoute = taskRouteOf("abc-123");
+    expect(routeFromPath(pathOf(route))).toBe(route);
+  });
+});
+
+// --- UPDATE (text-search phase 2, the search route) ------------------------
+// PRPs/prds/text-search.prd.md AC-12 (via plan AC-A1) needs one more
+// reachable route: `/search`, a flat literal exactly like `settings`/
+// `notifications` rather than the parameterized `task/${string}` shape,
+// since the query text lives in `SearchScreen`'s own component state, not
+// the URL (the plan's own Solution Statement). Source plan:
+// PRPs/plans/text-search-phase-2-the-search-route.plan.md
+// (Task 1 — src/shared/app-route.ts: add "search" to the AppRoute union,
+// placed after "notifications-diagnostics" and before the parameterized
+// `task/${string}` member; add the `/search` <-> "search" mapping in
+// routeFromPath/pathOf, checking it the same way the other flat literals
+// are checked). This is infrastructure for AC-A1's icon-tap/`/`-key
+// activation — the route existing and round-tripping is the PRECONDITION
+// Task 3's icon button and Task 4's `/` shortcut navigate through. The
+// actual tap/keypress/focus behaviour is React-component + DOM-event UI,
+// which this codebase verifies manually (no component test file exists for
+// TodayHeader.tsx, TodayScreen.tsx or SettingsScreen.tsx either) — that
+// half is covered by the plan's own AC-A12 device pass, not here. Every
+// assertion below this point is ADDITIVE: none of the existing routes'
+// cases above changed shape or expectation.
+//
+// This file is RED again for a NEW reason once Task 1 lands and before it:
+// today `AppRoute` has no `"search"` member, so the `const route: AppRoute
+// = "search"` assignment below fails to type-check, and `routeFromPath`/
+// `pathOf` do not recognise `/search` or `"search"` at all.
+
+describe("routeFromPath — the search route (PRD AC-12 via plan AC-A1)", () => {
+  it("maps /search to search", () => {
+    expect(routeFromPath("/search")).toBe("search");
+  });
+
+  it("accepts a trailing slash on /search", () => {
+    expect(routeFromPath("/search/")).toBe("search");
+  });
+
+  it("resolves a path nested under /search to today, not to search — there is exactly one segment", () => {
+    expect(routeFromPath("/search/unknown")).toBe("today");
+  });
+});
+
+describe("pathOf — the search route (PRD AC-12 via plan AC-A1)", () => {
+  it("maps search to /search", () => {
+    expect(pathOf("search")).toBe("/search");
+  });
+});
+
+describe("routeFromPath and pathOf agree — the search route round-trips too", () => {
+  it("round-trips search", () => {
+    const route: AppRoute = "search";
     expect(routeFromPath(pathOf(route))).toBe(route);
   });
 });

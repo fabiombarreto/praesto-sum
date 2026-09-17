@@ -47,6 +47,7 @@ describe("toQuery", () => {
       priority: "high",
       from: "2026-08-01",
       to: TODAY,
+      q: null,
     };
 
     // status, from, to, priority — fixed so the output is assertable and so
@@ -57,6 +58,35 @@ describe("toQuery", () => {
   it("encodes values rather than concatenating them raw", () => {
     expect(toQuery({ ...EMPTY_FILTER, status: "missed" })).toBe("?status=missed");
     expect(toQuery({ ...EMPTY_FILTER, from: "2026-12-31" })).toContain("from=2026-12-31");
+  });
+});
+
+// PRPs/prds/text-search.prd.md — phase 1 added `q` to TaskFilter/EMPTY_FILTER
+// and to toQuery's own fixed order (the module's doc comment: "q sits last so
+// no existing assertion's expected string changes"), but no AC in phase 1
+// exercised it directly through toQuery — see this file's own "EMPTY_FILTER
+// has all five dimensions null" comment below, which named phase 2 as the
+// point this gap closes. Phase 2's SearchScreen is the first real caller
+// (PRPs/plans/text-search-phase-2-the-search-route.plan.md, Task 6:
+// `listTasks({ ...EMPTY_FILTER, q: debounced }, undefined, controller.signal)`,
+// the request AC-A3 issues), so this is where `toQuery` carrying `q` — and
+// carrying it LAST when composed with another dimension — actually gets
+// pinned. EXISTING_TEST_UPDATED: this file already exists and already tests
+// every other `toQuery` dimension; these cases close the one dimension left
+// unexercised, they do not touch or narrow any assertion above.
+describe("toQuery — q (PRD text-search AC-12 via phase-2 plan AC-A3)", () => {
+  it("carries q on its own", () => {
+    expect(toQuery({ ...EMPTY_FILTER, q: "aluguel" })).toBe("?q=aluguel");
+  });
+
+  it("places q LAST when composed with another dimension, per the module's fixed order", () => {
+    expect(toQuery({ ...EMPTY_FILTER, status: "open", q: "aluguel" })).toBe(
+      "?status=open&q=aluguel",
+    );
+  });
+
+  it("encodes q rather than concatenating it raw", () => {
+    expect(toQuery({ ...EMPTY_FILTER, q: "boleto atrasado" })).toBe("?q=boleto+atrasado");
   });
 });
 
@@ -80,9 +110,9 @@ describe("activeCount", () => {
   });
 
   it("never exceeds three", () => {
-    expect(activeCount({ status: "open", priority: "high", from: "2026-08-01", to: TODAY })).toBe(
-      3,
-    );
+    expect(
+      activeCount({ status: "open", priority: "high", from: "2026-08-01", to: TODAY, q: null }),
+    ).toBe(3);
   });
 });
 
@@ -136,6 +166,7 @@ describe("toggleChip", () => {
       priority: "low",
       from: "2026-08-01",
       to: "2026-09-30",
+      q: null,
     };
 
     const afterHigh = toggleChip(rich, "high", TODAY);
@@ -181,7 +212,17 @@ describe("purity", () => {
     expect(b.to).toBe("2030-06-15");
   });
 
-  it("EMPTY_FILTER has all four dimensions null", () => {
-    expect(EMPTY_FILTER).toEqual({ status: null, priority: null, from: null, to: null });
+  it("EMPTY_FILTER has all five dimensions null", () => {
+    // PRPs/prds/text-search.prd.md — Task 4 of
+    // PRPs/plans/text-search-phase-1-search-on-the-api.plan.md adds `q:
+    // string | null` to TaskFilter/EMPTY_FILTER so it stays the single
+    // source of truth for filter state (no PRD AC-N exercises `q` directly
+    // in this phase — AC-12's search route, phase 2, is what calls
+    // `toQuery({ ...EMPTY_FILTER, q: <value> })`). The struct's shape
+    // genuinely changes in this phase, so this is an EXISTING_TEST_UPDATED
+    // fix, not a weakening: dropping this assertion would leave a real
+    // shape change unpinned, and narrowing it to four keys would silently
+    // accept a `q` the struct is never supposed to carry.
+    expect(EMPTY_FILTER).toEqual({ status: null, priority: null, from: null, to: null, q: null });
   });
 });

@@ -14,7 +14,7 @@
 | Method | Route | Behavior |
 |---|---|---|
 | GET | `/api/health` | `{ ok: true }` |
-| GET | `/api/tasks?status=open\|done\|missed&from=YYYY-MM-DD&to=YYYY-MM-DD&priority=high\|normal\|low&limit=N` | `{ tasks: TaskDto[] }` in urgency order (see the frozen read contract below), max `MAX_TASK_LIMIT` (500). `from`/`to` are inclusive and compare against `coalesce(deadline, scheduledDate)`, so a Task with neither date is outside any range; an inverted range (`from` after `to`) answers `200` with an empty list. `priority=normal` also matches an unset priority. Unknown status, an invalid date, an unknown priority, or an invalid `limit` → 400 |
+| GET | `/api/tasks?status=open\|done\|missed&from=YYYY-MM-DD&to=YYYY-MM-DD&priority=high\|normal\|low&limit=N&q=<text>` | `{ tasks: TaskDto[] }` in urgency order (see the frozen read contract below), max `MAX_TASK_LIMIT` (500). `from`/`to` are inclusive and compare against `coalesce(deadline, scheduledDate)`, so a Task with neither date is outside any range; an inverted range (`from` after `to`) answers `200` with an empty list. `priority=normal` also matches an unset priority. `q` (optional): every whitespace-separated word must occur, in any order and anywhere, in the title or description, case- and diacritic-insensitive, across every status; blank/whitespace-only or over 100 characters → 400 naming `q`. Unknown status, an invalid date, an unknown priority, or an invalid `limit` → 400 |
 | POST | `/api/tasks` | Create. `title` required; `deadline` XOR `scheduledDate` (both must be valid calendar dates); `priority` is `high\|normal\|low` or absent → 201 `{ task }` |
 | PATCH | `/api/tasks/:id` | Edit. Editable keys are exactly `title`, `description`, `deadline`, `scheduledDate`, `priority` (`EDITABLE_TASK_FIELDS`); any other key — `id`, `status`, `createdAt`, `completedAt`, `seriesId`, `occurrenceDate`, `detached`, `lifeAreaId`, or a typo — → 400. An empty body → 400. Setting one date clears the other in the same write; editing a Task with a `seriesId` sets `detached` (ADR-0006, never exposed on the wire). → 200 `{ task }`, or 404 when absent |
 | POST | `/api/tasks/:id/complete` | Open → done, stamps `completedAt`. Not open → 404 |
@@ -72,12 +72,23 @@ Ordered by the delivery units in `documentation/50-planning/roadmap.md` — that
 | 4 `data-export` | `GET /api/export` — full JSON dump + `.ics` | FR-042, FR-043 |
 | 5 `push-channel-proven` | Client subscription UI (server-side subscription registration, test-push route and cron diagnostics have shipped — see Implemented above) | FR-041 |
 | 6 `reminders` | Reminder CRUD (standalone and attached), due-scan job | FR-044, FR-025 |
-| 7 `text-search` | Text search over Tasks | FR-040 |
-| 8 `recurring-tasks` | Series CRUD + occurrence materialization | FR-009 |
-| 9 `missed-sweep` | Cron sweep marking `missed` and spawning the next occurrence | FR-009, FR-011 |
-| 10 `adherence-mirror` | Adherence read model per series | FR-011 |
-| 11 `repeated-miss-nudge` | Repeated-miss job + per-series mute | FR-012 |
-| 12 `life-areas` | Life Area CRUD and area filters | FR-008 |
-| 13–17 (Phase 2) | Events, day/week range queries, event exceptions, event reminders, Task↔Event links | FR-020..026, FR-010 |
+| 8 `text-search` | The search route (UI) — the server-side `q` parameter shipped in phase 1. | FR-040 |
+| 9 `recurring-tasks` | Series CRUD + occurrence materialization | FR-009 |
+| 10 `missed-sweep` | Cron sweep marking `missed` and spawning the next occurrence | FR-009, FR-011 |
+| 11 `adherence-mirror` | Adherence read model per series | FR-011 |
+| 12 `repeated-miss-nudge` | Repeated-miss job + per-series mute | FR-012 |
+| 13 `life-areas` | Life Area CRUD and area filters | FR-008 |
+| 14–18 (Phase 2) | Events, day/week range queries, event exceptions, event reminders, Task↔Event links | FR-020..026, FR-010 |
+
+Note on the gap at 7: units 4 `data-export`, 5 `push-channel-proven` and 6
+`reminders` keep the legacy numbers 4/5/6 above rather than their current
+roadmap numbers 5/6/7 — deliberately. All three have shipped, so "Not built
+yet" is the wrong category for them, not merely the wrong number; renumbering
+them here without also moving them out of this table would still leave the
+table wrong. This phase (text-search unit 8) renumbers only the genuinely
+not-built block it collides with (`recurring-tasks` through the Phase 2
+aggregate row); the three legacy rows are a separate, deeper fix left for a
+future pass (see `PRPs/plans/text-search-phase-2-the-search-route.plan.md`,
+Task 10 and its Risks entry).
 
 Cron (not HTTP): `scheduled()` in `src/worker/index.ts` now calls `runCronHeartbeat` (`src/worker/cron.ts`), which records every run — success or failure — as a `cron_runs` row, readable via `GET /api/diagnostics`. It still reads no Reminder; the due-Reminder scan, the recurrence sweep (materialize next occurrence, mark superseded ones `missed`) and the export snapshot job are unit 7+'s scope.

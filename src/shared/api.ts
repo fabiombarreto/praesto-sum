@@ -239,6 +239,14 @@ export const EDITABLE_TASK_FIELDS: readonly string[] = [
 export const MAX_TASK_LIMIT = 500;
 
 /**
+ * The hard ceiling on how many characters the `q` search parameter on
+ * `GET /api/tasks` may carry. A query over this length is rejected with 400
+ * (AC-8) rather than silently truncated — truncating would search for
+ * something the caller never typed.
+ */
+export const MAX_SEARCH_QUERY_LENGTH = 100;
+
+/**
  * `POST /api/reminders` body. Mirrors `CreateTaskInput`'s create-vs-update
  * split: absent and explicit-`null` mean the same thing on create.
  *

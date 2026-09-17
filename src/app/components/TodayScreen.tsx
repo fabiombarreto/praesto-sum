@@ -132,6 +132,7 @@ export function TodayScreen({
   onUnauthorized,
   initialShare,
   initialTaskId,
+  onOpenSearch,
   onOpenSettings,
 }: {
   onUnauthorized: () => void;
@@ -142,6 +143,8 @@ export function TodayScreen({
    * once the Task list has loaded (see the effect below).
    */
   initialTaskId: string | null;
+  /** Threaded from `App.tsx` (text-search phase 2 Task 5) so `TodayHeader`'s search icon button (Task 3) and the `/` shortcut below can navigate. */
+  onOpenSearch: () => void;
   /** Threaded from `App.tsx` (plan Task 8) so `TodayHeader`'s settings icon button (Task 7) can navigate. */
   onOpenSettings: () => void;
 }) {
@@ -645,6 +648,24 @@ export function TodayScreen({
   }, []);
 
   useEffect(() => {
+    // The `/`-focuses-search shortcut (layout standard §5) — GitHub's own
+    // guard against stealing the keystroke while the owner types a literal
+    // `/` into the capture field or a Task title/description.
+    function handleKeyDown(event: KeyboardEvent): void {
+      if (event.key !== "/") return;
+      const active = document.activeElement;
+      const isTextField =
+        active instanceof HTMLInputElement ||
+        active instanceof HTMLTextAreaElement ||
+        (active instanceof HTMLElement && active.isContentEditable);
+      if (isTextField) return;
+      onOpenSearch();
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onOpenSearch]);
+
+  useEffect(() => {
     if (tasks !== null) {
       setSlow(false);
       return;
@@ -789,6 +810,7 @@ export function TodayScreen({
         }
         activeFilterCount={activeCount(filter)}
         onOpenFilters={() => setFiltersOpen(true)}
+        onOpenSearch={onOpenSearch}
         onOpenSettings={onOpenSettings}
       />
 
