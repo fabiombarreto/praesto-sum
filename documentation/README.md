@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-09-09
+last_updated: 2026-09-16
 review_trigger: "any document is created, renamed, merged or changes status"
 ---
 
@@ -53,6 +53,7 @@ This is also the writing order of Phase 0. Architecture and engineering document
 | Scope changes or a backlog idea is accepted | [functional-requirements](20-requirements/functional-requirements.md) + [roadmap](50-planning/roadmap.md) |
 | Stack, component, data or integration changes | [architecture-overview](30-architecture/architecture-overview.md) + affected 40-engineering/ docs |
 | A milestone completes or a phase closes | [roadmap](50-planning/roadmap.md) |
+| A release is cut (the version number moves, a `v<version>` tag is pushed) | [dev-environment](40-engineering/dev-environment.md#versioning-and-releases) if the scheme or the guard changes, and a Delivery history line in the [roadmap](50-planning/roadmap.md) pairing the tag with the deploy's Cloudflare version id |
 | A UI rule proves wrong when a screen is built (the A5 retro's own trigger) | [ui-ux-guidelines](40-engineering/ui-ux-guidelines.md) and/or [ui-layout-standard](40-engineering/ui-layout-standard.md) — amend the rule in place, dated, and add a History row; never leave the built screen and the written rule disagreeing |
 | An identity element changes (mark, tokens, voice) | [visual-identity](10-product/visual-identity.md) + `src/app/tokens.css` + an ADR when non-obvious |
 | A screen does not fit the layout anatomy, or a third destination of equal weight appears | [ui-layout-standard](40-engineering/ui-layout-standard.md) (+ a History line in [ui-ux-plan](50-planning/ui-ux-plan.md)) |
@@ -74,15 +75,15 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 20-requirements/functional-requirements.md | active | 2026-08-12 |
 | 20-requirements/quality-attributes.md | active | 2026-08-03 |
 | 20-requirements/constraints.md | active | 2026-08-04 |
-| 30-architecture/architecture-overview.md | draft | 2026-09-03 |
+| 30-architecture/architecture-overview.md | draft | 2026-09-16 |
 | 30-architecture/domain-model.md | draft | 2026-08-15 |
 | 40-engineering/tech-stack.md | active | 2026-09-08 |
 | 40-engineering/engineering-conventions.md | active | 2026-08-30 |
-| 40-engineering/dev-environment.md | active | 2026-09-08 |
+| 40-engineering/dev-environment.md | active | 2026-09-16 |
 | 40-engineering/testing-strategy.md | active | 2026-08-12 |
 | 40-engineering/ui-ux-guidelines.md | active | 2026-08-30 |
 | 40-engineering/ui-layout-standard.md | active | 2026-08-23 |
-| 50-planning/roadmap.md | active | 2026-09-15 |
+| 50-planning/roadmap.md | active | 2026-09-16 |
 | 50-planning/ui-ux-plan.md | deprecated | 2026-08-23 |
 | 60-decisions/index.md | active | 2026-09-08 |
 | 60-decisions/ADR-0001-write-all-artifacts-in-english.md | accepted | 2026-08-02 |

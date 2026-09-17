@@ -10,6 +10,7 @@
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { AppRoute } from "../../shared/app-route";
+import { formatAppVersion } from "../../shared/app-version";
 import { canWrite } from "../../shared/connectivity";
 import { useConnectivity } from "../hooks/useConnectivity";
 import { DataExportCard } from "./DataExportCard";
@@ -109,6 +110,18 @@ export function SettingsScreen({
         <GoogleConnectionCard onUnauthorized={onUnauthorized} canWrite={canWrite(connectivity)} />
         <DataExportCard onUnauthorized={onUnauthorized} />
         <NotificationsEntryCard onOpenNotifications={() => navigate("notifications")} />
+
+        {/* The build stamp, in the corner of the last card rather than in the
+            header: it is reference information the owner looks up when he
+            wonders whether the app in front of him is the build he just
+            deployed, never something he acts on, so it takes the quietest
+            weight the tokens offer (§4.2's smallest step, muted, the data face
+            the app already uses for figures) and sits after everything
+            actionable. `formatAppVersion` owns every decidable case; this line
+            only renders what it returns. */}
+        <p className="mt-auto pt-2 text-right font-data text-t1 text-muted">
+          {formatAppVersion(__APP_VERSION__)}
+        </p>
       </main>
     </div>
   );
