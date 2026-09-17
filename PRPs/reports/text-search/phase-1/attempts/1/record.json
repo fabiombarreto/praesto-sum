@@ -1,0 +1,37 @@
+{
+  "attempt": 1,
+  "verdict": "TEST_CONTRACT_DISPUTE",
+  "files_changed": [
+    "src/shared/api.ts",
+    "src/shared/search.ts",
+    "src/shared/task-filter.ts",
+    "src/worker/routes/tasks.ts",
+    "test/search-sql-agreement.test.ts",
+    "test/search.test.ts",
+    "test/task-filter.test.ts",
+    "test/task-list-search.test.ts"
+  ],
+  "files_changed_note": "the four test files are the B8-APPROVED test-first suite, present in the worktree before the implementer ran; the implementer touched only the four src files",
+  "base_commit": "7116a10697deb7e015dcebc0ddecd6a01b23c2bd",
+  "validation": {
+    "level_1": "FAIL",
+    "level_2": "FAIL",
+    "level_3": "FAIL"
+  },
+  "validation_notes": [
+    "L1/L3: 3 TS2741/TS2345 errors in test/task-filter.test.ts literals lacking the now-required q",
+    "L2: the plan node --experimental-strip-types script cannot resolve the extensionless ./api import under bare Node ESM"
+  ],
+  "dispute_evidence": {
+    "disputed_tests": [
+      "test/task-filter.test.ts:45-54",
+      "test/task-filter.test.ts:82-86",
+      "test/task-filter.test.ts:134-139"
+    ],
+    "prd_refs": [
+      "PRPs/prds/text-search.prd.md:241-244"
+    ],
+    "claim": "Plan Task 4 makes TaskFilter.q a required field per PRD Architecture Notes; the approved suite updated only the EMPTY_FILTER assertion, leaving three TaskFilter literals without q, so tsc -b fails and no passing implementation exists without editing the test file.",
+    "proposed_resolution": "Add q: null to the three remaining TaskFilter-shaped literals (lines 45, 83, 134), the same EXISTING_TEST_UPDATED fix already applied at the EMPTY_FILTER assertion; no asserted behaviour changes."
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "attempt": 2,
+  "phase": 2,
+  "verdict": "IMPLEMENTATION_COMPLETE",
+  "base": "128a499bcd9bc8eb6b69d11f0d348babfba5c8b1 (phase 1 end state plus the B8-approved phase-2 test files, so the implementer diff carries no test glob)",
+  "base_note": "attempt 1 was captured against d5ca146 (phase 1 end state only), which made the phase-2 test files appear in the diff and tripped R-X as an artifact",
+  "edited_this_attempt": [
+    "src/app/components/SearchScreen.tsx"
+  ],
+  "fix": "the whole results region is gated on connectivity; results state is kept but never rendered while offline (AC-A7)",
+  "validation": {
+    "level_1": "PASS",
+    "level_2": "PASS (2 files / 52 tests)",
+    "level_3": "PASS"
+  },
+  "full_suite": "65 files / 991 tests passed"
+}

@@ -1,0 +1,19 @@
+{
+  "invocation": 2,
+  "formatter_cmd": "npx prettier --write",
+  "discovery_source": "methodology.md formatter_cmd",
+  "files_scoped_count": 65,
+  "files_scoped_note": "every tracked-or-untracked file in the worktree matching the R-X test pathspec set",
+  "outcome": "formatted",
+  "exit_code_or_null": 0,
+  "unstaged_test_diff_before": " 1 file changed, 5 insertions(+), 3 deletions(-)",
+  "unstaged_test_diff_after": " 1 file changed, 5 insertions(+), 3 deletions(-)",
+  "previous_invocation": {
+    "formatter_cmd": "npx prettier --write",
+    "discovery_source": "methodology.md formatter_cmd",
+    "files_scoped_count": 65,
+    "files_scoped_note": "every tracked-or-untracked file in the worktree matching the R-X test pathspec set",
+    "outcome": "formatted",
+    "exit_code_or_null": 0
+  }
+}

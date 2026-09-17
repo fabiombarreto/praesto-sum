@@ -1,0 +1,676 @@
+{
+  "feature": "text-search",
+  "prd_path": "PRPs/prds/text-search.prd.md",
+  "started_at": "2026-09-15T19:36:11Z",
+  "ended_at": "2026-09-16T16:36:30Z",
+  "max_plan_review_retries": 2,
+  "max_tdd_review_retries": 2,
+  "max_orchestrator_minutes": 240,
+  "lane_execution": "serial — lane_runtime_safe absent from methodology.md, and the two rows form one lane through Depends",
+  "phases": [
+    {
+      "phase": 1,
+      "stage": "plan",
+      "outcome": "DRAFT_WRITTEN",
+      "plan_path": "PRPs/plans/text-search-phase-1-search-on-the-api.plan.md"
+    },
+    {
+      "phase": 1,
+      "stage": "worktree",
+      "outcome": "CREATED",
+      "repo": null,
+      "worktree_path": ".worktrees/text-search/",
+      "base": "main@7116a10 (--base override, see worktree-bases.json)",
+      "bootstrap": "OK",
+      "settings_json_propagation": "skipped — .claude/settings.json absent at the repo root",
+      "worktree_attempted": true,
+      "worktree_succeeded": true,
+      "fallback_reason": null
+    },
+    {
+      "phase": 1,
+      "stage": "plan_review",
+      "attempt": 1,
+      "outcome": "CHANGES_REQUESTED",
+      "failing_ids": [
+        "R-COH-TASK-AC-MISSING"
+      ],
+      "note": "Task 4 cited no AC; re-adopted /relay-plan with prior_feedback, amending the DRAFT in place"
+    },
+    {
+      "phase": 1,
+      "stage": "baseline",
+      "outcome": "GREEN",
+      "detail": "worktree before any change: 889 tests / 62 files passing, npm run check clean"
+    },
+    {
+      "phase": 1,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/text-search-phase-1-search-on-the-api.plan.md",
+      "plan_review_attempts": 2,
+      "note": "attempt 2 approved after Task 4 gained an honest infrastructure note"
+    },
+    {
+      "phase": 1,
+      "stage": "tdd",
+      "outcome": "DISPATCHED",
+      "mode": "test-first",
+      "phase_type": "feature",
+      "test_files_root": ".worktrees/text-search/test/"
+    },
+    {
+      "phase": 1,
+      "stage": "tdd_writer",
+      "attempt": 1,
+      "outcome": "SUITE_DRAFT_WRITTEN",
+      "suite_path": "PRPs/reports/text-search/test-suite.diff",
+      "test_files": [
+        "test/search.test.ts",
+        "test/search-sql-agreement.test.ts",
+        "test/task-list-search.test.ts"
+      ],
+      "lifecycle": [
+        {
+          "op": "UPDATE",
+          "file": "test/task-filter.test.ts:184"
+        }
+      ],
+      "formatting": "formatted via methodology.md formatter_cmd; 1 of 4 files changed"
+    },
+    {
+      "phase": 1,
+      "stage": "tdd_review",
+      "attempt": 1,
+      "outcome": "CHANGES_REQUESTED",
+      "failing_ids": [
+        "R-DUPLICATE"
+      ],
+      "note": "two AC-8 tests used the identical ?q= input and property; R-RED-LEGITIMATE passed (search module missing, q handling absent, EMPTY_FILTER lacks q). Re-adopted /relay-write-test with prior_feedback"
+    },
+    {
+      "phase": 1,
+      "stage": "tdd_writer",
+      "attempt": 2,
+      "outcome": "SUITE_DRAFT_WRITTEN",
+      "note": "deleted the duplicate AC-8 test (same-session draft correction, not a lifecycle DELETE); whitespace-only q already covered; formatter re-run on the touched file, unchanged"
+    },
+    {
+      "phase": 1,
+      "stage": "implement_preflight",
+      "outcome": "BASE_DERIVED",
+      "base_commit": "7116a10697deb7e015dcebc0ddecd6a01b23c2bd",
+      "how": "no supplied diff base (first phase); git merge-base HEAD main in the worktree",
+      "worktree_dirty_with": [
+        "test/task-filter.test.ts (M)",
+        "test/search-sql-agreement.test.ts",
+        "test/search.test.ts",
+        "test/task-list-search.test.ts"
+      ]
+    },
+    {
+      "phase": 1,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "suite_path": "PRPs/reports/text-search/test-suite.diff",
+      "tdd_review_attempts": 2,
+      "red": "12 of 41 tests failing across 4 files, all tracing to the seam set; test/task-list-filters.test.ts and test/tasks.test.ts (29 tests) still green"
+    },
+    {
+      "phase": 1,
+      "stage": "implement",
+      "attempt": 1,
+      "outcome": "DISPATCHED",
+      "base_commit": "7116a10",
+      "open_advisories": 0,
+      "preflight_formatting": "formatted, 65 test files scoped, no content change",
+      "docs_sync_enabled": true,
+      "visual_verification_enabled": false
+    },
+    {
+      "phase": 1,
+      "stage": "implement",
+      "attempt": 1,
+      "outcome": "TEST_CONTRACT_DISPUTE",
+      "disputes_used": 1,
+      "disputed_tests": [
+        "test/task-filter.test.ts:45-54",
+        "test/task-filter.test.ts:82-86",
+        "test/task-filter.test.ts:134-139"
+      ],
+      "artifacts": "PRPs/reports/text-search/phase-1/attempts/1/"
+    },
+    {
+      "phase": 1,
+      "stage": "implement",
+      "attempt": 1,
+      "mode": "arbitration",
+      "outcome": "HALT:DISPUTE_UPHELD_TEST_WRONG"
+    },
+    {
+      "phase": 1,
+      "stage": "recovery",
+      "outcome": "STARTED",
+      "at": "2026-09-15T22:07:42Z",
+      "by": "owner request: pode fazer os testes",
+      "route": "test pair corrects test/task-filter.test.ts per the upheld dispute; suite manifest hand-returned APPROVED -> DRAFT (documented escape hatch) for re-review"
+    },
+    {
+      "phase": 1,
+      "stage": "tdd_writer",
+      "attempt": 3,
+      "outcome": "SUITE_DRAFT_WRITTEN",
+      "note": "recovery for DISPUTE_UPHELD_TEST_WRONG: q: null added to three TaskFilter literals in test/task-filter.test.ts (lines 45, 83, 134); tsc -b clean; ledger row added"
+    },
+    {
+      "phase": 1,
+      "stage": "tdd",
+      "attempt": 3,
+      "outcome": "APPROVED",
+      "note": "suite re-approved after the dispute recovery; honesty run: 3 of 4 suite files GREEN, test/task-list-search.test.ts 18/22 failing on a real D1 too-many-SQL-variables defect in the implementation"
+    },
+    {
+      "phase": 1,
+      "stage": "plan",
+      "outcome": "AMENDED_TO_DRAFT",
+      "at": "2026-09-15T22:20:02Z",
+      "by": "owner request: pode corrigir o plano e rodar a implementação",
+      "changes": [
+        "Task 2: DIACRITIC_MAP constants embedded as escaped SQL literals, only the search word bound — D1 caps a statement at 100 bound parameters",
+        "Tasks 2-4 VALIDATE and Level 2: run the approved vitest suite instead of node --experimental-strip-types, which cannot resolve extensionless imports",
+        "Risks: D1 bound-parameter limit row"
+      ],
+      "next": "plan re-review, then /relay-implement attempt with the D1 defect as prior_feedback"
+    },
+    {
+      "phase": 1,
+      "stage": "plan",
+      "outcome": "AMENDMENT_APPLIED",
+      "at": "2026-09-15T22:21:09Z",
+      "note": "the AMENDED_TO_DRAFT entry above was logged before the edit script ran (its first run failed on shell quoting); this entry confirms the amendment is on disk, Prettier-clean, plan_sha256 b9978707…; Task 1 keeps its node command (api.ts loads under plain Node); plan-review attempt 3 dispatched"
+    },
+    {
+      "phase": 1,
+      "stage": "implement_preflight",
+      "invocation": 2,
+      "outcome": "READY",
+      "base_commit": "7116a10697deb7e015dcebc0ddecd6a01b23c2bd",
+      "base_note": "main advanced to 9feb81c (usage-metrics shards only); merge-base with the feature branch is still 7116a10",
+      "preflight_formatting": "65 test files scoped, exit 0, no content change",
+      "prd_row_1": "in-progress",
+      "waiting_on": "plan-review attempt 3"
+    },
+    {
+      "phase": 1,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_review_attempts_total": 3,
+      "note": "amended plan approved at 22:21:09Z review; non-blocking copyedit noted: Task 2 VALIDATE comment reads as both fails and must exit 0"
+    },
+    {
+      "phase": 1,
+      "stage": "implement",
+      "attempt": 2,
+      "outcome": "DISPATCHED",
+      "at": "2026-09-15T22:26:35Z",
+      "base_commit": "7116a10",
+      "open_advisories": 0,
+      "prior_feedback_ids": [
+        "arbitration",
+        "suite-run",
+        "validation-commands"
+      ],
+      "disputes_used_so_far": 1
+    },
+    {
+      "phase": 1,
+      "stage": "implement",
+      "attempt": 2,
+      "outcome": "IMPLEMENTATION_COMPLETE",
+      "files_edited_this_attempt": [
+        "src/shared/search.ts"
+      ],
+      "validation": "L1 PASS, L2 PASS (141 tests), L3 PASS",
+      "full_suite_reported": "975/975, with two earlier runs each timing out one unrelated file",
+      "artifacts": "PRPs/reports/text-search/phase-1/attempts/2/"
+    },
+    {
+      "phase": 1,
+      "stage": "code_review",
+      "attempt": 2,
+      "outcome": "APPROVED",
+      "note": "all rubric rows pass; R-X cleared by authorship (B8-approved suite), not by hash equivalence; reviewer full-suite run 975/975, no timeout"
+    },
+    {
+      "phase": 1,
+      "stage": "visual",
+      "outcome": "SKIPPED (not figma-sourced)",
+      "reason": "figma_track: false"
+    },
+    {
+      "phase": 1,
+      "stage": "docs_sync",
+      "attempt": 1,
+      "outcome": "DISPATCHED"
+    },
+    {
+      "phase": 1,
+      "stage": "docs_updater",
+      "attempt": 1,
+      "outcome": "DRAFT_WRITTEN",
+      "manifest": "PRPs/reports/text-search/docs-update.md",
+      "edited": [
+        "docs/context/architecture.md",
+        "docs/domain/areas/tasks.md"
+      ],
+      "candidate_decisions": 6,
+      "deferred_questions": 0,
+      "read_only_findings": [
+        "docs/api-reference.md stale (no q, old unit numbering) — outside the updater write scope",
+        "documentation/ not edited — outside the updater write scope; the PRD assigns documentation/ updates to phase 2"
+      ]
+    },
+    {
+      "phase": 1,
+      "stage": "docs_reviewer",
+      "attempt": 1,
+      "outcome": "DISPATCHED",
+      "review_started_at": "2026-09-15T22:49:24Z"
+    },
+    {
+      "phase": 1,
+      "stage": "docs_sync",
+      "outcome": "APPROVED",
+      "note": "D-R1..D-R8 pass; manifest flipped by docs-reviewer; documentation/ intentionally untouched (outside updater scope, PRD assigns it to phase 2)"
+    },
+    {
+      "phase": 1,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "d8": {
+        "a_plan_flip": "success",
+        "b_plan_move": "PRPs/plans/completed/text-search-phase-1-search-on-the-api.plan.md",
+        "c_prd_row": "in-progress -> implemented"
+      },
+      "implement_attempts": 2,
+      "disputes_used": 1
+    },
+    {
+      "phase": 1,
+      "stage": "test",
+      "outcome": "GREEN",
+      "detail": "65 files / 975 tests, 40.6 s, run by hand (no .claude/settings.json for the test-runner agent)",
+      "run_json": "PRPs/reports/text-search/phase-1/run.json"
+    },
+    {
+      "phase": 1,
+      "stage": "test_review",
+      "outcome": "APPROVED",
+      "record": "PRPs/reports/text-search/phase-1/test-review.json"
+    },
+    {
+      "phase": 1,
+      "stage": "row_status_flip",
+      "to": "tested",
+      "outcome": "success"
+    },
+    {
+      "phase": 1,
+      "stage": "row_status_flip",
+      "to": "complete",
+      "outcome": "success"
+    },
+    {
+      "phase": 1,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/text-search-phase-1-search-on-the-api.plan.md",
+      "timestamp": "2026-09-15T22:55:16Z"
+    },
+    {
+      "phase": 2,
+      "stage": "orchestrator",
+      "outcome": "RESUMED",
+      "at": "2026-09-16T14:02:55Z",
+      "note": "second /relay-execute invocation; row 1 complete, row 2 pending with satisfied dependency; topology absent, lane_runtime_safe absent -> serial; worktree feature/text-search reused with phase 1 uncommitted",
+      "supplied_diff_base": "d5ca146bb7d9b90cfa805a4a43f94c6f991a1902"
+    },
+    {
+      "phase": 2,
+      "stage": "plan",
+      "outcome": "DISPATCHED"
+    },
+    {
+      "phase": 2,
+      "stage": "plan",
+      "outcome": "DRAFT_WRITTEN",
+      "plan_path": "PRPs/plans/text-search-phase-2-the-search-route.plan.md",
+      "tasks": 9,
+      "note": "debounce, AbortController and the / shortcut have no precedent in the codebase; device half of AC-12 is the owner s step; docs/api-reference.md fixed narrowly (q + unit number only)"
+    },
+    {
+      "phase": 2,
+      "stage": "plan_review",
+      "attempt": 1,
+      "outcome": "CHANGES_REQUESTED",
+      "failing_ids": [
+        "R-COH-TASK-AC-MISSING"
+      ],
+      "note": "tasks 1,2,3,4,5,8,9 cite no AC and carry no infrastructure annotation; validation-framework and UI-checklist concerns both cleared; re-adopted /relay-plan with prior_feedback"
+    },
+    {
+      "phase": 2,
+      "stage": "plan_writer",
+      "attempt": 2,
+      "outcome": "DRAFT_CORRECTED",
+      "note": "5 tasks gained AC citations (AC-A1/A3/A5), tasks 8 and 9 gained infrastructure notes; only the Step-by-Step Tasks section changed (hash diff), so the fix stayed in scope"
+    },
+    {
+      "phase": 2,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/text-search-phase-2-the-search-route.plan.md",
+      "plan_review_attempts": 2,
+      "note": "18 rubric rows pass; reviewer judged every new AC citation honest rather than stretched"
+    },
+    {
+      "phase": 2,
+      "stage": "worktree",
+      "outcome": "CREATED",
+      "worktree_path": ".worktrees/text-search/",
+      "note": "idempotent re-use: the worktree from phase 1 is still on feature/text-search",
+      "worktree_attempted": true,
+      "worktree_succeeded": true,
+      "fallback_reason": null
+    },
+    {
+      "phase": 2,
+      "stage": "tdd",
+      "outcome": "DISPATCHED",
+      "mode": "test-first",
+      "phase_type": "feature",
+      "manifest": "PRPs/reports/text-search/phase-2/test-suite.diff",
+      "note": "phase-2 manifest kept in its own subdirectory so phase 1s APPROVED manifest is not overwritten"
+    },
+    {
+      "phase": 2,
+      "stage": "tdd_writer",
+      "attempt": 1,
+      "outcome": "SUITE_DRAFT_WRITTEN",
+      "updated": [
+        "test/app-route.test.ts",
+        "test/task-filter.test.ts"
+      ],
+      "new_files": 0,
+      "note": "AC-A1 and AC-A3 partly covered by shared-layer tests; AC-A2, A5, A6, A7, A12 and the UI halves OUT_OF_PHASE_SCOPE (manual per ADR-0008); AC-A4 partly EXISTING_TEST_COVERS via day-groups"
+    },
+    {
+      "phase": 2,
+      "stage": "tdd_review",
+      "attempt": 1,
+      "outcome": "CHANGES_REQUESTED",
+      "failing_ids": [
+        "R-AC-COVERAGE"
+      ],
+      "note": "AC-A2s minimum-length gate is decidable logic living inside SearchScreen; methodology requires extracting it to src/shared and testing it. R-RED-LEGITIMATE confirmed the split (4 app-route assertions red for the right reason, toQuery q green because phase 1 shipped it). Root cause is the PLAN, so the plan was hand-returned APPROVED -> DRAFT for an amendment"
+    },
+    {
+      "phase": 2,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_review_attempts_total": 3,
+      "note": "amended plan approved: new Task 6 exports SEARCH_MIN_QUERY_LENGTH and shouldSearch from src/shared/search.ts; renumbering audited clean; test-file routing now names test/search.test.ts too"
+    },
+    {
+      "phase": 2,
+      "stage": "tdd_writer",
+      "attempt": 2,
+      "outcome": "DISPATCHED",
+      "note": "cover the AC-A2 decidable gate against the newly specified shared exports"
+    },
+    {
+      "phase": 2,
+      "stage": "tdd_writer",
+      "attempt": 2,
+      "outcome": "SUITE_DRAFT_WRITTEN",
+      "note": "7 cases for shouldSearch/SEARCH_MIN_QUERY_LENGTH appended to test/search.test.ts (boundary, empty, whitespace-only, both trim directions); AC-A2 split into a covered decidable row and a manual rendering row"
+    },
+    {
+      "phase": 2,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "suite_path": "PRPs/reports/text-search/phase-2/test-suite.diff",
+      "tdd_review_attempts": 2,
+      "red": "three-way split confirmed: 4 app-route assertions and 8 of 18 search.test.ts cases red for their own seam, task-filter green from phase 1; all 10 pre-existing search.test.ts assertions still green"
+    },
+    {
+      "phase": 2,
+      "stage": "implement",
+      "attempt": 1,
+      "outcome": "DISPATCHED",
+      "supplied_diff_base": "d5ca146bb7d9b90cfa805a4a43f94c6f991a1902",
+      "open_advisories": 0,
+      "preflight_formatting": "65 test files scoped, exit 0, no content change"
+    },
+    {
+      "phase": 2,
+      "stage": "implement",
+      "attempt": 1,
+      "outcome": "IMPLEMENTATION_COMPLETE",
+      "files_changed": 11,
+      "new_file": "src/app/components/SearchScreen.tsx",
+      "validation": "L1, L2 and L3 PASS",
+      "full_suite": "991/991",
+      "artifacts": "PRPs/reports/text-search/phase-2/attempts/1/"
+    },
+    {
+      "phase": 2,
+      "stage": "code_review",
+      "attempt": 1,
+      "outcome": "CHANGES_REQUESTED",
+      "failing_ids": [
+        "R-SEM",
+        "R-COH-COMMENT-MISMATCH",
+        "R-X (artifact)",
+        "R-COH-OTHER-INTERNAL-CONTRADICTION (informational)"
+      ],
+      "note": "AC-A7: SearchScreen keeps the last result list rendered under the offline banner because the effect is keyed only on [debounced]. R-X failed as an artifact of the diff base (the phase-2 test files post-date the phase-1 snapshot); reviewer verified hunk-by-hunk that the implementer touched no test file. Rebuilding the base to include the approved tests for attempt 2"
+    },
+    {
+      "phase": 2,
+      "stage": "implement",
+      "attempt": 2,
+      "outcome": "IMPLEMENTATION_COMPLETE",
+      "edited": [
+        "src/app/components/SearchScreen.tsx"
+      ],
+      "diff_base": "128a499 (rebuilt to include the approved phase-2 tests)",
+      "validation": "L1, L2, L3 PASS; full suite 991/991"
+    },
+    {
+      "phase": 2,
+      "stage": "code_review",
+      "attempt": 2,
+      "outcome": "CHANGES_REQUESTED",
+      "resolved": [
+        "R-SEM (AC-A7 offline gate verified by tracing the ternary chain)",
+        "R-X (diff base rebuilt; test globs structurally absent, base blobs verified byte-identical)"
+      ],
+      "failing_ids": [
+        "R-COH-COMMENT-MISMATCH",
+        "R-COH-OTHER-INTERNAL-CONTRADICTION"
+      ],
+      "note": "comment overclaims that the banner is all the owner sees offline (the header stays visible); docs/api-reference.md has two rows numbered 8 because our own edit set text-search to 8 beside a stale recurring-tasks row. Attempt 3 dispatched for both, with the roadmap as the numbering authority"
+    },
+    {
+      "phase": 2,
+      "stage": "implement",
+      "attempt": 3,
+      "outcome": "IMPLEMENTATION_COMPLETE",
+      "edited": [
+        "src/app/components/SearchScreen.tsx",
+        "docs/api-reference.md"
+      ],
+      "validation": "L1, L2, L3 PASS; full suite 991/991"
+    },
+    {
+      "phase": 2,
+      "stage": "code_review",
+      "attempt": 3,
+      "outcome": "CHANGES_REQUESTED",
+      "resolved": [
+        "R-COH-COMMENT-MISMATCH"
+      ],
+      "failing_ids": [
+        "R-SEM",
+        "R-COH-TASK-CONTRADICTION",
+        "R-COH-OTHER-INTERNAL-CONTRADICTION"
+      ],
+      "note": "my own attempt-3 instruction caused this: docs/api-reference.md is off by one for every row from recurring-tasks onward, so renumbering a single row traded an 8/8 collision for a 9/9 one, and Task 10s unamended text forbids touching any row but text-search. Chosen fix: amend Task 10 to renumber the whole block against the roadmap, then implement attempt 4"
+    },
+    {
+      "phase": 2,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_review_attempts_total": 4,
+      "advisories": [
+        {
+          "rubric_id": "R-COH-SUMMARY-TASKS-DRIFT",
+          "reason": "Summary and the Files to Change row still describe the pre-widening single-row scope; Task 10, NOT Building and Risks carry the real 7-row block"
+        }
+      ],
+      "note": "Task 10 widened to the full recurring-tasks..Phase-2-aggregate block; mapping verified against the roadmap by the reviewer; excluded rows (data-export, push-channel-proven, reminders) leave a numbering gap but no collision"
+    },
+    {
+      "phase": 2,
+      "stage": "implement",
+      "attempt": 4,
+      "outcome": "DISPATCHED",
+      "note": "last attempt in the budget; worktree file is half-patched from attempt 3, so the implementer works from current content toward the specified end state"
+    },
+    {
+      "phase": 2,
+      "stage": "implement",
+      "attempt": 4,
+      "outcome": "IMPLEMENTATION_COMPLETE",
+      "edited": [
+        "docs/api-reference.md"
+      ],
+      "validation": "L1, L2 (after a transient workerd flake), L3 PASS; full suite 991/991",
+      "note": "Task 10 VALIDATE grep syntax is stale against the files real table shape — disclosed, not disputed"
+    },
+    {
+      "phase": 2,
+      "stage": "code_review",
+      "attempt": 4,
+      "outcome": "APPROVED",
+      "note": "full rubric passes, 991/991; renumbering verified against plan and roadmap; reviewer recorded a plan-quality defect without failing on it: Task 10s VALIDATE greps assume a table shape the file never had, and plan-review attempt 4 wrongly reported them as matching"
+    },
+    {
+      "phase": 2,
+      "stage": "visual",
+      "outcome": "SKIPPED (not figma-sourced)",
+      "reason": "figma_track: false"
+    },
+    {
+      "phase": 2,
+      "stage": "docs_sync",
+      "attempt": 1,
+      "outcome": "DISPATCHED",
+      "note": "gap check only — the plan already updated four docs inside the diff"
+    },
+    {
+      "phase": 2,
+      "stage": "docs_updater",
+      "attempt": 1,
+      "outcome": "DRAFT_WRITTEN",
+      "manifest": "PRPs/reports/text-search/phase-2/docs-update.md",
+      "edited": [
+        "docs/context/architecture.md"
+      ],
+      "note": "gap check: the plan had already covered the roadmap, tasks.md and api-reference.md; no new candidate decisions"
+    },
+    {
+      "phase": 2,
+      "stage": "docs_review",
+      "attempt": 1,
+      "outcome": "CHANGES_REQUESTED",
+      "failing_ids": [
+        "D-R1"
+      ],
+      "note": "docs/domain/areas/tasks.md claims the search UI shipped, contradicting the roadmap and PRD (AC-12 device pass still owed); the deliberate gap at unit 7 in docs/api-reference.md is reasoned in the plan but recorded nowhere in the documentation. D-R2..D-R8 pass; the updaters own architecture.md edit was verified correct"
+    },
+    {
+      "phase": 2,
+      "stage": "docs_updater",
+      "attempt": 2,
+      "outcome": "DRAFT_CORRECTED",
+      "edited": [
+        "docs/domain/areas/tasks.md",
+        "docs/api-reference.md",
+        "manifest"
+      ],
+      "note": "overclaim reworded to match the roadmap; a note under the table records why units 4/5/6 keep their legacy numbers; both files removed from the no-gap list"
+    },
+    {
+      "phase": 2,
+      "stage": "docs_sync",
+      "outcome": "APPROVED",
+      "attempts": 2,
+      "note": "D-R1..D-R8 pass; the api-reference edit outside the updaters default scope was judged adequately disclosed because the plan already assigned that file to this phase"
+    },
+    {
+      "phase": 2,
+      "stage": "test",
+      "outcome": "GREEN",
+      "detail": "65 files / 991 tests, 34.9 s, run by hand (no .claude/settings.json for the test-runner agent)",
+      "run_json": "PRPs/reports/text-search/phase-2/run.json"
+    },
+    {
+      "phase": 2,
+      "stage": "test_review",
+      "outcome": "APPROVED",
+      "record": "PRPs/reports/text-search/phase-2/test-review.json"
+    },
+    {
+      "phase": 2,
+      "stage": "row_status_flip",
+      "to": "tested",
+      "outcome": "success"
+    },
+    {
+      "phase": 2,
+      "stage": "row_status_flip",
+      "to": "complete",
+      "outcome": "success"
+    },
+    {
+      "phase": 2,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/text-search-phase-2-the-search-route.plan.md",
+      "timestamp": "2026-09-16T16:36:30Z"
+    }
+  ],
+  "outcome": "ALL_PHASES_COMPLETE",
+  "phases_completed": [
+    1,
+    2
+  ],
+  "worktree_attempted": true,
+  "worktree_succeeded": true,
+  "fallback_reason": null,
+  "phase_diff_bases": {
+    "1": "d5ca146bb7d9b90cfa805a4a43f94c6f991a1902",
+    "2": "c2597cf476043d7a35100ced33c1a5f5a57fed09"
+  },
+  "lane_durations_ms": {},
+  "total_duration_ms": 75619000,
+  "resumed_after_halt": {
+    "halt": "FAILED_IMPLEMENT_DISPUTE_UPHELD_TEST_WRONG",
+    "resolved_at": "2026-09-15T22:55:16Z",
+    "note": "phase 1 driven to complete after the owner-requested recovery; phase 2 (the search route) is still pending and was not started in this session"
+  },
+  "owner_owed": [
+    "AC-12 device verification on the Android phone and the Windows PC",
+    "the ui-ux-guidelines review checklist result recorded"
+  ]
+}

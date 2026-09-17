@@ -1,0 +1,50 @@
+{
+  "outcome": "DISPUTE_UPHELD_TEST_WRONG",
+  "halted_at": "2026-09-15T20:26:38Z",
+  "dispute_payload": {
+    "disputed_tests": [
+      "test/task-filter.test.ts:45-54",
+      "test/task-filter.test.ts:82-86",
+      "test/task-filter.test.ts:134-139"
+    ],
+    "prd_refs": [
+      "PRPs/prds/text-search.prd.md:241-244"
+    ],
+    "claim": "TaskFilter.q is required (q: string | null) per PRD and plan Task 4; the approved suite updated only the EMPTY_FILTER assertion, leaving three TaskFilter literals without q, so tsc -b fails (TS2741 x2, TS2345 x1) and, if force-compiled, toQuery would emit a spurious q=undefined.",
+    "proposed_resolution": "Add q: null to the three literals at lines 45, 83 and 134 as an EXISTING_TEST_UPDATED ledger entry; no asserted behaviour changes."
+  },
+  "arbitration_verdict": {
+    "verdict": "DISPUTE_UPHELD_TEST_WRONG",
+    "log": "PRPs/plans/text-search-phase-1-search-on-the-api.code-review.jsonl"
+  },
+  "attempt_history": [
+    {
+      "attempt": 1,
+      "verdict": "TEST_CONTRACT_DISPUTE",
+      "artifacts": "PRPs/reports/text-search/phase-1/attempts/1/"
+    }
+  ],
+  "dispute_history": [
+    {
+      "attempt": 1,
+      "outcome": "DISPUTE_UPHELD_TEST_WRONG"
+    }
+  ],
+  "working_tree_state": "implementation of all four plan tasks present and uncommitted in .worktrees/text-search (src/shared/api.ts, src/shared/search.ts new, src/shared/task-filter.ts, src/worker/routes/tasks.ts); D8 not run; plan still APPROVED; PRD row 1 still in-progress",
+  "secondary_defect": {
+    "what": "The plan Validation Level 2 command (node --experimental-strip-types over src/shared/search.ts) cannot pass: the module imports ./api extensionless, the repo-wide convention (src/shared/format.ts imports ./dates the same way), which bare Node ESM cannot resolve.",
+    "action": "Amend the plan Level 2 command to run the pure tests through vitest instead, before re-running implementation, or the next attempt fails Level 2 regardless of the test fix."
+  },
+  "actionable_recommendation": "Route the dispute to the shipped test pair: run /relay-write-test PRPs/plans/text-search-phase-1-search-on-the-api.plan.md with this dispute_evidence as the correction input, then /relay-test-write-review PRPs/reports/text-search/test-suite.diff to re-approve the suite, then re-run /relay-execute PRPs/prds/text-search.prd.md (row 1 is still in-progress, so re-run /relay-implement on the plan directly to resume phase 1).",
+  "resolution": {
+    "status": "resolved",
+    "resolved_at": "2026-09-15T22:55:16Z",
+    "how": [
+      "test pair added q: null to three TaskFilter literals; suite re-approved (TDD review attempt 3)",
+      "plan amended: DIACRITIC_MAP constants as escaped SQL literals so only search words are bound (D1 caps a statement at 100 bound parameters); vitest-based Level 2 and task VALIDATE; plan re-approved (review attempt 3)",
+      "implementation attempt 2: IMPLEMENTATION_COMPLETE, code review APPROVED, docs sync APPROVED, D8 done",
+      "suite GREEN 65 files / 975 tests; post-green review APPROVED; PRD row 1 complete"
+    ],
+    "outcome_note": "Resolved. Kept for the audit trail."
+  }
+}

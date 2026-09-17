@@ -1,0 +1,34 @@
+{
+  "run_id": "ffc504b7-f052-4b1e-936e-08e09ad60bde",
+  "feature": "text-search",
+  "started_at": "2026-09-16T16:33:00Z",
+  "ended_at": "2026-09-16T16:33:26Z",
+  "elapsed_ms": 34865,
+  "max_test_retries": 3,
+  "max_test_minutes": 30,
+  "attempts": [
+    {
+      "n": 1,
+      "verdict": "GREEN",
+      "record": "phase-2/suite-run.log",
+      "implementer_diff": null
+    }
+  ],
+  "outcome": "GREEN",
+  "phase": 2,
+  "time_breakdown": {
+    "attempt_1_suite_ms": 34865
+  },
+  "tdd_mode": true,
+  "totals": {
+    "test_files": 65,
+    "tests": 991,
+    "failed": 0
+  },
+  "runner": "manual npm test in .worktrees/text-search",
+  "runner_deviation": "the relay test-runner agent was not used: .claude/settings.json is absent at the repo root, so /relay-test would HALT at its precondition 2 (missing_settings_json); creating that file is the owner s decision, so the suite was run by hand, as in phase 1 and earlier units",
+  "notes": [
+    "the implementer saw one transient workerd internal error during attempt 4 that did not reproduce here",
+    "phase 1s own run.json is preserved at phase-1/run.json; this file and the feature-level copy now describe phase 2"
+  ]
+}

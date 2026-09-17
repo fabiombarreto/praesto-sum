@@ -1,0 +1,16 @@
+{
+  "outcome": "FAILED_IMPLEMENT_DISPUTE_UPHELD_TEST_WRONG",
+  "phase_N": 1,
+  "halting_stage": "implement",
+  "underlying_halt_ref": "PRPs/reports/text-search/phase-1/halt.json",
+  "halted_at": "2026-09-15T20:26:38Z",
+  "phases_completed": [],
+  "manual_recovery_paths": [
+    "Route the dispute to the shipped test pair: run /relay-write-test PRPs/plans/text-search-phase-1-search-on-the-api.plan.md with this dispute_evidence as the correction input, then /relay-test-write-review PRPs/reports/text-search/test-suite.diff to re-approve the suite, then re-run /relay-execute PRPs/prds/text-search.prd.md (row 1 is still in-progress, so re-run /relay-implement on the plan directly to resume phase 1).",
+    "Before re-running implementation, amend the plan Level 2 validation command (see secondary_defect in the phase halt)."
+  ],
+  "resolution": {
+    "resolved_at": "2026-09-15T22:55:16Z",
+    "note": "Phase 1 completed after recovery; see phase-1/halt.json resolution. Phase 2 pending: re-run /relay-execute PRPs/prds/text-search.prd.md to continue."
+  }
+}

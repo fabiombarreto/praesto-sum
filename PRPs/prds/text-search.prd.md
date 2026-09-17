@@ -264,8 +264,8 @@ Current value of `tdd` in `docs/context/methodology.md`: **true**. Test-first or
 
 | # | Phase | Description | Status | Repo | Parallel | Depends | PRP Plan |
 |---|-------|-------------|--------|------|----------|---------|----------|
-| 1 | Search on the API | The `src/shared/` mapping table with `normalizeSearchText`, `searchWords` and the SQL-expression generator; `q` validation and the `instr` clause in `GET /api/tasks`; `q` added to `TaskFilter` and `toQuery` | pending | - | - | - | - |
-| 2 | The search route | `AppRoute` search variant and codec, the header *Pesquisar* icon, the focused field with debounce and request abort, grouped results opening the existing Task sheet, `/` and `Esc`, empty/offline/error states in pt-BR; device verification and documentation updates | pending | - | - | 1 | - |
+| 1 | Search on the API | The `src/shared/` mapping table with `normalizeSearchText`, `searchWords` and the SQL-expression generator; `q` validation and the `instr` clause in `GET /api/tasks`; `q` added to `TaskFilter` and `toQuery` | complete | - | - | - | PRPs/plans/text-search-phase-1-search-on-the-api.plan.md |
+| 2 | The search route | `AppRoute` search variant and codec, the header *Pesquisar* icon, the focused field with debounce and request abort, grouped results opening the existing Task sheet, `/` and `Esc`, empty/offline/error states in pt-BR; device verification and documentation updates | complete | - | - | 1 | PRPs/plans/text-search-phase-2-the-search-route.plan.md |
 
 ### Phase Details
 

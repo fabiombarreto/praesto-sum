@@ -1,0 +1,8 @@
+{
+  "text-search": {
+    "base": "main (--base override)",
+    "resolved_ref": "refs/heads/main",
+    "sha": "7116a10697deb7e015dcebc0ddecd6a01b23c2bd",
+    "override_reason": "origin/main was 2 docs-only commits behind local main (0abb194, 7116a10: the unit 8 PRD and roadmap). The D11 default would have cut the worktree without the PRD and with a stale roadmap that phase 2 edits; pushing was not requested by the owner, so the base was overridden instead."
+  }
+}

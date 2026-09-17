@@ -1,0 +1,8 @@
+{
+  "phase": 2,
+  "formatter_cmd": "npx prettier --write",
+  "discovery_source": "methodology.md formatter_cmd",
+  "files_scoped_count": 65,
+  "outcome": "formatted",
+  "exit_code_or_null": 0
+}

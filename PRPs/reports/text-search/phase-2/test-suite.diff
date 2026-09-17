@@ -1,0 +1,95 @@
+# TDD initial suite — phase 2
+# Source PRD: PRPs/prds/text-search.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/text-search-phase-2-the-search-route.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-09-16
+
+## Scope note
+
+This suite walks the PLAN's own AC-A1..AC-A7 and AC-A12 (phase 2's
+Acceptance Criteria section), not the full PRD AC-1..AC-13 list — phase 1's
+AC-1..AC-11/AC-13 suite is already APPROVED at
+PRPs/reports/text-search/test-suite.diff and is untouched here.
+
+Per docs/context/methodology.md's declared TDD scope ("Scope of the
+practice" + "Browser-API work" split) and this plan's own Notes
+("Test-file routing") and Risks table, phase 2 is almost entirely a new
+React route/screen and client-only glue (App.tsx wiring, TodayHeader.tsx,
+TodayScreen.tsx, api.ts's new `signal` parameter, SearchScreen.tsx) — none
+of which carries a dedicated test file anywhere in this codebase
+(TodayHeader.tsx, SettingsScreen.tsx, useRoute.ts, useConnectivity.ts all
+ship with zero test files too). The plan's own Level 2 validation names
+`test/app-route.test.ts` as "the one file this phase touches that carries
+automated coverage." This suite honors that boundary: it extends the three
+pre-existing pure/shared test files the plan's decidable surface actually
+touches (`test/app-route.test.ts` for the new `search` AppRoute codec,
+`test/task-filter.test.ts` for `toQuery` finally carrying `q` through a
+real caller, `test/search.test.ts` for the amended plan's `shouldSearch`/
+`SEARCH_MIN_QUERY_LENGTH` predicate — Task 6's decidable extraction of
+AC-A2's threshold gate) and classifies every remaining UI-behavior AC as
+OUT_OF_PHASE_SCOPE — not deferred to a later phase, but outside this
+project's automated-test scope by established, repeated convention,
+verified by the owner's own AC-A12 device pass instead. No AC was found
+AMBIGUOUS; no invented component test or production signature was
+introduced to manufacture coverage that does not exist in this codebase's
+testing strategy.
+
+**Revision note (attempt 2 of 3):** `test-reviewer` returned
+`CHANGES_REQUESTED` on attempt 1 with `R-AC-COVERAGE` against AC-A2: the
+`<2-characters` gate is a decidable, DOM-free predicate and had been
+bundled wholesale into the OUT_OF_PHASE_SCOPE rendering half instead of
+being tested. The plan was amended (new Task 6: `src/shared/search.ts`
+gains `SEARCH_MIN_QUERY_LENGTH`/`shouldSearch`, stated verbatim in the
+plan's own ACTION text) to make the finding fixable without inventing any
+signature. AC-A2's decidable half now has real coverage below; every other
+AC outcome, every existing ledger row, and this suite's DRAFT status are
+unchanged from attempt 1.
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-A1 (routing precondition) | EXISTING_TEST_UPDATED | test/app-route.test.ts — new `describe("routeFromPath — the search route ...")` / `describe("pathOf — the search route ...")` / `describe("routeFromPath and pathOf agree — the search route round-trips too")` blocks (appended at EOF), plus one added `expect(taskIdFromRoute("search")).toBeNull();` line in the existing "taskIdFromRoute returns null for every non-Task route" test. Covers only the `/search` <-> `"search"` codec round-trip that Task 1 adds — the precondition Task 3's icon and Task 4's `/` shortcut navigate through. |
+| AC-A1 (icon tap / `/`-key / focus behavior) | OUT_OF_PHASE_SCOPE | React DOM event wiring in TodayHeader.tsx/TodayScreen.tsx/App.tsx — no dedicated test file exists for any sibling component in this codebase (TodayHeader.tsx, SettingsScreen.tsx have none either); manual verification via AC-A12's device pass, per docs/context/methodology.md's declared UI carve-out. |
+| AC-A2 (decidable threshold gate) | EXISTING_TEST_UPDATED | test/search.test.ts — new `describe("shouldSearch / SEARCH_MIN_QUERY_LENGTH (PRD AC-12 via phase-2 plan AC-A2)")` block (appended): the constant's value, one character below/at/above the minimum, an empty string, whitespace-only input, and leading/trailing whitespace that only counts after trimming (both directions of that boundary). Covers the amended plan's Task 6 export (`src/shared/search.ts`: `SEARCH_MIN_QUERY_LENGTH = 2`, `shouldSearch(raw) => raw.trim().length >= SEARCH_MIN_QUERY_LENGTH`) — the decidable half of AC-A2, extracted per docs/context/methodology.md's "Browser-API work" section ("the exemption is for glue, never for logic"). |
+| AC-A2 (pt-BR prompt rendering) | OUT_OF_PHASE_SCOPE | The prompt shown when `!shouldSearch(debounced)` is SearchScreen.tsx conditional rendering (a CREATEd React screen with no test file, matching every other screen in this codebase); `shouldSearch` itself is consumed, not re-derived, per Task 7's own text. Manual verification via AC-A12. |
+| AC-A3 (toQuery/q infrastructure) | EXISTING_TEST_UPDATED | test/task-filter.test.ts — new `describe("toQuery — q (PRD text-search AC-12 via phase-2 plan AC-A3)")` block: `q` alone, `q` composed with `status` (pins the fixed LAST-position order the module's own doc comment promises), and `q` encoding (`"boleto atrasado"` -> `"?q=boleto+atrasado"`). Phase 1 added `q` to `TaskFilter`/`toQuery` but no phase-1 AC exercised `toQuery` carrying it (see the pre-existing "EMPTY_FILTER has all five dimensions null" comment in the same file, which named phase 2 as where this closes); `SearchScreen`'s `listTasks({ ...EMPTY_FILTER, q: debounced }, ...)` call (plan Task 6) is the first real caller. |
+| AC-A3 (300ms debounce timing + AbortController cancellation) | OUT_OF_PHASE_SCOPE | Lives in SearchScreen.tsx's `useEffect`/`setTimeout` state and api.ts's `signal` forwarding into `request()`'s already-existing `fetch({ ...init })` spread. The plan's own Task 2 VALIDATE step names `npx tsc -b` as the established proof for `api.ts`, "consistent with every other client-only glue module in this codebase, e.g. `useRoute.ts`, `useConnectivity.ts`" — no dedicated test file exists for any of them. Manual Tier B verification under throttled network is the plan's own stated mitigation (Risks table). |
+| AC-A4 | EXISTING_TEST_COVERS (partial) + OUT_OF_PHASE_SCOPE (wiring) | The reused `collectDayItems` grouping function itself is already covered by test/day-groups.test.ts (pre-existing, untouched by this plan — not in its Files to Change table), so the grouping CONTRACT AC-A4 leans on is already proven. Wiring that same call over search `results` inside the new SearchScreen.tsx component (`renderDayItems`/`TaskGroup` reuse) is React UI with no test file convention in this codebase; manual verification via AC-A12. |
+| AC-A5 | OUT_OF_PHASE_SCOPE | `TaskSheet` reuse + `back()` (from the already-glue-exempt `useRoute.ts`, which itself carries no test file) inside SearchScreen.tsx; manual verification via AC-A12. |
+| AC-A6 | OUT_OF_PHASE_SCOPE | pt-BR empty-state copy naming the query is SearchScreen.tsx conditional rendering; manual verification via AC-A12 and the UI/UX guidelines review checklist. |
+| AC-A7 | OUT_OF_PHASE_SCOPE | Reuses the already glue-exempt `useConnectivity()` hook + `Banner` UI; manual verification via AC-A12 (ADR-0003: search is online-only, never a stale result list). |
+| AC-A12 | OUT_OF_PHASE_SCOPE | The plan's own text: "performed by the owner... not a Step-by-Step Task" — the Android phone + Windows PC device pass and the UI/UX checklist recording. No automated test is possible or appropriate here. |
+
+## Test files written this session
+
+(none created — both touched files already existed)
+
+## Test files updated this session
+
+- C:\repos\assistente-pessoal\.worktrees\text-search\test\app-route.test.ts
+- C:\repos\assistente-pessoal\.worktrees\text-search\test\task-filter.test.ts
+- C:\repos\assistente-pessoal\.worktrees\text-search\test\search.test.ts (attempt 2 — R-AC-COVERAGE correction)
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| UPDATE | EXISTING_TEST_UPDATED | test/app-route.test.ts:describe("taskIdFromRoute returns null for every non-Task route") | AC-A1 (plan) / PRD AC-12 — added one `expect(taskIdFromRoute("search")).toBeNull();` line; the route vocabulary grew by one flat literal, so the existing "every non-Task route" enumeration must grow with it. No existing assertion changed or narrowed. |
+| UPDATE | EXISTING_TEST_UPDATED | test/app-route.test.ts:describe("routeFromPath — the search route (PRD AC-12 via plan AC-A1)") (new, appended) | AC-A1 (plan) / PRD AC-12 — pins `/search` -> `"search"` and the trailing-slash + nested-path-falls-to-today totality behavior, mirroring the identical pattern already used for `settings`/`notifications`. Purely additive; file's existing describe blocks are untouched. |
+| UPDATE | EXISTING_TEST_UPDATED | test/app-route.test.ts:describe("pathOf — the search route (PRD AC-12 via plan AC-A1)") (new, appended) | AC-A1 (plan) / PRD AC-12 — pins `"search"` -> `/search`. Additive. |
+| UPDATE | EXISTING_TEST_UPDATED | test/app-route.test.ts:describe("routeFromPath and pathOf agree — the search route round-trips too") (new, appended) | AC-A1 (plan) / PRD AC-12 — pins the round-trip property every other route already carries. Additive. |
+| UPDATE | EXISTING_TEST_UPDATED | test/task-filter.test.ts:describe("toQuery — q (PRD text-search AC-12 via phase-2 plan AC-A3)") (new, appended) | AC-A3 (plan) / PRD AC-12 — closes the toQuery-carries-q gap phase 1 explicitly left open for phase 2 (see the pre-existing "EMPTY_FILTER has all five dimensions null" comment in the same file). Pins `q` alone, `q` composed with `status` in the module's documented fixed LAST position, and `q`'s encoding. No existing `toQuery` assertion changed. |
+| UPDATE | EXISTING_TEST_UPDATED | test/search.test.ts:describe("shouldSearch / SEARCH_MIN_QUERY_LENGTH (PRD AC-12 via phase-2 plan AC-A2)") (new, appended) | AC-A2 (plan) / PRD AC-12 — test-reviewer's attempt-1 `R-AC-COVERAGE` finding: AC-A2's `<2-characters` gate is decidable and DOM-free and had no test. The plan was amended (new Task 6) to export `SEARCH_MIN_QUERY_LENGTH`/`shouldSearch` from the existing, already-APPROVED phase-1 module `src/shared/search.ts`; this file (also phase-1, already APPROVED) gains the boundary cases — below/at/above the threshold, empty string, whitespace-only, and pre/post-trim whitespace at the boundary in both directions. No existing `normalizeSearchText`/`searchWords`/`validateSearchQuery` assertion changed. |
+
+## Formatting Outcome
+
+- Outcome: formatted
+- Command: `npx prettier --write`
+- Discovery source: methodology.md formatter_cmd
+- Files scoped: test/app-route.test.ts, test/task-filter.test.ts (in .worktrees/text-search)
+
+## Status
+
+*Approved: 2026-09-16*
+*Status: APPROVED*

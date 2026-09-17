@@ -1,0 +1,111 @@
+# TDD initial suite — phase 1
+# Source PRD: PRPs/prds/text-search.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/text-search-phase-1-search-on-the-api.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-09-15
+
+## Mode
+
+test-first (docs/context/methodology.md: tdd: true, test_frameworks: ["vitest"]).
+The suite below is authored BEFORE the Implementer runs; it is expected to be
+RED against the current worktree (`src/shared/search.ts` does not exist yet,
+`MAX_SEARCH_QUERY_LENGTH` is not yet exported, `TaskFilter` does not yet carry
+`q`, and `GET /api/tasks` does not yet read `q`), which is the correct
+RED-for-the-right-reason state per the plan's Task 3 (`q` validation short-
+circuits before any DB access) and Task 2 (the new pure module).
+
+Test files were written under the feature worktree
+`C:\repos\assistente-pessoal\.worktrees\text-search\test\` (branch
+`feature/text-search`), never under the main checkout's `test/` directory.
+All paths below are relative to that worktree unless stated otherwise.
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-1 (one word, any case, any position) | NEW_TEST_REQUIRED | test/task-list-search.test.ts:87-99 |
+| AC-2 (diacritics ignored both ways) | NEW_TEST_REQUIRED | test/task-list-search.test.ts:101-115 |
+| AC-3 (every word must match, any order) | NEW_TEST_REQUIRED | test/task-list-search.test.ts:117-129 |
+| AC-4 (description searched separately) | NEW_TEST_REQUIRED | test/task-list-search.test.ts:131-151 |
+| AC-5 (all statuses without a filter) | NEW_TEST_REQUIRED | test/task-list-search.test.ts:153-164 |
+| AC-6 (composes with existing filters) | NEW_TEST_REQUIRED | test/task-list-search.test.ts:166-227 |
+| AC-7 (special characters are literal) | NEW_TEST_REQUIRED | test/task-list-search.test.ts:229-245 |
+| AC-8 (invalid queries rejected) | NEW_TEST_REQUIRED | test/search.test.ts:51-79 (validateSearchQuery, pure) + test/task-list-search.test.ts:248-283 (route 400s / no-q-key regression) |
+| AC-9 (ordering + existing responses unchanged) | NEW_TEST_REQUIRED (positive ordering half) + EXISTING_TEST_COVERS (regression half) | test/task-list-search.test.ts:285-296 (new: `q` preserves urgency order) + test/task-list-filters.test.ts (whole file, left byte-for-byte untouched — its assertions passing unmodified IS the AC-9 regression evidence) |
+| AC-10 (token gate) | EXISTING_TEST_COVERS | test/tasks.test.ts:109-112 ("requires the token" — the auth gate runs before any query-param parsing per the plan's Architecture Notes, so it is unaffected by `q` and this generic 401 assertion on `GET /api/tasks` already proves it) |
+| AC-11 (one normalization, two implementations that agree) | NEW_TEST_REQUIRED | test/search.test.ts:22-49 (JS fixture: normalizeSearchText/searchWords) + test/search-sql-agreement.test.ts:45-54 (SQL-vs-JS agreement, evaluated inside D1 via workerd) |
+| AC-12 (search route, UI) | OUT_OF_PHASE_SCOPE | Phase 2 — not referenced by any AC-A in this phase's plan |
+| AC-13 (export untouched) | EXISTING_TEST_COVERS | test/export-completeness.test.ts:43-123 (enumerates real schema tables generically; this phase adds none, so it cannot trip) |
+
+### Infrastructure note (not tied to a single AC-N, flagged by the plan itself)
+
+The plan's own Risk table (`PRPs/plans/text-search-phase-1-search-on-the-api.plan.md`,
+Task 4 risk row) flags that `TaskFilter` gaining `q: string | null` breaks
+`test/task-filter.test.ts`'s `EMPTY_FILTER` deep-equality assertion, and
+names the correct fix as an `EXISTING_TEST_UPDATED` lifecycle entry — see the
+Lifecycle ledger below. No PRD AC-N exercises `TaskFilter.q` directly in this
+phase (Task 4 is infrastructure for Phase 2's search route, per the plan's
+own "Infrastructure note" on that task), so this is recorded separately from
+the AC outcomes table rather than mapped to one.
+
+## Revision note (attempt 2 — test-reviewer CHANGES_REQUESTED, R-DUPLICATE)
+
+`test-reviewer` cited `R-DUPLICATE`: `test/task-list-search.test.ts`'s former
+"rejects a blank `q` BEFORE touching the database — no Task is ever read"
+case (AC-8 describe block) targeted the byte-identical input `?q=` already
+covered by "rejects an empty `q` with 400 naming q", and asserted the same
+observable property (400 + an `error` field) — its extra `create()` call and
+stated DB-access intent were not backed by any assertion that actually
+distinguishes a DB-touched path from a DB-untouched one, so it was a strict
+subset of the first test rather than a second guarantee.
+
+Resolved by DELETING the redundant case outright — it was written and never
+approved in attempt 1, so removing it is a correction of this draft, not a
+lifecycle DELETE of a previously-approved test (no ledger entry below). The
+whitespace-only case AC-8 also names (`q=%20%20`) was already covered by a
+separate, still-present test ("rejects a whitespace-only `q` with 400 naming
+q") in the same describe block, so there was no undiscriminated AC-8 input
+left to re-target the deleted case at. `test/task-list-search.test.ts`'s line
+numbers for AC-8 and AC-9 shift accordingly in the table above; no other file
+changed.
+
+## Revision note (attempt 3 — DISPUTE_UPHELD_TEST_WRONG recovery)
+
+The Implementer halted Task 4 with a `TEST_CONTRACT_DISPUTE`: three
+`TaskFilter`-shaped literals this suite's attempt-2 `EXISTING_TEST_UPDATED`
+fix left in `test/task-filter.test.ts` (lines 45, 83, 134) omitted the new
+`q` key, so once `TaskFilter.q` was added as a REQUIRED field
+(`q: string | null`, per the PRD Architecture Notes and plan Task 4) they
+became `tsc -b` errors (TS2741 at 45/134, TS2345 at 83) — the suite, not the
+implementation, was contract-broken. The `code-reviewer` agent arbitrated
+the dispute and returned `DISPUTE_UPHELD_TEST_WRONG`, upheld by the owner as
+the sanctioned recovery path. Resolution: added `q: null` to all three
+literals exactly as the dispute's `proposed_resolution` specified — no
+expected value changed, no assertion dropped, no other file touched. See the
+extended Lifecycle ledger row below. `npx tsc -b` was re-run in the worktree
+after the fix; see the confirmation message for the result.
+
+## Test files written this session
+
+- test/search.test.ts (CREATE)
+- test/search-sql-agreement.test.ts (CREATE)
+- test/task-list-search.test.ts (CREATE)
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| UPDATE | EXISTING_TEST_UPDATED | test/task-filter.test.ts:184 ("EMPTY_FILTER has all five dimensions null", formerly "...all four dimensions null") | Driving change: this phase's plan Task 4 adds `q: string \| null` to `TaskFilter`/`EMPTY_FILTER` — the struct's shape genuinely changes, so the old four-key deep-equality literal would fail for a reason unrelated to any real defect the moment Task 4 lands. Updated to assert five keys including `q: null`, per the plan's own Risk table entry naming this exact fix. No assertion was dropped — the update only adds the new key the AC-adjacent infrastructure change requires. |
+| UPDATE | EXISTING_TEST_UPDATED | test/task-filter.test.ts:45 (`const filter: TaskFilter` in "carries every set dimension in one query string, in a fixed order"), :83 (inline `activeCount({...})` argument in "never exceeds three"), :134-135 (`const rich: TaskFilter` in "touches no dimension but its own") | Driving change: DISPUTE_UPHELD_TEST_WRONG arbitration (code-reviewer, per PRPs/reports/text-search/phase-1/halt.json dispute_evidence) on the Implementer's TEST_CONTRACT_DISPUTE halt — `TaskFilter.q` is a REQUIRED key (`q: string \| null`, not optional) per the PRD's Architecture Notes (lines 241-244) and plan Task 4, so the three bare `TaskFilter`-typed/shaped literals this attempt's Task-4 update left without a `q` key were themselves TS2741/TS2345 errors under `tsc -b`, not a legitimate contract the Implementer had to satisfy. Added `q: null` to each of the three literals per the upheld dispute's proposed_resolution; no expected value changed and no assertion was dropped. A full-worktree scan (Explore agent, read-only) confirmed no other test file constructs a bare TaskFilter-shaped literal lacking `q`. |
+
+## Formatting Outcome
+
+- Outcome: formatted
+- Command: `npx prettier --write`
+- Discovery source: methodology.md formatter_cmd
+- Files scoped: test/search.test.ts, test/search-sql-agreement.test.ts, test/task-list-search.test.ts, test/task-filter.test.ts (in .worktrees/text-search)
+
+## Status
+
+*Approved: 2026-09-15*
+*Status: APPROVED*
