@@ -659,6 +659,12 @@ export function TodayScreen({
         active instanceof HTMLTextAreaElement ||
         (active instanceof HTMLElement && active.isContentEditable);
       if (isTextField) return;
+      // Stop the keystroke here, or it continues into the search field this
+      // very handler is about to focus and the query starts as "/…" — found on
+      // the UI/UX checklist run of 2026-09-17, after the screen had shipped.
+      // GitHub's shortcut, which this guard mirrors, prevents it for the same
+      // reason.
+      event.preventDefault();
       onOpenSearch();
     }
     window.addEventListener("keydown", handleKeyDown);
