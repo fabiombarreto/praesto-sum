@@ -20,7 +20,8 @@ declare const __DEV_API_TOKEN__: string | null;
 /**
  * `__APP_VERSION__` carries the build stamp the settings screen shows in its
  * corner: the build date and the short commit it was built from
- * (`2026-09-16 · 85f109b`), or `dev` under `vite dev`. It answers one question
+ * (`2026-09-16 · 85f109b`), with ` · dev` appended under `vite dev`. It answers
+ * one question
  * — is the app in front of me the build I just deployed? — which a
  * `package.json` version nobody remembers to bump answers wrongly.
  *

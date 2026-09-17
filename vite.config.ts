@@ -58,17 +58,35 @@ function devApiToken(mode: string): string | null {
  * desconhecida". A build must never fail over a label.
  */
 function buildStamp(mode: string): string {
-  if (mode === "development") return "dev";
-  const date = new Date().toISOString().slice(0, 10);
+  // The owner's own calendar day, not UTC: an ISO timestamp rolls over at 21:00
+  // in São Paulo, so an evening build would be stamped tomorrow. `todayIn` in
+  // `src/shared/dates.ts` answers exactly this for the domain's dates and owns
+  // the `PRAESTO_TIMEZONE` definition, but this file belongs to
+  // `tsconfig.node.json` and importing across that project boundary is a
+  // compile error by design — so the zone is repeated here, and only here, with
+  // that file named as its source. "sv-SE" is the shortest locale that formats
+  // as YYYY-MM-DD.
+  const date = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(
+    new Date(),
+  );
+  let sha = "";
   try {
-    const sha = execFileSync("git", ["rev-parse", "--short", "HEAD"], {
+    sha = execFileSync("git", ["rev-parse", "--short", "HEAD"], {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
     }).trim();
-    return sha.length === 0 ? date : `${date} · ${sha}`;
   } catch {
-    return date;
+    // `git` may legitimately be out of reach: a tarball checkout has no `.git`,
+    // and inside the dev container the worktree's `.git` is a file pointing
+    // outside the bind mount. The date alone still identifies the build well
+    // enough, and a build must never fail over a label.
   }
+  const parts = sha.length === 0 ? [date] : [date, sha];
+  // Development keeps the date and the commit and adds a marker, rather than
+  // replacing them (owner's request, 2026-09-16): a line that reads only
+  // "versão de desenvolvimento" hides the number it exists to show.
+  if (mode === "development") parts.push("dev");
+  return parts.join(" · ");
 }
 
 export default defineConfig(({ mode }) => ({

@@ -14,7 +14,8 @@ Run 2026-09-16 in the browser pane against this worktree's own dev server.
    after the last card, pushed to the bottom of the same scroll area).
 3. **No meaning carried by colour alone.** ✔ — the meaning is the words themselves.
 4. **Copy is pt-BR, sentence case, "você", `Intl` dates.** ✔ — *versão 2026-09-16 · 85f109b*,
-   *versão de desenvolvimento*, *versão desconhecida*. The date is the build's own ISO stamp, not
+   *versão 2026-09-16 · 85f109b (desenvolvimento)*, *versão desconhecida*. The date is the
+   build's own ISO stamp, not
    a rendered date, so `Intl` does not apply; it is a build identifier, not a date the owner reads
    as a date.
 5. **Tab / Enter / Esc work, focus is visible, focus returns to the opener on close.** ✔ —

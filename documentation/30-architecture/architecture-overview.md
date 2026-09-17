@@ -88,8 +88,13 @@ every later unit plugs into it:
   size carries 313 tests without a browser tier: the components are glue, and the glue is
   verified by hand ([testing strategy](../40-engineering/testing-strategy.md)).
 - **The build identifies itself** (2026-09-16): `vite.config.ts` injects `__APP_VERSION__` — the
-  build date plus the short commit, or `dev` under `vite dev` — through the same `define`
-  mechanism `__DEV_API_TOKEN__` already used, and the settings screen shows it in its corner.
+  build date plus the short commit, with a `dev` marker appended under `vite dev` — through the
+  same `define` mechanism `__DEV_API_TOKEN__` already used, and the settings screen shows it in
+  its corner. A development build keeps the date and commit rather than replacing them with a
+  word: the owner asked for the number on the day the line shipped, and a label that hides it
+  defeats the line's own purpose. `git` may be out of reach (a tarball checkout, or the dev
+  container, whose bind mount does not carry the worktree's real `.git`); the date alone still
+  identifies the build, and a build never fails over a label.
   `package.json` carries no `version` field on purpose: a number bumped by hand answers "is this
   the build I just deployed?" with a stale yes, while the commit cannot be wrong. The formatting
   of the three cases (a real stamp, a development build, a stamp `git` could not resolve) is
