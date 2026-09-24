@@ -16,7 +16,14 @@ import { useRef } from "react";
 import type { ReactNode } from "react";
 import type { ReminderDto, TaskDto, TaskPriority } from "../../shared/api";
 import { instantToLocalParts } from "../../shared/dates";
-import type { ReminderDraft } from "../../shared/reminder-edit";
+import { draftFromReminder, type ReminderDraft } from "../../shared/reminder-edit";
+import {
+  recurrenceDraftError,
+  reminderWillCarryOver,
+  type RecurrenceDraft,
+  type RecurrenceEndOption,
+  type RecurrenceFreq,
+} from "../../shared/series-edit";
 import type { TaskDateMode, TaskDraft } from "../../shared/task-edit";
 import { draftFromTask, type SheetView } from "../../shared/task-sheet";
 import { ReminderForm } from "./ReminderForm";
@@ -48,6 +55,9 @@ export function TaskSheet({
   onReminderDeleteRequest,
   onReminderDeleteCancel,
   onReminderDeleteConfirm,
+  recurrenceDraft,
+  onRecurrenceDraftChange,
+  onSaveWithRecurrence,
 }: {
   task: TaskDto | null;
   open: boolean;
@@ -72,6 +82,11 @@ export function TaskSheet({
   onReminderDeleteRequest: () => void;
   onReminderDeleteCancel: () => void;
   onReminderDeleteConfirm: () => void;
+  /** The Repetir control's draft — owned by the parent, like `reminderDraft` above (recurring-tasks phase 4, plan AC-A2). */
+  recurrenceDraft: RecurrenceDraft;
+  onRecurrenceDraftChange: (changes: Partial<RecurrenceDraft>) => void;
+  /** Fired instead of `onSave` when `recurrenceDraft.freq !== "none"`. */
+  onSaveWithRecurrence: () => void;
 }) {
   const lastTask = useRef<TaskDto | null>(null);
   if (task !== null) lastTask.current = task;
@@ -80,6 +95,15 @@ export function TaskSheet({
   const shown = task ?? lastTask.current;
   const shownDraft = draft ?? lastDraft.current ?? (shown === null ? null : draftFromTask(shown));
   if (shown === null || shownDraft === null) return null;
+
+  // The Repetir control only ever applies to a Task not already part of a
+  // series (PRD D11 — a series' rule is fixed at creation, never edited
+  // afterward): converting one is create-then-delete, not a rule edit.
+  const canRepeat = shown.seriesId === null;
+  const recurrenceError = canRepeat ? recurrenceDraftError(shownDraft, recurrenceDraft) : null;
+  // Derived from the Task's own linked Reminder — never from `reminderDraft`
+  // above, which only holds a value while the Reminder editor view is open.
+  const existingReminderDraft = reminder === null ? null : draftFromReminder(reminder);
 
   return (
     <Sheet
@@ -94,6 +118,11 @@ export function TaskSheet({
           className="flex flex-col gap-4"
           onSubmit={(event) => {
             event.preventDefault();
+            if (canRepeat && recurrenceDraft.freq !== "none") {
+              if (recurrenceError !== null) return;
+              onSaveWithRecurrence();
+              return;
+            }
             onSave();
           }}
         >
@@ -163,6 +192,92 @@ export function TaskSheet({
             <Chip value="low">Baixa</Chip>
           </ChipGroup>
 
+          {canRepeat && (
+            <>
+              <p className="m-0 font-data text-t1 font-semibold text-muted">Repetir</p>
+              <ChipGroup
+                multiple={false}
+                label="Repetir"
+                value={[recurrenceDraft.freq]}
+                onValueChange={(next) =>
+                  onRecurrenceDraftChange({
+                    freq: (next[0] as RecurrenceFreq | undefined) ?? "none",
+                  })
+                }
+              >
+                <Chip value="none">Não repete</Chip>
+                <Chip value="daily">Diariamente</Chip>
+                <Chip value="weekly">Semanalmente</Chip>
+                <Chip value="monthly">Mensalmente</Chip>
+                <Chip value="yearly">Anualmente</Chip>
+              </ChipGroup>
+
+              {recurrenceDraft.freq !== "none" && (
+                <>
+                  <p className="m-0 font-data text-t1 font-semibold text-muted">Até quando?</p>
+                  <ChipGroup
+                    multiple={false}
+                    label="Até quando?"
+                    value={[recurrenceDraft.endOption]}
+                    onValueChange={(next) =>
+                      onRecurrenceDraftChange({
+                        endOption: (next[0] as RecurrenceEndOption | undefined) ?? "never",
+                      })
+                    }
+                  >
+                    <Chip value="never">Nunca</Chip>
+                    <Chip value="until">Até uma data</Chip>
+                    <Chip value="count">Depois de N vezes</Chip>
+                  </ChipGroup>
+
+                  {recurrenceDraft.endOption === "until" && (
+                    <input
+                      id="sheet-recurrence-until"
+                      type="date"
+                      aria-label="Repetir até"
+                      value={recurrenceDraft.untilDate}
+                      disabled={busy}
+                      onChange={(event) =>
+                        onRecurrenceDraftChange({ untilDate: event.target.value })
+                      }
+                      className="min-h-12 rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
+                    />
+                  )}
+
+                  {recurrenceDraft.endOption === "count" && (
+                    <input
+                      id="sheet-recurrence-count"
+                      type="number"
+                      min={1}
+                      step={1}
+                      aria-label="Número de repetições"
+                      value={recurrenceDraft.maxCount}
+                      disabled={busy}
+                      onChange={(event) =>
+                        onRecurrenceDraftChange({ maxCount: event.target.value })
+                      }
+                      className="min-h-12 rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
+                    />
+                  )}
+
+                  {existingReminderDraft !== null &&
+                    !reminderWillCarryOver(existingReminderDraft) && (
+                      <p className="m-0 font-text text-t1 text-muted">
+                        O lembrete atual não será copiado para a série; adicione um novo lembrete
+                        relativo depois de salvar.
+                      </p>
+                    )}
+
+                  {recurrenceError !== null && (
+                    <p role="alert" className="m-0 font-text text-t2 text-overdue">
+                      {recurrenceError}
+                    </p>
+                  )}
+                </>
+              )}
+            </>
+          )}
+
           <p className="m-0 font-data text-t1 font-semibold text-muted">Lembrete</p>
           {reminder === null ? (
             <Button
@@ -203,7 +318,12 @@ export function TaskSheet({
             >
               Cancelar
             </Button>
-            <Button type="submit" variant="primary" className="flex-1" disabled={busy}>
+            <Button
+              type="submit"
+              variant="primary"
+              className="flex-1"
+              disabled={busy || recurrenceError !== null}
+            >
               Salvar
             </Button>
           </div>

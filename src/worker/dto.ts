@@ -6,6 +6,7 @@ import type {
   PushSubscriptionDto,
   ReminderDto,
   RecurrenceSeriesDto,
+  SeriesDto,
   TaskDto,
 } from "../shared/api";
 import type {
@@ -106,6 +107,17 @@ export function toRecurrenceSeriesDto(row: RecurrenceSeries): RecurrenceSeriesDt
     createdAt: toEpochSeconds(row.createdAt) ?? 0,
     updatedAt: toEpochSeconds(row.updatedAt) ?? 0,
   };
+}
+
+/**
+ * Maps a Recurrence Series row for `/api/series`, composing
+ * `toRecurrenceSeriesDto` rather than re-declaring any of its fields by hand
+ * (docs/anti-patterns.md — "Hand-duplicated entity types"), and spreading on
+ * the series' current open occurrence's Task id (or `null`), which the route
+ * looks up separately since it is not a `recurrenceSeries` column.
+ */
+export function toSeriesDto(row: RecurrenceSeries, openOccurrenceId: string | null): SeriesDto {
+  return { ...toRecurrenceSeriesDto(row), openOccurrenceId };
 }
 
 /**

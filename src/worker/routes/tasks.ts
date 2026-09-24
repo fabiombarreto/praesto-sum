@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, isNull, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, gt, isNotNull, isNull, sql, type SQL } from "drizzle-orm";
 import { Hono } from "hono";
 import {
   EDITABLE_TASK_FIELDS,
@@ -9,9 +9,14 @@ import {
   type CreateTaskInput,
 } from "../../shared/api";
 import { offsetToInstant, todayIn } from "../../shared/dates";
+import {
+  occurrenceReminderInstants,
+  nextOccurrence,
+  type RecurrenceRule,
+} from "../../shared/recurrence";
 import { buildSearchClauses } from "../../shared/search";
 import { createDb } from "../db/client";
-import { reminders, tasks } from "../db/schema";
+import { recurrenceSeries, reminders, tasks, type RecurrenceSeries, type Task } from "../db/schema";
 import { toTaskDto } from "../dto";
 
 /**
@@ -22,6 +27,83 @@ import { toTaskDto } from "../dto";
  * schema already carries the columns and the invariant indexes it will need.
  */
 export const taskRoutes = new Hono<{ Bindings: Env }>();
+
+/**
+ * Maps a `recurrenceSeries` row to `src/shared/recurrence.ts`'s
+ * `RecurrenceRule`. `byWeekday` is decoded here — the route boundary
+ * `src/shared/recurrence.ts:34-36`'s own doc comment anticipates — since
+ * Phase 2's `POST /api/series` only ever encoded it for storage and never
+ * needed to read it back (`firstOccurrence` never consults it).
+ */
+function buildRecurrenceRule(series: RecurrenceSeries): RecurrenceRule {
+  return {
+    freq: series.freq,
+    interval: series.interval,
+    byWeekday: series.byWeekday === null ? null : (JSON.parse(series.byWeekday) as number[]),
+    byMonthday: series.byMonthday,
+    dtstart: series.dtstart,
+    timezone: series.timezone,
+    anchorMode: series.anchorMode,
+    endKind: series.endKind,
+    untilDate: series.untilDate,
+    maxCount: series.maxCount,
+  };
+}
+
+/**
+ * Builds (never executes) the Task-insert-plus-Reminders statements for a new
+ * occurrence of `series` on `occurrenceDate`, generalizing
+ * `src/worker/routes/series.ts:169-220`'s first-occurrence materialization
+ * shape to read the template from an existing `RecurrenceSeries` row instead
+ * of a validated POST body. The caller splices `statements` into its own
+ * `db.batch([...])` array alongside the Task-status-changing statement, so
+ * the whole write — closing/skipping the current occurrence AND spawning the
+ * next one — stays one atomic operation.
+ */
+async function buildSuccessorStatements(
+  db: ReturnType<typeof createDb>,
+  series: RecurrenceSeries,
+  occurrenceDate: string,
+): Promise<{ successorId: string; statements: unknown[] }> {
+  const reminderOffsets =
+    series.reminderOffsets === null ? [] : (JSON.parse(series.reminderOffsets) as number[]);
+  const reminderInstants = occurrenceReminderInstants(
+    occurrenceDate,
+    reminderOffsets,
+    series.timezone,
+  );
+
+  const successorId = crypto.randomUUID();
+
+  return {
+    successorId,
+    statements: [
+      db
+        .insert(tasks)
+        .values({
+          id: successorId,
+          // Non-null: recurrence_series_template_chk guarantees title is set for kind='task'.
+          title: series.title!,
+          description: series.description,
+          deadline: series.dateMode === "deadline" ? occurrenceDate : null,
+          scheduledDate: series.dateMode === "scheduled" ? occurrenceDate : null,
+          priority: series.priority,
+          lifeAreaId: series.lifeAreaId,
+          seriesId: series.id,
+          occurrenceDate,
+        })
+        .returning(),
+      ...reminderInstants.map((instant, index) =>
+        db.insert(reminders).values({
+          id: crypto.randomUUID(),
+          taskId: successorId,
+          fireAt: new Date(instant * 1000),
+          originOffsetMinutes: reminderOffsets[index] ?? null,
+        }),
+      ),
+    ],
+  };
+}
 
 /**
  * FR-007 — list, optionally filtered by status, a date range and priority, in
@@ -309,33 +391,210 @@ taskRoutes.patch("/:id", async (c) => {
   return c.json({ task: toTaskDto(row) });
 });
 
+/**
+ * The `error.message.includes("UNIQUE constraint failed")` check this helper
+ * wraps is grounded in `test/tasks.test.ts:140-147`'s proof that a partial
+ * unique-index violation surfaces in THIS harness (Vitest +
+ * `@cloudflare/vitest-pool-workers` + Drizzle) as a rejected promise reaching
+ * the caller. No prior route in this codebase catches a D1 constraint
+ * violation and maps it to a non-`500` response — this is that pattern's
+ * first use (plan `## Notes`, "No-precedent design decision"). Any error NOT
+ * matching that message propagates unchanged, never silently swallowed,
+ * consistent with `src/worker/routes/oauth-callback.ts`'s own
+ * reason-preserving catch blocks.
+ */
+async function batchOrRace<T extends unknown[]>(
+  db: ReturnType<typeof createDb>,
+  statements: T,
+): Promise<{ ok: true; results: unknown[] } | { ok: false; response: Response }> {
+  try {
+    // The batch is built dynamically (a variable number of successor
+    // statements), so it cannot be typed as the literal tuple `db.batch`'s
+    // signature demands; the runtime shape is exactly what `series.ts` and
+    // `oauth-callback.ts` already pass it. See plan `## Notes`.
+    const results = (await db.batch(statements as never)) as unknown[];
+    return { ok: true, results };
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("UNIQUE constraint failed")) {
+      return {
+        ok: false,
+        response: Response.json(
+          { error: "A próxima ocorrência já foi criada por outra requisição" },
+          { status: 409 },
+        ),
+      };
+    }
+    throw error;
+  }
+}
+
 /** FR-003 — complete a Task, and undo it. */
 taskRoutes.post("/:id/complete", async (c) => {
   const id = c.req.param("id");
   const db = createDb(c.env);
 
-  const [row] = await db
-    .update(tasks)
-    .set({ status: "done", completedAt: new Date() })
-    .where(and(eq(tasks.id, id), eq(tasks.status, "open")))
-    .returning();
+  const [existing] = await db.select().from(tasks).where(eq(tasks.id, id));
+  if (existing === undefined || existing.status !== "open") {
+    return c.json({ error: "No open Task with that id" }, 404);
+  }
 
-  if (row === undefined) return c.json({ error: "No open Task with that id" }, 404);
-  return c.json({ task: toTaskDto(row) });
+  if (existing.seriesId === null) {
+    const [row] = await db
+      .update(tasks)
+      .set({ status: "done", completedAt: new Date() })
+      .where(and(eq(tasks.id, id), eq(tasks.status, "open")))
+      .returning();
+
+    if (row === undefined) return c.json({ error: "No open Task with that id" }, 404);
+    return c.json({ task: toTaskDto(row) });
+  }
+
+  // Series occurrence (PRD AC-19, AC-20, AC-21, AC-22).
+  const [series] = await db
+    .select()
+    .from(recurrenceSeries)
+    .where(eq(recurrenceSeries.id, existing.seriesId));
+  if (series === undefined) return c.json({ error: "Série não encontrada" }, 404);
+
+  const rule = buildRecurrenceRule(series);
+  const completedOn =
+    rule.anchorMode === "completion" ? todayIn(new Date(), rule.timezone) : undefined;
+  const closedCount = series.doneCount + 1 + series.missedCount; // D6 — this completion counts.
+  const occurrenceDate = existing.occurrenceDate as string; // tasks_occurrence_chk guarantees it for a series row.
+  const next =
+    series.status === "ended"
+      ? null
+      : nextOccurrence(rule, {
+          after: occurrenceDate,
+          closedCount,
+          ...(completedOn === undefined ? {} : { completedOn }),
+        });
+
+  const seriesUpdate: Partial<typeof recurrenceSeries.$inferInsert> = {
+    doneCount: series.doneCount + 1,
+  };
+  // Avoid a no-op `status: "ended"` write when the series was ended already
+  // (e.g. via `PATCH /api/series/:id`) while this, its last open occurrence,
+  // is only now being completed.
+  if (next === null && series.status !== "ended") seriesUpdate.status = "ended";
+
+  const statements: unknown[] = [
+    db
+      .update(tasks)
+      .set({ status: "done", completedAt: new Date() })
+      .where(and(eq(tasks.id, id), eq(tasks.status, "open")))
+      .returning(),
+    db.update(recurrenceSeries).set(seriesUpdate).where(eq(recurrenceSeries.id, series.id)),
+  ];
+  let successorId: string | undefined;
+  if (next !== null) {
+    const successor = await buildSuccessorStatements(db, series, next);
+    successorId = successor.successorId;
+    statements.push(...successor.statements);
+  }
+
+  const outcome = await batchOrRace(db, statements);
+  if (!outcome.ok) return outcome.response;
+
+  const [updatedRow] = outcome.results[0] as Task[];
+  if (updatedRow === undefined) return c.json({ error: "No open Task with that id" }, 404);
+
+  if (successorId === undefined) return c.json({ task: toTaskDto(updatedRow) });
+  const [successorRow] = outcome.results[2] as Task[];
+  return c.json({ task: toTaskDto(updatedRow), successor: toTaskDto(successorRow as Task) });
 });
 
+/** FR-003 — undo a completion. */
 taskRoutes.post("/:id/reopen", async (c) => {
   const id = c.req.param("id");
   const db = createDb(c.env);
 
-  const [row] = await db
-    .update(tasks)
-    .set({ status: "open", completedAt: null })
-    .where(and(eq(tasks.id, id), eq(tasks.status, "done")))
-    .returning();
+  const [existing] = await db.select().from(tasks).where(eq(tasks.id, id));
+  if (existing === undefined || existing.status !== "done") {
+    return c.json({ error: "No completed Task with that id" }, 404);
+  }
 
-  if (row === undefined) return c.json({ error: "No completed Task with that id" }, 404);
-  return c.json({ task: toTaskDto(row) });
+  if (existing.seriesId === null) {
+    const [row] = await db
+      .update(tasks)
+      .set({ status: "open", completedAt: null })
+      .where(and(eq(tasks.id, id), eq(tasks.status, "done")))
+      .returning();
+
+    if (row === undefined) return c.json({ error: "No completed Task with that id" }, 404);
+    return c.json({ task: toTaskDto(row) });
+  }
+
+  // Series occurrence (PRD AC-24, D10).
+  const [series] = await db
+    .select()
+    .from(recurrenceSeries)
+    .where(eq(recurrenceSeries.id, existing.seriesId));
+  if (series === undefined) return c.json({ error: "Série não encontrada" }, 404);
+
+  // The chronologically NEXT row for this series — the one the original
+  // completion spawned, whichever its current state — adapted (not reused
+  // verbatim) from `series.ts`'s `findOpenOccurrenceId`, which finds
+  // "whichever row is currently open" instead; the two differ once more than
+  // one cycle has elapsed since the row being reopened.
+  const reopenedOccurrenceDate = existing.occurrenceDate as string; // tasks_occurrence_chk guarantees it for a series row.
+  const [successor] = await db
+    .select()
+    .from(tasks)
+    .where(
+      and(eq(tasks.seriesId, existing.seriesId), gt(tasks.occurrenceDate, reopenedOccurrenceDate)),
+    )
+    .orderBy(tasks.occurrenceDate)
+    .limit(1);
+
+  let untouched: boolean;
+  if (successor === undefined) {
+    // No successor row at all — e.g. the series had already reached its end
+    // condition when this occurrence was completed. D10's own wording does
+    // not name this edge explicitly; treated as vacuously untouched (plan
+    // `## Risks and Mitigations`).
+    untouched = true;
+  } else {
+    const [sentReminder] = await db
+      .select({ id: reminders.id })
+      .from(reminders)
+      .where(and(eq(reminders.taskId, successor.id), isNotNull(reminders.sentAt)))
+      .limit(1);
+    untouched =
+      successor.detached === false && successor.status === "open" && sentReminder === undefined;
+  }
+
+  if (!untouched) {
+    return c.json({ error: "A próxima ocorrência já existe e não pode mais ser desfeita" }, 409);
+  }
+
+  // The successor's delete MUST run before the reopened row flips back to
+  // "open" — both are the same series, and `tasks_series_single_open_unq`
+  // checks immediately (SQLite does not defer unique-index enforcement to
+  // the end of the batch), so reopening first would transiently collide
+  // with the still-open successor even though the batch as a whole is
+  // correct.
+  const statements: unknown[] = [];
+  if (successor !== undefined) {
+    statements.push(db.delete(tasks).where(eq(tasks.id, successor.id)));
+  }
+  statements.push(
+    db
+      .update(tasks)
+      .set({ status: "open", completedAt: null })
+      .where(and(eq(tasks.id, id), eq(tasks.status, "done")))
+      .returning(),
+    db
+      .update(recurrenceSeries)
+      .set({ doneCount: series.doneCount - 1 })
+      .where(eq(recurrenceSeries.id, existing.seriesId)),
+  );
+  const updatedRowIndex = successor === undefined ? 0 : 1;
+
+  const results = (await db.batch(statements as never)) as unknown[];
+  const [updatedRow] = results[updatedRowIndex] as Task[];
+  if (updatedRow === undefined) return c.json({ error: "No completed Task with that id" }, 404);
+  return c.json({ task: toTaskDto(updatedRow) });
 });
 
 /** FR-004 — delete a Task. */
@@ -343,8 +602,62 @@ taskRoutes.delete("/:id", async (c) => {
   const id = c.req.param("id");
   const db = createDb(c.env);
 
-  const [row] = await db.delete(tasks).where(eq(tasks.id, id)).returning();
-  if (row === undefined) return c.json({ error: "No Task with that id" }, 404);
+  const [existing] = await db.select().from(tasks).where(eq(tasks.id, id));
+  if (existing === undefined) return c.json({ error: "No Task with that id" }, 404);
+
+  if (existing.seriesId === null || existing.status !== "open") {
+    // A closed series row (already done/missed) is deleted the plain way —
+    // only an OPEN series occurrence triggers skip-and-spawn below. Keeps
+    // AC-25 structural and avoids re-spawning a successor for a row that
+    // already has one.
+    const [row] = await db.delete(tasks).where(eq(tasks.id, id)).returning();
+    if (row === undefined) return c.json({ error: "No Task with that id" }, 404);
+    return c.body(null, 204);
+  }
+
+  // Open series occurrence (PRD AC-23, D3): skip the cycle, spawn the
+  // successor immediately; doneCount/missedCount stay UNCHANGED.
+  const [series] = await db
+    .select()
+    .from(recurrenceSeries)
+    .where(eq(recurrenceSeries.id, existing.seriesId));
+  if (series === undefined) return c.json({ error: "Série não encontrada" }, 404);
+
+  const rule = buildRecurrenceRule(series);
+  // `completedOn` here stands in for "the day this cycle ended" on a
+  // completion-anchored series being SKIPPED rather than completed — D3/D5's
+  // interaction for that combination is not named by any AC (plan `## Risks
+  // and Mitigations`).
+  const completedOn =
+    rule.anchorMode === "completion" ? todayIn(new Date(), rule.timezone) : undefined;
+  const occurrenceDate = existing.occurrenceDate as string; // tasks_occurrence_chk guarantees it for a series row.
+  const next =
+    series.status === "ended"
+      ? null
+      : nextOccurrence(rule, {
+          after: occurrenceDate,
+          closedCount: series.doneCount + series.missedCount, // D3 — unchanged, a skip counts as neither.
+          ...(completedOn === undefined ? {} : { completedOn }),
+        });
+
+  const statements: unknown[] = [db.delete(tasks).where(eq(tasks.id, id)).returning()];
+  if (next !== null) {
+    const successor = await buildSuccessorStatements(db, series, next);
+    statements.push(...successor.statements);
+  } else if (series.status !== "ended") {
+    statements.push(
+      db
+        .update(recurrenceSeries)
+        .set({ status: "ended" })
+        .where(eq(recurrenceSeries.id, series.id)),
+    );
+  }
+
+  const outcome = await batchOrRace(db, statements);
+  if (!outcome.ok) return outcome.response;
+
+  const [deletedRow] = outcome.results[0] as Task[];
+  if (deletedRow === undefined) return c.json({ error: "No Task with that id" }, 404);
   return c.body(null, 204);
 });
 

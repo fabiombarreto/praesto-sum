@@ -10,7 +10,7 @@ import { useEffect, useReducer, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { ReminderDto, TaskDto } from "../../shared/api";
 import { canWrite } from "../../shared/connectivity";
-import { instantToLocalParts, todayIn } from "../../shared/dates";
+import { instantToLocalParts, PRAESTO_TIMEZONE, todayIn } from "../../shared/dates";
 import { googleFailureMessage } from "../../shared/google-failure-copy";
 import { classifyRequestFailure } from "../../shared/request-failure";
 import {
@@ -19,6 +19,11 @@ import {
   draftFromReminder,
   type ReminderDraft,
 } from "../../shared/reminder-edit";
+import {
+  buildCreateSeriesInput,
+  EMPTY_RECURRENCE_DRAFT,
+  type RecurrenceDraft,
+} from "../../shared/series-edit";
 import type { ShareTarget } from "../../shared/share-target";
 import { buildTaskPatch } from "../../shared/task-edit";
 import {
@@ -36,6 +41,7 @@ import {
   ApiError,
   completeTask,
   createReminder,
+  createSeries,
   createTask,
   deleteReminder,
   deleteTask,
@@ -219,6 +225,7 @@ export function TodayScreen({
   } | null>(null);
   const [reminderSheetError, setReminderSheetError] = useState<string | null>(null);
   const [taskReminderDraft, setTaskReminderDraft] = useState<ReminderDraft | null>(null);
+  const [recurrenceDraft, setRecurrenceDraft] = useState<RecurrenceDraft>(EMPTY_RECURRENCE_DRAFT);
 
   // The other half of the notification deep link: `App.tsx` resolves
   // `/tasks/<id>` into `initialTaskId`, and this opens that Task's sheet as
@@ -238,6 +245,14 @@ export function TodayScreen({
     if (target === undefined) return;
     dispatchSheet({ type: "open", task: target });
   }, [initialTaskId, tasks]);
+
+  // Mirrors `taskReminderDraft`'s own per-Task lifetime: a fresh Repetir
+  // draft every time the sheet closes or opens a different Task ("saved" and
+  // "deleted" both clear `sheet.taskId` back to `null`), never carried over
+  // from whichever Task it last described.
+  useEffect(() => {
+    setRecurrenceDraft(EMPTY_RECURRENCE_DRAFT);
+  }, [sheet.taskId]);
 
   const today = todayIn(new Date());
   const now = new Date();
@@ -557,6 +572,34 @@ export function TodayScreen({
       } else {
         showToast({ key: "task-saved", text: "Tarefa salva" });
       }
+    });
+  }
+
+  /**
+   * Converts the sheet's one-off Task into a series (PRD AC-26, plan
+   * AC-A2/AC-A3): `createSeries` succeeds FIRST, and only then is the
+   * original row deleted — never the reverse, so a failed delete after a
+   * successful create leaves at worst a visible, recoverable duplicate
+   * rather than losing the owner's Task. `refresh()` (already called by
+   * `runSheet`'s own success path) is the same call that already surfaces a
+   * completed occurrence's successor with no reload (AC-A3) — no separate
+   * fetch is needed here for the newly created occurrence either.
+   */
+  function saveSheetWithRecurrence(): void {
+    if (sheetTask === null) return;
+    const input = buildCreateSeriesInput(
+      currentDraft(sheet, sheetTask),
+      recurrenceDraft,
+      sheetTaskReminder === null ? null : draftFromReminder(sheetTaskReminder),
+      PRAESTO_TIMEZONE,
+    );
+    const id = sheetTask.id;
+    void runSheet(async () => {
+      await createSeries(input);
+      await deleteTask(id);
+      dispatchSheet({ type: "deleted", taskId: id });
+      setRecurrenceDraft(EMPTY_RECURRENCE_DRAFT);
+      showToast({ key: "series-created", text: "Série criada" });
     });
   }
 
@@ -1026,6 +1069,11 @@ export function TodayScreen({
             showToast({ key: "reminder-deleted", text: "Lembrete excluído" });
           });
         }}
+        recurrenceDraft={recurrenceDraft}
+        onRecurrenceDraftChange={(changes) =>
+          setRecurrenceDraft((prev) => ({ ...prev, ...changes }))
+        }
+        onSaveWithRecurrence={saveSheetWithRecurrence}
       />
 
       {/* Never stack sheets (layout standard §3): gated on the same
