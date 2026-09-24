@@ -1,0 +1,129 @@
+# TDD initial suite — phase 3
+# Source PRD: PRPs/prds/recurring-tasks.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/recurring-tasks-phase-3-materialization-on-close.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-09-24
+
+## Rebuild notice
+
+This manifest was rewritten from scratch on 2026-09-24 after the original file
+was accidentally truncated to 0 bytes by a status-flip script bug (an
+outer-open-for-write executed before the inner read in the same expression;
+never committed, so git held no copy to restore). The post-green reviewer
+caught the loss by reading the file on disk rather than trusting an
+APPROVED-status claim. Every fact below is re-derived from artifacts that
+survived the incident, not from memory of the original text:
+- The suite itself: `.worktrees/recurring-tasks/test/tasks.test.ts` (current
+  on-disk state, including the Revision 1 strengthening).
+- The amended sibling: `.worktrees/recurring-tasks/test/series.test.ts`
+  (current on-disk state, including the Revision 2 amendment).
+- `PRPs/plans/recurring-tasks-phase-3-materialization-on-close.test-write-review.jsonl`
+  (three verdicts, read in full).
+- `PRPs/plans/recurring-tasks-phase-3-materialization-on-close.code-review.jsonl`
+  (the arbitration entry and the standard-mode APPROVED, read in full).
+- The intact phase-1 and phase-2 manifests, for shape only
+  (`PRPs/reports/recurring-tasks/test-suite.diff`,
+  `PRPs/reports/recurring-tasks/phase-2/test-suite.diff`).
+
+Where this reconstruction states a fact not independently visible in one of
+those artifacts (for example, exact wording of my own original prose), it is
+marked as such rather than presented as a verbatim recovery.
+
+## Mode
+
+TEST-FIRST (`tdd: true`, `test_frameworks: ["vitest"]`,
+`docs/context/methodology.md`). At authoring time,
+`src/worker/routes/tasks.ts`'s `complete`/`delete`/`reopen` handlers carried
+ZERO series awareness (plan's Problem Statement, `:313-349` verbatim); the
+suite was authored against that gap and confirmed RED for exactly that
+reason (see "Test files written this session" below). Production code has
+since landed and been approved (`code-review.jsonl` line 2, standard-mode
+APPROVED, 2026-09-24T14:35:54Z) — this manifest still documents the suite's
+pre-implementation RED state as originally observed, plus the two revisions
+that followed.
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-1..AC-10 | OUT_OF_PHASE_SCOPE | (Phase 1 "Pure expansion" — covered by `.worktrees/recurring-tasks/test/recurrence.test.ts`, APPROVED at `PRPs/reports/recurring-tasks/test-suite.diff`; not duplicated or modified here) |
+| AC-11..AC-18 | OUT_OF_PHASE_SCOPE | (Phase 2 "Series API" — covered by `.worktrees/recurring-tasks/test/series.test.ts`, APPROVED at `PRPs/reports/recurring-tasks/phase-2/test-suite.diff`; AC-16's own test received a post-implementation amendment this session — see Revision 2 and the Lifecycle ledger below — but the AC-11..AC-18 mapping is otherwise untouched) |
+| AC-19 | NEW_TEST_REQUIRED | test/tasks.test.ts:306 (`describe("AC-19 / AC-A1 Completing spawns the successor in the same write")`) |
+| AC-20 | NEW_TEST_REQUIRED | test/tasks.test.ts:343 (`describe("AC-20 / AC-A2 No duplicate successor")` — 2 cases: sequential double-complete, concurrent double-complete) |
+| AC-21 | NEW_TEST_REQUIRED | test/tasks.test.ts:381 (`describe("AC-21 / AC-A3 End conditions stop the series")` — 2 cases: `count`, `until`) |
+| AC-22 | NEW_TEST_REQUIRED | test/tasks.test.ts:419 (`describe("AC-22 / AC-A4 An edited occurrence does not leak into the successor (D2)")`) |
+| AC-23 | NEW_TEST_REQUIRED | test/tasks.test.ts:438 (`describe("AC-23 / AC-A5 Deleting the open occurrence skips the cycle (D3)")` — 2 cases: open-occurrence skip+spawn, already-closed plain delete) |
+| AC-24 | NEW_TEST_REQUIRED | test/tasks.test.ts:494 (`describe("AC-24 / AC-A6 Reopen undoes the spawn, or refuses honestly (D10)")` — 4 cases: untouched-successor undo, touched-by-detach 409, touched-by-close 409, touched-by-sent-reminder 409; the last two strengthened in Revision 1) |
+| AC-25 | NEW_TEST_REQUIRED (partial-coverage delta) | test/tasks.test.ts:604 (`describe("AC-25 / AC-A7 One-off Tasks are unaffected — response shape stays byte-identical")` — see Existing-coverage scan below) |
+| AC-26..AC-28 | OUT_OF_PHASE_SCOPE | (Phase 4 "The screen" — not yet planned; manual/device verification, produces no test file even when reached, per the methodology's UI split) |
+
+## Test files written this session
+
+- `.worktrees/recurring-tasks/test/tasks.test.ts` (UPDATE — existing file extended, no pre-existing test body touched). Three additive changes:
+  1. Import block: added `SeriesDto` to the existing `TaskDto` type import, added `offsetToInstant`/`PRAESTO_TIMEZONE` from `src/shared/dates`, added `reminders` to the existing `recurrenceSeries, tasks` schema import. No existing import line was removed.
+  2. A second, purely additive `beforeEach(async () => { await createDb(env).delete(reminders); }, DRAIN_BUDGET_MS)` appended after the file's existing `beforeEach(resetTaskTables, DRAIN_BUDGET_MS)` (line 44, untouched) — Vitest runs same-scope `beforeEach` hooks in declaration order, so this only adds a `reminders` wipe (the shared barrier in `test/isolation.ts` only knows about `tasks`/`recurrenceSeries`; `test/series.test.ts` needed and added the identical wipe for the same reason). No existing hook line was edited.
+  3. Seven new top-level `describe` blocks (AC-19 through AC-25) plus their supporting helpers (`patch`, `del`, `getSeries`, `createSeries`, `completeAndGetSuccessor`) and a `SERIES_TEMPLATE` fixture, appended after the file's existing `describe("Recurrence invariants (ADR-0006)")` block (line 199). Zero existing `it()` bodies were edited, moved or removed.
+
+  Confirmed RED for the right reason at authoring time. **Provenance, stated honestly rather than implied:** the aggregate counts below ARE corroborated by the surviving trail — `test-write-review.jsonl` line 2's reason records "still 24 total / 12 passed / 12 failed, the identical 12 failing test names as the prior run". The **per-AC failure messages that follow are NOT** recoverable from that trail: line 1's `R-RED-LEGITIMATE` row carries `passed: true` with no `reason` field at all, and line 2's reason covers only the `completeAndGetSuccessor` chokepoint for the two AC-24 cases it was re-verifying. They are reproduced here from the destroyed original manifest and were independently confirmed by the test-reviewer, which ran `npx vitest run test/tasks.test.ts` itself in the same session and observed exactly these messages — but a future reader checking only the four artifacts named in the rebuild notice cannot verify this paragraph, and should treat it accordingly. `npx vitest run test/tasks.test.ts` produced **24 tests total, 12 passed, 12 failed**, every failure tracing to the same single root cause — `complete`/`delete`/`reopen` did not yet read or write `recurrenceSeries`, so no successor was ever spawned and no series `status`/`doneCount` ever changed:
+  - **AC-19** (1 case): `expected undefined to be defined` at `expect(body.successor).toBeDefined()` — `complete`'s response was exactly `{ task }`.
+  - **AC-20** (2 cases): `expected [...] to have a length of 2 but got 1` — the `tasks` rows for the series never grew past the one original occurrence.
+  - **AC-21** (2 cases): `expected 'active' to be 'ended'` — the series row's `status` was never touched by `complete`.
+  - **AC-22** (1 case): `expected undefined to be defined` — same root cause as AC-19.
+  - **AC-23** (1 direct case): `expected [] to have a length of 1 but got +0` — `delete` on an open series occurrence just deleted the row; no successor spawn existed yet.
+  - **AC-23** (1 case) + all 4 **AC-24** cases: failed inside the shared `completeAndGetSuccessor` helper (`test/tasks.test.ts:291`) at the same `expect(body.successor).toBeDefined()`.
+
+  No other RED reason was observed: no crash, no thrown `TypeError` reaching a test body, no import/compile/syntax error, no unrelated `500`. Sibling suites (`test/series.test.ts`, `test/recurrence.test.ts`) were fully green (39/39) at the same point, and the full `npm test` (68 files, 1053 tests) showed exactly these 12 failures and no others.
+
+- `.worktrees/recurring-tasks/test/series.test.ts` (UPDATE — post-implementation amendment, Revision 2 below; a pre-existing, already-APPROVED Phase 2 test body). See the Lifecycle ledger.
+
+## Existing-coverage scan
+
+`test/tasks.test.ts`'s pre-existing `describe("Task lifecycle (FR-001..FR-004, FR-007)")` block already exercises the one-off (`seriesId === null`) `complete`/`reopen`/`delete` paths directly:
+- `"completes a Task and reopens it"` (`:59-77`) — asserts `complete` sets `status: "done"`/`completedAt` set, that a second `complete` 404s, and that `reopen` sets `status: "open"`/`completedAt: null`.
+- `"deletes a Task"` (`:79-86`) — asserts `delete` returns `204` and the row leaves the open list.
+
+These cover AC-25's *behavioral* half (a one-off Task's status transitions are unaffected) but neither test inspects the exact **response key set** — AC-19's own text requires "a one-off Task's complete response has no `successor` key and is otherwise byte-identical to today's", and neither existing test would fail if a stray `successor` key were added, since neither asserts `Object.keys(...)`. That is the missing-property delta: `describe("AC-25 / AC-A7 ...")`'s three new cases assert the exact key set of the `complete`/`reopen` response bodies and the empty `204` body of `delete`, each carrying a comment header citing the existing partial-coverage test by path:line. No duplicate test was written for the behavior the two existing tests already prove.
+
+`test/series.test.ts` (Phase 2, APPROVED at authoring time) was also scanned: its own AC-16 test drove one `complete` call incidentally (to prove `GET /api/series/:id` reports no open occurrence once the occurrence closes), asserting nothing about the `complete` response's shape or about `doneCount`/successor spawning — no overlap with this phase's in-scope ACs at that time. That incidental call is exactly what Revision 2 below revisits.
+
+## Lifecycle ledger
+
+One row this session — the only pre-existing, already-APPROVED test body this phase's TDD pair touched.
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| UPDATE | EXISTING_TEST_UPDATED | `test/series.test.ts` — `describe("AC-16 / AC-A6 Read")` → `it("reads each series with its open occurrence id, or null once it closes; an unknown id is 404")` (`:233`) | Arbitration verdict `DISPUTE_UPHELD_TEST_WRONG` (code-reviewer, 2026-09-24T14:21:02Z): the `null`-after-complete assertion was stale — Phase 3 shipped AC-19 successor-spawning for this active, no-end-condition series; AC-16's own wording is satisfied either way. |
+
+## Revision 1 — `test-reviewer` CHANGES_REQUESTED, `R-TRIVIAL-ASSERT` (pre-implementation)
+
+`test-reviewer` returned `CHANGES_REQUESTED` on the first draft (`test-write-review.jsonl` line 1, 2026-09-24T14:03:56Z) citing `R-TRIVIAL-ASSERT` against two of AC-24's four cases: `"refuses with 409 and changes nothing when the successor has already been closed"` and `"...already had a reminder sent"` (`test/tasks.test.ts`, both originally in the `:546-585` range) asserted only `occurrenceRows[0]?.status === "done"` (the closed case) or that plus `successorRows` length `1` (the reminder-sent case) — a strict subset of AC-24's own "and nothing changes" requirement, unlike the sibling "detached" case a few lines above it, which already asserted full before/after row equality for both the occurrence and the successor plus the series' `doneCount`/`missedCount`.
+
+Fixed in place: both cases now capture `beforeOccurrence`/`beforeSuccessor`/`seriesBefore` immediately before the `reopen` call and `afterOccurrence`/`afterSuccessor`/`seriesAfter` immediately after the `409`, asserting `toEqual` row equality plus counter equality — the exact shape the detached case already used (now at `test/tasks.test.ts:546-569` and `:571-601`). No other test body in the file was touched; no production file was touched.
+
+Re-verified after the fix (`test-write-review.jsonl` line 2, 2026-09-24T14:08:23Z, `APPROVED`): `npx tsc -b --noEmit` clean, `npx eslint test/tasks.test.ts` clean, `npx vitest run test/tasks.test.ts` — still 24 total / 12 passed / 12 failed, the identical split and the identical 12 failing test names as the first draft. Both revised cases were still RED, and for the identical underlying reason: they failed inside the shared `completeAndGetSuccessor` helper's `expect(body.successor).toBeDefined()` (`test/tasks.test.ts:291`) before ever reaching the `409` assertion, because AC-19's successor-spawning was itself not yet implemented — the same chokepoint already documented for the other three AC-24/AC-23 cases above. The new `toEqual`/counter assertions were consequently not yet exercised at that point (dead code until `complete` and `reopen` both gained series-awareness) — expected and correct for a test-first suite.
+
+## Revision 2 — post-implementation `TEST_CONTRACT_DISPUTE`, arbitration `DISPUTE_UPHELD_TEST_WRONG`
+
+After the Implementer's phase-3 attempt landed `complete`/`delete`/`reopen`'s series-awareness, `npm test` surfaced one failure outside `test/tasks.test.ts`: `test/series.test.ts`'s AC-16 test (`"reads each series with its open occurrence id, or null once it closes; an unknown id is 404"`) asserted `afterCompleteBody.series.openOccurrenceId` was `null` immediately after `POST /api/tasks/:id/complete` closed that series' occurrence. That series (`VALID_SERIES_BODY`) carries no `endKind`/`untilDate`/`maxCount`, so it defaults to `endKind: "never"` (`src/worker/routes/series.ts:106`) and has reached no end condition — meaning AC-19, now implemented, was REQUIRED to spawn a successor for it, which made `openOccurrenceId` the successor's real id, not `null`. The test's own header comment (written in Phase 2, before AC-19 existed) had already flagged this as a Phase-2-only assumption pending Phase 3.
+
+The Implementer raised this as a `TEST_CONTRACT_DISPUTE` rather than silently reinterpreting or weakening the test itself (forbidden by `docs/anti-patterns.md`, restated in this plan's own `## Notes`). `code-reviewer` in arbitration mode (`code-review.jsonl` line 1, 2026-09-24T14:21:02Z) upheld the dispute as `DISPUTE_UPHELD_TEST_WRONG`: AC-16 only promises "their current open occurrence id (or `null`)" and is satisfied either way, so the contradiction was between the test's own hardcoded `null` and AC-19's now-shipped requirement — not a Phase 3 implementation defect. The arbitration verdict independently re-ran `npx vitest run test/series.test.ts test/tasks.test.ts` and confirmed exactly one failure (`test/series.test.ts:265`, expected `null`, received the successor's real id; `test/tasks.test.ts` itself fully green at 24/24) and confirmed via `git status --short` that the Implementer had authored no test-file edit.
+
+Per the arbitration's `proposed_resolution`, the test pair (not the Implementer) amended the disputed test: `test/series.test.ts:259-270` now captures the `complete` response's `successor.id` as `successorId`, asserts it `toBeDefined()`, and asserts `afterCompleteBody.series.openOccurrenceId` equals it instead of asserting `null`; the comment above was rewritten from the "out of scope, Phase 3's concern" note to state the current, shipped reason. This is the Lifecycle ledger's `EXISTING_TEST_UPDATED` row above — anti-weakening holds because the dropped `.toBeNull()` was not a live requirement being silently removed: it was factually superseded (this series can no longer produce `null` here once AC-19 always spawns a successor for it), and the replacement is strictly stronger (it now also proves `GET /api/series/:id` correctly tracks the NEW open row via `findOpenOccurrenceId`, not just that the old one closed).
+
+Re-reviewed and `APPROVED` (`test-write-review.jsonl` line 3, 2026-09-24T14:28:19Z): `R-TRIVIAL-ASSERT` passed (the amended assertion is discriminative — it fails if AC-19's spawn does not fire, or if `findOpenOccurrenceId` mistracks the new open row); `R-RED-LEGITIMATE` passed under the reviewer's post-implementation framing (this round's question was whether the new GREEN is trustworthy, not whether the suite is still red — verified by reading the live `toSeriesDto`/`findOpenOccurrenceId` wiring directly, confirming `openOccurrenceId` is computed by a live query, not stubbed); `R-LIFECYCLE-LEGITIMATE` passed after the reviewer independently re-derived the ledger row against the file on disk (byte-for-byte at `:233`, `:259-270`) and cross-checked file mtimes to confirm `test/series.test.ts` was the only test file touched since the prior review round. `npx vitest run test/series.test.ts test/tasks.test.ts`: 46/46 passed. The reviewer also flagged, as an observation rather than a rubric failure, that AC-16's own "(or `null`)" branch is no longer exercised by any test in the suite — a latent gap that predates this revision (the dropped assertion was only ever correct by accident, since Phase 3 did not exist when Phase 2's suite was written), not something this revision newly introduced.
+
+`code-reviewer` then re-ran in standard mode (`code-review.jsonl` line 2, 2026-09-24T14:35:54Z) and returned `APPROVED`: `npx tsc -b --noEmit` clean, `npx eslint src/worker/routes/tasks.ts src/shared/api.ts` clean, `npx vitest run test/tasks.test.ts` 24/24, full `npm test` 1053/1053, `npm run check` clean, `R-X` confirmed zero test-file paths in the Implementer's own captured diff (only `src/shared/api.ts` and `src/worker/routes/tasks.ts`) — the `test/series.test.ts` and `test/tasks.test.ts` working-tree modifications are the test pair's own, matching the arbitration and Revision 1 trails exactly, not the Implementer's.
+
+## Notes
+
+- Every test that needs a real spawned successor (AC-22, AC-23's second case, all four AC-24 cases) routes through one shared helper, `completeAndGetSuccessor` (`test/tasks.test.ts:280-291`), whose own `expect(body.successor).toBeDefined()` was the single, uniform pre-implementation RED point for all of them — chosen deliberately over letting each test destructure `body.successor` directly and crash with a raw `TypeError` a few lines further down.
+- AC-20's concurrent-double-complete case (`Promise.all` of two `POST .../complete` calls on the same open occurrence) is the PRD's own worked example and the plan's own concurrency design (`## Patterns to Mirror`, the `tasks_series_occurrence_unq` citation) — it asserts only the two properties AC-20 actually names (no response is `500`; exactly one successor exists afterwards), not which of the two requests "won", since the PRD does not name a winner.
+- AC-21's `until` case picks `untilDate: "2026-10-06"` — one day after the series' own `dtstart`/first-occurrence date (`2026-10-05`) and before the next track date (`2026-11-05`) — so completing the FIRST occurrence already exceeds the end condition, matching the PRD's "the same for `endKind: 'until'` when the next track date is after `untilDate`" wording without needing a second completion cycle.
+- AC-24's three "touched" cases each isolate exactly one of D10's three named conditions (`detached`, closed/`status !== "open"`, a sent reminder) rather than combining them, so a future regression in only one of the three checks fails exactly one test, not all three at once — matching the plan's own Risk table entry on this exact hazard ("missing one could silently delete a successor that already has real history").
+- Every field name, status code and worked value (`"2026-11-05"`, `1440`, `offsetToInstant(...)`, `"high"`, the pt-BR substring `"já existe"` from D10's `"A próxima ocorrência já existe e não pode mais ser desfeita"`) is taken verbatim from the PRD's AC-19..AC-25 prose, the plan's Task 3-5 `**ACTION**` blocks, or D10's own quoted message — no input or expected output here is invented.
+- No test in `test/tasks.test.ts` imports `CompleteTaskResponse` or any other not-yet-existing production symbol — every response was read as an inline-typed `{ task: TaskDto; successor?: TaskDto }` (or `Record<string, unknown>` for the exact-key-set checks), so the suite compiled cleanly before any production code existed (`tsc -b --noEmit` exits 0) and failed only at runtime, against the missing behavior.
+- This manifest's Revision 2 section documents an amendment to a Phase 2 file (`test/series.test.ts`) that occurred as part of Phase 3's post-implementation review cycle (recorded in Phase 3's own `test-write-review.jsonl` and `code-review.jsonl`), not as part of Phase 2's original authoring session — it is recorded here, under phase-3's manifest, rather than retroactively edited into the intact, already-APPROVED `PRPs/reports/recurring-tasks/phase-2/test-suite.diff`.
+
+## Status
+
+*Status: APPROVED*

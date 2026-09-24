@@ -1,0 +1,181 @@
+# TDD initial suite — phase 4
+# Source PRD: PRPs/prds/recurring-tasks.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/recurring-tasks-phase-4-the-screen.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-09-24
+
+## Mode
+
+TEST-FIRST (`tdd: true`, `test_frameworks: ["vitest"]`,
+`docs/context/methodology.md`). At authoring time,
+`.worktrees/recurring-tasks/src/shared/series-edit.ts` did not exist at all
+(confirmed via `Glob` against the full `src/shared/` directory listing before
+writing anything), so `test/series-edit.test.ts`'s import of
+`buildCreateSeriesInput`/`EMPTY_RECURRENCE_DRAFT`/`recurrenceDraftError`/
+`reminderWillCarryOver` from `../src/shared/series-edit` is RED for the
+canonical test-first reason (module-not-found) — no production file exists
+for it to compile against.
+
+**Tool-availability note, stated honestly:** this agent's toolset for this
+session was `Task, Read, Write, Edit, Glob` — no `Bash`. The plan's own
+Validation guidance (`npx vitest run test/series-edit.test.ts`, then
+`npm test`) and the `formatter_cmd` scoped-Prettier pass could not be executed
+by this agent as a result; both are left for `test-reviewer`'s
+`R-RED-LEGITIMATE` dynamic check (which does carry `Bash`) to actually run and
+for `/relay-test-write-review`'s own preflight to format. The RED verdict
+above is therefore a static claim (no production module exists to satisfy the
+import), not a dynamically observed one, and is explicitly deferred to the
+reviewer rather than asserted as independently confirmed.
+
+## Scope, restated from the calling context
+
+This is the UI phase. `documentation/40-engineering/testing-strategy.md` and
+`docs/context/methodology.md`'s "Scope of the practice" section deliberately
+keep UI verification MANUAL in this project. PRD AC-26..AC-28 are the
+manual/device criteria and produce no test file for their screen/device halves
+— that is the documented no-test-required path, not a gap. No React component
+test was written and no DOM testing tier was invented; the only test tier is
+Vitest inside workerd, which has no DOM.
+
+The one genuinely decidable piece the plan carves out of AC-26 is the pure
+module `src/shared/series-edit.ts` (plan Task 1): `RecurrenceDraft`,
+`EMPTY_RECURRENCE_DRAFT`, `recurrenceDraftError`, `buildCreateSeriesInput`,
+`reminderWillCarryOver`. That module is what this session authors tests for.
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-1..AC-10 | OUT_OF_PHASE_SCOPE | (Phase 1 "Pure expansion" — covered by `test/recurrence.test.ts`, APPROVED at `PRPs/reports/recurring-tasks/test-suite.diff`; not touched here) |
+| AC-11..AC-18 | OUT_OF_PHASE_SCOPE | (Phase 2 "Series API" — covered by `test/series.test.ts`, APPROVED at `PRPs/reports/recurring-tasks/phase-2/test-suite.diff`; not touched here) |
+| AC-19..AC-25 | OUT_OF_PHASE_SCOPE | (Phase 3 "Materialization on close" — covered by `test/tasks.test.ts`, APPROVED at `PRPs/reports/recurring-tasks/phase-3/test-suite.diff`; not touched here) |
+| AC-26 (decidable slice, via plan AC-A1) | NEW_TEST_REQUIRED | `test/series-edit.test.ts` (new file — 26 cases across `EMPTY_RECURRENCE_DRAFT`, `recurrenceDraftError`, `buildCreateSeriesInput`, `reminderWillCarryOver`) |
+| AC-26 (screen half, via plan AC-A2/AC-A3) | NO_TEST_FILE (manual/device — methodology UI carve-out) | `TaskSheet`/`TaskRow`/`TodayScreen` wiring is verified by the plan's Level 3 manual steps and the owner's own device use; no DOM test tier exists in this project |
+| AC-27 (via plan AC-A4) | NO_TEST_FILE (manual — methodology UI carve-out) | The `ui-ux-guidelines.md` Tier A checklist is a human review step (plan Task 6), not an automatable assertion |
+| AC-28 (via plan AC-A5) | NO_TEST_FILE (manual/device — out of this plan's code scope by construction) | The owner's own production action; recorded in the roadmap's Delivery history when performed, not in this suite |
+
+## Test files written this session
+
+- `.worktrees/recurring-tasks/test/series-edit.test.ts` (CREATE — new file, 26
+  `it`/`it.each`-row cases across 12 `describe` blocks). Imports
+  `buildCreateSeriesInput`, `EMPTY_RECURRENCE_DRAFT`, `recurrenceDraftError`,
+  `reminderWillCarryOver`, `type RecurrenceDraft` from the not-yet-created
+  `../src/shared/series-edit`, plus `type ReminderDraft` from the real,
+  already-shipped `../src/shared/reminder-edit` and `type TaskDraft` from the
+  real, already-shipped `../src/shared/task-edit`. No production file was
+  created, edited or touched by this session — confirmed by this agent's own
+  toolset carrying no capability to write outside test files or this report
+  directory (`Task, Read, Write, Edit, Glob`; no Bash to run a stray script,
+  no access to any path under `.claude/`).
+
+  Coverage by exported symbol:
+  - `EMPTY_RECURRENCE_DRAFT` — 3 cases (freq defaults to `"none"`; the two
+    string fields are always strings, never undefined; composed with
+    `recurrenceDraftError` to confirm it validates clean).
+  - `recurrenceDraftError` — 13 cases: freq `"none"` short-circuits
+    validation entirely (1); a Task date is required once `freq !== "none"`,
+    both the no-date and the invalid-date-string branches, plus two
+    valid-date passes for `deadline` and `scheduled` (4); `endOption:
+    "until"` requires a valid calendar `untilDate` — empty, malformed
+    (`2026-13-05`), and valid (3); `endOption: "count"` requires `maxCount`
+    to parse as an integer `>= 1` — `it.each` over empty/non-numeric/
+    zero/negative/decimal (5 rows) plus one valid pass (6); `endOption:
+    "never"` needs neither field (1). Every failure case asserts only
+    `not.toBeNull()` / `typeof === "string"` — never an exact message string,
+    since the plan pins WHEN the function must reject, not its literal pt-BR
+    wording (see "Mock discipline / no invented implementation" note below).
+  - `buildCreateSeriesInput` — 12 cases: `dtstart`/`dateMode` mapping for
+    both `deadline` and `scheduled` Tasks (2); `freq`/`title`/`priority`
+    carried verbatim, including a `null` priority (3); `byMonthday`/
+    `byWeekday` are never present on the output (1); the three `endOption` →
+    `endKind` mappings, each asserting the matching field is set and the
+    *other* end-condition field is absent (3); `reminderOffsets` derived from
+    the Reminder draft's three states — offset-mode, no existing Reminder,
+    absolute-mode (3); `timezone` passed through verbatim (1) — 2+3+1+3+3
+    +... totals as enumerated above.
+  - `reminderWillCarryOver` — 3 cases: `null` → `false`; offset-mode →
+    `true`; absolute-mode → `false` — the exact silent-drop branch the plan's
+    Task 1 flags as the reason this export exists at all.
+
+## Existing-coverage scan
+
+Searched `test/` (full directory listing via `Glob`, 68 existing `*.test.ts`
+files) for any reference to `series-edit`, `buildCreateSeriesInput`,
+`RecurrenceDraft`, `recurrenceDraftError`, or `reminderWillCarryOver`: none
+found. `test/task-edit.test.ts` and `test/reminder-edit.test.ts` were read in
+full as the closest siblings (same pure-module, draft-to-wire-body shape) and
+confirmed to cover only `TaskDraft`/`buildTaskPatch`/`dateModeOf` and
+`ReminderDraft`/`buildCreateReminderInput`/`buildUpdateReminderInput`/
+`draftFromReminder` respectively — zero overlap with this phase's in-scope
+symbols. No existing test anywhere in the suite exercises the new module, so
+every case above is `NEW_TEST_REQUIRED`, not `EXISTING_TEST_COVERS`.
+
+## Lifecycle ledger
+
+(none — no update/delete this session)
+
+This phase's calling context explicitly forbids touching
+`test/tasks.test.ts`, `test/series.test.ts` or `test/recurrence.test.ts` —
+all three are APPROVED (phases 1–3's own manifests) and out of this session's
+scope by direct instruction, not by this agent's own discretion.
+
+**On the flagged AC-16 "(or null)" gap in `test/tasks.test.ts` (phase-3's
+`## Notes`):** phase 3's plan flagged that `test/tasks.test.ts`'s AC-21 cases
+call `getSeries()` after an `until`/`count` series ends but assert only
+`.status`/`.doneCount`, never `.openOccurrenceId` — so PRD AC-16's "(or null)"
+read branch is exercised nowhere. Judged **out of scope for this session**:
+the calling context's own hard constraint for phase 4 explicitly lists
+`test/tasks.test.ts` among the files this test-writer run must not touch, and
+this phase's scope was deliberately narrowed to the one new pure module
+(`series-edit.ts`) plus purely manual/device ACs — closing a Phase-3-owned gap
+in a Phase-3 file is not part of that narrowed scope. This is a documented
+deferral, not a silent omission: a future session with `test/tasks.test.ts`
+in its writable scope should add one assertion
+(`expect(afterBody.series.openOccurrenceId).toBeNull()`) to each of AC-21's
+`count`/`until` cases and record it as an `EXISTING_TEST_UPDATED` ledger row
+at that time.
+
+## Notes
+
+- Every worked value in the suite (`"2026-10-05"`, `1440`,
+  `"America/Sao_Paulo"`/`"America/New_York"`, the `endOption`/`endKind`
+  vocabulary, the `freq` union) is taken verbatim from the plan's Task 1
+  `**ACTION**` block or from `src/shared/api.ts`'s already-shipped
+  `CreateSeriesInput`/`RecurrenceSeriesDto` types (read in full before
+  writing this suite) — no field name or enum value here is invented.
+- `ReminderDraft`'s real shape (`src/shared/reminder-edit.ts:33-39`) was read
+  directly rather than trusted from the plan's prose: it is `label`,
+  `timeMode`, `absoluteDay`, `absoluteTime`, `offsetMinutes` — there is no
+  `originOffsetMinutes` field on the draft (that name belongs to the wire-level
+  `ReminderDto`/`CreateReminderInput`). The suite's `reminderDraft()` fixture
+  and every `reminderOffsets`/`reminderWillCarryOver` case use `offsetMinutes`
+  and `timeMode` exclusively, matching the corrected contract the plan itself
+  called out (an earlier plan draft had invented `originOffsetMinutes` on the
+  draft; the reviewer caught it before this plan was APPROVED).
+- `description` and `lifeAreaId` are deliberately **not** asserted anywhere in
+  this suite. The plan's Task 1 `**ACTION**` text enumerates exactly what
+  `buildCreateSeriesInput` maps — `dtstart`, `dateMode`, `priority`/`title`
+  verbatim, `byMonthday`/`byWeekday` omission, `reminderOffsets` — and the
+  phase Summary names the source fields as "title/date/priority draft", never
+  description. Asserting a specific `description`/`lifeAreaId` mapping would
+  invent a contract the plan does not pin; leaving it untested here is a
+  deliberate narrowing, not an oversight.
+- `recurrenceDraftError`'s "none" freq case and the "date required" cases are
+  composed to also indirectly exercise `EMPTY_RECURRENCE_DRAFT`'s real
+  shape — see the `EMPTY_RECURRENCE_DRAFT` describe block's third case — so
+  the suite never needs to assert the constant's `endOption`/`untilDate`/
+  `maxCount` literal defaults, which are unobservable when `freq === "none"`
+  keeps the whole end-condition UI hidden per plan Task 3.
+- No test in this file imports `CreateSeriesInput` or any other production
+  symbol beyond the four Task-1 exports plus the two already-shipped sibling
+  draft types — so once `series-edit.ts` exists with the right export names,
+  the suite is expected to compile clean on the first try; nothing here reads
+  a symbol the plan does not promise.
+- Mock discipline: this module has no I/O, no browser API and no dependency
+  to mock — every test calls the pure functions directly with plain object
+  fixtures and asserts on their return values. No mock of any kind appears in
+  this suite.
+
+## Status
+
+*Status: APPROVED*

@@ -1,0 +1,33 @@
+{
+  "feature": "recurring-tasks",
+  "phase": 3,
+  "outcome": "GREEN",
+  "framework": "vitest",
+  "worktree": ".worktrees/recurring-tasks",
+  "command": "npm test",
+  "test_files_passed": 68,
+  "test_files_total": 68,
+  "tests_passed": 1053,
+  "tests_total": 1053,
+  "duration_s": 61.23,
+  "delta_this_phase": { "test_files": 0, "tests": 15, "file": "test/tasks.test.ts (extended)" },
+  "progression": [
+    { "point": "v0.8.1 baseline", "test_files": 66, "tests": 999 },
+    { "point": "after phase 1", "test_files": 67, "tests": 1016 },
+    { "point": "after phase 2", "test_files": 68, "tests": 1038 },
+    { "point": "after phase 3", "test_files": 68, "tests": 1053 }
+  ],
+  "attempts": 1,
+  "dispute": {
+    "raised_by": "implementer",
+    "disputed_test": "test/series.test.ts AC-16 case",
+    "arbitration": "DISPUTE_UPHELD_TEST_WRONG",
+    "resolution": "phase-2 test-writer amended the stale null assertion; EXISTING_TEST_UPDATED recorded in the phase-3 lifecycle ledger"
+  },
+  "incident": {
+    "what": "the orchestrator truncated PRPs/reports/recurring-tasks/phase-3/test-suite.diff to 0 bytes with an unsafe status-flip one-liner (outer open-for-write evaluated before the inner read)",
+    "caught_by": "post-green-reviewer, by reading the file instead of accepting the APPROVED claim",
+    "resolution": "manifest rebuilt from surviving artifacts, provenance of the unrecoverable paragraph stated explicitly, re-verified by the test-reviewer before the status flip"
+  },
+  "ran_at": "2026-09-24T14:37:00Z"
+}

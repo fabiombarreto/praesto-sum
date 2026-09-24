@@ -1,0 +1,55 @@
+# TDD initial suite — phase 2
+# Source PRD: PRPs/prds/recurring-tasks.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/recurring-tasks-phase-2-series-api.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-09-23
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-1..AC-10 | OUT_OF_PHASE_SCOPE | (Phase 1 "Pure expansion" — already covered by `.worktrees/recurring-tasks/test/recurrence.test.ts`, APPROVED at `PRPs/reports/recurring-tasks/test-suite.diff`; not duplicated or modified here) |
+| AC-11 | NEW_TEST_REQUIRED | test/series.test.ts (`describe("AC-11 / AC-A1 Create materializes the first occurrence (deadline)")`) |
+| AC-12 | NEW_TEST_REQUIRED | test/series.test.ts (`describe("AC-12 / AC-A2 Reminder offsets follow the occurrence's own date field (D9)")`) |
+| AC-13 | NEW_TEST_REQUIRED | test/series.test.ts (`describe("AC-13 / AC-A3 create validation writes nothing")` — 9-case `it.each` table) |
+| AC-14 | NEW_TEST_REQUIRED | test/series.test.ts (`describe("AC-14 / AC-A4 Priority is an enum twice (migration 0005)")`) |
+| AC-15 | NEW_TEST_REQUIRED | test/series.test.ts (`describe("AC-15 / AC-A5 Token gate")`) |
+| AC-16 | NEW_TEST_REQUIRED | test/series.test.ts (`describe("AC-16 / AC-A6 Read")`) |
+| AC-17 | NEW_TEST_REQUIRED | test/series.test.ts (`describe("AC-17 / AC-A7 Template edit propagates only to the open, non-detached occurrence (D7)")`) |
+| AC-18 | NEW_TEST_REQUIRED | test/series.test.ts (`describe("AC-18 / AC-A8 Ending a series")`) |
+| AC-19..AC-28 | OUT_OF_PHASE_SCOPE | (Phases 3-4 "Materialization on close" / "The screen" — not yet planned; AC-26..AC-28 are manual/device verification and produce no test file even when reached, per the methodology's UI split) |
+
+## Test files written this session
+
+- .worktrees/recurring-tasks/test/series.test.ts (CREATE) — new file; no prior version existed. Covers PRD AC-11..AC-18 (plan AC-A1..AC-A8) against `/api/series`'s planned four endpoints (`POST /`, `GET /`, `GET /:id`, `PATCH /:id`) and migration 0005's `recurrence_series_priority_chk` CHECK, none of which exist yet (test-first).
+
+  Confirmed RED for the right reasons — ran `npx prettier --write test/series.test.ts` (no changes; already conformant) then `npx vitest run test/series.test.ts` inside the worktree: **18 failed / 4 passed (22 total)**, zero transform/import/syntax errors.
+  - 13 failures are direct `404` (or a `200`-vs-`404` on the list read) where `201`/`400`/`200` was expected — every `/api/series` request currently falls through to Hono's `app.notFound`, because `src/worker/routes/series.ts` does not exist and no route is mounted (plan Tasks 5-7).
+  - 4 failures (`AC-17` ×2, `AC-18` ×2) are `TypeError: Cannot read properties of undefined` — a direct cascade of the same 404: the test destructures `{ series }` from a `POST /api/series` response body that is actually `{ error: "Not found" }`, so `series` is `undefined` and the next line's property read throws. Same root cause, not an independent defect.
+  - 1 failure is the AC-14 direct-DB-insert case: `db.insert(recurrenceSeries).values({ priority: "urgent" as any, ... })` was expected to reject and instead resolved successfully — `recurrence_series_priority_chk` does not exist yet because migration 0005 has not been generated/applied (plan Tasks 1-2).
+  - The 4 PASSING tests are `describe("AC-15 / AC-A5 Token gate")`'s four no-token cases (`GET /`, `POST /`, `GET /:id`, `PATCH /:id` all return `401`): these pass **legitimately**, not by accident — `app.use("/api/*", requireToken)` in `src/worker/index.ts` runs ahead of route dispatch, so the auth gate already rejects an unauthenticated request before Hono ever needs a matching route. This is exactly the plan's own claim ("`/api/series` inherits the token gate for free", Task 7's `# SOURCE` note) and is why AC-15 is green before any of Tasks 1-7 land.
+
+  No other RED reason was observed (no compile error, no unresolved import, no assertion bug in the test file itself).
+
+## Existing-coverage scan
+
+`test/tasks.test.ts:115-198` ("Recurrence invariants (ADR-0006)") is the only recurrence-adjacent existing test — it proves the `recurrence_series`/`tasks` partial-unique-index DB invariants (one open occurrence per series; no duplicate occurrence date) by inserting rows directly. It exercises no `/api/series` route and covers none of AC-11..AC-18 (which are about the route family's request/response/validation contract and the migration-0005 CHECK). `test/reminders.test.ts` and `test/recurrence.test.ts` were also scanned; neither touches `/api/series`. No `EXISTING_TEST_COVERS` mapping applies to any in-scope AC.
+
+## Lifecycle ledger
+
+(none — no update/delete this session)
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no update/delete this session) | — | — | — |
+
+## Notes
+
+- AC-13's nine validation cases are encoded as a single `it.each` table (`test/series.test.ts:141-172`) rather than nine separate `it()` blocks, following the PRD's own tabular Given/When/Then for AC-13 ("Given a body with, one at a time, ..."). Each case overrides exactly one field of a shared valid base body (`VALID_SERIES_BODY`), asserts `400`, asserts the error message names the offending field (case-insensitive substring match against one or more plausible field-name candidates — chosen because the AC requires "naming the field" without prescribing exact wording, and pinning one exact string would be encoding imagined implementation copy, not the AC), and asserts zero rows were written to any of `recurrence_series`, `tasks` or `reminders` via a direct DB row count.
+- AC-17's two closed/detached-occurrence fixtures are inserted directly via `db.insert(tasks).values(...)` / `db.update(tasks).set({ detached: true })`, mirroring the existing `test/tasks.test.ts:115-198` precedent for recurrence-adjacent DB setup — Phase 3's successor-spawning and detach-on-edit routes do not exist yet, so there is no route path that could produce these fixtures for this phase's suite.
+- AC-16's "or `null`" clause is exercised by completing the open occurrence through the **already-shipped** `POST /api/tasks/:id/complete` route (no series awareness required — this phase only asserts that `GET /api/series/:id` correctly reports no open occurrence once none exists) rather than by any Phase-3 successor-spawning behavior, which stays out of this phase's scope per the plan's own "NOT Building" list.
+- Every field name, status code and worked value (`"2026-10-05"`, `1440`, `offsetToInstant(...)`, the nine AC-13 cases, the `high|normal|low` enum) is taken verbatim from the PRD's AC-11..AC-18 prose and the plan's Task 1-8 `**ACTION**` blocks — no input or expected output here is invented.
+
+## Status
+
+*Status: APPROVED*

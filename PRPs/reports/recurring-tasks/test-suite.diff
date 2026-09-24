@@ -1,0 +1,48 @@
+# TDD initial suite — phase 1
+# Source PRD: PRPs/prds/recurring-tasks.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/recurring-tasks-phase-1-pure-expansion.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-09-23
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-1 | NEW_TEST_REQUIRED | test/recurrence.test.ts (`describe("AC-1 Clock-free")`) |
+| AC-2 | NEW_TEST_REQUIRED | test/recurrence.test.ts (`describe("AC-2 Monthly by month day")`) |
+| AC-3 | NEW_TEST_REQUIRED | test/recurrence.test.ts (`describe("AC-3 Month-day overflow clamps backward (D1)")`) |
+| AC-4 | NEW_TEST_REQUIRED | test/recurrence.test.ts (`describe("AC-4 Weekly with weekdays and interval")`) |
+| AC-5 | NEW_TEST_REQUIRED | test/recurrence.test.ts (`describe("AC-5 Daily and yearly")`) |
+| AC-6 | NEW_TEST_REQUIRED | test/recurrence.test.ts (`describe("AC-6 Calendar anchor keeps the track")`) |
+| AC-7 | NEW_TEST_REQUIRED | test/recurrence.test.ts (`describe("AC-7 Completion anchor counts from the completion day (D5)")`) |
+| AC-8 | NEW_TEST_REQUIRED | test/recurrence.test.ts (`describe("AC-8 End conditions (D6)")`) |
+| AC-9 | NEW_TEST_REQUIRED | test/recurrence.test.ts (`describe("AC-9 Bounded window expansion for unit 17")`) |
+| AC-10 | NEW_TEST_REQUIRED | test/recurrence.test.ts (`describe("AC-10 Reminder instants for an occurrence")`) |
+| AC-11..AC-18 | OUT_OF_PHASE_SCOPE | (Phase 2 "Series API" — `PRPs/plans/recurring-tasks-phase-1-pure-expansion.plan.md` covers only AC-A1..AC-A10 / PRD AC-1..AC-10; not yet planned) |
+| AC-19..AC-25 | OUT_OF_PHASE_SCOPE | (Phase 3 "Materialization on close" — not yet planned) |
+| AC-26..AC-28 | OUT_OF_PHASE_SCOPE | (Phase 4 "The screen" — manual/device verification per methodology's UI split, produces no test file even when reached) |
+
+## Test files written this session
+
+- .worktrees/recurring-tasks/test/recurrence.test.ts (CREATE) — new file; no prior version existed. Covers PRD AC-1..AC-10 (plan AC-A1..AC-A10) against `src/shared/recurrence.ts`'s planned exports (`firstOccurrence`, `nextOccurrence`, `expandOccurrences`, `occurrenceReminderInstants`), none of which exist yet (test-first). Confirmed RED for the right reason: `npx vitest run test/recurrence.test.ts` inside the worktree fails with `Error: Cannot find module '../src/shared/recurrence'` — 0 tests collected, no syntax error, no assertion failure. `npx prettier --write test/recurrence.test.ts` made no changes (already conformant).
+
+## Existing-coverage scan
+
+`test/tasks.test.ts:115-198` ("Recurrence invariants (ADR-0006)") was the only recurrence-adjacent existing test found. It proves the `recurrence_series`/`tasks` partial-unique-index DB invariants by inserting rows directly — it exercises no pure function and therefore does not cover any of AC-1..AC-10 (which are about `src/shared/recurrence.ts`'s clock-free, DB-free date arithmetic). No `EXISTING_TEST_COVERS` mapping applies to any in-scope AC.
+
+## Lifecycle ledger
+
+(none — no update/delete this session)
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no update/delete this session) | — | — | — |
+
+## Notes
+
+- AC-1's "the module imports nothing from `src/worker/` or `src/app/`" clause is asserted at compile time only (the plan's own Level 1 `tsc -b` project-reference boundary and Level 3 `grep -nE '\.\./(worker|app)'` check), not inside `test/recurrence.test.ts`: that file loads in the `worker` Vitest project, which runs inside workerd via `@cloudflare/vitest-pool-workers` and has no `node:fs` (confirmed against this repo's own `vitest.config.ts`, which routes its two file-reading suites into a separate `docs`/plain-Node project for exactly that reason). Only AC-1's clock-free behavioural half (`vi.setSystemTime` two instants a year apart) is asserted in the suite.
+- AC-5's yearly worked example (`{ freq: "yearly", dtstart: "2028-02-29" }` → `2028-02-29, 2029-02-28, 2030-02-28, 2031-02-28, 2032-02-29`) is encoded as written in the PRD and the plan **as amended on 2026-09-23**: the originally approved text skipped `2031-02-28`, the test-writer encoded that verbatim rather than repairing it silently, and the owner confirmed the correction before any production code existed, via chained `nextOccurrence(rule, { after: <previous> })` calls (an `expandOccurrences` call spanning the same 4+ year range would itself trip AC-9's 366-day guard). The sequence as stated skips a `2031-02-28` value a naive same-day-of-year stepping would otherwise produce; this is encoded faithfully rather than "corrected," per the mandate to derive tests from the PRD's literal Given/When/Then and let any real inconsistency surface as a RED result for the Implementer/reviewer to resolve, not something for the test-writer to silently reinterpret.
+
+## Status
+
+*Status: APPROVED*

@@ -1,0 +1,217 @@
+{
+  "feature": "recurring-tasks",
+  "prd_path": "PRPs/prds/recurring-tasks.prd.md",
+  "started_at": "2026-09-22T21:15:00Z",
+  "ended_at": "2026-09-24T15:55:00Z",
+  "max_plan_review_retries": 2,
+  "max_tdd_review_retries": 2,
+  "max_orchestrator_minutes": 240,
+  "lane_execution": "serial",
+  "lane_gate_reason": "lane_runtime_safe absent from docs/context/methodology.md (nobody decided yet, rather than decided no)",
+  "phases": [
+    {
+      "phase": 1,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "attempts": 2,
+      "first_attempt_defect": "R-COH-TASK-AC-MISSING",
+      "plan_path": "PRPs/plans/completed/recurring-tasks-phase-1-pure-expansion.plan.md"
+    },
+    {
+      "phase": 1,
+      "stage": "worktree",
+      "outcome": "CREATED",
+      "worktree_path": ".worktrees/recurring-tasks",
+      "base": "local main 2e86bc0 (origin/main was 2 commits behind)",
+      "worktree_attempted": true,
+      "worktree_succeeded": true,
+      "fallback_reason": null
+    },
+    {
+      "phase": 1,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "mode": "test-first",
+      "suite_path": "PRPs/reports/recurring-tasks/test-suite.diff",
+      "red_verified": "Cannot find module '../src/shared/recurrence' — 0 tests collected"
+    },
+    {
+      "phase": 1,
+      "stage": "prd_amendment",
+      "outcome": "OWNER_CONFIRMED",
+      "detail": "AC-5's yearly sequence skipped 2031-02-28; found by the test-writer encoding the AC verbatim rather than repairing it silently; amended 2026-09-23 with a dated note and a Decisions Log row"
+    },
+    {
+      "phase": 1,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 2,
+      "first_attempt_defects": [
+        "R-SEM expandOccurrences leaked a bare TypeError for completion-anchored rules",
+        "R-SEM docstring overclaimed 'exactly one period forward'"
+      ]
+    },
+    {
+      "phase": 1,
+      "stage": "test",
+      "outcome": "GREEN",
+      "tests": "1016/1016 across 67 files",
+      "baseline": "999/999 across 66 files"
+    },
+    {
+      "phase": 1,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 1,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/recurring-tasks-phase-1-pure-expansion.plan.md",
+      "timestamp": "2026-09-23T13:30:00Z"
+    },
+    {
+      "phase": 2,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "attempts": 1
+    },
+    {
+      "phase": 2,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "mode": "test-first",
+      "note": "the test-writer also wrote three production files outside its contract; caught via mtimes, disclosed, and reviewed as first-pass code"
+    },
+    {
+      "phase": 2,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 1
+    },
+    {
+      "phase": 2,
+      "stage": "test",
+      "outcome": "GREEN",
+      "tests": "1038/1038 across 68 files"
+    },
+    {
+      "phase": 2,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 2,
+      "status": "complete"
+    },
+    {
+      "phase": 3,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "attempts": 2,
+      "first_attempt_defects": [
+        "R3 TBD in Patterns to Mirror",
+        "R-COH-TASK-AC-MISSING"
+      ]
+    },
+    {
+      "phase": 3,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "attempts": 2,
+      "first_attempt_defect": "R-TRIVIAL-ASSERT on two AC-24 409 cases"
+    },
+    {
+      "phase": 3,
+      "stage": "implement",
+      "outcome": "TEST_CONTRACT_DISPUTE then APPROVED",
+      "arbitration": "DISPUTE_UPHELD_TEST_WRONG"
+    },
+    {
+      "phase": 3,
+      "stage": "test",
+      "outcome": "GREEN",
+      "tests": "1053/1053 across 68 files"
+    },
+    {
+      "phase": 3,
+      "stage": "test_review",
+      "outcome": "APPROVED",
+      "note": "the phase-3 manifest was destroyed by an unsafe status-flip one-liner in the command, rebuilt from surviving artifacts, and its unverifiable paragraph marked as such"
+    },
+    {
+      "phase": 3,
+      "status": "complete"
+    },
+    {
+      "phase": 4,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "attempts": 2,
+      "first_attempt_defects": [
+        "R3",
+        "R5",
+        "R-COH-OTHER-INTERNAL-CONTRADICTION (invented ReminderDraft field)",
+        "R-COH-MANDATORY-READING-IRRELEVANT (wrong file, originating in the command's own instruction)"
+      ]
+    },
+    {
+      "phase": 4,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "attempts": 1,
+      "scope": "one pure module; AC-26..AC-28 are manual/device and produce no test file"
+    },
+    {
+      "phase": 4,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 2,
+      "first_attempt_defect": "R-COH-COMMENT-MISMATCH"
+    },
+    {
+      "phase": 4,
+      "stage": "ui_ux_checklist",
+      "outcome": "RUN_BEFORE_MERGE",
+      "method": "static inspection, not a live browser pass; item 6 (aria-label only) flagged for real device eyes; recorded in the plan's Notes"
+    },
+    {
+      "phase": 4,
+      "stage": "test",
+      "outcome": "GREEN",
+      "tests": "1087/1087 across 69 files"
+    },
+    {
+      "phase": 4,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 4,
+      "status": "complete"
+    }
+  ],
+  "outcome": "ALL_PHASES_COMPLETE",
+  "phases_completed": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "worktree_attempted": true,
+  "worktree_succeeded": true,
+  "fallback_reason": null,
+  "phase_diff_bases": {
+    "1": "a5fa5895a7f0602a9b4535ad25aec9e4b889b925",
+    "2": "3c63d79e9ea24e64ae67c61665e2f4661e3e1d8e",
+    "3": "c42095caaa5e67d8d5d273eb0e893f587000c0d3",
+    "4": "ece12d38f884fc074b8d427d99c31f4d26d4973b"
+  },
+  "lane_durations_ms": {},
+  "total_duration_ms": null,
+  "owed_before_the_unit_can_close": [
+    "AC-28: the owner completes a real occurrence on his own device and the next appears on the right date with its reminders set — the unit's exit signal, which no agent can supply",
+    "migration 0005's remote apply at deploy time (production confirmed to hold zero recurrence_series rows)",
+    "a real device look at UI/UX checklist item 6 (the two new inputs use aria-label with no <label>, mirroring the already-shipped sheet-date input)",
+    "coverage follow-up: PRD AC-16's '(or null)' branch is unexercised — one line on phase 3's two AC-21 cases, deferred twice with reasons"
+  ]
+}

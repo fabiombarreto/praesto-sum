@@ -1,0 +1,16 @@
+{
+  "feature": "recurring-tasks",
+  "phase": 1,
+  "outcome": "GREEN",
+  "framework": "vitest",
+  "worktree": ".worktrees/recurring-tasks",
+  "command": "npm test",
+  "test_files_passed": 67,
+  "test_files_total": 67,
+  "tests_passed": 1016,
+  "tests_total": 1016,
+  "duration_s": 61.17,
+  "baseline_before_phase": { "test_files": 66, "tests": 999, "source": "release v0.8.1" },
+  "attempts": 1,
+  "ran_at": "2026-09-23T13:26:00Z"
+}

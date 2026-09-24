@@ -139,7 +139,11 @@ local calendar days (`YYYY-MM-DD`); `tz` is `America/Sao_Paulo` unless stated.
 - **AC-5 Daily and yearly:** Given `{ freq: "daily", interval: 3, dtstart:
   "2026-09-01" }`, the occurrence after `2026-09-01` is `2026-09-04`; given `{ freq:
   "yearly", dtstart: "2028-02-29" }`, the occurrences are `2028-02-29, 2029-02-28,
-  2030-02-28, 2032-02-29`.
+  2030-02-28, 2031-02-28, 2032-02-29`. *(Amended 2026-09-23, owner-confirmed: the
+  approved text listed `2028-02-29, 2029-02-28, 2030-02-28, 2032-02-29`, skipping
+  `2031-02-28`. A yearly rule never skips a year — the writer's slip, caught by the
+  test-writer encoding the AC verbatim instead of silently repairing it. February 2032
+  returns to the 29th because it is a leap year, not because 2031 is absent.)*
 - **AC-6 Calendar anchor keeps the track:** Given a calendar-anchored monthly series on
   the 5th, when `nextOccurrence(rule, { after: "2026-08-05", completedOn: "2026-09-20" })`
   is called, then it returns `"2026-09-05"` — the next date on the track after the
@@ -154,10 +158,17 @@ local calendar days (`YYYY-MM-DD`); `tz` is `America/Sao_Paulo` unless stated.
   monthly-on-the-5th series, the occurrence after `2026-12-05` is `null`. Given
   `endKind: "count", maxCount: 3` and `closedCount: 3` (done + missed), the next
   occurrence is `null`; with `closedCount: 2` it is a date.
-- **AC-9 Bounded window expansion for unit 17:** Given any rule, when
-  `expandOccurrences(rule, { from, to })` is called, then it returns every occurrence
+- **AC-9 Bounded window expansion for unit 17:** Given any **calendar-anchored** rule,
+  when `expandOccurrences(rule, { from, to })` is called, then it returns every occurrence
   date in `[from, to]` in ascending order, and it refuses (throws `RangeError`) a window
-  longer than 366 days — the guard against a runaway loop.
+  longer than 366 days — the guard against a runaway loop. A **completion-anchored** rule
+  is refused outright with a named, documented `TypeError`. *(Amended 2026-09-24,
+  owner-confirmed: the approved text read "Given any rule" and named only the 366-day
+  refusal. A completion-anchored series' future occurrences depend on completion events
+  that have not happened yet — decision D5 — so they are not enumerable over a window at
+  all. The code was already honest about this and refuses explicitly; the AC's wording was
+  the part that promised more than the function delivers, and unit 17 will read this AC to
+  reuse the function.)*
 - **AC-10 Reminder instants for an occurrence:** Given an occurrence day and the
   template's offsets `[1440, 60]`, when `occurrenceReminderInstants(day, offsets, tz)`
   is called, then it returns exactly `offsetToInstant(day, 1440, tz)` and
@@ -398,10 +409,10 @@ are manual/device verification and produce no test file, per the methodology's s
 
 | # | Phase | Description | Status | Parallel | Depends | PRP Plan |
 |---|-------|-------------|--------|----------|---------|----------|
-| 1 | Pure expansion | `src/shared/recurrence.ts`: first/next/window expansion, both anchors, end conditions, month-day clamp, reminder-instant composition; clock-free and DB-free (AC-1..AC-10) | pending | - | - | - |
-| 2 | Series API | Migration `0005` (`priority` enum); `POST/GET/PATCH /api/series` creating the series and materializing its first occurrence with reminders; template propagation; ending (AC-11..AC-18) | pending | - | 1 | - |
-| 3 | Materialization on close | Complete spawns the successor with reminders in one batch; end conditions; detached isolation; delete = skip; reopen = undo-or-409; one-off Tasks unchanged (AC-19..AC-25) | pending | - | 2 | - |
-| 4 | The screen | *Repetir* control in the Task sheet, series glyph on the row, successor visible without reload; UI/UX checklist before merge; device proof of the exit signal; documentation updates (AC-26..AC-28) | pending | - | 3 | - |
+| 1 | Pure expansion | `src/shared/recurrence.ts`: first/next/window expansion, both anchors, end conditions, month-day clamp, reminder-instant composition; clock-free and DB-free (AC-1..AC-10) | complete | - | - | PRPs/plans/completed/recurring-tasks-phase-1-pure-expansion.plan.md |
+| 2 | Series API | Migration `0005` (`priority` enum); `POST/GET/PATCH /api/series` creating the series and materializing its first occurrence with reminders; template propagation; ending (AC-11..AC-18) | complete | - | 1 | PRPs/plans/completed/recurring-tasks-phase-2-series-api.plan.md |
+| 3 | Materialization on close | Complete spawns the successor with reminders in one batch; end conditions; detached isolation; delete = skip; reopen = undo-or-409; one-off Tasks unchanged (AC-19..AC-25) | complete | - | 2 | PRPs/plans/completed/recurring-tasks-phase-3-materialization-on-close.plan.md |
+| 4 | The screen | *Repetir* control in the Task sheet, series glyph on the row, successor visible without reload; UI/UX checklist before merge; device proof of the exit signal; documentation updates (AC-26..AC-28) | complete | - | 3 | PRPs/plans/completed/recurring-tasks-phase-4-the-screen.plan.md |
 
 ### Phase Details
 
@@ -444,6 +455,8 @@ are manual/device verification and produce no test file, per the methodology's s
 | D9 — Reminder offsets on a `scheduled` series | Resolve against the occurrence's own date field (deadline **or** scheduled date), same `offsetToInstant` and 23:59 anchor | Allow reminder offsets only on `deadline` series, matching unit 7's single-Reminder route | Refusing would make "take the medicine every morning" unremindable. The hand-made Reminder route is left unchanged (Open Questions). |
 | D10 — Reopening a completed occurrence whose successor exists | Untouched successor → delete it and its unsent reminders, reopen, decrement `done_count`; touched successor → `409` with pt-BR copy, nothing changes | Always refuse; allow two open occurrences | Reopen is a shipped capability (FR-003) and "undo" should undo; two open occurrences are forbidden by the unique index. |
 | D11 — Rule edits of an existing series | Won't: end the series and create a new one | Allow and move the open occurrence's date; allow and apply from the next spawn | Nothing in the exit signal needs it and each option is a decision about the owner's data; deferred to real demand. |
+| AC-5's yearly sequence (amendment, 2026-09-23) | Corrected to `2028-02-29, 2029-02-28, 2030-02-28, 2031-02-28, 2032-02-29` after approval | Leave the approved text and let the Implementer satisfy it, or raise a test-contract dispute | The approved AC skipped `2031-02-28`, and a yearly rule never skips a year. Found because the test-writer encoded the AC verbatim instead of repairing it silently — the test-first order caught a contract defect before one line of production code existed, which is the whole point of ADR-0008. Amended with the owner's confirmation, per the 2026-08-29 rule that an APPROVED PRD changes only with a dated amendment note |
+| AC-9's scope (amendment, 2026-09-24) | Scoped to calendar-anchored rules; a completion-anchored rule is refused with a named, documented `TypeError` | Leave "given any rule" and let a future reader discover the limit in a docstring | Found by the code reviewer during phase 1: the implementation had correctly turned an accidental `TypeError` leak into an explicit refusal, but the AC still promised expansion for any rule shape the type system permits. Unit 17 reads this AC to reuse the function, so a PRD that over-promises is the expensive kind of stale. Amended with the owner's confirmation under the 2026-08-29 dated-amendment rule, like AC-5 before it |
 | Migration | One migration, `0005`, changing `recurrence_series.priority` from `integer` to the `high/normal/low` text enum with a CHECK | Keep `integer` and map in the DTO | Unit 2 migrated `tasks.priority` (`migrations/0001`) and left the template column behind; domain enums are enforced twice, and a hand-mapping would be a second source of truth |
 
 ---

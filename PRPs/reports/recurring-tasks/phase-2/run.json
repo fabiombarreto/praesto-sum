@@ -1,0 +1,21 @@
+{
+  "feature": "recurring-tasks",
+  "phase": 2,
+  "outcome": "GREEN",
+  "framework": "vitest",
+  "worktree": ".worktrees/recurring-tasks",
+  "command": "npm test",
+  "test_files_passed": 68,
+  "test_files_total": 68,
+  "tests_passed": 1038,
+  "tests_total": 1038,
+  "duration_s": 37.8,
+  "delta_this_phase": { "test_files": 1, "tests": 22, "file": "test/series.test.ts" },
+  "progression": [
+    { "point": "v0.8.1 baseline", "test_files": 66, "tests": 999 },
+    { "point": "after phase 1", "test_files": 67, "tests": 1016 },
+    { "point": "after phase 2", "test_files": 68, "tests": 1038 }
+  ],
+  "attempts": 1,
+  "ran_at": "2026-09-24T13:21:00Z"
+}

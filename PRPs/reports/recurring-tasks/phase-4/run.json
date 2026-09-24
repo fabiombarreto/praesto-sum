@@ -1,0 +1,18 @@
+{
+  "feature": "recurring-tasks", "phase": 4, "outcome": "GREEN", "framework": "vitest",
+  "worktree": ".worktrees/recurring-tasks", "command": "npm test",
+  "test_files_passed": 69, "test_files_total": 69,
+  "tests_passed": 1087, "tests_total": 1087,
+  "delta_this_phase": { "test_files": 1, "tests": 34, "file": "test/series-edit.test.ts" },
+  "progression": [
+    { "point": "v0.8.1 baseline", "test_files": 66, "tests": 999 },
+    { "point": "after phase 1", "test_files": 67, "tests": 1016 },
+    { "point": "after phase 2", "test_files": 68, "tests": 1038 },
+    { "point": "after phase 3", "test_files": 68, "tests": 1053 },
+    { "point": "after phase 4", "test_files": 69, "tests": 1087 }
+  ],
+  "attempts": 2,
+  "formatter_preflight": "the command ran `npx prettier --write test/series-edit.test.ts` after the implementer, per docs/context/methodology.md's Formatter section — the implementer correctly refused to touch a test file to fix a Level-1 formatting failure (R-X). The post-green reviewer could not byte-diff pre/post because the file was never committed, and said so rather than asserting a verification it did not perform.",
+  "manual_scope": "PRD AC-26..AC-28 are manual/device criteria and produce no test file, per documentation/40-engineering/testing-strategy.md and the methodology's UI split. Level 3 (manual integration) reported NOT_RUN, not faked.",
+  "ran_at": "2026-09-24T15:52:00Z"
+}
