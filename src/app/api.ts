@@ -1,5 +1,6 @@
 import type {
   CreateReminderInput,
+  CreateSeriesInput,
   CreateTaskInput,
   DiagnosticsDto,
   GoogleCalendarDto,
@@ -7,6 +8,7 @@ import type {
   GoogleEventsDto,
   PushSubscriptionDto,
   ReminderDto,
+  SeriesDto,
   SubscribePushInput,
   TaskDto,
   UpdateReminderInput,
@@ -194,6 +196,20 @@ export async function updateReminder(id: string, input: UpdateReminderInput): Pr
 
 export async function deleteReminder(id: string): Promise<void> {
   await request<void>(`/api/reminders/${id}`, { method: "DELETE" });
+}
+
+/**
+ * PRD AC-26 (plan AC-A2) — registers a Recurrence Series and materializes
+ * its first occurrence. One-liner over `request<T>()`, exactly like
+ * `createReminder` above.
+ */
+export async function createSeries(
+  input: CreateSeriesInput,
+): Promise<{ series: SeriesDto; occurrence: TaskDto }> {
+  return request<{ series: SeriesDto; occurrence: TaskDto }>("/api/series", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
 /**

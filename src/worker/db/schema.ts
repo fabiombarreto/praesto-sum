@@ -94,7 +94,7 @@ export const recurrenceSeries = sqliteTable(
     // Task template (kind = 'task' only).
     title: text("title"),
     description: text("description"),
-    priority: integer("priority"),
+    priority: text("priority", { enum: ["high", "normal", "low"] }),
     lifeAreaId: text("life_area_id").references(() => lifeAreas.id, {
       onUpdate: "cascade",
       onDelete: "set null",
@@ -132,6 +132,10 @@ export const recurrenceSeries = sqliteTable(
     check(
       "recurrence_series_template_chk",
       sql`(${t.kind} = 'task' and ${t.title} is not null) or (${t.kind} = 'event' and ${t.title} is null)`,
+    ),
+    check(
+      "recurrence_series_priority_chk",
+      sql`${t.priority} is null or ${t.priority} in ('high','normal','low')`,
     ),
   ],
 );

@@ -10,6 +10,7 @@
 import type { ReactNode } from "react";
 import { useReducer, useRef, useState } from "react";
 import type { TaskDto } from "../../shared/api";
+import { EMPTY_RECURRENCE_DRAFT } from "../../shared/series-edit";
 import { currentDraft, INITIAL_TASK_SHEET_STATE, reduceTaskSheet } from "../../shared/task-sheet";
 import { CaptureDeck } from "./CaptureDeck";
 import { EmptyState } from "./EmptyState";
@@ -384,6 +385,9 @@ export function DesignPlayground() {
             onReminderDeleteRequest={() => {}}
             onReminderDeleteCancel={() => {}}
             onReminderDeleteConfirm={() => {}}
+            recurrenceDraft={EMPTY_RECURRENCE_DRAFT}
+            onRecurrenceDraftChange={() => {}}
+            onSaveWithRecurrence={() => {}}
           />
           <div className="rounded-card border border-line bg-surface-1 px-4">
             <ConfirmView

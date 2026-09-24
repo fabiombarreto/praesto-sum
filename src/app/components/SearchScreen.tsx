@@ -10,7 +10,7 @@ import { ArrowLeft } from "lucide-react";
 import { useEffect, useReducer, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { ReminderDto, TaskDto } from "../../shared/api";
-import { todayIn } from "../../shared/dates";
+import { PRAESTO_TIMEZONE, todayIn } from "../../shared/dates";
 import { collectDayItems } from "../../shared/day-groups";
 import { assertNeverDaySource, dayItemFromTask, type DayItem } from "../../shared/day-item";
 import { classifyRequestFailure } from "../../shared/request-failure";
@@ -21,6 +21,11 @@ import {
   type ReminderDraft,
 } from "../../shared/reminder-edit";
 import { SEARCH_MIN_QUERY_LENGTH, shouldSearch } from "../../shared/search";
+import {
+  buildCreateSeriesInput,
+  EMPTY_RECURRENCE_DRAFT,
+  type RecurrenceDraft,
+} from "../../shared/series-edit";
 import { buildTaskPatch } from "../../shared/task-edit";
 import { EMPTY_FILTER } from "../../shared/task-filter";
 import { currentDraft, INITIAL_TASK_SHEET_STATE, reduceTaskSheet } from "../../shared/task-sheet";
@@ -28,6 +33,7 @@ import {
   ApiError,
   completeTask,
   createReminder,
+  createSeries,
   deleteReminder,
   deleteTask,
   listReminders,
@@ -63,6 +69,7 @@ export function SearchScreen({
   const [sheet, dispatchSheet] = useReducer(reduceTaskSheet, INITIAL_TASK_SHEET_STATE);
   const [sheetError, setSheetError] = useState<string | null>(null);
   const [taskReminderDraft, setTaskReminderDraft] = useState<ReminderDraft | null>(null);
+  const [recurrenceDraft, setRecurrenceDraft] = useState<RecurrenceDraft>(EMPTY_RECURRENCE_DRAFT);
   const [busy, setBusy] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -142,6 +149,13 @@ export function SearchScreen({
   useEffect(() => {
     void refreshReminders();
   }, []);
+
+  // Mirrors `taskReminderDraft`'s own per-Task lifetime: a fresh Repetir
+  // draft every time the sheet closes or opens a different Task, never
+  // carried over from whichever Task it last described.
+  useEffect(() => {
+    setRecurrenceDraft(EMPTY_RECURRENCE_DRAFT);
+  }, [sheet.taskId]);
 
   useEffect(() => {
     document.title = "Pesquisar · Praesto Sum";
@@ -236,6 +250,30 @@ export function SearchScreen({
     void runSheet(async () => {
       await updateTask(sheetTask.id, changes);
       dispatchSheet({ type: "saved", taskId: sheetTask.id });
+    });
+  }
+
+  /**
+   * Converts the sheet's Task into a series: create-then-delete, the same
+   * sequencing and the same failure semantics as `TodayScreen`'s
+   * `saveSheetWithRecurrence` — minus the success toast, since this screen
+   * has no toast slot (`toastSlot={null}` below is deliberate, not an
+   * oversight) (recurring-tasks phase 4, plan AC-A2).
+   */
+  function saveSheetWithRecurrence(): void {
+    if (sheetTask === null) return;
+    const input = buildCreateSeriesInput(
+      currentDraft(sheet, sheetTask),
+      recurrenceDraft,
+      sheetTaskReminder === null ? null : draftFromReminder(sheetTaskReminder),
+      PRAESTO_TIMEZONE,
+    );
+    const id = sheetTask.id;
+    void runSheet(async () => {
+      await createSeries(input);
+      await deleteTask(id);
+      dispatchSheet({ type: "deleted", taskId: id });
+      setRecurrenceDraft(EMPTY_RECURRENCE_DRAFT);
     });
   }
 
@@ -421,6 +459,11 @@ export function SearchScreen({
             dispatchSheet({ type: "close-reminder" });
           });
         }}
+        recurrenceDraft={recurrenceDraft}
+        onRecurrenceDraftChange={(changes) =>
+          setRecurrenceDraft((prev) => ({ ...prev, ...changes }))
+        }
+        onSaveWithRecurrence={saveSheetWithRecurrence}
       />
     </div>
   );

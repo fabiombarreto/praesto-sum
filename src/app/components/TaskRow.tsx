@@ -2,7 +2,7 @@
 // two-line title, the meta line, and the row's single trailing element (the
 // pencil, open Tasks only — never a chevron, never a delete).
 
-import { ChevronDown, ChevronUp, Pencil } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, Repeat } from "lucide-react";
 import { useState } from "react";
 import type { TaskDto, TaskPriority } from "../../shared/api";
 import { taskMetaLine } from "../../shared/format";
@@ -113,6 +113,11 @@ export function TaskRow({
                 meta.overdue && "text-overdue",
               )}
             >
+              {task.seriesId !== null && (
+                <>
+                  <Repeat className="inline size-3" aria-hidden="true" /> Repete{" "}
+                </>
+              )}
               {metaSplit.prefix}
               {metaSplit.priorityWord === "alta" && (
                 <ChevronUp className="inline size-3" aria-hidden="true" />

@@ -9,6 +9,7 @@ import { diagnosticsRoutes } from "./routes/diagnostics";
 import { pushRoutes } from "./routes/push";
 import { pushSpikeRoutes } from "./routes/push-spike";
 import { reminderRoutes } from "./routes/reminders";
+import { seriesRoutes } from "./routes/series";
 import { taskRoutes } from "./routes/tasks";
 
 /**
@@ -26,6 +27,7 @@ app.use("/api/*", requireToken);
 app.get("/api/health", (c) => c.json({ ok: true }));
 app.route("/api/tasks", taskRoutes);
 app.route("/api/reminders", reminderRoutes);
+app.route("/api/series", seriesRoutes);
 app.route("/api/google", googleRoutes);
 app.route("/api/export", exportRoutes);
 app.route("/api/export.ics", icsRoutes);

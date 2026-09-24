@@ -40,6 +40,18 @@ export interface TaskDto {
 }
 
 /**
+ * `POST /api/tasks/:id/complete`'s response shape (PRD AC-19). `successor` is
+ * present only when the completed Task belonged to an active series and a
+ * next occurrence was spawned; a one-off Task's response carries no
+ * `successor` key at all, matching today's `{ task }` shape byte-for-byte
+ * (AC-25).
+ */
+export interface CompleteTaskResponse {
+  task: TaskDto;
+  successor?: TaskDto;
+}
+
+/**
  * The Google connection's STATUS — never its credential.
  *
  * There is no `refreshToken` field and there must never be one: the token
@@ -90,7 +102,7 @@ export interface RecurrenceSeriesDto {
   status: "active" | "ended";
   title: string | null;
   description: string | null;
-  priority: number | null;
+  priority: TaskPriority | null;
   lifeAreaId: string | null;
   dateMode: "deadline" | "scheduled";
   /** JSON array of reminder offsets in minutes, or `null`. */
@@ -288,6 +300,68 @@ export const EDITABLE_REMINDER_FIELDS: readonly string[] = [
   "label",
   "fireAt",
   "originOffsetMinutes",
+];
+
+/**
+ * `POST /api/series` body — every `RecurrenceRule` field the series needs
+ * (see `src/shared/recurrence.ts`'s `RecurrenceRule`) plus the Task template
+ * fields the first occurrence and every future one are stamped from.
+ */
+export interface CreateSeriesInput {
+  title: string;
+  freq: "daily" | "weekly" | "monthly" | "yearly";
+  interval?: number;
+  byWeekday?: number[] | null;
+  byMonthday?: number | null;
+  dtstart: string;
+  timezone?: string;
+  anchorMode?: "calendar" | "completion";
+  endKind?: "never" | "until" | "count";
+  untilDate?: string | null;
+  maxCount?: number | null;
+  dateMode: "deadline" | "scheduled";
+  reminderOffsets?: number[] | null;
+  description?: string | null;
+  priority?: TaskPriority | null;
+  lifeAreaId?: string | null;
+}
+
+/**
+ * Partial update of an existing Recurrence Series template, mirroring
+ * `UpdateReminderInput`'s absent-vs-null-vs-present convention: an ABSENT key
+ * leaves the field untouched, an explicit `null` clears it. `status` is the
+ * one non-template field — the only value `PATCH /api/series/:id` accepts
+ * for it is `"ended"` (the route enforces that, this type only describes the
+ * shape). Every rule field (`freq`, `interval`, `byWeekday`, `byMonthday`,
+ * `dtstart`, `timezone`, `anchorMode`, `endKind`, `untilDate`, `maxCount`) is
+ * deliberately absent — `EDITABLE_SERIES_FIELDS` rejects them by name.
+ */
+export interface UpdateSeriesInput {
+  title?: string;
+  description?: string | null;
+  priority?: TaskPriority | null;
+  lifeAreaId?: string | null;
+  reminderOffsets?: number[] | null;
+  status?: "active" | "ended";
+}
+
+/** A Recurrence Series plus its current open occurrence's Task id, or `null`. */
+export type SeriesDto = RecurrenceSeriesDto & { openOccurrenceId: string | null };
+
+/**
+ * The closed set of keys `PATCH /api/series/:id` accepts. Every rule column
+ * (`freq`, `interval`, `byWeekday`, `byMonthday`, `dtstart`, `timezone`,
+ * `anchorMode`, `endKind`, `untilDate`, `maxCount`) is deliberately excluded —
+ * that is what makes AC-17's "a rule field is rejected with 400 naming it"
+ * structural rather than a runtime special case.
+ */
+export const EDITABLE_SERIES_FIELDS: readonly string[] = [
+  "title",
+  "description",
+  "priority",
+  "lifeAreaId",
+  "reminderOffsets",
+  "status",
 ];
 
 export interface ApiErrorBody {
