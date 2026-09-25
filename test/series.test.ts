@@ -171,6 +171,23 @@ describe("AC-13 / AC-A3 create validation writes nothing", () => {
       expect(await countAllRows()).toEqual(before);
     },
   );
+
+  // ADR-0009 regression guard, added 2026-09-25 after a local QA run found every
+  // validation message here in English while the same route's 404/409 and unit 7's
+  // equivalent messages (`src/worker/routes/reminders.ts`) were pt-BR. The AC-13
+  // cases above deliberately match on the FIELD NAME and never on the copy, so they
+  // stayed green through the whole regression — which is exactly why this exists.
+  it("answers validation errors in pt-BR, while still naming the field (ADR-0009)", async () => {
+    const res = await post(BASE, { ...VALID_SERIES_BODY, byMonthday: 32 });
+    expect(res.status).toBe(400);
+    const { error } = (await res.json()) as { error: string };
+
+    // The machine-readable field name survives, so a client can still highlight it.
+    expect(error.toLowerCase()).toContain("bymonthday");
+    // The prose the owner reads is Portuguese.
+    expect(error).toContain("O dia do mês deve ser um inteiro entre 1 e 31");
+    expect(error).not.toMatch(/\bmust be\b|\bis required\b|\bUnknown\b/);
+  });
 });
 
 describe("AC-14 / AC-A4 Priority is an enum twice (migration 0005)", () => {

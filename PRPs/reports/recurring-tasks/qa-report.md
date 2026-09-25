@@ -254,13 +254,22 @@ leave a `recurrence_series` row the API cannot delete (hard-delete is a PRD Won'
 
 ### Findings
 
-1. **Validation error copy is English where unit 7's precedent is pt-BR.** `POST /api/series` returns
+1. **~~Validation error copy is English where unit 7's precedent is pt-BR.~~ FIXED 2026-09-25.** `POST /api/series` returns
    `"title is required"`, `"Unknown freq: hourly"`, `"interval must be an integer >= 1"`. The same route's 404
    and 409 *are* pt-BR (`"Série não encontrada"`, `"A próxima ocorrência já existe…"`), and unit 7's
    `reminders.ts` uses pt-BR for the equivalent validation (`"Informe um label ou uma tarefa"`). `runSheet`
    surfaces API errors into `sheetError`, which is on screen, so these can reach the owner. In practice the
    client validates first in pt-BR (`"Escolha uma data para a Tarefa antes de repetir."`), which is why this
    is Low and not High. No test catches it — the suite asserts the field is *named*, never the language.
+
+   **Resolution.** All 25 owner-facing validation messages on `/api/series` are now pt-BR, each keeping the
+   machine-readable field identifier in parentheses (`"O dia do mês deve ser um inteiro entre 1 e 31
+   (byMonthday)"`) so AC-13's "naming the offending field" contract still holds and a client can still highlight
+   the field. The two `"Body must be a JSON object"` messages stay English deliberately — that is a malformed
+   request, not owner-facing validation, and unit 7's `reminders.ts` keeps its own in English for the same
+   reason. A regression guard was added at `test/series.test.ts` ("answers validation errors in pt-BR, while
+   still naming the field"): the AC-13 table matches on field names and never on copy, so it stayed green
+   through the entire regression — which is precisely why a copy-level guard was needed.
 
 2. **The QA report's own case 29 was exercised for real.** Migration `0005` went to the remote D1 before the
    deploy, in the runbook's order.

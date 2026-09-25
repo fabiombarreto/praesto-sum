@@ -63,21 +63,21 @@ seriesRoutes.post("/", async (c) => {
   const input = body as Partial<CreateSeriesInput>;
 
   const title = typeof input.title === "string" ? input.title.trim() : "";
-  if (!title) return badRequest(c, "title is required");
+  if (!title) return badRequest(c, "Informe um título (title)");
 
   const freq = input.freq;
   if (typeof freq !== "string" || !(FREQ_VALUES as readonly string[]).includes(freq)) {
-    return badRequest(c, `Unknown freq: ${String(freq)}`);
+    return badRequest(c, `Frequência desconhecida: ${String(freq)} (freq)`);
   }
 
   const interval = input.interval ?? 1;
   if (typeof interval !== "number" || !Number.isInteger(interval) || interval < 1) {
-    return badRequest(c, "interval must be an integer >= 1");
+    return badRequest(c, "O intervalo deve ser um inteiro maior ou igual a 1 (interval)");
   }
 
   const byMonthday = input.byMonthday ?? null;
   if (byMonthday !== null && (!Number.isInteger(byMonthday) || byMonthday < 1 || byMonthday > 31)) {
-    return badRequest(c, "byMonthday must be an integer between 1 and 31");
+    return badRequest(c, "O dia do mês deve ser um inteiro entre 1 e 31 (byMonthday)");
   }
 
   const byWeekday = input.byWeekday ?? null;
@@ -86,13 +86,16 @@ seriesRoutes.post("/", async (c) => {
       !Array.isArray(byWeekday) ||
       byWeekday.some((day) => !Number.isInteger(day) || day < 1 || day > 7)
     ) {
-      return badRequest(c, "byWeekday entries must be integers between 1 and 7");
+      return badRequest(c, "Os dias da semana devem ser inteiros entre 1 e 7 (byWeekday)");
     }
   }
 
   const dtstart = input.dtstart;
   if (!isCalendarDate(dtstart)) {
-    return badRequest(c, "dtstart must be a calendar date (YYYY-MM-DD)");
+    return badRequest(
+      c,
+      "A data de início deve ser uma data válida no formato AAAA-MM-DD (dtstart)",
+    );
   }
 
   const timezone =
@@ -100,45 +103,45 @@ seriesRoutes.post("/", async (c) => {
 
   const anchorMode = input.anchorMode ?? "calendar";
   if (anchorMode !== "calendar" && anchorMode !== "completion") {
-    return badRequest(c, "anchorMode must be 'calendar' or 'completion'");
+    return badRequest(c, "A âncora deve ser 'calendar' ou 'completion' (anchorMode)");
   }
 
   const endKind = input.endKind ?? "never";
   if (!(END_KIND_VALUES as readonly string[]).includes(endKind)) {
-    return badRequest(c, `Unknown endKind: ${String(endKind)}`);
+    return badRequest(c, `Condição de fim desconhecida: ${String(endKind)} (endKind)`);
   }
   const untilDate = input.untilDate ?? null;
   const maxCount = input.maxCount ?? null;
   if (untilDate !== null && !isCalendarDate(untilDate)) {
-    return badRequest(c, "untilDate must be a calendar date (YYYY-MM-DD)");
+    return badRequest(c, "A data final deve ser uma data válida no formato AAAA-MM-DD (untilDate)");
   }
   if (maxCount !== null && (!Number.isInteger(maxCount) || maxCount < 1)) {
-    return badRequest(c, "maxCount must be a positive integer");
+    return badRequest(c, "O número de vezes deve ser um inteiro positivo (maxCount)");
   }
   if (endKind === "until" && untilDate === null) {
-    return badRequest(c, "untilDate is required when endKind is 'until'");
+    return badRequest(c, "Informe untilDate quando endKind for 'until'");
   }
   if (endKind === "count" && maxCount === null) {
-    return badRequest(c, "maxCount is required when endKind is 'count'");
+    return badRequest(c, "Informe maxCount quando endKind for 'count'");
   }
   if (endKind !== "until" && untilDate !== null) {
-    return badRequest(c, "untilDate is only valid when endKind is 'until'");
+    return badRequest(c, "untilDate só vale quando endKind é 'until'");
   }
   if (endKind !== "count" && maxCount !== null) {
-    return badRequest(c, "maxCount is only valid when endKind is 'count'");
+    return badRequest(c, "maxCount só vale quando endKind é 'count'");
   }
   if (untilDate !== null && maxCount !== null) {
-    return badRequest(c, "endKind cannot carry both untilDate and maxCount");
+    return badRequest(c, "Use untilDate ou maxCount, nunca os dois (endKind)");
   }
 
   const dateMode = input.dateMode;
   if (typeof dateMode !== "string" || !(DATE_MODE_VALUES as readonly string[]).includes(dateMode)) {
-    return badRequest(c, `Unknown dateMode: ${String(dateMode)}`);
+    return badRequest(c, `Tipo de data desconhecido: ${String(dateMode)} (dateMode)`);
   }
 
   const priority = input.priority ?? null;
   if (priority !== null && !isTaskPriority(priority)) {
-    return badRequest(c, `Unknown priority: ${String(priority)}`);
+    return badRequest(c, `Prioridade desconhecida: ${String(priority)} (priority)`);
   }
 
   const reminderOffsets = input.reminderOffsets ?? [];
@@ -146,7 +149,7 @@ seriesRoutes.post("/", async (c) => {
     !Array.isArray(reminderOffsets) ||
     reminderOffsets.some((offset) => typeof offset !== "number" || !Number.isFinite(offset))
   ) {
-    return badRequest(c, "reminderOffsets must be an array of numbers");
+    return badRequest(c, "Os lembretes devem ser uma lista de números (reminderOffsets)");
   }
 
   const description = input.description ?? null;
@@ -265,10 +268,10 @@ seriesRoutes.patch("/:id", async (c) => {
 
   const unknownKey = Object.keys(body).find((key) => !EDITABLE_SERIES_FIELDS.includes(key));
   if (unknownKey !== undefined) {
-    return badRequest(c, `Field is not editable: ${unknownKey}`);
+    return badRequest(c, `Campo não editável: ${unknownKey}`);
   }
   if (Object.keys(body).length === 0) {
-    return badRequest(c, "At least one editable field is required");
+    return badRequest(c, "Informe ao menos um campo editável");
   }
 
   const db = createDb(c.env);
@@ -285,14 +288,14 @@ seriesRoutes.patch("/:id", async (c) => {
   if (Object.hasOwn(body, "status")) {
     const status = body.status;
     if (status !== "ended") {
-      return badRequest(c, "status must be 'ended'");
+      return badRequest(c, "O status só pode ser alterado para 'ended' (status)");
     }
     seriesPatch.status = "ended";
   }
 
   if (Object.hasOwn(body, "title")) {
     const title = typeof body.title === "string" ? body.title.trim() : "";
-    if (!title) return badRequest(c, "title must be a non-empty string");
+    if (!title) return badRequest(c, "O título não pode ficar vazio (title)");
     seriesPatch.title = title;
     taskPatch.title = title;
     touchesTemplate = true;
@@ -301,7 +304,7 @@ seriesRoutes.patch("/:id", async (c) => {
   if (Object.hasOwn(body, "description")) {
     const description = body.description;
     if (description !== null && typeof description !== "string") {
-      return badRequest(c, "description must be a string or null");
+      return badRequest(c, "A descrição deve ser texto ou nula (description)");
     }
     seriesPatch.description = description;
     taskPatch.description = description;
@@ -311,7 +314,7 @@ seriesRoutes.patch("/:id", async (c) => {
   if (Object.hasOwn(body, "priority")) {
     const priority = body.priority;
     if (priority !== null && !isTaskPriority(priority)) {
-      return badRequest(c, `Unknown priority: ${String(priority)}`);
+      return badRequest(c, `Prioridade desconhecida: ${String(priority)} (priority)`);
     }
     seriesPatch.priority = priority;
     taskPatch.priority = priority;
@@ -321,7 +324,7 @@ seriesRoutes.patch("/:id", async (c) => {
   if (Object.hasOwn(body, "lifeAreaId")) {
     const lifeAreaId = body.lifeAreaId;
     if (lifeAreaId !== null && typeof lifeAreaId !== "string") {
-      return badRequest(c, "lifeAreaId must be a string or null");
+      return badRequest(c, "A área da vida deve ser texto ou nula (lifeAreaId)");
     }
     seriesPatch.lifeAreaId = lifeAreaId;
     taskPatch.lifeAreaId = lifeAreaId;
@@ -335,7 +338,7 @@ seriesRoutes.patch("/:id", async (c) => {
       (!Array.isArray(reminderOffsets) ||
         reminderOffsets.some((offset) => typeof offset !== "number" || !Number.isFinite(offset)))
     ) {
-      return badRequest(c, "reminderOffsets must be an array of numbers or null");
+      return badRequest(c, "Os lembretes devem ser uma lista de números ou nula (reminderOffsets)");
     }
     // Never re-armed onto the Task here — armed Reminders are D4's concern
     // (Phase 3), not touched by a template edit (plan Task 6).
