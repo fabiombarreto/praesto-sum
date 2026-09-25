@@ -225,5 +225,70 @@ omission.
 
 ---
 
+## Execution record — local environment, 2026-09-25
+
+Run against `npm run dev` (workerd + local D1, migrations `0004`/`0005` applied) with the local `.dev.vars`
+token. **Production was not exercised**: its bearer token is a different secret, and the write-path cases would
+leave a `recurrence_series` row the API cannot delete (hard-delete is a PRD Won't).
+
+### Verified
+
+| Case | Result |
+|---|---|
+| 11 create | series + first occurrence + reminder at `2026-10-05T02:59Z` — 23:59 local minus 1440 min, correct |
+| 12 scheduled dateMode | occurrence carried `scheduledDate`, not `deadline` |
+| 13 validation | five bad bodies, each `400` naming the field, nothing written |
+| 15 token gate | `401` without, **`200` with** — the 200 is what proves the route is mounted |
+| 16 read | `openOccurrenceId` tracked the successor after a completion |
+| **16b (was uncovered)** | **`openOccurrenceId` is `null` on an ended series — the behavior is correct; only the assertion was missing** |
+| 19 complete | successor `2026-11-05`, `doneCount` 1, its reminder armed at `2026-11-05T02:59Z` |
+| 20 double complete | `404 {"error":"No open Task with that id"}` — handled, not a 500; no second successor |
+| 21 end conditions | `status: ended`, `doneCount: 2`, `successor: null` |
+| 22 detached | `PATCH` set `detached = 1`; the successor kept the template's title |
+| 23 delete = skip | `204`, successor spawned a week on (`2026-10-13`), neither counter moved |
+| 24 reopen (undo) | successor deleted, its unsent reminder deleted, `doneCount` back to 0 |
+| 24 reopen (refuse) | **`409` — "A próxima ocorrência já existe e não pode mais ser desfeita"**, every row unchanged |
+| 26 screen | *Repetir* group in pt-BR; series created from the sheet; **exactly one Task left** — create-then-delete left no duplicate |
+| 26 glyph | row reads `⇄ Repete até seg., 05/10`, confirmed visually |
+| 30 (UI equivalent) | completing the occurrence **from the row** spawned the successor and the screen showed `05/11` **without a reload** |
+
+### Findings
+
+1. **Validation error copy is English where unit 7's precedent is pt-BR.** `POST /api/series` returns
+   `"title is required"`, `"Unknown freq: hourly"`, `"interval must be an integer >= 1"`. The same route's 404
+   and 409 *are* pt-BR (`"Série não encontrada"`, `"A próxima ocorrência já existe…"`), and unit 7's
+   `reminders.ts` uses pt-BR for the equivalent validation (`"Informe um label ou uma tarefa"`). `runSheet`
+   surfaces API errors into `sheetError`, which is on screen, so these can reach the owner. In practice the
+   client validates first in pt-BR (`"Escolha uma data para a Tarefa antes de repetir."`), which is why this
+   is Low and not High. No test catches it — the suite asserts the field is *named*, never the language.
+
+2. **The QA report's own case 29 was exercised for real.** Migration `0005` went to the remote D1 before the
+   deploy, in the runbook's order.
+
+### Two near-misses worth recording, because they are how a QA run produces a false bug report
+
+- I set a date with `input.value` and the pt-BR alert stayed up. That looked like a defect. It was not: the
+  *Data* group has three mode chips — *Sem data · Concluir até · Fazer em* — and the date only counts once a
+  dated mode is chosen. `Sem data` was still selected, so the app was right and the driver was wrong.
+- Row completion appeared not to persist, and the network buffer showed no `POST …/complete` for the
+  occurrence. Both signals were artifacts: my `ref`-based clicks were landing outside the 48 px control, and
+  that buffer drops older entries. The discriminator that settled it was completing a **one-off** Task through
+  the identical path — it persisted, so the control was fine. A screenshot then showed the clicks were missing
+  the target.
+
+### Not covered by this run
+
+- **Case 30 proper (AC-28)** — the exit signal needs a *real* series on the owner's own device, over real
+  cycles. A local dev click is not that, and this run does not advance it.
+- **Case 28's device items** — touch targets, visible focus, and the `aria-label` question need a real screen.
+- **Case 27** — the absolute-time reminder carry-over notice was not exercised; the pure module that decides it
+  is automated (`test/series-edit.test.ts:314`, `:341`), the on-screen notice is not.
+- **Production write paths** — deliberately not exercised, for the token and residue reasons above.
+
+**Local database left clean:** every row this run created (4 series, 8 Tasks, their reminders, all titled
+`QA …`) was deleted afterwards. `recurrence_series` is back to 0 rows locally.
+
+---
+
 *Generated: 2026-09-25*
 *Status: DRAFT — manual statuses are `pending` until a human records otherwise*
