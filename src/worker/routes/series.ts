@@ -66,6 +66,9 @@ seriesRoutes.post("/", async (c) => {
   if (!title) return badRequest(c, "Informe um título (title)");
 
   const freq = input.freq;
+  if (freq === undefined || freq === null) {
+    return badRequest(c, "Informe a frequência (freq): 'daily', 'weekly', 'monthly' ou 'yearly'");
+  }
   if (typeof freq !== "string" || !(FREQ_VALUES as readonly string[]).includes(freq)) {
     return badRequest(c, `Frequência desconhecida: ${String(freq)} (freq)`);
   }
@@ -135,6 +138,9 @@ seriesRoutes.post("/", async (c) => {
   }
 
   const dateMode = input.dateMode;
+  if (dateMode === undefined || dateMode === null) {
+    return badRequest(c, "Informe o tipo de data (dateMode): 'deadline' ou 'scheduled'");
+  }
   if (typeof dateMode !== "string" || !(DATE_MODE_VALUES as readonly string[]).includes(dateMode)) {
     return badRequest(c, `Tipo de data desconhecido: ${String(dateMode)} (dateMode)`);
   }
