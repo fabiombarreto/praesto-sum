@@ -6,6 +6,8 @@ docs_sync: true
 formatter_cmd: "npx prettier --write"
 figma_track: false
 visual_first_approval: auto
+hybrid_code_review: true
+hybrid_code_review_level: "high"
 ---
 
 # Methodology
@@ -103,3 +105,35 @@ value from `package.json`, devDependencies or config files; on `*update` it
 preserves an existing value untouched. Setting it back to `null` disables the
 formatting step, which restores the R-X × Level 1 deadlock this key exists to
 prevent.
+
+## Hybrid Code Review
+
+Current state: **declared active** — `hybrid_code_review: true` with
+`hybrid_code_review_level: "high"` in the frontmatter above. This project is
+the dogfood target for relay's hybrid code review (relay 0.39.0; the operating
+conditions are frozen in relay's own `docs/decisions.md` entry 103).
+
+With the key on, `code-reviewer` runs Claude Code's built-in `/code-review`
+once per review over the attempt's diff and treats its findings as evidence for
+its own R-SEM row. Findings arrive as `class: advisory` and leave the verdict
+alone; one is promoted to `class: blocking` only when it is high-severity AND
+the reviewer confirms, with `git diff` against the diff under review, that the
+cited line sits in an added or modified hunk. At most 10 findings are
+adjudicated. R-X, the arbitration outcomes and the dispute channel are
+untouched: a promoted finding about a test file still routes through
+`TEST_CONTRACT_DISPUTE` and never authorizes a direct test edit.
+
+`level` is `high` rather than the shipped default `medium` on purpose. The
+pinned sample set relay measures drift against was benchmarked at `high`, so a
+`medium` run here would produce recall numbers that are not comparable to that
+baseline. Expect roughly 20 to 130 seconds of added wall time per review; the
+pass carries its own three-minute timeout, never consumes an implement retry,
+and skips itself when the loop's remaining wall clock is short.
+
+### How to override
+
+Heuristics MUST NOT flip this value — only a human edit can. Setting it to
+`false`, or removing it, returns `code-reviewer` to the rubric it had before
+0.39.0, with no `/code-review` invocation and no `hyb*` fields on the verdict.
+Levels above `high` are refused by name by the agent itself, so raising this
+value to `xhigh`, `max` or `ultra` disables the pass rather than deepening it.
