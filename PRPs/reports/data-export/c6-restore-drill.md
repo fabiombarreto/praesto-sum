@@ -70,3 +70,43 @@ The limitation recorded above is now closed for `reminders`: its epoch instants 
 and standalone. `recurrence_series` is still the one to watch.
 
 *Status: PASS — reminders exercised; recurrence_series, life_areas and google_calendar_selections still empty*
+
+---
+
+## Re-run 2026-09-30 — `recurrence_series` exercised, and a real defect found in the drill
+
+**Why now.** At the roadmap's rule-6(b) review the owner set this run before unit 10's PRD opens, and
+brought it forward from the 2026-10-04 Sunday snapshot to the same day: `recurrence_series` held its
+first real row only from 2026-09-30, so the latest unattended snapshot (2026-09-28) still carried none.
+A snapshot was pulled by hand with `node scripts/pull-export-snapshot.mjs` — the same script the Scheduled
+Task runs, read-only against production — writing `praesto-2026-09-30.json` (1 series, 19 Tasks,
+7 Reminders).
+
+**First run: FAIL, and correctly.** Every table's counts matched, `recurrence_series` and `reminders`
+came back field-identical, but every Task mismatched on one field: `detached: snapshot false != restored
+"false"`. The drill bound every non-number, non-string value through `JSON.stringify`, so the export's JSON
+boolean became the TEXT `"false"` in an INTEGER column that Drizzle's boolean mode stores as 0/1. It had
+never met a boolean: `detached` reached the export only in `v0.9.2` (recurring-tasks AC-30). **A restore
+through this path would have corrupted `detached` on every Task** — exactly the class of defect this chore
+exists to find before it matters.
+
+**Fix, test-first.** The value mapping moved to `src/shared/restore-values.ts` (`toSqliteValue`,
+`restoredValueMatches`), pinned by `test/restore-values.test.ts` (7 tests, written first and seen RED on the
+missing module); `scripts/restore-drill.mjs` imports both, so the drill runs the code the suite covers.
+Booleans bind as 1/0 and compare against 1/0; the corrupted text form is rejected.
+
+**Second run: PASS.**
+
+| Table | Snapshot | Restored | Fields |
+|---|---|---|---|
+| recurrence_series | 1 | 1 | every field identical |
+| tasks | 19 | 19 | every field identical |
+| reminders | 7 | 7 | every field identical |
+| life_areas, google_calendar_selections | 0 | 0 | not exercised |
+
+The 2026-09-28 snapshot also still passes. `recurrence_series` is now exercised on the owner's real row,
+which closes the limitation recorded above for it. `life_areas` and `google_calendar_selections` remain
+empty and close at their own triggers (unit 13; a Google calendar selection).
+
+*Status: PASS (2026-09-30) — recurrence_series exercised; life_areas and google_calendar_selections still empty*
+

@@ -23,6 +23,7 @@
  * Usage: node scripts/restore-drill.mjs <path-to-snapshot.json>
  */
 import { DatabaseSync } from "node:sqlite";
+import { restoredValueMatches, toSqliteValue } from "../src/shared/restore-values.ts";
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -67,9 +68,7 @@ try {
     for (const row of rows) {
       const cols = Object.keys(row).map(camelToSnake);
       const placeholders = cols.map(() => "?").join(", ");
-      const values = Object.values(row).map((v) =>
-        v === null || typeof v === "number" || typeof v === "string" ? v : JSON.stringify(v),
-      );
+      const values = Object.values(row).map(toSqliteValue);
       db.prepare(`INSERT INTO ${table} (${cols.join(", ")}) VALUES (${placeholders})`).run(
         ...values,
       );
@@ -123,7 +122,7 @@ try {
       }
       for (const [key, want] of Object.entries(row)) {
         const got = back[camelToSnake(key)];
-        if (got !== want && !(got === null && want === null)) {
+        if (!restoredValueMatches(want, got)) {
           mismatches.push(
             `${row.id} ${key}: snapshot ${JSON.stringify(want)} != restored ${JSON.stringify(got)}`,
           );
