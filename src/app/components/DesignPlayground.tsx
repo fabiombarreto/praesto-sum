@@ -40,6 +40,7 @@ function playgroundTask(
     lifeAreaId: null,
     seriesId: null,
     occurrenceDate: null,
+    detached: false,
     completedAt: null,
     createdAt: 0,
     ...task,
@@ -388,6 +389,14 @@ export function DesignPlayground() {
             recurrenceDraft={EMPTY_RECURRENCE_DRAFT}
             onRecurrenceDraftChange={() => {}}
             onSaveWithRecurrence={() => {}}
+            series={null}
+            seriesError={null}
+            seriesRuleDraft={null}
+            onSeriesRuleDraftChange={() => {}}
+            applyTo="series"
+            onApplyToChange={() => {}}
+            onSaveSeriesOccurrence={() => {}}
+            onEndSeries={() => {}}
           />
           <div className="rounded-card border border-line bg-surface-1 px-4">
             <ConfirmView

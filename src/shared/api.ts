@@ -35,6 +35,14 @@ export interface TaskDto {
   lifeAreaId: string | null;
   seriesId: string | null;
   occurrenceDate: string | null;
+  /**
+   * True once this occurrence has been edited individually, after which series
+   * template edits stop reaching it (ADR-0006). On the wire since 2026-09-29 so the
+   * screen can say so: before that the flag was set silently by `PATCH /api/tasks/:id`
+   * and the owner had no way to know a Task had stopped following its series (AC-30).
+   * Always `false` for a one-off Task.
+   */
+  detached: boolean;
   completedAt: number | null;
   createdAt: number;
 }
@@ -343,6 +351,18 @@ export interface UpdateSeriesInput {
   lifeAreaId?: string | null;
   reminderOffsets?: number[] | null;
   status?: "active" | "ended";
+  // The rule, editable since 2026-09-29 (D11 amended). A rule change applies from
+  // the NEXT spawn: the open occurrence keeps the date it already has. `dtstart` is
+  // deliberately absent — it is the series' origin and the alignment every period is
+  // computed from, so moving it would silently re-align history (AC-29).
+  freq?: "daily" | "weekly" | "monthly" | "yearly";
+  interval?: number;
+  byWeekday?: number[] | null;
+  byMonthday?: number | null;
+  anchorMode?: "calendar" | "completion";
+  endKind?: "never" | "until" | "count";
+  untilDate?: string | null;
+  maxCount?: number | null;
 }
 
 /** A Recurrence Series plus its current open occurrence's Task id, or `null`. */
@@ -362,6 +382,16 @@ export const EDITABLE_SERIES_FIELDS: readonly string[] = [
   "lifeAreaId",
   "reminderOffsets",
   "status",
+  // Rule fields (D11 amended 2026-09-29). `dtstart` stays off this list on purpose:
+  // refusing it by name is what keeps a rule edit a this-and-forward change.
+  "freq",
+  "interval",
+  "byWeekday",
+  "byMonthday",
+  "anchorMode",
+  "endKind",
+  "untilDate",
+  "maxCount",
 ];
 
 export interface ApiErrorBody {

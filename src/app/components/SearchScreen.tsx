@@ -24,6 +24,7 @@ import { SEARCH_MIN_QUERY_LENGTH, shouldSearch } from "../../shared/search";
 import {
   buildCreateSeriesInput,
   EMPTY_RECURRENCE_DRAFT,
+  planSeriesOccurrenceSave,
   type RecurrenceDraft,
 } from "../../shared/series-edit";
 import { buildTaskPatch } from "../../shared/task-edit";
@@ -40,9 +41,11 @@ import {
   listTasks,
   reopenTask,
   updateReminder,
+  updateSeries,
   updateTask,
 } from "../api";
 import { useConnectivity } from "../hooks/useConnectivity";
+import { useSeriesSheet } from "../hooks/useSeriesSheet";
 import { TaskGroup } from "./TaskGroup";
 import { TaskRow } from "./TaskRow";
 import { TaskSheet } from "./TaskSheet";
@@ -82,6 +85,8 @@ export function SearchScreen({
   const sheetTask = results?.find((task) => task.id === sheet.taskId) ?? null;
   const sheetTaskReminder =
     sheetTask === null ? null : ((reminders ?? []).find((r) => r.taskId === sheetTask.id) ?? null);
+  // Same series editing as *Hoje* — one hook, so the two sheets cannot drift.
+  const seriesSheet = useSeriesSheet(sheetTask);
 
   /** A 401 routes to the token gate; otherwise returns the failure's message. */
   function handleFailure(cause: unknown): string | null {
@@ -277,6 +282,46 @@ export function SearchScreen({
     });
   }
 
+  /**
+   * Mirrors `TodayScreen`'s `saveSeriesOccurrence` — the same split, decided by
+   * the same pure `planSeriesOccurrenceSave` — minus the toast, since this screen
+   * has no toast slot (`toastSlot={null}` below is deliberate).
+   */
+  function saveSeriesOccurrence(): void {
+    const series = seriesSheet.series;
+    if (sheetTask === null || series === null) return;
+    const plan = planSeriesOccurrenceSave(
+      sheetTask,
+      currentDraft(sheet, sheetTask),
+      series,
+      seriesSheet.ruleDraft,
+      seriesSheet.applyTo,
+    );
+    if (plan.seriesBody === null && Object.keys(plan.taskChanges).length === 0) {
+      dispatchSheet({ type: "close" });
+      return;
+    }
+    const id = sheetTask.id;
+    void runSheet(async () => {
+      if (plan.seriesBody !== null) {
+        seriesSheet.acceptSeries(await updateSeries(series.id, plan.seriesBody));
+      }
+      if (Object.keys(plan.taskChanges).length > 0) await updateTask(id, plan.taskChanges);
+      dispatchSheet({ type: "saved", taskId: id });
+    });
+  }
+
+  /** Ends the series; this occurrence stays. Irreversible — the sheet confirms first. */
+  function endSheetSeries(): void {
+    const series = seriesSheet.series;
+    if (sheetTask === null || series === null) return;
+    const id = sheetTask.id;
+    void runSheet(async () => {
+      seriesSheet.acceptSeries(await updateSeries(series.id, { status: "ended" }));
+      dispatchSheet({ type: "saved", taskId: id });
+    });
+  }
+
   function deleteSheetTask(): void {
     if (sheet.taskId === null) return;
     const id = sheet.taskId;
@@ -464,6 +509,14 @@ export function SearchScreen({
           setRecurrenceDraft((prev) => ({ ...prev, ...changes }))
         }
         onSaveWithRecurrence={saveSheetWithRecurrence}
+        series={seriesSheet.series}
+        seriesError={seriesSheet.seriesError}
+        seriesRuleDraft={seriesSheet.ruleDraft}
+        onSeriesRuleDraftChange={seriesSheet.changeRuleDraft}
+        applyTo={seriesSheet.applyTo}
+        onApplyToChange={seriesSheet.setApplyTo}
+        onSaveSeriesOccurrence={saveSeriesOccurrence}
+        onEndSeries={endSheetSeries}
       />
     </div>
   );

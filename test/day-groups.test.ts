@@ -51,6 +51,7 @@ function task(
     lifeAreaId: null,
     seriesId: null,
     occurrenceDate: null,
+    detached: false,
     completedAt: null,
     createdAt: 1_700_000_000,
   };

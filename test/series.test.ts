@@ -334,10 +334,15 @@ describe("AC-17 / AC-A7 Template edit propagates only to the open, non-detached 
     expect(closedRows[0]?.title).toBe("Pagar aluguel");
     expect(closedRows[0]?.priority).toBeNull();
 
-    const ruleEdit = await patch(`${BASE}/${series.id}`, { freq: "weekly" });
-    expect(ruleEdit.status).toBe(400);
-    const ruleEditBody = (await ruleEdit.json()) as { error: string };
-    expect(ruleEditBody.error.toLowerCase()).toContain("freq");
+    // Updated 2026-09-29 with the amended AC-17. The approved text asserted that a
+    // rule field (`freq`) was rejected; D11's amendment made the rule editable, so
+    // `dtstart` takes its place as the field still refused — it is the series' origin
+    // and the alignment every period is computed from, which is exactly what keeps a
+    // rule edit a this-and-forward change.
+    const originEdit = await patch(`${BASE}/${series.id}`, { dtstart: "2026-11-05" });
+    expect(originEdit.status).toBe(400);
+    const originEditBody = (await originEdit.json()) as { error: string };
+    expect(originEditBody.error.toLowerCase()).toContain("dtstart");
   });
 
   it("PATCH template edit leaves a detached open occurrence's template untouched", async () => {
@@ -357,6 +362,102 @@ describe("AC-17 / AC-A7 Template edit propagates only to the open, non-detached 
       .from(tasks)
       .where(eq(tasks.id, occurrence.id));
     expect(occurrenceRows[0]?.title).toBe("Pagar aluguel");
+  });
+});
+
+// D11 was amended on 2026-09-29 after real use: the rule became editable, applying
+// from the next spawn. These cases exist because the previous contract asserted the
+// opposite, and a contract that reverses without a test reverses again by accident.
+describe("AC-29 The rule is editable, and the change applies from the next spawn (D11, amended)", () => {
+  it("moves the day of the cycle without touching the open occurrence's own date", async () => {
+    const created = await post(BASE, VALID_SERIES_BODY);
+    const { series, occurrence } = (await created.json()) as {
+      series: SeriesDto;
+      occurrence: TaskDto;
+    };
+    expect(occurrence.deadline).toBe("2026-10-05");
+
+    const edit = await patch(`${BASE}/${series.id}`, { byMonthday: 10 });
+    expect(edit.status).toBe(200);
+    expect(((await edit.json()) as { series: SeriesDto }).series.byMonthday).toBe(10);
+
+    // The whole point of option (a): the occurrence the owner may already have
+    // planned around keeps the date it had.
+    const db = createDb(env);
+    const [openRow] = await db.select().from(tasks).where(eq(tasks.id, occurrence.id));
+    expect(openRow?.deadline).toBe("2026-10-05");
+    expect(openRow?.occurrenceDate).toBe("2026-10-05");
+
+    // ...and the new rule is what computes the successor: the NEXT DATE it produces
+    // after the completed occurrence — here still October. Owner's decision
+    // (2026-09-30): the rule is the rule, and whether this month was already met is
+    // his call, made by deleting the extra occurrence (which skips the cycle, D3).
+    // "Next period" (2026-11-10) was the rejected alternative; asserting the exact
+    // date is what stops the two readings from being confused again.
+    const completed = await post(`${TASKS_BASE}/${occurrence.id}/complete`);
+    expect(completed.status).toBe(200);
+    const { successor } = (await completed.json()) as { successor: TaskDto };
+    expect(successor.occurrenceDate).toBe("2026-10-10");
+    expect(successor.deadline).toBe("2026-10-10");
+  });
+
+  it("accepts freq, interval, anchorMode and the end condition as a coherent unit", async () => {
+    const created = await post(BASE, VALID_SERIES_BODY);
+    const { series } = (await created.json()) as { series: SeriesDto };
+
+    const edit = await patch(`${BASE}/${series.id}`, {
+      freq: "weekly",
+      interval: 2,
+      byWeekday: [4],
+      anchorMode: "completion",
+      endKind: "count",
+      maxCount: 3,
+    });
+    expect(edit.status).toBe(200);
+    const edited = ((await edit.json()) as { series: SeriesDto }).series;
+    expect(edited.freq).toBe("weekly");
+    expect(edited.interval).toBe(2);
+    expect(edited.anchorMode).toBe("completion");
+    expect(edited.endKind).toBe("count");
+    expect(edited.maxCount).toBe(3);
+    // The SQL CHECK allows exactly one end field; switching kinds must clear the other.
+    expect(edited.untilDate).toBeNull();
+  });
+
+  it("refuses dtstart, because moving the origin would re-align every past period", async () => {
+    const created = await post(BASE, VALID_SERIES_BODY);
+    const { series } = (await created.json()) as { series: SeriesDto };
+
+    const res = await patch(`${BASE}/${series.id}`, { dtstart: "2026-11-05" });
+    expect(res.status).toBe(400);
+    expect(((await res.json()) as { error: string }).error.toLowerCase()).toContain("dtstart");
+
+    const db = createDb(env);
+    const [row] = await db
+      .select()
+      .from(recurrenceSeries)
+      .where(eq(recurrenceSeries.id, series.id));
+    expect(row?.dtstart).toBe("2026-10-05");
+  });
+});
+
+describe("AC-30 An occurrence detached from its series says so on the wire", () => {
+  it("reports detached true only after the occurrence is edited individually", async () => {
+    const created = await post(BASE, VALID_SERIES_BODY);
+    const { occurrence } = (await created.json()) as { occurrence: TaskDto };
+    expect(occurrence.detached).toBe(false);
+
+    const edited = await exports.default.fetch(
+      `${TASKS_BASE}/${occurrence.id}`,
+      auth({ method: "PATCH", body: JSON.stringify({ title: "Pagar aluguel deste mês" }) }),
+    );
+    expect(edited.status).toBe(200);
+
+    const list = await get(`${TASKS_BASE}?q=aluguel`);
+    const listed = ((await list.json()) as { tasks: TaskDto[] }).tasks.find(
+      (t) => t.id === occurrence.id,
+    );
+    expect(listed?.detached).toBe(true);
   });
 });
 

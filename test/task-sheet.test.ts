@@ -49,6 +49,7 @@ function task(overrides: Partial<TaskDto> = {}): TaskDto {
     lifeAreaId: null,
     seriesId: null,
     occurrenceDate: null,
+    detached: false,
     completedAt: null,
     createdAt: 1_780_000_000,
     ...overrides,

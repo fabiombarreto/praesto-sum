@@ -22,6 +22,7 @@ import {
 import {
   buildCreateSeriesInput,
   EMPTY_RECURRENCE_DRAFT,
+  planSeriesOccurrenceSave,
   type RecurrenceDraft,
 } from "../../shared/series-edit";
 import type { ShareTarget } from "../../shared/share-target";
@@ -49,9 +50,11 @@ import {
   listTasks,
   reopenTask,
   updateReminder,
+  updateSeries,
   updateTask,
 } from "../api";
 import { useConnectivity } from "../hooks/useConnectivity";
+import { useSeriesSheet } from "../hooks/useSeriesSheet";
 import { dismissToast, showToast, useToast } from "../toast-store";
 import { CaptureDeck } from "./CaptureDeck";
 import { EmptyState } from "./EmptyState";
@@ -274,6 +277,8 @@ export function TodayScreen({
   const sheetTask = tasks?.find((task) => task.id === sheet.taskId) ?? null;
   const sheetTaskReminder =
     sheetTask === null ? null : ((reminders ?? []).find((r) => r.taskId === sheetTask.id) ?? null);
+  // The series side of the sheet, for an occurrence (PRD D11 amended 2026-09-29).
+  const seriesSheet = useSeriesSheet(sheetTask);
   // Already-sent or Task-linked Reminders do not belong on the standalone list.
   const standaloneReminders = (reminders ?? []).filter(
     (r) => r.taskId === null && r.sentAt === null,
@@ -600,6 +605,55 @@ export function TodayScreen({
       dispatchSheet({ type: "deleted", taskId: id });
       setRecurrenceDraft(EMPTY_RECURRENCE_DRAFT);
       showToast({ key: "series-created", text: "Série criada" });
+    });
+  }
+
+  /**
+   * Saves a series occurrence. What goes to the series and what goes to this
+   * occurrence is decided by `planSeriesOccurrenceSave` (pure, tested): the rule
+   * always goes to the series and never moves this occurrence (D11 option (a)); a
+   * date change is always this occurrence's own; title, description and priority
+   * follow "Aplicar a". The series request runs FIRST, so a template edit reaches
+   * this occurrence through the route's propagation before any occurrence-only
+   * change detaches it.
+   */
+  function saveSeriesOccurrence(): void {
+    const series = seriesSheet.series;
+    if (sheetTask === null || series === null) return;
+    const plan = planSeriesOccurrenceSave(
+      sheetTask,
+      currentDraft(sheet, sheetTask),
+      series,
+      seriesSheet.ruleDraft,
+      seriesSheet.applyTo,
+    );
+    if (plan.seriesBody === null && Object.keys(plan.taskChanges).length === 0) {
+      dispatchSheet({ type: "close" });
+      return;
+    }
+    const id = sheetTask.id;
+    void runSheet(async () => {
+      if (plan.seriesBody !== null) {
+        seriesSheet.acceptSeries(await updateSeries(series.id, plan.seriesBody));
+      }
+      if (Object.keys(plan.taskChanges).length > 0) await updateTask(id, plan.taskChanges);
+      dispatchSheet({ type: "saved", taskId: id });
+      showToast({
+        key: "series-saved",
+        text: plan.seriesBody !== null ? "Série atualizada" : "Tarefa salva",
+      });
+    });
+  }
+
+  /** Ends the series: this occurrence stays, no new one will be created. Irreversible. */
+  function endSheetSeries(): void {
+    const series = seriesSheet.series;
+    if (sheetTask === null || series === null) return;
+    const id = sheetTask.id;
+    void runSheet(async () => {
+      seriesSheet.acceptSeries(await updateSeries(series.id, { status: "ended" }));
+      dispatchSheet({ type: "saved", taskId: id });
+      showToast({ key: "series-ended", text: "Repetição encerrada" });
     });
   }
 
@@ -1074,6 +1128,14 @@ export function TodayScreen({
           setRecurrenceDraft((prev) => ({ ...prev, ...changes }))
         }
         onSaveWithRecurrence={saveSheetWithRecurrence}
+        series={seriesSheet.series}
+        seriesError={seriesSheet.seriesError}
+        seriesRuleDraft={seriesSheet.ruleDraft}
+        onSeriesRuleDraftChange={seriesSheet.changeRuleDraft}
+        applyTo={seriesSheet.applyTo}
+        onApplyToChange={seriesSheet.setApplyTo}
+        onSaveSeriesOccurrence={saveSeriesOccurrence}
+        onEndSeries={endSheetSeries}
       />
 
       {/* Never stack sheets (layout standard §3): gated on the same

@@ -12,6 +12,7 @@ import type {
   SubscribePushInput,
   TaskDto,
   UpdateReminderInput,
+  UpdateSeriesInput,
   UpdateTaskInput,
 } from "../shared/api";
 import { exportFilename } from "../shared/content-disposition";
@@ -210,6 +211,24 @@ export async function createSeries(
     method: "POST",
     body: JSON.stringify(input),
   });
+}
+
+/** Reads one series, so an occurrence's sheet can show and edit its rule (D11 amended 2026-09-29). */
+export async function getSeries(id: string): Promise<SeriesDto> {
+  const body = await request<{ series: SeriesDto }>(`/api/series/${id}`);
+  return body.series;
+}
+
+/**
+ * Edits a series' template or rule, or ends it. A rule edit applies from the next
+ * spawn — the open occurrence keeps its date (D11 option (a)).
+ */
+export async function updateSeries(id: string, input: UpdateSeriesInput): Promise<SeriesDto> {
+  const body = await request<{ series: SeriesDto }>(`/api/series/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+  return body.series;
 }
 
 /**

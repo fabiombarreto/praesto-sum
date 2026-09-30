@@ -354,6 +354,106 @@ seriesRoutes.patch("/:id", async (c) => {
         : JSON.stringify(reminderOffsets);
   }
 
+  // --- The rule (D11 amended 2026-09-29, AC-29) --------------------------------
+  // A rule edit is a this-and-forward change: nothing below touches the open
+  // occurrence, so it keeps the date the owner may already have planned around.
+  // The new rule takes effect the next time an occurrence closes and a successor
+  // is computed. `dtstart` is absent from EDITABLE_SERIES_FIELDS, so it is already
+  // refused by name above — that refusal is what keeps this "forward only".
+  if (Object.hasOwn(body, "freq")) {
+    const freq = body.freq;
+    if (typeof freq !== "string" || !(FREQ_VALUES as readonly string[]).includes(freq)) {
+      return badRequest(c, `Frequência desconhecida: ${String(freq)} (freq)`);
+    }
+    seriesPatch.freq = freq as (typeof FREQ_VALUES)[number];
+  }
+
+  if (Object.hasOwn(body, "interval")) {
+    const interval = body.interval;
+    if (typeof interval !== "number" || !Number.isInteger(interval) || interval < 1) {
+      return badRequest(c, "O intervalo deve ser um inteiro maior ou igual a 1 (interval)");
+    }
+    seriesPatch.interval = interval;
+  }
+
+  if (Object.hasOwn(body, "byMonthday")) {
+    const byMonthday = body.byMonthday;
+    if (
+      byMonthday !== null &&
+      (typeof byMonthday !== "number" ||
+        !Number.isInteger(byMonthday) ||
+        byMonthday < 1 ||
+        byMonthday > 31)
+    ) {
+      return badRequest(c, "O dia do mês deve ser um inteiro entre 1 e 31 (byMonthday)");
+    }
+    seriesPatch.byMonthday = byMonthday;
+  }
+
+  if (Object.hasOwn(body, "byWeekday")) {
+    const byWeekday = body.byWeekday;
+    if (
+      byWeekday !== null &&
+      (!Array.isArray(byWeekday) ||
+        byWeekday.some(
+          (day) => typeof day !== "number" || !Number.isInteger(day) || day < 1 || day > 7,
+        ))
+    ) {
+      return badRequest(c, "Os dias da semana devem ser inteiros entre 1 e 7 (byWeekday)");
+    }
+    seriesPatch.byWeekday =
+      byWeekday === null || byWeekday.length === 0 ? null : JSON.stringify(byWeekday);
+  }
+
+  if (Object.hasOwn(body, "anchorMode")) {
+    const anchorMode = body.anchorMode;
+    if (anchorMode !== "calendar" && anchorMode !== "completion") {
+      return badRequest(c, "A âncora deve ser 'calendar' ou 'completion' (anchorMode)");
+    }
+    seriesPatch.anchorMode = anchorMode;
+  }
+
+  // The end condition is validated as a unit, because `recurrence_series_end_chk`
+  // enforces the same three-way shape in SQL: whichever kind wins must carry its own
+  // field and only its own field. Reading the incoming value or falling back to the
+  // stored one keeps a partial edit (just `untilDate`, say) coherent.
+  if (
+    Object.hasOwn(body, "endKind") ||
+    Object.hasOwn(body, "untilDate") ||
+    Object.hasOwn(body, "maxCount")
+  ) {
+    const endKind = Object.hasOwn(body, "endKind") ? body.endKind : existing.endKind;
+    if (typeof endKind !== "string" || !(END_KIND_VALUES as readonly string[]).includes(endKind)) {
+      return badRequest(c, `Condição de fim desconhecida: ${String(endKind)} (endKind)`);
+    }
+
+    const untilDate = Object.hasOwn(body, "untilDate") ? body.untilDate : existing.untilDate;
+    const maxCount = Object.hasOwn(body, "maxCount") ? body.maxCount : existing.maxCount;
+
+    if (endKind === "until") {
+      if (typeof untilDate !== "string" || !isCalendarDate(untilDate)) {
+        return badRequest(
+          c,
+          "A data final deve ser uma data válida no formato AAAA-MM-DD (untilDate)",
+        );
+      }
+      seriesPatch.endKind = "until";
+      seriesPatch.untilDate = untilDate;
+      seriesPatch.maxCount = null;
+    } else if (endKind === "count") {
+      if (typeof maxCount !== "number" || !Number.isInteger(maxCount) || maxCount < 1) {
+        return badRequest(c, "O número de vezes deve ser um inteiro positivo (maxCount)");
+      }
+      seriesPatch.endKind = "count";
+      seriesPatch.maxCount = maxCount;
+      seriesPatch.untilDate = null;
+    } else {
+      seriesPatch.endKind = "never";
+      seriesPatch.untilDate = null;
+      seriesPatch.maxCount = null;
+    }
+  }
+
   const [seriesRow] = await db
     .update(recurrenceSeries)
     .set(seriesPatch)

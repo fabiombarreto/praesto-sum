@@ -38,6 +38,7 @@ export function toTaskDto(row: Task): TaskDto {
     lifeAreaId: row.lifeAreaId,
     seriesId: row.seriesId,
     occurrenceDate: row.occurrenceDate,
+    detached: row.detached,
     completedAt: toEpochSeconds(row.completedAt),
     createdAt: toEpochSeconds(row.createdAt) ?? 0,
   };

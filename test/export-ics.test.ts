@@ -38,6 +38,7 @@ function makeTask(overrides: Partial<TaskDto> = {}): TaskDto {
     lifeAreaId: null,
     seriesId: null,
     occurrenceDate: null,
+    detached: false,
     completedAt: null,
     createdAt: Math.floor(Date.now() / 1000),
     ...overrides,

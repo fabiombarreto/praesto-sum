@@ -12,17 +12,21 @@
 // pre-edit values, for ~300 ms.
 
 import { Bell, Trash2 } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { ReactNode } from "react";
-import type { ReminderDto, TaskDto, TaskPriority } from "../../shared/api";
+import type { ReminderDto, SeriesDto, TaskDto, TaskPriority } from "../../shared/api";
 import { instantToLocalParts } from "../../shared/dates";
 import { draftFromReminder, type ReminderDraft } from "../../shared/reminder-edit";
 import {
   recurrenceDraftError,
   reminderWillCarryOver,
+  seriesRuleDraftError,
+  type ApplyTo,
   type RecurrenceDraft,
   type RecurrenceEndOption,
   type RecurrenceFreq,
+  type SeriesFreq,
+  type SeriesRuleDraft,
 } from "../../shared/series-edit";
 import type { TaskDateMode, TaskDraft } from "../../shared/task-edit";
 import { draftFromTask, type SheetView } from "../../shared/task-sheet";
@@ -58,6 +62,14 @@ export function TaskSheet({
   recurrenceDraft,
   onRecurrenceDraftChange,
   onSaveWithRecurrence,
+  series,
+  seriesError,
+  seriesRuleDraft,
+  onSeriesRuleDraftChange,
+  applyTo,
+  onApplyToChange,
+  onSaveSeriesOccurrence,
+  onEndSeries,
 }: {
   task: TaskDto | null;
   open: boolean;
@@ -87,7 +99,25 @@ export function TaskSheet({
   onRecurrenceDraftChange: (changes: Partial<RecurrenceDraft>) => void;
   /** Fired instead of `onSave` when `recurrenceDraft.freq !== "none"`. */
   onSaveWithRecurrence: () => void;
+  /**
+   * The series an occurrence belongs to, loaded by the parent (`null` for a one-off,
+   * or while loading). Editable since 2026-09-29 (PRD D11 amended, option (a)).
+   */
+  series: SeriesDto | null;
+  /** Why the series could not be loaded, shown in place of the rule controls. */
+  seriesError: string | null;
+  seriesRuleDraft: SeriesRuleDraft | null;
+  onSeriesRuleDraftChange: (changes: Partial<SeriesRuleDraft>) => void;
+  /** Where title, description and priority go when a series occurrence is saved. */
+  applyTo: ApplyTo;
+  onApplyToChange: (next: ApplyTo) => void;
+  /** Fired instead of `onSave` for a series occurrence. */
+  onSaveSeriesOccurrence: () => void;
+  onEndSeries: () => void;
 }) {
+  // Ending a series cannot be undone (there is no way back to "active"), so it
+  // asks once more in place — the same rule the checklist applies to deletion.
+  const [confirmEnd, setConfirmEnd] = useState(false);
   const lastTask = useRef<TaskDto | null>(null);
   if (task !== null) lastTask.current = task;
   const lastDraft = useRef<TaskDraft | null>(null);
@@ -100,6 +130,20 @@ export function TaskSheet({
   // series (PRD D11 — a series' rule is fixed at creation, never edited
   // afterward): converting one is create-then-delete, not a rule edit.
   const canRepeat = shown.seriesId === null;
+  /**
+   * When a repetition is chosen, the Data group stops describing a one-off date and
+   * starts describing the FIRST occurrence — the rule's anchor, which is also where
+   * the day of the cycle comes from (the server derives `byMonthday`/`byWeekday` from
+   * `dtstart`). Labelling it "Data" beside a second date picker for the end condition
+   * read as two competing deadlines; the owner said so after using it (2026-09-25).
+   */
+  const repeats = canRepeat && recurrenceDraft.freq !== "none";
+  /** An occurrence of an existing series: its sheet edits the series too. */
+  const isOccurrence = !canRepeat;
+  const seriesRuleError =
+    isOccurrence && seriesRuleDraft !== null && series?.status === "active"
+      ? seriesRuleDraftError(seriesRuleDraft)
+      : null;
   const recurrenceError = canRepeat ? recurrenceDraftError(shownDraft, recurrenceDraft) : null;
   // Derived from the Task's own linked Reminder — never from `reminderDraft`
   // above, which only holds a value while the Reminder editor view is open.
@@ -121,6 +165,11 @@ export function TaskSheet({
             if (canRepeat && recurrenceDraft.freq !== "none") {
               if (recurrenceError !== null) return;
               onSaveWithRecurrence();
+              return;
+            }
+            if (isOccurrence) {
+              if (seriesRuleError !== null) return;
+              onSaveSeriesOccurrence();
               return;
             }
             onSave();
@@ -154,11 +203,11 @@ export function TaskSheet({
           />
 
           <p id="sheet-date-label" className="m-0 font-data text-t1 font-semibold text-muted">
-            Data
+            {repeats ? "Primeira vez em" : isOccurrence ? "Data desta ocorrência" : "Data"}
           </p>
           <ChipGroup
             multiple={false}
-            label="Data"
+            label={repeats ? "Primeira vez em" : isOccurrence ? "Data desta ocorrência" : "Data"}
             value={[shownDraft.dateMode]}
             onValueChange={(next) =>
               onDraftChange({ dateMode: (next[0] as TaskDateMode | undefined) ?? "none" })
@@ -171,7 +220,7 @@ export function TaskSheet({
           <input
             id="sheet-date"
             type="date"
-            aria-label="Data — dia"
+            aria-label={repeats ? "Primeira vez em — dia" : "Data — dia"}
             value={shownDraft.date}
             disabled={busy || shownDraft.dateMode === "none"}
             onChange={(event) => onDraftChange({ date: event.target.value })}
@@ -214,7 +263,9 @@ export function TaskSheet({
 
               {recurrenceDraft.freq !== "none" && (
                 <>
-                  <p className="m-0 font-data text-t1 font-semibold text-muted">Até quando?</p>
+                  <p className="m-0 font-data text-t1 font-semibold text-muted">
+                    Repetir até quando?
+                  </p>
                   <ChipGroup
                     multiple={false}
                     label="Até quando?"
@@ -272,6 +323,204 @@ export function TaskSheet({
                     <p role="alert" className="m-0 font-text text-t2 text-overdue">
                       {recurrenceError}
                     </p>
+                  )}
+                </>
+              )}
+            </>
+          )}
+
+          {isOccurrence && (
+            <>
+              {shown.detached && (
+                <p role="note" className="m-0 font-text text-t2 text-ink">
+                  Esta ocorrência foi editada à parte e não segue mais as mudanças feitas na série.
+                </p>
+              )}
+
+              <p className="m-0 font-data text-t1 font-semibold text-muted">
+                Aplicar título, descrição e prioridade a
+              </p>
+              <ChipGroup
+                multiple={false}
+                label="Aplicar título, descrição e prioridade a"
+                value={[applyTo]}
+                onValueChange={(next) =>
+                  onApplyToChange((next[0] as ApplyTo | undefined) ?? applyTo)
+                }
+              >
+                <Chip value="series">Toda a série</Chip>
+                <Chip value="occurrence">Só esta ocorrência</Chip>
+              </ChipGroup>
+
+              <p className="m-0 font-data text-t1 font-semibold text-muted">Repetição</p>
+              {seriesError !== null ? (
+                <p role="alert" className="m-0 font-text text-t2 text-overdue">
+                  {seriesError}
+                </p>
+              ) : series === null || seriesRuleDraft === null ? (
+                <p className="m-0 font-text text-t2 text-muted">Carregando repetição…</p>
+              ) : series.status === "ended" ? (
+                <p className="m-0 font-text text-t2 text-muted">
+                  Repetição encerrada — nenhuma nova ocorrência será criada.
+                </p>
+              ) : (
+                <>
+                  <ChipGroup
+                    multiple={false}
+                    label="Repetição"
+                    value={[seriesRuleDraft.freq]}
+                    onValueChange={(next) =>
+                      onSeriesRuleDraftChange({
+                        freq: (next[0] as SeriesFreq | undefined) ?? seriesRuleDraft.freq,
+                      })
+                    }
+                  >
+                    <Chip value="daily">Diariamente</Chip>
+                    <Chip value="weekly">Semanalmente</Chip>
+                    <Chip value="monthly">Mensalmente</Chip>
+                    <Chip value="yearly">Anualmente</Chip>
+                  </ChipGroup>
+
+                  {seriesRuleDraft.freq === "monthly" && (
+                    <>
+                      <label
+                        htmlFor="sheet-series-monthday"
+                        className="m-0 font-data text-t1 font-semibold text-muted"
+                      >
+                        Dia do mês
+                      </label>
+                      <input
+                        id="sheet-series-monthday"
+                        type="number"
+                        min={1}
+                        max={31}
+                        step={1}
+                        value={seriesRuleDraft.dayOfMonth}
+                        disabled={busy}
+                        onChange={(event) =>
+                          onSeriesRuleDraftChange({ dayOfMonth: event.target.value })
+                        }
+                        className="min-h-12 rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
+                      />
+                    </>
+                  )}
+
+                  {seriesRuleDraft.freq === "weekly" && (
+                    <ChipGroup
+                      label="Dias da semana"
+                      value={seriesRuleDraft.weekdays.map(String)}
+                      onValueChange={(next) =>
+                        onSeriesRuleDraftChange({
+                          weekdays: next.map(Number).sort((a, b) => a - b),
+                        })
+                      }
+                    >
+                      <Chip value="1">Seg</Chip>
+                      <Chip value="2">Ter</Chip>
+                      <Chip value="3">Qua</Chip>
+                      <Chip value="4">Qui</Chip>
+                      <Chip value="5">Sex</Chip>
+                      <Chip value="6">Sáb</Chip>
+                      <Chip value="7">Dom</Chip>
+                    </ChipGroup>
+                  )}
+
+                  <p className="m-0 font-data text-t1 font-semibold text-muted">
+                    Repetir até quando?
+                  </p>
+                  <ChipGroup
+                    multiple={false}
+                    label="Repetir até quando?"
+                    value={[seriesRuleDraft.endOption]}
+                    onValueChange={(next) =>
+                      onSeriesRuleDraftChange({
+                        endOption: (next[0] as RecurrenceEndOption | undefined) ?? "never",
+                      })
+                    }
+                  >
+                    <Chip value="never">Nunca</Chip>
+                    <Chip value="until">Até uma data</Chip>
+                    <Chip value="count">Depois de N vezes</Chip>
+                  </ChipGroup>
+
+                  {seriesRuleDraft.endOption === "until" && (
+                    <input
+                      id="sheet-series-until"
+                      type="date"
+                      aria-label="Repetir até"
+                      value={seriesRuleDraft.untilDate}
+                      disabled={busy}
+                      onChange={(event) =>
+                        onSeriesRuleDraftChange({ untilDate: event.target.value })
+                      }
+                      className="min-h-12 rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
+                    />
+                  )}
+
+                  {seriesRuleDraft.endOption === "count" && (
+                    <input
+                      id="sheet-series-count"
+                      type="number"
+                      min={1}
+                      step={1}
+                      aria-label="Número de repetições"
+                      value={seriesRuleDraft.maxCount}
+                      disabled={busy}
+                      onChange={(event) =>
+                        onSeriesRuleDraftChange({ maxCount: event.target.value })
+                      }
+                      className="min-h-12 rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
+                    />
+                  )}
+
+                  <p className="m-0 font-text text-t1 text-muted">
+                    Mudanças na repetição valem a partir da próxima ocorrência. Esta continua na
+                    data atual.
+                  </p>
+
+                  {seriesRuleError !== null && (
+                    <p role="alert" className="m-0 font-text text-t2 text-overdue">
+                      {seriesRuleError}
+                    </p>
+                  )}
+
+                  {confirmEnd ? (
+                    <div className="flex flex-col gap-2">
+                      <p className="m-0 font-text text-t2 text-ink">
+                        Encerrar a repetição? Esta ocorrência continua; nenhuma nova será criada, e
+                        não há como desfazer.
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          disabled={busy}
+                          onClick={() => setConfirmEnd(false)}
+                        >
+                          Manter repetição
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          disabled={busy}
+                          onClick={() => {
+                            setConfirmEnd(false);
+                            onEndSeries();
+                          }}
+                        >
+                          Encerrar repetição
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={busy}
+                      onClick={() => setConfirmEnd(true)}
+                    >
+                      Encerrar repetição
+                    </Button>
                   )}
                 </>
               )}

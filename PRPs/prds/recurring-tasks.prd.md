@@ -81,11 +81,13 @@ same function without changing a line of it.
   `missed-sweep` (FR-009 sweep, FR-011 data). In this unit an unfinished occurrence
   simply stays open and overdue.
 - **Adherence and the repeated-miss nudge** — units 11 and 12.
-- **Editing the rule of an existing series** (frequency, interval, weekdays, month day,
-  anchor, start, end condition). The template (title, description, priority, reminder
-  offsets) is editable; the rule is not — end the series and create a new one. Rule
-  edits need a decision about what happens to the already-materialized occurrence's
-  date, and nothing in the exit signal needs it.
+- ~~**Editing the rule of an existing series.**~~ **Moved INTO scope on 2026-09-29,
+  owner-confirmed** — see the amended D11 and AC-29. The rule (frequency, interval,
+  weekdays, month day, anchor, end condition) is editable and the change applies from the
+  next spawn; the open occurrence keeps its date. Only **`dtstart` stays out**: it is the
+  series' origin and the alignment every period is computed from, so moving it would
+  silently re-align history. The original deferral named this exact trigger and real use
+  produced it four days after the unit shipped.
 - **Hard-deleting a series.** A series can be ended; its closed occurrences stay as
   history. Deletion would orphan the realization log the next three units read.
 - **"This and all future" edits, or detaching a whole tail of occurrences** — ADR-0006
@@ -208,12 +210,33 @@ local calendar days (`YYYY-MM-DD`); `tz` is `America/Sao_Paulo` unless stated.
 - **AC-17 Template edit propagates only to the open, non-detached occurrence (D7):**
   Given a series with two closed occurrences and one open, non-detached occurrence, when
   `PATCH /api/series/:id` changes `title` and `priority`, then the open occurrence
-  carries the new values, the closed rows keep their old ones, and a rule field in the
-  body (e.g. `freq`) is rejected with `400` naming it. Given the open occurrence is
-  `detached`, then it is left untouched too.
+  carries the new values, the closed rows keep their old ones, and `dtstart` in the body is
+  rejected with `400` naming it. Given the open occurrence is
+  `detached`, then it is left untouched too. *(Amended 2026-09-29, owner-confirmed: the
+  approved text said "a rule field in the body (e.g. `freq`) is rejected". Rule fields are
+  now editable per the amended D11 — see AC-29. `dtstart` takes `freq`'s place as the field
+  that is still refused, because it is the series' origin and the alignment every period is
+  computed from.)*
 - **AC-18 Ending a series:** Given an active series with an open occurrence, when
   `PATCH /api/series/:id` sets `status: "ended"`, then the series is `ended`, the open
   occurrence stays open, and completing it later spawns nothing.
+- **AC-29 The rule is editable, and the change applies from the next spawn (D11, amended):**
+  Given an active monthly-on-the-5th series with an open occurrence dated `2026-10-05`, when
+  `PATCH /api/series/:id` sets `byMonthday: 10`, then the series carries the new rule, **the
+  open occurrence keeps its `2026-10-05` date untouched**, and completing it spawns a
+  successor on **`2026-10-10`** — the next date the new rule produces after the completed
+  occurrence, even when that falls in the same month. The same holds for `freq`, `interval`,
+  `byWeekday`, `anchorMode` and the end condition (`endKind` with its matching
+  `untilDate`/`maxCount`). `dtstart` stays frozen and is refused. *(Corrected 2026-09-30,
+  owner-confirmed, before any code shipped: the first draft of this AC said `2026-11-10`,
+  i.e. "the next period". The owner chose "the next date" — the rule is the rule, and
+  whether this month's obligation was already met is the owner's call, made by deleting the
+  extra occurrence, which already skips the cycle (D3). This also keeps `nextOccurrence`
+  untouched, which unit 17 must reuse without changing a line.)*
+- **AC-30 An occurrence detached from its series says so:** Given an occurrence whose
+  `detached` flag is true, when it is read through `GET /api/tasks`, then the response
+  carries `detached: true`, so a client can tell the owner that series edits no longer reach
+  this occurrence. Given a one-off Task, then `detached` is `false`.
 
 ### Phase 3 — materialization when an occurrence closes
 
@@ -454,7 +477,9 @@ are manual/device verification and produce no test file, per the methodology's s
 | D8 — Sweep, adherence, nudge | Out of scope | Build the sweep now | Units 10, 11, 12 own them; keeps this unit inside its 6-day floor |
 | D9 — Reminder offsets on a `scheduled` series | Resolve against the occurrence's own date field (deadline **or** scheduled date), same `offsetToInstant` and 23:59 anchor | Allow reminder offsets only on `deadline` series, matching unit 7's single-Reminder route | Refusing would make "take the medicine every morning" unremindable. The hand-made Reminder route is left unchanged (Open Questions). |
 | D10 — Reopening a completed occurrence whose successor exists | Untouched successor → delete it and its unsent reminders, reopen, decrement `done_count`; touched successor → `409` with pt-BR copy, nothing changes | Always refuse; allow two open occurrences | Reopen is a shipped capability (FR-003) and "undo" should undo; two open occurrences are forbidden by the unique index. |
-| D11 — Rule edits of an existing series | Won't: end the series and create a new one | Allow and move the open occurrence's date; allow and apply from the next spawn | Nothing in the exit signal needs it and each option is a decision about the owner's data; deferred to real demand. |
+| D11 — Rule edits of an existing series | ~~Won't: end the series and create a new one~~ **Amended 2026-09-29, owner-confirmed: allowed, applying from the next spawn (option (a)).** The open occurrence keeps its date; `dtstart` stays frozen and is refused; everything else about the rule is editable | Move the open occurrence's date to match the new rule (option b); keep the Won't (option c) | The deferral named this exact trigger — *"if the owner asks to change 'every 5th' to 'every 10th' in practice, the decision about the already-materialized occurrence's date gets its own PRD amendment"* — and real use produced it four days after the unit shipped. Option (a) was chosen because it is what calendars do: changing an RRULE is a this-and-forward edit, and ADR-0006 already defers "this and future" to an explicit series split. It is also the only option that never rewrites a date the owner may already have planned around. Freezing `dtstart` is what makes (a) coherent: `byMonthday`/`byWeekday` override the day derived from it, so the rule can change without the series' origin moving |
+| After a rule edit, next date or next period? (2026-09-30) | **Next date** — the successor is the first date the new rule produces after the completed occurrence, even inside the same cycle | Next period — the successor must fall in a later cycle than the completed one | Surfaced by a failing test, not by design: with an unchanged rule the two readings coincide, so nothing before the rule became editable could tell them apart. The owner's reasoning: the rule is the rule, and whether this month's obligation was already met is his call — made by deleting the extra occurrence, which already skips the cycle (D3). It also leaves `nextOccurrence` exactly as unit 17 will inherit it; the next-period reading would have required changing that contract |
+| Editing the repetition from the Task sheet (2026-09-29) | A series occurrence's sheet shows the rule, edits the template, changes the rule, ends the series, and warns when the occurrence is detached | Leave the sheet as it was and require a separate series screen | Real use found three holes at once: the sheet did not reveal that the Task repeated at all, offered no way to stop it, and silently set `detached` on any edit with no indication. The API for the first two already existed from phase 2 — only the screen was missing, which is the cheapest kind of gap to leave open and the most expensive to explain later |
 | AC-5's yearly sequence (amendment, 2026-09-23) | Corrected to `2028-02-29, 2029-02-28, 2030-02-28, 2031-02-28, 2032-02-29` after approval | Leave the approved text and let the Implementer satisfy it, or raise a test-contract dispute | The approved AC skipped `2031-02-28`, and a yearly rule never skips a year. Found because the test-writer encoded the AC verbatim instead of repairing it silently — the test-first order caught a contract defect before one line of production code existed, which is the whole point of ADR-0008. Amended with the owner's confirmation, per the 2026-08-29 rule that an APPROVED PRD changes only with a dated amendment note |
 | AC-9's scope (amendment, 2026-09-24) | Scoped to calendar-anchored rules; a completion-anchored rule is refused with a named, documented `TypeError` | Leave "given any rule" and let a future reader discover the limit in a docstring | Found by the code reviewer during phase 1: the implementation had correctly turned an accidental `TypeError` leak into an explicit refusal, but the AC still promised expansion for any rule shape the type system permits. Unit 17 reads this AC to reuse the function, so a PRD that over-promises is the expensive kind of stale. Amended with the owner's confirmation under the 2026-08-29 dated-amendment rule, like AC-5 before it |
 | Migration | One migration, `0005`, changing `recurrence_series.priority` from `integer` to the `high/normal/low` text enum with a CHECK | Keep `integer` and map in the DTO | Unit 2 migrated `tasks.priority` (`migrations/0001`) and left the template column behind; domain enums are enforced twice, and a hand-mapping would be a second source of truth |
