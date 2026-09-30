@@ -525,6 +525,7 @@ no reminder test file exist yet.
 
 ---
 
+*Unit shipped: 2026-09-30, on the owner's decision — the week of real reminders the exit signal names was not observed*
 *Generated: 2026-09-09*
 *Approved: 2026-09-09*
 *Status: APPROVED*

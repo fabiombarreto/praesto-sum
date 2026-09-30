@@ -152,7 +152,7 @@ declared, no tests are authored.
 
 ## Open Questions
 
-- [ ] The exit signal needs real Tasks completed weeks earlier, and on 2026-09-14
+- [x] *(Closed 2026-09-30: the unit was shipped on the owner's decision without this find being reported — see the roadmap's Delivery history.)* The exit signal needs real Tasks completed weeks earlier, and on 2026-09-14
   production held only 14 test Tasks. The unit can be built now, but it can only
   close after real use accumulates — accepted as the same shape units 3 and 4
   closed on, but the date it becomes earnable is unknown.
@@ -352,6 +352,7 @@ Current value of `tdd` in `docs/context/methodology.md`: **true**. Test-first or
 
 ---
 
+*Unit shipped: 2026-09-30, on the owner's decision (exit signal not reported as observed)*
 *Generated: 2026-09-15*
 *Approved: 2026-09-15*
 *Status: APPROVED*
