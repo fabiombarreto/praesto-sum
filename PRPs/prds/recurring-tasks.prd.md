@@ -291,7 +291,9 @@ local calendar days (`YYYY-MM-DD`); `tz` is `America/Sao_Paulo` unless stated.
 - **AC-28 Exit signal on the owner's device:** Given a real series the owner created
   in production, when he completes a real occurrence, then the next occurrence appears
   on the right date with its reminders set, with nothing else done — recorded in the
-  roadmap's Delivery history as the unit's device proof.
+  roadmap's Delivery history as the unit's device proof. *(Met 2026-09-30, reported by the
+  owner after running the device script on his phone against production `v0.9.3`; recorded in
+  Delivery history, and the unit is `shipped`.)*
 
 ## Open Questions
 

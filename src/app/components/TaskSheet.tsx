@@ -289,7 +289,7 @@ export function TaskSheet({
                       })
                     }
                   >
-                    <Chip value="never">Nunca</Chip>
+                    <Chip value="never">Nunca parar</Chip>
                     <Chip value="until">Até uma data</Chip>
                     <Chip value="count">Depois de N vezes</Chip>
                   </ChipGroup>
@@ -465,7 +465,7 @@ export function TaskSheet({
                       })
                     }
                   >
-                    <Chip value="never">Nunca</Chip>
+                    <Chip value="never">Nunca parar</Chip>
                     <Chip value="until">Até uma data</Chip>
                     <Chip value="count">Depois de N vezes</Chip>
                   </ChipGroup>

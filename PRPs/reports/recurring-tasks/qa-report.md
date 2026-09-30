@@ -2,7 +2,9 @@
 
 **Source:** `PRPs/prds/recurring-tasks.prd.md` (APPROVED, with two dated amendments — AC-5 and AC-9)
 **Generated:** 2026-09-25 · **Mode:** PRD · **Cases:** 31
-**Updated:** 2026-09-30 — case 16b is now covered (`automated`); see its section. Nothing else in this report was re-run.
+**Updated:** 2026-09-30 — case 16b is now covered (`automated`); see its section. Later the same day the owner ran
+the device script on his phone against production `v0.9.3` and reported every part passing: cases 26, 28 and 30 are
+recorded as passed on his word, and case 29 from the v0.9.0 deploy record. Cases 27 and 31 stay pending.
 
 **State at generation.** Merged as `8f21896` (PR #6). **Not deployed.** Last production deployment is
 `542d4fb4` (2026-09-17, v0.8.1). Migration `0005` is **not applied to the remote D1** —
@@ -85,7 +87,7 @@ Automated in `test/series.test.ts`, running inside workerd against an ephemeral 
 - **Required state:** a series whose end condition has been reached, so no successor exists
 - **Coverage:** automated since 2026-09-30 (was **none**)
 - **Automated test path:** `test/tasks.test.ts`, `describe("AC-21 / AC-A3 End conditions stop the series")` — both the `count` and the `until` case assert `expect(seriesAfter.openOccurrenceId).toBeNull()` (added 2026-09-30; before that, no test asserted it)
-- **Manual status:** pending
+- **Manual status:** n/a — superseded by the automated assertion
 - **Why it is here:** `test/tasks.test.ts:381` ("AC-21 … End conditions stop the series") already *executes*
   this exact path — it ends a series and calls `getSeries()` — but asserts only `.status` and `.doneCount`,
   never `.openOccurrenceId`. So the behavior runs and is almost certainly correct; the assertion is missing.
@@ -133,13 +135,15 @@ omission.
 ### 26 — Create a series from the Task sheet and see it on the row
 
 - **Risk:** High · **Coverage:** manual (the draft-to-wire mapping underneath is automated at
-  `test/series-edit.test.ts:199`, `:223`, `:276`) · **Manual status:** pending
+  `test/series-edit.test.ts:199`, `:223`, `:276`) · **Manual status:** **passed** 2026-09-30, owner on his phone
+  against production `v0.9.3` (series created from the sheet, *Série criada*, series glyph on the row). The
+  device script did not ask him to look for a leftover duplicate; step 6 rests on the 2026-09-25 local run
 - **Required state:** a deployed build with migration `0005` applied remotely; the app installed and the
   bearer token stored
 - **Steps:**
   1. Open *Hoje*, create a Task "Pagar aluguel".
   2. Set *Prazo* to the 5th of next month.
-  3. Open *Repetir* → *Todo mês*. Leave the end condition on *Nunca*.
+  3. Open *Repetir* → *Mensalmente*. Leave the end condition on *Nunca parar* (*Nunca* until 2026-09-30).
   4. Save.
   5. Expect the Task to appear under its date group carrying the **series glyph** in its row metadata (the
      `Repeat` icon plus the word *Repete*).
@@ -159,7 +163,9 @@ omission.
 
 ### 28 — UI/UX review checklist
 
-- **Risk:** Medium · **Coverage:** manual · **Manual status:** pending
+- **Risk:** Medium · **Coverage:** manual · **Manual status:** **passed** 2026-09-30 — the live run with real
+  pointer and keyboard input is `v0.9.3-ui-checklist.md` (items 2, 5 and 6 measured and closed), and the owner
+  ran the phone-only checks (back gesture, keyboard overlap, safe areas, overscroll) on his device
 - **Required state:** none
 - **What already happened:** the checklist ran **before the merge**, which is the rule the v0.8.1 incident
   produced, and its result is recorded in `PRPs/plans/completed/recurring-tasks-phase-4-the-screen.plan.md`
@@ -174,7 +180,8 @@ omission.
 
 ### 29 — **Deploy order: migration `0005` before the Worker** ⚠
 
-- **Risk:** Critical · **Coverage:** none (this is an ordering constraint, not a behavior) · **Manual status:** pending
+- **Risk:** Critical · **Coverage:** none (this is an ordering constraint, not a behavior) · **Manual status:**
+  **passed** 2026-09-25 — `0005` was applied to the remote D1 before the `v0.9.0` deploy (roadmap Delivery history)
 - **Required state:** production; `wrangler` authenticated
 - **Why it is Critical:** the deploy runbook applies migrations to the remote D1 *before* deploying. Reversed,
   the new Worker writes `priority` into a column that is still `integer` with no CHECK — the code works, the
@@ -191,7 +198,9 @@ omission.
 
 ### 30 — The exit signal: complete a real occurrence (AC-28)
 
-- **Risk:** Critical · **Coverage:** manual · **Manual status:** pending
+- **Risk:** Critical · **Coverage:** manual · **Manual status:** **passed** 2026-09-30, reported by the owner:
+  on his phone, against production `v0.9.3`, he completed a real occurrence and the next one appeared on the
+  right date with its reminder armed, with nothing else done. Unit 9 is `shipped` on that call
 - **Required state:** deployed build; one **real** series the owner actually cares about, not a `Teste` row
 - **Why it is the one that matters:** this is the unit's exit signal. No agent can supply it, and neither a
   green suite nor a merge grants it. Until this passes, unit 9 stays `in-progress`.
