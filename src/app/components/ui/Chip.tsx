@@ -1,5 +1,6 @@
 // Owned components (ADR-0011): filter chips over Base UI Toggle / ToggleGroup —
-// 48 px hit areas, pill shape, on-state by fill + weight + a leading check (never
+// 48 × 48 px minimum hit areas (width too, so a short label never drops a chip
+// below the rule), pill shape, on-state by fill + weight + a leading check (never
 // colour alone, guidelines §4.4).
 
 import { Toggle } from "@base-ui/react/toggle";
@@ -37,7 +38,7 @@ export function Chip({ value, children }: { value: string; children: ReactNode }
   return (
     <Toggle
       value={value}
-      className="inline-flex min-h-12 flex-none items-center gap-1 rounded-pill border border-line bg-surface-2 px-3 font-text text-t2 font-medium whitespace-nowrap text-ink data-pressed:border-transparent data-pressed:bg-accent data-pressed:font-semibold data-pressed:text-on-accent"
+      className="inline-flex min-h-12 min-w-12 flex-none items-center justify-center gap-1 rounded-pill border border-line bg-surface-2 px-3 font-text text-t2 font-medium whitespace-nowrap text-ink data-pressed:border-transparent data-pressed:bg-accent data-pressed:font-semibold data-pressed:text-on-accent"
     >
       <Check className="hidden size-4 in-data-pressed:block" strokeWidth={2.5} aria-hidden="true" />
       {children}

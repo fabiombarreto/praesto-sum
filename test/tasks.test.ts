@@ -394,6 +394,7 @@ describe("AC-21 / AC-A3 End conditions stop the series", () => {
     const seriesAfter = await getSeries(series.id);
     expect(seriesAfter.status).toBe("ended");
     expect(seriesAfter.doneCount).toBe(1);
+    expect(seriesAfter.openOccurrenceId).toBeNull();
 
     const rows = await createDb(env).select().from(tasks).where(eq(tasks.seriesId, series.id));
     expect(rows).toHaveLength(1);
@@ -413,6 +414,7 @@ describe("AC-21 / AC-A3 End conditions stop the series", () => {
 
     const seriesAfter = await getSeries(series.id);
     expect(seriesAfter.status).toBe("ended");
+    expect(seriesAfter.openOccurrenceId).toBeNull();
   });
 });
 

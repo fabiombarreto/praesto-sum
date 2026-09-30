@@ -24,7 +24,7 @@ import {
   type UpdateTaskInput,
 } from "./api";
 import type { ReminderDraft } from "./reminder-edit";
-import { buildTaskPatch, type TaskDraft } from "./task-edit";
+import { buildTaskPatch, type TaskDateMode, type TaskDraft } from "./task-edit";
 
 /** The frequency choices the "Repetir" chip group offers, plus "none" for "does not repeat". */
 export type RecurrenceFreq = "none" | "daily" | "weekly" | "monthly" | "yearly";
@@ -89,6 +89,17 @@ export function recurrenceDraftError(
   }
 
   return null;
+}
+
+/**
+ * The date modes the sheet's Data group offers, in display order. A repeating
+ * Task needs a date — `recurrenceDraftError` refuses one without it — so "Sem
+ * data" (`none`) is withdrawn once a repetition is chosen rather than offered
+ * and then refused (owner-confirmed 2026-09-30). Only the choice is withdrawn:
+ * a draft already on `none` keeps it, and the owner picks the mode himself.
+ */
+export function dateModeChoices(freq: RecurrenceFreq): readonly TaskDateMode[] {
+  return freq === "none" ? ["none", "deadline", "scheduled"] : ["deadline", "scheduled"];
 }
 
 /**

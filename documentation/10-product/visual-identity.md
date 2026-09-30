@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-24
+last_updated: 2026-09-30
 review_trigger: "a step of UI/UX-plan activity A2 lands, an identity element (mark, tokens, voice) changes, or decision 5 is accepted"
 ---
 
@@ -102,7 +102,7 @@ Microcopy table (UI values in pt-BR — ADR-0009; the keys stay English in code)
 | Toasts | *Tarefa reaberta* · *Tarefa excluída* |
 | List load error | the approved request-error sentence · *Tentar de novo* |
 | Request errors (tested) | `Sem conexão com o servidor. Nada se perdeu — tente de novo quando a conexão voltar.` · `O servidor recusou a operação (código N). Tente de novo.` |
-| Detail sheet | labels *Título · Descrição · Data · Prioridade* · chips *Sem data · Concluir até · Fazer em* and *Alta · Normal · Baixa* (no chip selected = no priority) · *Cancelar* / *Salvar* / *Excluir* · close button *Fechar* |
+| Detail sheet | labels *Título · Descrição · Data · Dia · Prioridade* · chips *Sem data · Concluir até · Fazer em* (*Sem data* withdrawn while a repetition is chosen, 2026-09-30) and *Alta · Normal · Baixa* (no chip selected = no priority) · *Cancelar* / *Salvar* / *Excluir* · close button *Fechar* |
 | `<title>` | *Hoje · Praesto Sum* · *Praesto Sum* |
 | Manifest | `name` *Praesto Sum* · `short_name` *Praesto* · shortcut *Nova tarefa* — *Abrir o Praesto com o campo de captura vazio* |
 
@@ -116,6 +116,7 @@ TBD — after A5 ships: a week of cold opens on the phone against the three É w
 
 | Date | What changed |
 |---|---|
+| 2026-09-30 | **recurring-tasks follow-up (v0.9.3):** the detail sheet's date input gains the visible label *Dia*, and the end-condition inputs show *Repetir até* and *Número de repetições* as visible labels (previously `aria-label` only). *Sem data* is no longer offered while a repetition is chosen |
 | 2026-08-24 | **today-view-and-filters Phase 3 (Task 2): the quick-filter chip, filter-icon and filter-sheet strings added ahead of the code that renders them** (`PRPs/plans/today-view-and-filters-phase-3-quick-filters-and-the-filter-sheet.plan.md`) — chip row *Abertas · Para hoje · Alta prioridade · Filtros…*, the filter icon's accessible name (plain and with an active count), and the filter sheet's title, labels, chip vocabulary and *Limpar filtros* action |
 | 2026-08-23 | **today-view-and-filters Phase 2 (Task 2): the four group-header names added ahead of the code that uses them** (`PRPs/plans/today-view-and-filters-phase-2-grouping-and-the-grouped-list.plan.md`) — *Atrasadas*, *Hoje*, *Próximas* and *Sem data*, the group headers layout standard §2.5 specifies, each rendered with its count by the new `TaskGroup` component |
 | 2026-08-21 | **ui-design-pass Phase 2 (Task 10): one microcopy row added ahead of the code that uses it** (`PRPs/plans/ui-design-pass-phase-2-today-screen.plan.md`) — *List load error*, the retry copy the *Hoje* screen shows under a failed first load, pairing the existing request-error sentence with the infinitive button *Tentar de novo* |

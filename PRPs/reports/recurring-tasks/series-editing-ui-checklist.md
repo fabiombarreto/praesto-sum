@@ -36,3 +36,8 @@ unmeasured is marked below rather than assumed.
 **Owed before this is fully discharged:** item 12's phone-only checks (back gesture, keyboard
 overlap, safe areas) and a real-screen look at items 5 and 6. None blocks the commit; both are the
 kind of thing only a device can settle.
+
+**Follow-up 2026-09-30 (v0.9.3):** items 5 and 6 are now measured and closed, item 14 has screenshots, and item 2's
+"1 px of headroom" turned out to be font-dependent (*Ter* measured 47.7 px in another renderer) and is now held by
+a `min-w-12` floor on `Chip`. See [`v0.9.3-ui-checklist.md`](v0.9.3-ui-checklist.md). This record is left as it was
+written.

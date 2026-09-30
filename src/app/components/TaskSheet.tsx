@@ -18,6 +18,7 @@ import type { ReminderDto, SeriesDto, TaskDto, TaskPriority } from "../../shared
 import { instantToLocalParts } from "../../shared/dates";
 import { draftFromReminder, type ReminderDraft } from "../../shared/reminder-edit";
 import {
+  dateModeChoices,
   recurrenceDraftError,
   reminderWillCarryOver,
   seriesRuleDraftError,
@@ -35,6 +36,12 @@ import { Button } from "./ui/Button";
 import { Chip, ChipGroup } from "./ui/Chip";
 import { ConfirmView } from "./ui/ConfirmView";
 import { Sheet } from "./ui/Sheet";
+
+const DATE_MODE_LABELS: Record<TaskDateMode, string> = {
+  none: "Sem data",
+  deadline: "Concluir até",
+  scheduled: "Fazer em",
+};
 
 export function TaskSheet({
   task,
@@ -127,8 +134,9 @@ export function TaskSheet({
   if (shown === null || shownDraft === null) return null;
 
   // The Repetir control only ever applies to a Task not already part of a
-  // series (PRD D11 — a series' rule is fixed at creation, never edited
-  // afterward): converting one is create-then-delete, not a rule edit.
+  // series: converting one is create-then-delete. An occurrence edits its
+  // series' rule through the Repetição block below instead (PRD D11, amended
+  // 2026-09-29).
   const canRepeat = shown.seriesId === null;
   /**
    * When a repetition is chosen, the Data group stops describing a one-off date and
@@ -213,14 +221,19 @@ export function TaskSheet({
               onDraftChange({ dateMode: (next[0] as TaskDateMode | undefined) ?? "none" })
             }
           >
-            <Chip value="none">Sem data</Chip>
-            <Chip value="deadline">Concluir até</Chip>
-            <Chip value="scheduled">Fazer em</Chip>
+            {/* An occurrence keeps all three choices: only a one-off about to repeat loses "Sem data". */}
+            {dateModeChoices(repeats ? recurrenceDraft.freq : "none").map((mode) => (
+              <Chip key={mode} value={mode}>
+                {DATE_MODE_LABELS[mode]}
+              </Chip>
+            ))}
           </ChipGroup>
+          <label htmlFor="sheet-date" className="m-0 font-data text-t1 font-semibold text-muted">
+            Dia
+          </label>
           <input
             id="sheet-date"
             type="date"
-            aria-label={repeats ? "Primeira vez em — dia" : "Data — dia"}
             value={shownDraft.date}
             disabled={busy || shownDraft.dateMode === "none"}
             onChange={(event) => onDraftChange({ date: event.target.value })}
@@ -282,33 +295,47 @@ export function TaskSheet({
                   </ChipGroup>
 
                   {recurrenceDraft.endOption === "until" && (
-                    <input
-                      id="sheet-recurrence-until"
-                      type="date"
-                      aria-label="Repetir até"
-                      value={recurrenceDraft.untilDate}
-                      disabled={busy}
-                      onChange={(event) =>
-                        onRecurrenceDraftChange({ untilDate: event.target.value })
-                      }
-                      className="min-h-12 rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
-                    />
+                    <>
+                      <label
+                        htmlFor="sheet-recurrence-until"
+                        className="m-0 font-data text-t1 font-semibold text-muted"
+                      >
+                        Repetir até
+                      </label>
+                      <input
+                        id="sheet-recurrence-until"
+                        type="date"
+                        value={recurrenceDraft.untilDate}
+                        disabled={busy}
+                        onChange={(event) =>
+                          onRecurrenceDraftChange({ untilDate: event.target.value })
+                        }
+                        className="min-h-12 rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
+                      />
+                    </>
                   )}
 
                   {recurrenceDraft.endOption === "count" && (
-                    <input
-                      id="sheet-recurrence-count"
-                      type="number"
-                      min={1}
-                      step={1}
-                      aria-label="Número de repetições"
-                      value={recurrenceDraft.maxCount}
-                      disabled={busy}
-                      onChange={(event) =>
-                        onRecurrenceDraftChange({ maxCount: event.target.value })
-                      }
-                      className="min-h-12 rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
-                    />
+                    <>
+                      <label
+                        htmlFor="sheet-recurrence-count"
+                        className="m-0 font-data text-t1 font-semibold text-muted"
+                      >
+                        Número de repetições
+                      </label>
+                      <input
+                        id="sheet-recurrence-count"
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={recurrenceDraft.maxCount}
+                        disabled={busy}
+                        onChange={(event) =>
+                          onRecurrenceDraftChange({ maxCount: event.target.value })
+                        }
+                        className="min-h-12 rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
+                      />
+                    </>
                   )}
 
                   {existingReminderDraft !== null &&
@@ -444,33 +471,47 @@ export function TaskSheet({
                   </ChipGroup>
 
                   {seriesRuleDraft.endOption === "until" && (
-                    <input
-                      id="sheet-series-until"
-                      type="date"
-                      aria-label="Repetir até"
-                      value={seriesRuleDraft.untilDate}
-                      disabled={busy}
-                      onChange={(event) =>
-                        onSeriesRuleDraftChange({ untilDate: event.target.value })
-                      }
-                      className="min-h-12 rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
-                    />
+                    <>
+                      <label
+                        htmlFor="sheet-series-until"
+                        className="m-0 font-data text-t1 font-semibold text-muted"
+                      >
+                        Repetir até
+                      </label>
+                      <input
+                        id="sheet-series-until"
+                        type="date"
+                        value={seriesRuleDraft.untilDate}
+                        disabled={busy}
+                        onChange={(event) =>
+                          onSeriesRuleDraftChange({ untilDate: event.target.value })
+                        }
+                        className="min-h-12 rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
+                      />
+                    </>
                   )}
 
                   {seriesRuleDraft.endOption === "count" && (
-                    <input
-                      id="sheet-series-count"
-                      type="number"
-                      min={1}
-                      step={1}
-                      aria-label="Número de repetições"
-                      value={seriesRuleDraft.maxCount}
-                      disabled={busy}
-                      onChange={(event) =>
-                        onSeriesRuleDraftChange({ maxCount: event.target.value })
-                      }
-                      className="min-h-12 rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
-                    />
+                    <>
+                      <label
+                        htmlFor="sheet-series-count"
+                        className="m-0 font-data text-t1 font-semibold text-muted"
+                      >
+                        Número de repetições
+                      </label>
+                      <input
+                        id="sheet-series-count"
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={seriesRuleDraft.maxCount}
+                        disabled={busy}
+                        onChange={(event) =>
+                          onSeriesRuleDraftChange({ maxCount: event.target.value })
+                        }
+                        className="min-h-12 rounded-control border border-line-strong bg-surface-1 px-4 font-text text-t3 text-ink shadow-field"
+                      />
+                    </>
                   )}
 
                   <p className="m-0 font-text text-t1 text-muted">

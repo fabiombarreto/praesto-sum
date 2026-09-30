@@ -39,6 +39,7 @@ import {
   buildCreateSeriesInput,
   buildUpdateSeriesRule,
   buildUpdateSeriesTemplate,
+  dateModeChoices,
   EMPTY_RECURRENCE_DRAFT,
   planSeriesOccurrenceSave,
   recurrenceDraftError,
@@ -662,5 +663,28 @@ describe("planSeriesOccurrenceSave — splits one save between the series and th
     );
     expect(plan.seriesBody).toBeNull();
     expect(plan.taskChanges).toEqual({});
+  });
+});
+
+// Owner-confirmed 2026-09-30: once a repetition is chosen, "Sem data" is no
+// longer offered — offering it and then refusing the save with "choose a date"
+// was the same confusion the series-editing round fixed. Only the chip is
+// withdrawn; the draft's mode is NOT switched on the owner's behalf.
+describe("dateModeChoices — 'Sem data' is offered only while the Task does not repeat", () => {
+  it("offers none, deadline and scheduled, in that order, for a one-off Task", () => {
+    expect(dateModeChoices("none")).toEqual(["none", "deadline", "scheduled"]);
+  });
+
+  it.each(["daily", "weekly", "monthly", "yearly"] as const)(
+    "offers only deadline and scheduled once the Task repeats %s",
+    (freq) => {
+      expect(dateModeChoices(freq)).toEqual(["deadline", "scheduled"]);
+    },
+  );
+
+  it("still refuses a repeating draft left without a date — withdrawing the chip does not switch the mode", () => {
+    const draft: RecurrenceDraft = { ...EMPTY_RECURRENCE_DRAFT, freq: "monthly" };
+    expect(dateModeChoices(draft.freq)).not.toContain("none");
+    expect(recurrenceDraftError(taskDraft({ dateMode: "none", date: "" }), draft)).not.toBeNull();
   });
 });

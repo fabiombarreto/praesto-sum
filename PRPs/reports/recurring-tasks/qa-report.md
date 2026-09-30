@@ -2,6 +2,7 @@
 
 **Source:** `PRPs/prds/recurring-tasks.prd.md` (APPROVED, with two dated amendments — AC-5 and AC-9)
 **Generated:** 2026-09-25 · **Mode:** PRD · **Cases:** 31
+**Updated:** 2026-09-30 — case 16b is now covered (`automated`); see its section. Nothing else in this report was re-run.
 
 **State at generation.** Merged as `8f21896` (PR #6). **Not deployed.** Last production deployment is
 `542d4fb4` (2026-09-17, v0.8.1). Migration `0005` is **not applied to the remote D1** —
@@ -27,12 +28,11 @@ only way this unit can quietly corrupt data.
 
 | Coverage | Cases |
 |---|---|
-| automated | 25 |
+| automated | 26 |
 | manual | 5 |
-| **none** | **1** |
+| none | 0 |
 
-The single `none` is case 16b — PRD AC-16's "(or null)" read branch. It is disclosed here rather than folded
-into case 16, per the honesty rule.
+*(Updated 2026-09-30.)* Case 16b — PRD AC-16's "(or null)" read branch — was the single `none` at generation. It is now `automated`; its section keeps the original disclosure for the record.
 
 ---
 
@@ -79,12 +79,12 @@ Automated in `test/series.test.ts`, running inside workerd against an ephemeral 
 | 17 | Template edits reach the open non-detached occurrence only (D7) | High | a series with two closed occurrences and one open | automated | `test/series.test.ts:277` | n/a |
 | 18 | Ending a series — the open occurrence stays, no successor later | Medium | an active series with an open occurrence | automated | `test/series.test.ts:346` | n/a |
 
-### 16b — AC-16's "(or null)" branch — **UNCOVERED**
+### 16b — AC-16's "(or null)" branch — covered 2026-09-30 (was UNCOVERED)
 
 - **Risk:** Low
 - **Required state:** a series whose end condition has been reached, so no successor exists
-- **Coverage:** **none**
-- **Automated test path:** — (no test asserts `openOccurrenceId === null`)
+- **Coverage:** automated since 2026-09-30 (was **none**)
+- **Automated test path:** `test/tasks.test.ts`, `describe("AC-21 / AC-A3 End conditions stop the series")` — both the `count` and the `until` case assert `expect(seriesAfter.openOccurrenceId).toBeNull()` (added 2026-09-30; before that, no test asserted it)
 - **Manual status:** pending
 - **Why it is here:** `test/tasks.test.ts:381` ("AC-21 … End conditions stop the series") already *executes*
   this exact path — it ends a series and calls `getSeries()` — but asserts only `.status` and `.doneCount`,
@@ -219,7 +219,7 @@ omission.
 
 - **No automated test exercises the deployed production build.** Every `automated` entry above ran inside
   workerd against an ephemeral D1 in CI-less local runs. They prove the logic, not the deployment.
-- **Case 16b is a real, open coverage gap**, not a rounding error, and it is listed rather than absorbed.
+- ~~**Case 16b is a real, open coverage gap**~~ — closed 2026-09-30: both AC-21 cases in `test/tasks.test.ts` now assert `openOccurrenceId` is `null` on the ended series (an existing-test update, recorded as `EXISTING_TEST_UPDATED`: an assertion added, nothing removed or weakened).
 - **Cases 26–28 were verified by static inspection only** at the time of writing. The device column is empty
   for a reason: nobody has opened this on a phone yet.
 
