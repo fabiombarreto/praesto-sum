@@ -81,10 +81,10 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 40-engineering/engineering-conventions.md | active | 2026-08-30 |
 | 40-engineering/dev-environment.md | active | 2026-09-16 |
 | 40-engineering/testing-strategy.md | active | 2026-08-12 |
-| 40-engineering/ui-ux-guidelines.md | active | 2026-08-30 |
+| 40-engineering/ui-ux-guidelines.md | active | 2026-09-30 |
 | 40-engineering/ui-layout-standard.md | active | 2026-09-30 |
 | 50-planning/roadmap.md | active | 2026-09-30 |
-| 50-planning/ui-ux-plan.md | deprecated | 2026-08-23 |
+| 50-planning/ui-ux-plan.md | deprecated | 2026-09-30 |
 | 60-decisions/index.md | active | 2026-09-08 |
 | 60-decisions/ADR-0001-write-all-artifacts-in-english.md | accepted | 2026-08-02 |
 | 60-decisions/ADR-0002-name-the-project-praesto-sum.md | accepted | 2026-08-03 |

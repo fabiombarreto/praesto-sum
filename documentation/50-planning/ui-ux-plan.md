@@ -1,6 +1,6 @@
 ---
 status: deprecated
-last_updated: 2026-09-05
+last_updated: 2026-09-30
 review_trigger: "an activity changes state, an open question is answered, a decision lands as an ADR, or the hold on delivery units lifts"
 ---
 
@@ -172,6 +172,7 @@ Newest first. One row per state change, answer or decision, added in the same se
 
 | Date | What changed |
 |---|---|
+| 2026-09-30 | **Roadmap rule-6(b) review.** Two A3 layout decisions that were never built are rejected by the owner, each with a reopen trigger: the ≥ 840 px list + detail desktop (the PC does not feel cramped) and the §5 keyboard layer — roving row focus, single-key actions, a help sheet (the owner misses shortcuts on the PC). `ui-layout-standard.md` §5 and guidelines §1.7 now describe what is built; the rejected specifications are kept inside their amendments |
 | 2026-09-05 | **data-export phase 3.** `ui-layout-standard.md` §6's unit-5 plug-in row amended from a single combined download action to two explicit ones, with failure feedback moved from toast to an inline persistent error per guidelines §8 — the owner's two-button decision. See `ui-layout-standard.md` History, 2026-09-05, and `PRPs/plans/data-export-phase-3-the-button.plan.md` |
 | 2026-08-23 | **A5 closed — the owner's verdict is in.** He deployed the pass to production and opened it on the Android phone and the Windows PC: *"testei, tudo funcionando"*. That sentence is A5's exit signal, so the activity is `done` and A6 (`close-out`) is released. Two defects surfaced after the first deploy and were fixed and redeployed the same day: the capture field's focus ring was framed 2 px off its box and lost the field's recess (owner-reported, from a screenshot), and — found while auditing the CSS that shipped with that fix — Tailwind was compiling class strings quoted in this repository's own plans, reports and patches into real CSS (144 of 329 rules, including the very rule the fix had just superseded), now scoped to `src/` with `source(none)` (CSS −24 % gzip). Production is Version `a312fa7c`; `main` carries the whole pass in six commits from `b28e15b` |
 | 2026-08-22 | **A5 phase 4 implemented and deployed.** The full WCAG 2.2 Level A walk ran per screen (`PRPs/reports/ui-design-pass/phase-4/level-a-walk.md`, 31 criteria × 3 screens, zero ✘) and found four announcement defects, all fixed: the toast's `aria-live` was overriding `role="alert"`, two controls on the sheet were both named *Data*, the deck's offline hint was silent, and the inline editor had no instructions. The pane measured **1280 px for the first time in this feature** — the sheet is a centred 560 × 720 card there, columns capped, no overflow. The owner authorised the deploy in-session: no migration pending, `npm run deploy` succeeded (Version `decae1a2`, 17 assets, 49.32 KiB gzip) and the smoke test passed on every unauthenticated check. **Still owed, and it is what closes A5:** the owner's own pass on the Android phone (cold start, keyboard, targets, and the back gesture closing the sheet — PRD Open Question 1) and on the PC, plus his verdict in `PRPs/reports/ui-design-pass/phase-4/owner-runbook.md` |
