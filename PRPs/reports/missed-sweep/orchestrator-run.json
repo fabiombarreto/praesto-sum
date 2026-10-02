@@ -175,5 +175,10 @@
   "lane_durations_ms": {},
   "total_duration_ms": null,
   "phase_diff_bases_note": "entry 2 re-snapshotted after the phase-1 correction so phase 3 diffs exclude it",
-  "pr_url": "https://github.com/fabiombarreto/praesto-sum/pull/7"
+  "pr_url": "https://github.com/fabiombarreto/praesto-sum/pull/7",
+  "merged_at": "2026-10-02T19:01:50Z",
+  "merge_commit": "4df31b2c048997daca1797af3e5a302148eba952",
+  "approve_outcome": "COMPLETE",
+  "docs_outcome": "APPROVED",
+  "approve_note": "gh pr merge was run by the owner (the auto-mode classifier blocked it for the agent); cleanup and the docs cycle ran via /relay-approve"
 }
