@@ -1,0 +1,178 @@
+{
+  "feature": "missed-sweep",
+  "prd_path": "C:/repos/assistente-pessoal/PRPs/prds/missed-sweep.prd.md",
+  "started_at": "2026-10-02T01:28:00Z",
+  "ended_at": "2026-10-02T14:30:24.914Z",
+  "max_plan_review_retries": 2,
+  "max_tdd_review_retries": 2,
+  "max_orchestrator_minutes": 240,
+  "lane_mode": "serial (lane_runtime_safe absent)",
+  "prior_runs": [
+    {
+      "outcome": "FAILED_IMPLEMENT_DISPUTE_UPHELD_TEST_WRONG",
+      "halt": "PRPs/reports/missed-sweep/orchestrator-halt-run-1.json"
+    }
+  ],
+  "phases": [
+    {
+      "phase": 1,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/missed-sweep-phase-1-pure-plan.plan.md"
+    },
+    {
+      "phase": 1,
+      "stage": "worktree",
+      "outcome": "CREATED",
+      "repo": null,
+      "worktree_path": "C:/repos/assistente-pessoal/.worktrees/missed-sweep/",
+      "worktree_attempted": true,
+      "worktree_succeeded": true,
+      "fallback_reason": null
+    },
+    {
+      "phase": 1,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "suite_path": "PRPs/reports/missed-sweep/test-suite.diff"
+    },
+    {
+      "phase": 1,
+      "stage": "implement",
+      "outcome": "HALT:DISPUTE_UPHELD_TEST_WRONG"
+    },
+    {
+      "phase": 1,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "note": "manual recovery: suite corrected per arbitration, re-approved 2026-10-01T03:22:51Z"
+    },
+    {
+      "phase": 1,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "note": "fresh /relay-implement invocation, 2 attempts; docs-sync APPROVED (no edits); D8 a/b/c done"
+    },
+    {
+      "phase": 1,
+      "stage": "test",
+      "outcome": "GREEN",
+      "runner_note": "manual npm test (71/1147) + npm run check exit 0; relay test-runner not used because .claude/settings.json is absent"
+    },
+    {
+      "phase": 1,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 1,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/missed-sweep-phase-1-pure-plan.plan.md",
+      "timestamp": "2026-10-02T01:27:00Z"
+    },
+    {
+      "phase": 2,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/missed-sweep-phase-2-the-sweep-in-the-cron.plan.md"
+    },
+    {
+      "phase": 2,
+      "stage": "worktree",
+      "outcome": "REUSED"
+    },
+    {
+      "phase": 2,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "suite_path": "PRPs/reports/missed-sweep/test-suite.diff"
+    },
+    {
+      "phase": 2,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "note": "1 attempt; docs-sync APPROVED (architecture.md line 41); D8 a/b/c done"
+    },
+    {
+      "phase": 2,
+      "stage": "test",
+      "outcome": "GREEN",
+      "runner_note": "manual npm test (72/1160) + npm run check exit 0"
+    },
+    {
+      "phase": 2,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 2,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/missed-sweep-phase-2-the-sweep-in-the-cron.plan.md",
+      "timestamp": "2026-10-02T13:45:27.944Z"
+    },
+    {
+      "phase": 1,
+      "stage": "correction",
+      "outcome": "APPROVED",
+      "note": "owner-approved D-A catch-up fix on 2026-10-02: test pair added 3 tests (RED), implementer fixed src/shared/missed-sweep.ts, code review APPROVED after a command-side diff-base correction (base 585f4641 = phase-2 tree + approved suite); npm test 72/1163 green",
+      "artifacts": "PRPs/reports/missed-sweep/phase-1-correction/"
+    },
+    {
+      "phase": 3,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/missed-sweep-phase-3-the-screen.plan.md"
+    },
+    {
+      "phase": 3,
+      "stage": "worktree",
+      "outcome": "REUSED"
+    },
+    {
+      "phase": 3,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "suite_path": "PRPs/reports/missed-sweep/test-suite.diff"
+    },
+    {
+      "phase": 3,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "note": "1 attempt; docs-sync APPROVED (api-reference.md, documentation/README.md); D8 a/b/c done; UI checklist at phase-3/ui-checklist.md with OWED device items"
+    },
+    {
+      "phase": 3,
+      "stage": "test",
+      "outcome": "GREEN",
+      "runner_note": "manual npm test (72/1174) + npm run check exit 0"
+    },
+    {
+      "phase": 3,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 3,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/missed-sweep-phase-3-the-screen.plan.md",
+      "timestamp": "2026-10-02T14:30:24.913Z"
+    }
+  ],
+  "outcome": "ALL_PHASES_COMPLETE",
+  "phases_completed": [
+    1,
+    2,
+    3
+  ],
+  "worktree_attempted": true,
+  "worktree_succeeded": true,
+  "fallback_reason": null,
+  "phase_diff_bases": {
+    "1": "9cefa6b9aa5f47d99cb5828af4bc7e741f9c3c38",
+    "2": "00c5aad47e5a53cef927fd965508d41d5094e92e",
+    "3": "797a12b1226a614376d4fb66e8bcc50d2a3c16c0"
+  },
+  "lane_durations_ms": {},
+  "total_duration_ms": null,
+  "phase_diff_bases_note": "entry 2 re-snapshotted after the phase-1 correction so phase 3 diffs exclude it"
+}

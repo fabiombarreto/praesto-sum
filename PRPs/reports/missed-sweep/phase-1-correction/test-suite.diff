@@ -1,0 +1,61 @@
+# TDD correction suite — phase 1 (D-A catch-up defect)
+# Source PRD: PRPs/prds/missed-sweep.prd.md (Decision D-A; AC-3, AC-4; D-B, D-D)
+# Source plan: PRPs/plans/completed/missed-sweep-phase-1-pure-plan.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-10-02
+# Mode: test-first (tdd: true, vitest). Owner confirmed the fix on 2026-10-02.
+
+## Defect under test
+
+The catch-up loop in src/shared/missed-sweep.ts records a cycle as missed when its
+DATE is before `today`, while the open occurrence correctly uses the supersede rule
+(`today >= next(open)`). For non-daily rules this marks the still-running cycle as
+missed. D-A: a cycle is missed only when `today` reaches the NEXT occurrence's date.
+
+## armReminders reading
+
+`armReminders = successor.date >= today` (phase 1 contract, unchanged). The corrected
+successor is the cycle still running at `today`; when its date is before `today`
+(monthly 12-05 vs today 12-10; weekly 10-12 vs today 10-14) it is an open occurrence
+dated in the past, so `armReminders: false` (PRD D-B / AC-4: past-dated open
+successor without Reminders). It stays completable late; only its Reminders are not armed.
+
+## AC outcomes
+
+| Test (test/missed-sweep.test.ts, describe "D-A / AC-3 Catch-up never marks the still-running cycle as missed") | Outcome | Maps to |
+|---|---|---|
+| leaves the current monthly cycle open when the gap spans whole months | NEW_TEST_REQUIRED | AC-3 / D-A (monthly 5th, open 2026-10-05, today 2026-12-10: extra [2026-11-05], successor 2026-12-05 armReminders false, delta 2) |
+| leaves the current week's occurrence open after a multi-week gap | NEW_TEST_REQUIRED | AC-3 / D-A (Mondays, dtstart 2026-09-07, open 09-21, today Wed 10-14: extra [09-28, 10-05], successor 10-12 armReminders false, delta 3) |
+| keeps a series open on its last allowed occurrence while that cycle is still running | NEW_TEST_REQUIRED | AC-3 / D-A + D-D (same weekly fixture with until 2026-10-13: last occurrence 10-12 is missed only on 10-19, the date the rule would produce next, so successor 10-12, endSeries false) |
+
+Included the end-condition case because D-D determines it: the last allowed
+occurrence becomes missed "on the date the rule would have produced next". A count
+variant was skipped (not needed to pin the defect). Existing AC-1..AC-9 tests
+(15) are untouched, including the daily AC-3 / AC-4 ones.
+
+## Test files written this session
+
+- C:/repos/assistente-pessoal/.worktrees/missed-sweep/test/missed-sweep.test.ts (3 tests appended in a new describe block; no existing test modified)
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no update/delete this session) | — | — | — |
+
+## RED evidence (worktree, `npx vitest run test/missed-sweep.test.ts`)
+
+Result: 15 passed, 3 failed. `npx prettier --write` unchanged; `npx tsc -b` no errors.
+Run delegated to a Bash-capable subagent (the test-writer has no Bash tool).
+
+- monthly: extraMissedDates expected ["2026-11-05"], received ["2026-11-05","2026-12-05"] (line 137)
+- weekly: expected ["2026-09-28","2026-10-05"], received [... ,"2026-10-12"] (line 152)
+- weekly until: same diff (line 171)
+
+All three fail on the first differing assertion for exactly the defect (the
+still-running cycle appended to extraMissedDates).
+
+## Status
+
+*Approved: 2026-10-02*
+*Status: APPROVED*

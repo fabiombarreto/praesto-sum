@@ -281,9 +281,9 @@ Acceptance Criteria above, before the Implementer runs.
 
 | # | Phase | Description | Status | Repo | Parallel | Depends | PRP Plan |
 |---|-------|-------------|--------|------|----------|---------|----------|
-| 1 | Pure plan | The planning function in `src/shared`: superseded or not, catch-up rows, successor date, end conditions, completion anchor, repair — clock-free and DB-free, `recurrence.ts` untouched (AC-1..AC-9) | pending | - | - | - | - |
-| 2 | The sweep in the cron | Successor builder moved to a shared worker module; the sweep in `runScheduledJob` before the Reminder sweep, one batch per series, injectable `now`, conflict-tolerant, repair (AC-10..AC-18) | pending | - | - | 1 | - |
-| 3 | The screen | `groupTasks` done/missed split, *Concluídas* and *Não concluídas* on *Hoje* and in search, UI/UX checklist before the merge, device proof, documentation (AC-19..AC-21) | pending | - | - | 2 | - |
+| 1 | Pure plan | The planning function in `src/shared`: superseded or not, catch-up rows, successor date, end conditions, completion anchor, repair — clock-free and DB-free, `recurrence.ts` untouched (AC-1..AC-9) | complete | - | - | - | PRPs/plans/missed-sweep-phase-1-pure-plan.plan.md |
+| 2 | The sweep in the cron | Successor builder moved to a shared worker module; the sweep in `runScheduledJob` before the Reminder sweep, one batch per series, injectable `now`, conflict-tolerant, repair (AC-10..AC-18) | complete | - | - | 1 | PRPs/plans/missed-sweep-phase-2-the-sweep-in-the-cron.plan.md |
+| 3 | The screen | `groupTasks` done/missed split, *Concluídas* and *Não concluídas* on *Hoje* and in search, UI/UX checklist before the merge, device proof, documentation (AC-19..AC-21) | complete | - | - | 2 | PRPs/plans/missed-sweep-phase-3-the-screen.plan.md |
 
 ### Phase Details
 

@@ -1,0 +1,30 @@
+diff --git a/src/shared/missed-sweep.ts b/src/shared/missed-sweep.ts
+index 6ac7cdb..92c4827 100644
+--- a/src/shared/missed-sweep.ts
++++ b/src/shared/missed-sweep.ts
+@@ -71,8 +71,12 @@ export function planMissedSweep(input: MissedSweepInput): MissedSweepPlan {
+ 
+   // The supersede date ignores the end condition so the last allowed
+   // occurrence can still be recorded as missed.
+-  const supersedeDate = stepFrom({ ...rule, endKind: "never" }, openOccurrenceDate, 0);
+-  if (supersedeDate === null || today < supersedeDate) return noChange();
++  const neverEnding: RecurrenceRule = { ...rule, endKind: "never" };
++  const isSuperseded = (date: string): boolean => {
++    const supersedeDate = stepFrom(neverEnding, date, 0);
++    return supersedeDate !== null && supersedeDate <= today;
++  };
++  if (!isSuperseded(openOccurrenceDate)) return noChange();
+ 
+   if (status === "ended") {
+     return { ...noChange(), closeOpenAsMissed: true, missedCountDelta: 1 };
+@@ -81,7 +85,9 @@ export function planMissedSweep(input: MissedSweepInput): MissedSweepPlan {
+   const extraMissedDates: string[] = [];
+   let planned = 1; // the open occurrence
+   let current = stepFrom(rule, openOccurrenceDate, doneCount + missedCount + planned);
+-  while (current !== null && current < today && planned < MAX_MISSED_PER_RUN) {
++  // A cycle is missed only once today reaches the next date the rule would
++  // produce (D-A); the first cycle not yet superseded becomes the successor.
++  while (current !== null && isSuperseded(current) && planned < MAX_MISSED_PER_RUN) {
+     extraMissedDates.push(current);
+     planned += 1;
+     current = stepFrom(rule, current, doneCount + missedCount + planned);

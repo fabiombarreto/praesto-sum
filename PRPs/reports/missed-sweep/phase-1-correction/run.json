@@ -1,0 +1,12 @@
+{
+  "feature": "missed-sweep",
+  "scope": "phase-1 D-A correction",
+  "outcome": "GREEN",
+  "command": "npm test",
+  "tests_passed": 1163,
+  "tests_total": 1163,
+  "test_files": 72,
+  "check": "npm run check exit 0",
+  "runner": "implementer + code-reviewer re-run in worktree (manual; .claude/settings.json absent)",
+  "test_change": "51 added / 0 deleted lines in test/missed-sweep.test.ts, test-pair authored and approved"
+}

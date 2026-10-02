@@ -1,0 +1,29 @@
+{
+  "feature": "missed-sweep",
+  "phase": 2,
+  "outcome": "GREEN",
+  "framework": "vitest",
+  "worktree": ".worktrees/missed-sweep",
+  "command": "npm test",
+  "max_test_retries": 3,
+  "max_test_minutes": 30,
+  "attempts": 1,
+  "test_files_passed": 72,
+  "test_files_total": 72,
+  "tests_passed": 1160,
+  "tests_total": 1160,
+  "failed": 0,
+  "delta_this_phase": {
+    "test_files": 1,
+    "tests": 13,
+    "file": "test/missed-sweep-cron.test.ts"
+  },
+  "check": "npm run check exit 0",
+  "time_breakdown": {
+    "attempt_1_suite_ms": 45023
+  },
+  "tdd_mode": true,
+  "runner": "manual npm test in .worktrees/missed-sweep",
+  "runner_deviation": "the relay test-runner agent was not used: .claude/settings.json is absent at the repo root, so /relay-test would HALT at its precondition 2 (missing_settings_json); creating that file is the owner's decision, so the suite was run by hand, as in phase 1, text-search and reminders.",
+  "ended_at": "2026-10-02T01:50:00Z"
+}

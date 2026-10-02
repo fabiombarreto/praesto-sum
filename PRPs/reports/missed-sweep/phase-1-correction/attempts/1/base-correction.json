@@ -1,0 +1,1 @@
+{"post_suite_base_tree":"585f46416763ada3debb5fbd68fad14f5e63cfc4","why":"diff.patch was taken against the phase-2 tree and included the test pair's approved additions; this base = phase-2 tree + the approved test file (unchanged since approval), so the implementer's diff contains only src/shared/missed-sweep.ts"}

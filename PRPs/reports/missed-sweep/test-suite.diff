@@ -1,0 +1,51 @@
+# TDD initial suite — phase 3 (the screen)
+# Source PRD: PRPs/prds/missed-sweep.prd.md (Acceptance Criteria)
+# Source plan: C:/repos/assistente-pessoal/PRPs/plans/missed-sweep-phase-3-the-screen.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Mode: test-first (tdd: true, framework: vitest)
+# Code root: .worktrees/missed-sweep (tests under test/)
+# Generated: 2026-10-02
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-19 | NEW_TEST_REQUIRED + EXISTING_TEST_UPDATED | New: test/day-groups.test.ts ("collectDayItems — closed items split into done and missed", 7 cases); test/task-groups.test.ts (4 new cases in "status is read before the dates": long-past missed, mixed done/missed split in arrival order, open buckets unchanged, same-object identity). Updated: see ledger |
+| AC-20 | MANUAL (no test file) | On-screen *Hoje* / search reading and the UI/UX checklist are manual per methodology (ADR-0008; browser tier rejected). Not AMBIGUOUS |
+| AC-21 | MANUAL / DEVICE (no test file) | Owner's device proof in production; owed to the owner. Not AMBIGUOUS |
+| AC-1..AC-18 | OUT_OF_PHASE_SCOPE | Delivered in phases 1-2 |
+
+## Test files written this session
+
+- test/day-groups.test.ts (updated + new describe block)
+- test/task-groups.test.ts (updated + new cases)
+
+(Both are existing files edited in place; no new file was created.)
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| UPDATE | EXISTING_TEST_UPDATED | test/task-groups.test.ts:"puts an open Task with a past due day in overdue" | AC-19: `closed` bucket replaced by `done` and `missed`; the empty-bucket expectation now asserts both new buckets are empty (no assertion dropped) |
+| UPDATE | EXISTING_TEST_UPDATED | test/task-groups.test.ts:"puts a done Task in done even when its deadline is long past" (renamed from "...in closed...") | AC-19: expectation `closed == [finished]` becomes `done == [finished]`, plus `missed == []`; overdue == [] kept |
+| UPDATE | EXISTING_TEST_UPDATED | test/task-groups.test.ts:"puts a missed Task in missed even when its deadline is today" (renamed from "...in closed...") | AC-19: a missed Task formerly in `closed` now precisely in `missed`, with `done == []` added; today == [] kept; fixture carries series fields |
+| UPDATE | EXISTING_TEST_UPDATED | test/task-groups.test.ts:"puts a done Task with no date in done, not undated" (renamed) | AC-19: `closed` becomes `done`, `missed == []` added; undated == [] kept |
+| UPDATE | EXISTING_TEST_UPDATED | test/task-groups.test.ts:"keeps the arrival order inside every bucket" | AC-19: fixture gains "C-missed"; `closed == [C-done]` becomes `done == [C-done]` and `missed == [C-missed]`; the other four bucket assertions unchanged |
+| UPDATE | EXISTING_TEST_UPDATED | test/task-groups.test.ts:"loses no Task and invents none" | AC-19: conservation total sums `done` + `missed` in place of `closed`; still asserts total == input length |
+| UPDATE | EXISTING_TEST_UPDATED | test/task-groups.test.ts:"returns six empty buckets for an empty list" (renamed from "five") | AC-19: deep-equal now expects `done: []` and `missed: []` instead of `closed: []` |
+| UPDATE | EXISTING_TEST_UPDATED | test/task-groups.test.ts:task() fixture helper | AC-19 / phase-1 lesson: a `missed` fixture now carries seriesId and occurrenceDate (a miss is always a series occurrence); other statuses unchanged |
+| UPDATE | EXISTING_TEST_UPDATED | test/day-groups.test.ts:"buckets each item by its due day against `today`" | AC-19: `closed == [closed-1]` becomes `done == [closed-1]`; fixture gains "missed-1" asserted in `missed`; the four open assertions unchanged |
+| UPDATE | EXISTING_TEST_UPDATED | test/day-groups.test.ts:"reads closed BEFORE the dates, so a closed item never lands in a dated bucket" | AC-19: assertion kept, extended to also assert the missed item is not in overdue |
+| UPDATE | EXISTING_TEST_UPDATED | test/day-groups.test.ts:"returns all six buckets, every one of them empty" (renamed from "five") and BUCKETS constant | AC-19: bucket list `closed` replaced by `done`, `missed`; still asserts every bucket empty (also used by "loses no item and invents none", which now sums six buckets) |
+| UPDATE | EXISTING_TEST_UPDATED | test/day-groups.test.ts:task() fixture helper | AC-19 / phase-1 lesson: missed fixtures carry series fields |
+
+## RED evidence (worktree .worktrees/missed-sweep, via delegated shell run)
+
+- `npx prettier --write test/day-groups.test.ts test/task-groups.test.ts`: both rewritten.
+- `npx tsc -b`: errors only in the two test files, all TS2339/TS7053 "`done`/`missed` does not exist on DayItemGroups/TaskGroups" (planned seam).
+- `npx vitest run test/day-groups.test.ts test/task-groups.test.ts`: 2 files failed; 19 of 44 tests failed, 25 passed. Failures are `undefined` buckets (`groups.done`/`groups.missed`) and `closed: []` vs expected `done: [], missed: []`: the right reason.
+
+## Status
+
+*Approved: 2026-10-02*
+*Status: APPROVED*

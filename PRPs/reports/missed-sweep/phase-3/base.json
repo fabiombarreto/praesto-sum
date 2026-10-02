@@ -1,0 +1,1 @@
+{"post_suite_base_tree":"14699d6aa302f97b1401f755c02fefb7efd69aa8","phase_2_end_tree_with_correction":"00c5aad47e5a53cef927fd965508d41d5094e92e","why":"implementer diff base = phase-2 end state + the approved phase-3 suite, so the implementer's diff carries no test-pair edits (R-X)"}

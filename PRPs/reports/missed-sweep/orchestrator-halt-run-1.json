@@ -1,0 +1,15 @@
+{
+  "outcome": "FAILED_IMPLEMENT_DISPUTE_UPHELD_TEST_WRONG",
+  "phase_N": 1,
+  "halting_stage": "implement",
+  "underlying_halt_ref": "PRPs/reports/missed-sweep/phase-1/halt.json",
+  "orchestrator_run_log": [
+    {"phase": 1, "stage": "plan", "outcome": "APPROVED", "plan_path": "PRPs/plans/missed-sweep-phase-1-pure-plan.plan.md"},
+    {"phase": 1, "stage": "worktree", "outcome": "CREATED", "repo": null, "worktree_path": "C:/repos/assistente-pessoal/.worktrees/missed-sweep/", "worktree_attempted": true, "worktree_succeeded": true, "fallback_reason": null},
+    {"phase": 1, "stage": "tdd", "outcome": "APPROVED", "suite_path": "PRPs/reports/missed-sweep/test-suite.diff"},
+    {"phase": 1, "stage": "implement", "outcome": "HALT:DISPUTE_UPHELD_TEST_WRONG"}
+  ],
+  "worktree_attempted": true,
+  "worktree_succeeded": true,
+  "fallback_reason": null
+}

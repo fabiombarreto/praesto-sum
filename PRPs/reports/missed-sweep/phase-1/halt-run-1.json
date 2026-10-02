@@ -1,0 +1,25 @@
+{
+  "outcome": "DISPUTE_UPHELD_TEST_WRONG",
+  "dispute_payload": "see phase-1/attempts/2/record.json dispute_evidence",
+  "arbitration_verdict": {
+    "verdict": "DISPUTE_UPHELD_TEST_WRONG",
+    "jsonl": "PRPs/plans/missed-sweep-phase-1-pure-plan.code-review.jsonl (line 2, mode arbitration; note: the agent recorded the line with verdict field \"APPROVED\"/action \"final_flip\" while reporting DISPUTE_UPHELD_TEST_WRONG)",
+    "reasoning": "AC-4 imposes no dtstart; the fixture (open 2025-08-30 before baseRule dtstart 2026-08-05) is an impossible series state that only a production-side dtstart-rewrite guard can satisfy, and test/missed-sweep.test.ts:56 fails npm run check under noUncheckedIndexedAccess regardless of production code."
+  },
+  "attempt_history": [
+    {"attempt": 1, "implementer": "IMPLEMENTATION_COMPLETE", "reviewer": "CHANGES_REQUESTED", "failing": ["R-L1 (test file type error at :56)", "R-SEM (dtstart-rewrite guard bent around AC-4 fixture)"]},
+    {"attempt": 2, "implementer": "TEST_CONTRACT_DISPUTE", "reviewer": "DISPUTE_UPHELD_TEST_WRONG"}
+  ],
+  "dispute_history": [{"attempt": 2, "disputes_used": 1, "outcome": "DISPUTE_UPHELD_TEST_WRONG"}],
+  "required_test_edits": [
+    "test/missed-sweep.test.ts:56 — type addDays safely: const [y = 0, m = 1, d = 1] = day.split(\"-\").map(Number)",
+    "test/missed-sweep.test.ts AC-4 tests (126-166) — use rule: baseRule({ dtstart: open }) in both",
+    "refresh the stale header comment that says the suite is RED"
+  ],
+  "follow_up_for_implementer": "After the suite is re-approved, remove the dtstart-rewrite guard at src/shared/missed-sweep.ts:66-70 (use declaredRule).",
+  "open_advisories": [
+    "Completion-anchored repair steps a full interval from yesterday (interval 3 -> today+2); plan Task 3 risk marked TBD; no test pins it — needs an owner/test-pair decision (D-F).",
+    "lastClosedOccurrenceDate is declared in MissedSweepInput but never read."
+  ],
+  "actionable_recommendation": "Route the dispute to the shipped test pair: run /relay-write-test <plan_path> with the halt.json dispute_evidence as the correction input, then /relay-test-write-review <plan_path> to re-approve the suite, then re-run /relay-implement <plan_path>. Only if the arbitration turns out to hinge on the PRD itself, re-author the PRD instead."
+}

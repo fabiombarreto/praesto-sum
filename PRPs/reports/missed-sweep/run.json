@@ -1,0 +1,32 @@
+{
+  "feature": "missed-sweep",
+  "phase": 3,
+  "outcome": "GREEN",
+  "framework": "vitest",
+  "worktree": ".worktrees/missed-sweep",
+  "command": "npm test",
+  "max_test_retries": 3,
+  "max_test_minutes": 30,
+  "attempts": 1,
+  "test_files_passed": 72,
+  "test_files_total": 72,
+  "tests_passed": 1174,
+  "tests_total": 1174,
+  "failed": 0,
+  "delta_this_phase": {
+    "tests": 11,
+    "files": [
+      "test/day-groups.test.ts",
+      "test/task-groups.test.ts"
+    ],
+    "updated_tests": 12
+  },
+  "check": "npm run check exit 0",
+  "time_breakdown": {
+    "attempt_1_suite_ms": 69164
+  },
+  "tdd_mode": true,
+  "runner": "manual npm test in .worktrees/missed-sweep",
+  "runner_deviation": "relay test-runner not used: .claude/settings.json is absent (owner's decision to create it)",
+  "ended_at": "2026-10-02T14:29:54.781Z"
+}

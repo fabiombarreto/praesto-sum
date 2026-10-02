@@ -1,0 +1,58 @@
+# TDD initial suite — phase 1
+# Source PRD: PRPs/prds/missed-sweep.prd.md (Acceptance Criteria)
+# Source plan: C:/repos/assistente-pessoal/PRPs/plans/missed-sweep-phase-1-pure-plan.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-09-30
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-1 | NEW_TEST_REQUIRED | test/missed-sweep.test.ts (clock-free half; the no-worker/app-import half is left to plan Task 4 / Level 2 grep, since workerd has no node:fs) |
+| AC-2 | NEW_TEST_REQUIRED | test/missed-sweep.test.ts |
+| AC-3 | NEW_TEST_REQUIRED | test/missed-sweep.test.ts |
+| AC-4 | NEW_TEST_REQUIRED | test/missed-sweep.test.ts |
+| AC-5 | NEW_TEST_REQUIRED | test/missed-sweep.test.ts |
+| AC-6 | NEW_TEST_REQUIRED | test/missed-sweep.test.ts |
+| AC-7 | NEW_TEST_REQUIRED | test/missed-sweep.test.ts |
+| AC-8 | NEW_TEST_REQUIRED | test/missed-sweep.test.ts |
+| AC-9 | NEW_TEST_REQUIRED | test/missed-sweep.test.ts |
+| AC-10..AC-21 | OUT_OF_PHASE_SCOPE | (phases 2 and 3) |
+
+## Test files written this session
+
+- C:/repos/assistente-pessoal/.worktrees/missed-sweep/test/missed-sweep.test.ts
+
+RED verified: `npx vitest run test/missed-sweep.test.ts` fails with
+"Cannot find module '../src/shared/missed-sweep'" (module not yet created).
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| UPDATE | EXISTING_TEST_UPDATED | test/missed-sweep.test.ts:addDays (helper) | Correction after arbitration DISPUTE_UPHELD_TEST_WRONG: destructuring now `const [y = 0, m = 1, d = 1]` so the file passes `npm run check` under noUncheckedIndexedAccess (TS2769/TS18048). No assertion changed. |
+| UPDATE | EXISTING_TEST_UPDATED | test/missed-sweep.test.ts:AC-4 "covers at most 366 missed cycles and names an unswept successor without Reminders" | Arbitration DISPUTE_UPHELD_TEST_WRONG: fixture now passes `rule: baseRule({ dtstart: open })` (AC-4 AC-4 imposes no dtstart; the old fixture put the open occurrence before its series' dtstart). All expectations kept verbatim. |
+| UPDATE | EXISTING_TEST_UPDATED | test/missed-sweep.test.ts:AC-4 "reaches today's occurrence when repeated, losing no cycle and looping a bounded number of times" | Same arbitration and fix: `rule` with dtstart = open passed in the loop. All expectations kept verbatim (400 consecutive missed days, successor, armReminders). |
+| UPDATE | EXISTING_TEST_UPDATED | test/missed-sweep.test.ts (header comment) | Code-review advisory: stale "expected RED" comment replaced with a neutral test-first provenance note. Comment only. |
+
+## Correction session (2026-09-30)
+
+Adopted after arbitration DISPUTE_UPHELD_TEST_WRONG (halt evidence:
+PRPs/reports/missed-sweep/phase-1/halt.json). Only the two test defects and the
+stale-comment advisory were corrected; no other assertion added or changed (the
+completion-anchored repair question is an open owner decision and is not pinned).
+Results: `npx tsc -b` exit 0; `npx vitest run test/missed-sweep.test.ts` 15/15
+pass against the current src/shared/missed-sweep.ts. By reading, both AC-4 tests
+also hold without the implementation's dtstart-rewrite guard (their dtstart equals
+the open occurrence, so the guard never triggers).
+
+## Formatting
+
+Formatted 1 file via methodology.md formatter_cmd (`npx prettier --write
+test/missed-sweep.test.ts`, run in the worktree) after the correction: exit 0,
+file unchanged (`prettier --check` clean).
+
+## Status
+
+*Approved: 2026-10-01*
+*Status: APPROVED*

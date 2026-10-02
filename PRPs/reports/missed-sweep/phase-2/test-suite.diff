@@ -1,0 +1,54 @@
+# TDD initial suite — phase 2
+# Source PRD: PRPs/prds/missed-sweep.prd.md (Acceptance Criteria)
+# Source plan: C:/repos/assistente-pessoal/PRPs/plans/missed-sweep-phase-2-the-sweep-in-the-cron.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-10-01
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-1..AC-9 | OUT_OF_PHASE_SCOPE | (phase 1, covered by test/missed-sweep.test.ts, untouched) |
+| AC-4 (cron half, plan AC-A10) | NEW_TEST_REQUIRED | .worktrees/missed-sweep/test/missed-sweep-cron.test.ts ("a still-past successor gets no Reminders") |
+| AC-10 (plan AC-A1) | NEW_TEST_REQUIRED | .worktrees/missed-sweep/test/missed-sweep-cron.test.ts ("one batch writes the plan") |
+| AC-11 (plan AC-A2) | NEW_TEST_REQUIRED | .worktrees/missed-sweep/test/missed-sweep-cron.test.ts ("running it twice changes nothing") |
+| AC-12 (plan AC-A3) | NEW_TEST_REQUIRED | .worktrees/missed-sweep/test/missed-sweep-cron.test.ts ("a race with a manual completion is harmless", two stale-plan tests via the exported writeMissedSweepPlan seam; the cron_runs success half is in the AC-13 block) |
+| AC-13 (plan AC-A4) | NEW_TEST_REQUIRED | .worktrees/missed-sweep/test/missed-sweep-cron.test.ts ("one series cannot block another", plus conflict-only run records success) |
+| AC-14 (plan AC-A5) | NEW_TEST_REQUIRED | .worktrees/missed-sweep/test/missed-sweep-cron.test.ts ("the sweep runs before the Reminder sweep") |
+| AC-15 (plan AC-A6) | NEW_TEST_REQUIRED | .worktrees/missed-sweep/test/missed-sweep-cron.test.ts ("today is the series' local day", 02:30Z and 03:30Z) |
+| AC-16 (plan AC-A7) | NEW_TEST_REQUIRED | .worktrees/missed-sweep/test/missed-sweep-cron.test.ts ("a detached occurrence is missed like any other") |
+| AC-17 (plan AC-A8) | NEW_TEST_REQUIRED | .worktrees/missed-sweep/test/missed-sweep-cron.test.ts ("the repair runs in the cron") |
+| AC-18 (plan AC-A9) | NEW_TEST_REQUIRED | .worktrees/missed-sweep/test/missed-sweep-cron.test.ts ("one-off Tasks are untouched") |
+| AC-19..AC-21 | OUT_OF_PHASE_SCOPE | (deferred to phase 3) |
+
+Plan AC-A10's second clause ("full existing suite stays green without weakening") is a verification gate (plan Task 4), not a new test.
+
+## Test files written this session
+
+- C:/repos/assistente-pessoal/.worktrees/missed-sweep/test/missed-sweep-cron.test.ts
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no update/delete this session) | — | — | — |
+
+## RED evidence (captured by the command, 2026-10-02)
+
+`npx vitest run test/missed-sweep-cron.test.ts` in the worktree: 10 failed | 3 passed (13).
+Failures are missing behaviour (open rows not swept, no missed/successor rows) and
+`TypeError: writeMissedSweepPlan is not a function` (seam not exported yet). The 3
+passes are no-change guards (AC-15 02:30Z, AC-18 one-off untouched, and one more
+over-sweep guard). `npx tsc -b` errors in this file are only the seam ones
+(TS2339 missing `writeMissedSweepPlan` export; TS2554 two-argument `runScheduledJob`),
+which the Implementer's plan Tasks 3 create. `npx eslint` on the file: clean.
+
+## Formatting
+
+Formatted 1 file via methodology.md formatter_cmd (`npx prettier --write
+test/missed-sweep-cron.test.ts`, run in the worktree): exit 0.
+
+## Status
+
+*Approved: 2026-10-02*
+*Status: APPROVED*

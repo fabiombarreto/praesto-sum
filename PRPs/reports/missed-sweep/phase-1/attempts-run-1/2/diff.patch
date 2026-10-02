@@ -1,0 +1,401 @@
+diff --git a/src/shared/missed-sweep.ts b/src/shared/missed-sweep.ts
+new file mode 100644
+index 0000000..bf8c1c5
+--- /dev/null
++++ b/src/shared/missed-sweep.ts
+@@ -0,0 +1,105 @@
++/**
++ * Pure planning of the missed sweep (unit 10, ADR-0006): decides whether a
++ * Recurrence Series' open occurrence has been superseded, which whole cycles
++ * were missed, where the successor falls and whether the series ends.
++ *
++ * It is clock-free and database-free: it compares only local `YYYY-MM-DD`
++ * strings it is handed (`today` is the series' local day, supplied by the
++ * caller), reads no ambient clock, and imports only its same-directory sibling
++ * `./recurrence`, whose `nextOccurrence` it composes without changing.
++ */
++import { nextOccurrence, type RecurrenceRule } from "./recurrence";
++
++/** Upper bound on missed cycles recorded by a single planning call. */
++const MAX_MISSED_PER_RUN = 366;
++
++export interface MissedSweepInput {
++  rule: RecurrenceRule;
++  status: "active" | "ended";
++  doneCount: number;
++  missedCount: number;
++  /** Date of the series' open occurrence, or `null` when it has none. */
++  openOccurrenceDate: string | null;
++  /** Date of the last closed occurrence; informs the repair of a series with no open one. */
++  lastClosedOccurrenceDate: string | null;
++  /** The series' local calendar day (`YYYY-MM-DD`). */
++  today: string;
++}
++
++export interface MissedSweepPlan {
++  closeOpenAsMissed: boolean;
++  extraMissedDates: string[];
++  successor: { date: string; armReminders: boolean } | null;
++  endSeries: boolean;
++  /** The open occurrence's miss (when closed) plus `extraMissedDates.length`. */
++  missedCountDelta: number;
++}
++
++const NO_CHANGE: MissedSweepPlan = {
++  closeOpenAsMissed: false,
++  extraMissedDates: [],
++  successor: null,
++  endSeries: false,
++  missedCountDelta: 0,
++};
++
++function noChange(): MissedSweepPlan {
++  return { ...NO_CHANGE, extraMissedDates: [] };
++}
++
++/** The calendar day before `day`, derived from an explicit instant only. */
++function previousDay(day: string): string {
++  const [y = 0, m = 1, d = 1] = day.split("-").map(Number);
++  return new Date(Date.UTC(y, m - 1, d - 1)).toISOString().slice(0, 10);
++}
++
++/** Next date after `after` (completion anchor: counted from `after` itself). */
++function stepFrom(rule: RecurrenceRule, after: string, closedCount: number): string | null {
++  return nextOccurrence(rule, { after, completedOn: after, closedCount });
++}
++
++export function planMissedSweep(input: MissedSweepInput): MissedSweepPlan {
++  const { rule: declaredRule, status, doneCount, missedCount, openOccurrenceDate, today } = input;
++
++  // A track never starts after its own open occurrence: if the stored
++  // `dtstart` is later, the open date is the earliest point `nextOccurrence`
++  // may clamp to, so stepping continues from it instead of jumping forward.
++  const rule: RecurrenceRule =
++    openOccurrenceDate !== null && openOccurrenceDate < declaredRule.dtstart
++      ? { ...declaredRule, dtstart: openOccurrenceDate }
++      : declaredRule;
++
++  if (openOccurrenceDate === null) {
++    // Repair (D-F): an active series with no open occurrence starts fresh.
++    if (status !== "active") return noChange();
++    const first = stepFrom(rule, previousDay(today), doneCount + missedCount);
++    if (first === null) return { ...noChange(), endSeries: true };
++    return { ...noChange(), successor: { date: first, armReminders: true } };
++  }
++
++  // The supersede date ignores the end condition so the last allowed
++  // occurrence can still be recorded as missed.
++  const supersedeDate = stepFrom({ ...rule, endKind: "never" }, openOccurrenceDate, 0);
++  if (supersedeDate === null || today < supersedeDate) return noChange();
++
++  if (status === "ended") {
++    return { ...noChange(), closeOpenAsMissed: true, missedCountDelta: 1 };
++  }
++
++  const extraMissedDates: string[] = [];
++  let planned = 1; // the open occurrence
++  let current = stepFrom(rule, openOccurrenceDate, doneCount + missedCount + planned);
++  while (current !== null && current < today && planned < MAX_MISSED_PER_RUN) {
++    extraMissedDates.push(current);
++    planned += 1;
++    current = stepFrom(rule, current, doneCount + missedCount + planned);
++  }
++
++  return {
++    closeOpenAsMissed: true,
++    extraMissedDates,
++    successor: current === null ? null : { date: current, armReminders: current >= today },
++    endSeries: current === null,
++    missedCountDelta: planned,
++  };
++}
+diff --git a/test/missed-sweep.test.ts b/test/missed-sweep.test.ts
+new file mode 100644
+index 0000000..bc80289
+--- /dev/null
++++ b/test/missed-sweep.test.ts
+@@ -0,0 +1,284 @@
++// PRPs/prds/missed-sweep.prd.md AC-1..AC-9 — Phase 1, the pure plan
++// (`src/shared/missed-sweep.ts`).
++//
++// Source plan: PRPs/plans/missed-sweep-phase-1-pure-plan.plan.md
++//
++// This suite runs BEFORE the Implementer (test-first, per `tdd: true`):
++// src/shared/missed-sweep.ts does not exist yet, so this file is expected to be
++// RED for the right reason (the module itself is missing).
++//
++// AC-1's "imports nothing from src/worker/ or src/app/" half is a compile-time
++// / grep property (plan Task 4 and Level 2 validation). It is deliberately NOT
++// re-asserted here: this file loads inside the `worker` vitest project (workerd,
++// no `node:fs`). Only AC-1's clock-free behavioural half is asserted below.
++//
++// Every fixture is taken from the PRD's worked examples (AC-2..AC-9). The
++// contract shape (planMissedSweep / MissedSweepInput / MissedSweepPlan) is the
++// plan's proposed contract.
++
++import { describe, expect, it, vi } from "vitest";
++import { planMissedSweep, type MissedSweepInput } from "../src/shared/missed-sweep";
++import { PRAESTO_TIMEZONE } from "../src/shared/dates";
++import type { RecurrenceRule } from "../src/shared/recurrence";
++
++function baseRule(overrides: Partial<RecurrenceRule> = {}): RecurrenceRule {
++  return {
++    freq: "daily",
++    interval: 1,
++    byWeekday: null,
++    byMonthday: null,
++    dtstart: "2026-08-05",
++    timezone: PRAESTO_TIMEZONE,
++    anchorMode: "calendar",
++    endKind: "never",
++    untilDate: null,
++    maxCount: null,
++    ...overrides,
++  };
++}
++
++function baseInput(overrides: Partial<MissedSweepInput> = {}): MissedSweepInput {
++  return {
++    rule: baseRule(),
++    status: "active",
++    doneCount: 0,
++    missedCount: 0,
++    openOccurrenceDate: null,
++    lastClosedOccurrenceDate: null,
++    today: "2026-10-01",
++    ...overrides,
++  };
++}
++
++/** Calendar-day arithmetic on `YYYY-MM-DD` strings, from explicit instants only. */
++function addDays(day: string, n: number): string {
++  const [y, m, d] = day.split("-").map(Number);
++  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
++}
++
++const NO_OP = {
++  closeOpenAsMissed: false,
++  extraMissedDates: [],
++  successor: null,
++  endSeries: false,
++  missedCountDelta: 0,
++};
++
++describe("AC-1 Pure and clock-free", () => {
++  it("returns identical plans across two calls a year apart on the system clock", () => {
++    const input = baseInput({ openOccurrenceDate: "2026-10-01", today: "2026-10-04" });
++    vi.useFakeTimers();
++    try {
++      vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
++      const before = planMissedSweep(input);
++      vi.setSystemTime(new Date("2027-01-01T00:00:00Z"));
++      const after = planMissedSweep(input);
++      expect(after).toEqual(before);
++      expect(before.closeOpenAsMissed).toBe(true);
++    } finally {
++      vi.useRealTimers();
++    }
++  });
++});
++
++describe("AC-2 Not yet superseded is a no-op", () => {
++  it("changes nothing for a daily open occurrence on its own day", () => {
++    const plan = planMissedSweep(
++      baseInput({ openOccurrenceDate: "2026-10-01", today: "2026-10-01" }),
++    );
++    expect(plan).toEqual(NO_OP);
++  });
++
++  const monthly = baseRule({ freq: "monthly", byMonthday: 5, dtstart: "2026-08-05" });
++
++  it("changes nothing for a monthly-on-the-5th occurrence the day before the next one", () => {
++    const plan = planMissedSweep(
++      baseInput({ rule: monthly, openOccurrenceDate: "2026-10-05", today: "2026-11-04" }),
++    );
++    expect(plan).toEqual(NO_OP);
++  });
++
++  it("marks the occurrence missed with the successor on the next date when it arrives", () => {
++    const plan = planMissedSweep(
++      baseInput({ rule: monthly, openOccurrenceDate: "2026-10-05", today: "2026-11-05" }),
++    );
++    expect(plan.closeOpenAsMissed).toBe(true);
++    expect(plan.extraMissedDates).toEqual([]);
++    expect(plan.successor).toEqual({ date: "2026-11-05", armReminders: true });
++    expect(plan.endSeries).toBe(false);
++    expect(plan.missedCountDelta).toBe(1);
++  });
++});
++
++describe("AC-3 Catch-up leaves one row per whole cycle", () => {
++  it("closes the open occurrence, adds the skipped cycles and names today's successor", () => {
++    const plan = planMissedSweep(
++      baseInput({ openOccurrenceDate: "2026-10-01", today: "2026-10-04" }),
++    );
++    expect(plan.closeOpenAsMissed).toBe(true);
++    expect(plan.extraMissedDates).toEqual(["2026-10-02", "2026-10-03"]);
++    expect(plan.successor).toEqual({ date: "2026-10-04", armReminders: true });
++    expect(plan.endSeries).toBe(false);
++    expect(plan.missedCountDelta).toBe(3);
++  });
++});
++
++describe("AC-4 Catch-up is bounded", () => {
++  const today = "2026-10-04";
++  const open = addDays(today, -400);
++
++  it("covers at most 366 missed cycles and names an unswept successor without Reminders", () => {
++    const plan = planMissedSweep(baseInput({ openOccurrenceDate: open, today }));
++    expect(plan.closeOpenAsMissed).toBe(true);
++    expect(plan.missedCountDelta).toBeLessThanOrEqual(366);
++    expect(plan.missedCountDelta).toBe(1 + plan.extraMissedDates.length);
++    // The successor is the day right after the last missed cycle, still before today.
++    expect(plan.successor).toEqual({
++      date: addDays(open, plan.missedCountDelta),
++      armReminders: false,
++    });
++    expect(plan.successor!.date < today).toBe(true);
++    expect(plan.endSeries).toBe(false);
++  });
++
++  it("reaches today's occurrence when repeated, losing no cycle and looping a bounded number of times", () => {
++    const missed: string[] = [];
++    let openDate: string | null = open;
++    let missedCount = 0;
++    let finalPlan = null as ReturnType<typeof planMissedSweep> | null;
++
++    for (let run = 0; run < 10 && openDate !== null; run++) {
++      const plan = planMissedSweep(baseInput({ openOccurrenceDate: openDate, missedCount, today }));
++      finalPlan = plan;
++      if (plan.closeOpenAsMissed) missed.push(openDate);
++      missed.push(...plan.extraMissedDates);
++      missedCount += plan.missedCountDelta;
++      openDate = plan.successor === null ? null : plan.successor.date;
++      if (openDate === today) break;
++    }
++
++    expect(openDate).toBe(today);
++    expect(finalPlan!.successor).toEqual({ date: today, armReminders: true });
++    const expected: string[] = [];
++    for (let i = 0; i < 400; i++) expected.push(addDays(open, i));
++    expect(missed).toEqual(expected);
++    expect(missedCount).toBe(400);
++  });
++});
++
++describe("AC-5 Completion anchor", () => {
++  const rule = baseRule({ interval: 3, anchorMode: "completion" });
++
++  it("changes nothing before the completion-anchored date arrives", () => {
++    const plan = planMissedSweep(
++      baseInput({ rule, openOccurrenceDate: "2026-10-01", today: "2026-10-03" }),
++    );
++    expect(plan).toEqual(NO_OP);
++  });
++
++  it("marks the occurrence missed with the successor three days after it", () => {
++    const plan = planMissedSweep(
++      baseInput({ rule, openOccurrenceDate: "2026-10-01", today: "2026-10-04" }),
++    );
++    expect(plan.closeOpenAsMissed).toBe(true);
++    expect(plan.extraMissedDates).toEqual([]);
++    expect(plan.successor).toEqual({ date: "2026-10-04", armReminders: true });
++    expect(plan.missedCountDelta).toBe(1);
++  });
++});
++
++describe("AC-6 A count series ends on its last miss", () => {
++  it("marks the last allowed occurrence missed, plans no successor and ends the series", () => {
++    const rule = baseRule({
++      freq: "monthly",
++      byMonthday: 5,
++      dtstart: "2026-08-05",
++      endKind: "count",
++      maxCount: 3,
++    });
++    const plan = planMissedSweep(
++      baseInput({
++        rule,
++        doneCount: 1,
++        missedCount: 1,
++        openOccurrenceDate: "2026-10-05",
++        today: "2026-11-05",
++      }),
++    );
++    expect(plan.closeOpenAsMissed).toBe(true);
++    expect(plan.extraMissedDates).toEqual([]);
++    expect(plan.successor).toBeNull();
++    expect(plan.endSeries).toBe(true);
++    expect(plan.missedCountDelta).toBe(1);
++  });
++});
++
++describe("AC-7 An until series stops at its limit", () => {
++  it("records the cycles up to the limit, plans nothing after it and ends the series", () => {
++    const rule = baseRule({ endKind: "until", untilDate: "2026-10-03" });
++    const plan = planMissedSweep(
++      baseInput({ rule, openOccurrenceDate: "2026-10-01", today: "2026-10-10" }),
++    );
++    expect(plan.closeOpenAsMissed).toBe(true);
++    expect(plan.extraMissedDates).toEqual(["2026-10-02", "2026-10-03"]);
++    expect(plan.successor).toBeNull();
++    expect(plan.endSeries).toBe(true);
++    expect(plan.missedCountDelta).toBe(3);
++  });
++});
++
++describe("AC-8 A series the owner ended", () => {
++  it("closes only the open occurrence, with no intermediate rows and no successor", () => {
++    const rule = baseRule({ freq: "monthly", byMonthday: 5, dtstart: "2026-08-05" });
++    const plan = planMissedSweep(
++      baseInput({ rule, status: "ended", openOccurrenceDate: "2026-10-05", today: "2026-11-05" }),
++    );
++    expect(plan.closeOpenAsMissed).toBe(true);
++    expect(plan.extraMissedDates).toEqual([]);
++    expect(plan.successor).toBeNull();
++    expect(plan.missedCountDelta).toBe(1);
++  });
++});
++
++describe("AC-9 Repair starts fresh", () => {
++  it("plans exactly one open occurrence on today and no missed rows", () => {
++    const plan = planMissedSweep(
++      baseInput({ lastClosedOccurrenceDate: "2026-09-01", today: "2026-10-04" }),
++    );
++    expect(plan.closeOpenAsMissed).toBe(false);
++    expect(plan.extraMissedDates).toEqual([]);
++    expect(plan.successor).toEqual({ date: "2026-10-04", armReminders: true });
++    expect(plan.endSeries).toBe(false);
++    expect(plan.missedCountDelta).toBe(0);
++  });
++
++  it("plans no occurrence and ends the series when an until limit is in the past", () => {
++    const rule = baseRule({ endKind: "until", untilDate: "2026-09-30" });
++    const plan = planMissedSweep(
++      baseInput({ rule, lastClosedOccurrenceDate: "2026-09-01", today: "2026-10-04" }),
++    );
++    expect(plan.closeOpenAsMissed).toBe(false);
++    expect(plan.extraMissedDates).toEqual([]);
++    expect(plan.successor).toBeNull();
++    expect(plan.endSeries).toBe(true);
++    expect(plan.missedCountDelta).toBe(0);
++  });
++
++  it("plans no occurrence and ends the series when its count is already reached", () => {
++    const rule = baseRule({ endKind: "count", maxCount: 3 });
++    const plan = planMissedSweep(
++      baseInput({
++        rule,
++        doneCount: 2,
++        missedCount: 1,
++        lastClosedOccurrenceDate: "2026-09-01",
++        today: "2026-10-04",
++      }),
++    );
++    expect(plan.closeOpenAsMissed).toBe(false);
++    expect(plan.extraMissedDates).toEqual([]);
++    expect(plan.successor).toBeNull();
++    expect(plan.endSeries).toBe(true);
++    expect(plan.missedCountDelta).toBe(0);
++  });
++});
