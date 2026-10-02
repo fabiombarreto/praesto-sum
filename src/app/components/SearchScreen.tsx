@@ -66,6 +66,9 @@ export function SearchScreen({
   const { state: connectivity } = useConnectivity();
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
+  // Collapsed by default and deliberately not persisted: a search is a
+  // transient view; the per-group preference belongs to *Hoje*.
+  const [missedCollapsed, setMissedCollapsed] = useState(true);
   const [results, setResults] = useState<TaskDto[] | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [reminders, setReminders] = useState<ReminderDto[] | null>(null);
@@ -440,8 +443,16 @@ export function SearchScreen({
             <TaskGroup name="Sem data" count={groups.undated.length}>
               {renderDayItems(groups.undated)}
             </TaskGroup>
-            <TaskGroup name="Concluídas" count={groups.closed.length}>
-              {renderDayItems(groups.closed)}
+            <TaskGroup name="Concluídas" count={groups.done.length}>
+              {renderDayItems(groups.done)}
+            </TaskGroup>
+            <TaskGroup
+              name="Não concluídas"
+              count={groups.missed.length}
+              collapsed={missedCollapsed}
+              onToggle={() => setMissedCollapsed((current) => !current)}
+            >
+              {renderDayItems(groups.missed)}
             </TaskGroup>
           </>
         )}

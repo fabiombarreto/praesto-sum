@@ -26,13 +26,14 @@ import type { TaskDto } from "./api";
 import { collectDayItems, type DayItemGroups } from "./day-groups";
 import { dayItemFromTask } from "./day-item";
 
-/** The five buckets a Task can belong to. Keys are English; the pt-BR group names live in `TaskGroup`. */
+/** The six buckets a Task can belong to. Keys are English; the pt-BR group names live in `TaskGroup`. */
 export interface TaskGroups {
   overdue: TaskDto[];
   today: TaskDto[];
   upcoming: TaskDto[];
   undated: TaskDto[];
-  closed: TaskDto[];
+  done: TaskDto[];
+  missed: TaskDto[];
 }
 
 /**
@@ -46,16 +47,17 @@ function unwrap(bucket: DayItemGroups[keyof DayItemGroups]): TaskDto[] {
 }
 
 /**
- * Partitions `tasks` into the five buckets above, pushing each Task into
+ * Partitions `tasks` into the six buckets above, pushing each Task into
  * exactly one array in the order it was encountered — never sorted, never
- * reversed, so the concatenation `[...overdue, ...today, ...upcoming,
- * ...undated]` reproduces the input's open Tasks in exactly the same relative
- * order the API returned them in. With one source, `collectDayItems`'s merge
+ * reversed, so the concatenation of all six buckets is a partition of the
+ * input, and each bucket holds its Tasks in exactly the same relative order
+ * the API returned them in. With one source, `collectDayItems`'s merge
  * is the identity, which is what preserves that property here.
  *
  * Status is read BEFORE the dates, mirroring `taskMetaLine`: any Task whose
- * `status !== "open"` lands in `closed` regardless of its dates, so a `done`
- * Task with an overdue deadline never reappears under `overdue`. An open
+ * `status !== "open"` lands in a closed bucket regardless of its dates — a
+ * `done` Task in `done`, a `missed` Task in `missed` (missed-sweep PRD D-G) —
+ * so a `done` Task with an overdue deadline never reappears under `overdue`. An open
  * Task's bucket then follows `deadline ?? scheduledDate` (at most one is
  * set) compared against `today` as `YYYY-MM-DD` strings — zero-padded, so
  * lexicographic order is chronological order — mirroring the server's own
@@ -70,6 +72,7 @@ export function groupTasks(tasks: readonly TaskDto[], today: string): TaskGroups
     today: unwrap(groups.today),
     upcoming: unwrap(groups.upcoming),
     undated: unwrap(groups.undated),
-    closed: unwrap(groups.closed),
+    done: unwrap(groups.done),
+    missed: unwrap(groups.missed),
   };
 }

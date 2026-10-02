@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-09-16
+last_updated: 2026-10-02
 review_trigger: "any document is created, renamed, merged or changes status"
 ---
 
@@ -71,7 +71,7 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 00-meta/documentation-guidelines.md | active | 2026-08-02 |
 | 10-product/vision.md | active | 2026-08-04 |
 | 10-product/glossary.md | active | 2026-08-15 |
-| 10-product/visual-identity.md | active | 2026-09-30 |
+| 10-product/visual-identity.md | active | 2026-10-02 |
 | 20-requirements/functional-requirements.md | active | 2026-08-12 |
 | 20-requirements/quality-attributes.md | active | 2026-08-03 |
 | 20-requirements/constraints.md | active | 2026-08-04 |
@@ -82,8 +82,8 @@ Regenerated on every audit from each document's frontmatter. Template files unde
 | 40-engineering/dev-environment.md | active | 2026-09-16 |
 | 40-engineering/testing-strategy.md | active | 2026-08-12 |
 | 40-engineering/ui-ux-guidelines.md | active | 2026-09-30 |
-| 40-engineering/ui-layout-standard.md | active | 2026-09-30 |
-| 50-planning/roadmap.md | active | 2026-09-30 |
+| 40-engineering/ui-layout-standard.md | active | 2026-10-02 |
+| 50-planning/roadmap.md | active | 2026-10-02 |
 | 50-planning/ui-ux-plan.md | deprecated | 2026-09-30 |
 | 60-decisions/index.md | active | 2026-09-08 |
 | 60-decisions/ADR-0001-write-all-artifacts-in-english.md | accepted | 2026-08-02 |

@@ -9,15 +9,12 @@ import {
   type CreateTaskInput,
 } from "../../shared/api";
 import { offsetToInstant, todayIn } from "../../shared/dates";
-import {
-  occurrenceReminderInstants,
-  nextOccurrence,
-  type RecurrenceRule,
-} from "../../shared/recurrence";
+import { nextOccurrence } from "../../shared/recurrence";
 import { buildSearchClauses } from "../../shared/search";
 import { createDb } from "../db/client";
-import { recurrenceSeries, reminders, tasks, type RecurrenceSeries, type Task } from "../db/schema";
+import { recurrenceSeries, reminders, tasks, type Task } from "../db/schema";
 import { toTaskDto } from "../dto";
+import { buildRecurrenceRule, buildSuccessorStatements, isUniqueConflict } from "../successor";
 
 /**
  * Task routes — the Phase 1 core (FR-001..FR-004, FR-007, FR-045).
@@ -27,83 +24,6 @@ import { toTaskDto } from "../dto";
  * schema already carries the columns and the invariant indexes it will need.
  */
 export const taskRoutes = new Hono<{ Bindings: Env }>();
-
-/**
- * Maps a `recurrenceSeries` row to `src/shared/recurrence.ts`'s
- * `RecurrenceRule`. `byWeekday` is decoded here — the route boundary
- * `src/shared/recurrence.ts:34-36`'s own doc comment anticipates — since
- * Phase 2's `POST /api/series` only ever encoded it for storage and never
- * needed to read it back (`firstOccurrence` never consults it).
- */
-function buildRecurrenceRule(series: RecurrenceSeries): RecurrenceRule {
-  return {
-    freq: series.freq,
-    interval: series.interval,
-    byWeekday: series.byWeekday === null ? null : (JSON.parse(series.byWeekday) as number[]),
-    byMonthday: series.byMonthday,
-    dtstart: series.dtstart,
-    timezone: series.timezone,
-    anchorMode: series.anchorMode,
-    endKind: series.endKind,
-    untilDate: series.untilDate,
-    maxCount: series.maxCount,
-  };
-}
-
-/**
- * Builds (never executes) the Task-insert-plus-Reminders statements for a new
- * occurrence of `series` on `occurrenceDate`, generalizing
- * `src/worker/routes/series.ts:169-220`'s first-occurrence materialization
- * shape to read the template from an existing `RecurrenceSeries` row instead
- * of a validated POST body. The caller splices `statements` into its own
- * `db.batch([...])` array alongside the Task-status-changing statement, so
- * the whole write — closing/skipping the current occurrence AND spawning the
- * next one — stays one atomic operation.
- */
-async function buildSuccessorStatements(
-  db: ReturnType<typeof createDb>,
-  series: RecurrenceSeries,
-  occurrenceDate: string,
-): Promise<{ successorId: string; statements: unknown[] }> {
-  const reminderOffsets =
-    series.reminderOffsets === null ? [] : (JSON.parse(series.reminderOffsets) as number[]);
-  const reminderInstants = occurrenceReminderInstants(
-    occurrenceDate,
-    reminderOffsets,
-    series.timezone,
-  );
-
-  const successorId = crypto.randomUUID();
-
-  return {
-    successorId,
-    statements: [
-      db
-        .insert(tasks)
-        .values({
-          id: successorId,
-          // Non-null: recurrence_series_template_chk guarantees title is set for kind='task'.
-          title: series.title!,
-          description: series.description,
-          deadline: series.dateMode === "deadline" ? occurrenceDate : null,
-          scheduledDate: series.dateMode === "scheduled" ? occurrenceDate : null,
-          priority: series.priority,
-          lifeAreaId: series.lifeAreaId,
-          seriesId: series.id,
-          occurrenceDate,
-        })
-        .returning(),
-      ...reminderInstants.map((instant, index) =>
-        db.insert(reminders).values({
-          id: crypto.randomUUID(),
-          taskId: successorId,
-          fireAt: new Date(instant * 1000),
-          originOffsetMinutes: reminderOffsets[index] ?? null,
-        }),
-      ),
-    ],
-  };
-}
 
 /**
  * FR-007 — list, optionally filtered by status, a date range and priority, in
@@ -415,7 +335,7 @@ async function batchOrRace<T extends unknown[]>(
     const results = (await db.batch(statements as never)) as unknown[];
     return { ok: true, results };
   } catch (error) {
-    if (error instanceof Error && error.message.includes("UNIQUE constraint failed")) {
+    if (isUniqueConflict(error)) {
       return {
         ok: false,
         response: Response.json(

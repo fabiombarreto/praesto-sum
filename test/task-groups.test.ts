@@ -32,6 +32,10 @@ function task(
     priority?: TaskPriority | null;
   } = {},
 ): TaskDto {
+  // A missed Task is always an occurrence of a Recurrence Series (the sweep is
+  // its only writer), so the fixture carries series fields; the occurrence date
+  // is the day it was due.
+  const isMissed = overrides.status === "missed";
   return {
     id: `id-${title}`,
     title,
@@ -41,8 +45,8 @@ function task(
     scheduledDate: overrides.scheduledDate ?? null,
     priority: overrides.priority ?? null,
     lifeAreaId: null,
-    seriesId: null,
-    occurrenceDate: null,
+    seriesId: isMissed ? `series-${title}` : null,
+    occurrenceDate: isMissed ? (overrides.deadline ?? overrides.scheduledDate ?? null) : null,
     detached: false,
     completedAt: null,
     createdAt: 1_700_000_000,
@@ -61,7 +65,8 @@ describe("groupTasks — bucket membership", () => {
     expect(titles(groups.today)).toEqual([]);
     expect(titles(groups.upcoming)).toEqual([]);
     expect(titles(groups.undated)).toEqual([]);
-    expect(titles(groups.closed)).toEqual([]);
+    expect(titles(groups.done)).toEqual([]);
+    expect(titles(groups.missed)).toEqual([]);
   });
 
   it("puts an open Task due exactly today in today", () => {
@@ -116,7 +121,7 @@ describe("groupTasks — bucket membership", () => {
 });
 
 describe("groupTasks — status is read before the dates", () => {
-  it("puts a done Task in closed even when its deadline is long past", () => {
+  it("puts a done Task in done even when its deadline is long past", () => {
     const groups = groupTasks(
       [task("finished", { status: "done", deadline: "2026-01-01" })],
       TODAY,
@@ -124,22 +129,85 @@ describe("groupTasks — status is read before the dates", () => {
 
     // The trap this pins: a completed Task with an overdue date must never
     // reappear under *Atrasadas*.
-    expect(titles(groups.closed)).toEqual(["finished"]);
+    expect(titles(groups.done)).toEqual(["finished"]);
+    expect(titles(groups.missed)).toEqual([]);
     expect(titles(groups.overdue)).toEqual([]);
   });
 
-  it("puts a missed Task in closed even when its deadline is today", () => {
+  it("puts a missed Task in missed even when its deadline is today", () => {
     const groups = groupTasks([task("missed one", { status: "missed", deadline: TODAY })], TODAY);
 
-    expect(titles(groups.closed)).toEqual(["missed one"]);
+    expect(titles(groups.missed)).toEqual(["missed one"]);
+    expect(titles(groups.done)).toEqual([]);
     expect(titles(groups.today)).toEqual([]);
   });
 
-  it("puts a done Task with no date in closed, not undated", () => {
+  it("puts a done Task with no date in done, not undated", () => {
     const groups = groupTasks([task("done, undated", { status: "done" })], TODAY);
 
-    expect(titles(groups.closed)).toEqual(["done, undated"]);
+    expect(titles(groups.done)).toEqual(["done, undated"]);
+    expect(titles(groups.missed)).toEqual([]);
     expect(titles(groups.undated)).toEqual([]);
+  });
+
+  // PRPs/prds/missed-sweep.prd.md AC-19 Closed Tasks split into done and missed (D-G)
+  it("puts a missed Task with a long-past deadline in missed, not overdue and not done", () => {
+    const groups = groupTasks(
+      [task("long gone", { status: "missed", deadline: "2026-01-01" })],
+      TODAY,
+    );
+
+    expect(titles(groups.missed)).toEqual(["long gone"]);
+    expect(titles(groups.done)).toEqual([]);
+    expect(titles(groups.overdue)).toEqual([]);
+  });
+
+  it("splits a mixed closed list: done to done, missed to missed, each in arrival order", () => {
+    const groups = groupTasks(
+      [
+        task("m-2", { status: "missed", deadline: "2026-08-22" }),
+        task("d-2", { status: "done", deadline: "2026-08-22" }),
+        task("m-1", { status: "missed", deadline: "2026-08-10" }),
+        task("d-1", { status: "done" }),
+        task("m-3", { status: "missed", deadline: "2026-08-21" }),
+      ],
+      TODAY,
+    );
+
+    expect(titles(groups.missed)).toEqual(["m-2", "m-1", "m-3"]);
+    expect(titles(groups.done)).toEqual(["d-2", "d-1"]);
+  });
+
+  it("leaves the open buckets unchanged when done and missed Tasks sit among them", () => {
+    const open = [
+      task("o", { deadline: "2026-08-01" }),
+      task("t", { deadline: TODAY }),
+      task("u", { deadline: "2026-08-30" }),
+      task("n"),
+    ];
+    const mixed = [
+      task("m", { status: "missed", deadline: "2026-08-01" }),
+      ...open,
+      task("d", { status: "done", deadline: TODAY }),
+    ];
+
+    const groups = groupTasks(mixed, TODAY);
+    const baseline = groupTasks(open, TODAY);
+
+    expect(groups.overdue).toEqual(baseline.overdue);
+    expect(groups.today).toEqual(baseline.today);
+    expect(groups.upcoming).toEqual(baseline.upcoming);
+    expect(groups.undated).toEqual(baseline.undated);
+  });
+
+  it("returns the same Task objects in done and missed, not copies", () => {
+    const finished = task("finished", { status: "done", deadline: "2026-08-01" });
+    const skipped = task("skipped", { status: "missed", deadline: "2026-08-01" });
+
+    const groups = groupTasks([finished, skipped], TODAY);
+
+    expect(groups.done[0]).toBe(finished);
+    expect(groups.missed[0]).toBe(skipped);
   });
 });
 
@@ -160,6 +228,7 @@ describe("groupTasks — the partition never re-orders", () => {
     task("U-near", { deadline: "2026-08-24" }),
     task("N-a", {}),
     task("C-done", { status: "done", deadline: "2026-08-02" }),
+    task("C-missed", { status: "missed", deadline: "2026-08-03" }),
   ];
 
   it("keeps the arrival order inside every bucket", () => {
@@ -169,7 +238,8 @@ describe("groupTasks — the partition never re-orders", () => {
     expect(titles(groups.today)).toEqual(["T-second", "T-first"]);
     expect(titles(groups.upcoming)).toEqual(["U-far", "U-near"]);
     expect(titles(groups.undated)).toEqual(["N-b", "N-a"]);
-    expect(titles(groups.closed)).toEqual(["C-done"]);
+    expect(titles(groups.done)).toEqual(["C-done"]);
+    expect(titles(groups.missed)).toEqual(["C-missed"]);
   });
 
   /**
@@ -217,7 +287,8 @@ describe("groupTasks — the partition never re-orders", () => {
       groups.today.length +
       groups.upcoming.length +
       groups.undated.length +
-      groups.closed.length;
+      groups.done.length +
+      groups.missed.length;
 
     expect(total).toBe(scrambled.length);
   });
@@ -249,9 +320,16 @@ describe("groupTasks — purity", () => {
     expect(titles(rows)).toEqual(before);
   });
 
-  it("returns five empty buckets for an empty list", () => {
+  it("returns six empty buckets for an empty list", () => {
     const groups = groupTasks([], TODAY);
 
-    expect(groups).toEqual({ overdue: [], today: [], upcoming: [], undated: [], closed: [] });
+    expect(groups).toEqual({
+      overdue: [],
+      today: [],
+      upcoming: [],
+      undated: [],
+      done: [],
+      missed: [],
+    });
   });
 });
