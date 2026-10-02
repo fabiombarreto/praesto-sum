@@ -81,6 +81,7 @@ const UNDATED_COLLAPSED_KEY = "praesto.today.collapsed.undated";
 // The `collapsed.<group>` shape, not the legacy `doneCollapsed` one below —
 // a new key has no history to preserve, so it starts on the current scheme.
 const AGENDA_COLLAPSED_KEY = "praesto.today.collapsed.agenda";
+const MISSED_COLLAPSED_KEY = "praesto.today.collapsed.missed";
 // Kept exactly as shipped — renaming this literal would migrate (silently
 // lose) the owner's existing *Concluídas* preference.
 const CLOSED_COLLAPSED_KEY = "praesto.today.doneCollapsed";
@@ -206,6 +207,9 @@ export function TodayScreen({
   );
   const [doneCollapsed, setDoneCollapsed] = useState(() =>
     readCollapsed(CLOSED_COLLAPSED_KEY, false),
+  );
+  const [missedCollapsed, setMissedCollapsed] = useState(() =>
+    readCollapsed(MISSED_COLLAPSED_KEY, true),
   );
   // Seeded from the constant and never from storage, and never written to
   // storage — the deliberate asymmetry against the collapse state above,
@@ -529,6 +533,14 @@ export function TodayScreen({
     setDoneCollapsed((current) => {
       const next = !current;
       writeCollapsed(CLOSED_COLLAPSED_KEY, next);
+      return next;
+    });
+  }
+
+  function toggleMissedCollapsed(): void {
+    setMissedCollapsed((current) => {
+      const next = !current;
+      writeCollapsed(MISSED_COLLAPSED_KEY, next);
       return next;
     });
   }
@@ -1037,11 +1049,20 @@ export function TodayScreen({
 
             <TaskGroup
               name="Concluídas"
-              count={groups.closed.length}
+              count={groups.done.length}
               collapsed={doneCollapsed}
               onToggle={toggleDoneCollapsed}
             >
-              {renderDayItems(groups.closed)}
+              {renderDayItems(groups.done)}
+            </TaskGroup>
+
+            <TaskGroup
+              name="Não concluídas"
+              count={groups.missed.length}
+              collapsed={missedCollapsed}
+              onToggle={toggleMissedCollapsed}
+            >
+              {renderDayItems(groups.missed)}
             </TaskGroup>
           </>
         )}

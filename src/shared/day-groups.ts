@@ -2,7 +2,7 @@
  * The range function (unit 4 `google-calendar-read`, phase 1).
  *
  * `collectDayItems` takes a LIST of sources — not one source, not a fixed pair
- * — and answers with the five buckets layout standard §2.5 specifies. That
+ * — and answers with the six buckets layout standard §2.5 specifies. That
  * signature is the unit's declared non-negotiable design condition: it is what
  * lets unit 14 add local Events as a third source instead of rewriting the
  * screen. There is deliberately no branch on `sources.length`; zero, one and
@@ -23,13 +23,18 @@
 
 import type { DayItem } from "./day-item";
 
-/** The five buckets. Keys are English; the pt-BR group names live in `TaskGroup`. */
+/**
+ * The six buckets. Keys are English; the pt-BR group names live in `TaskGroup`.
+ * The closed items are split in two (missed-sweep PRD D-G): `done` lists only
+ * completed Tasks, `missed` the occurrences the cron sweep recorded as missed.
+ */
 export interface DayItemGroups {
   overdue: DayItem[];
   today: DayItem[];
   upcoming: DayItem[];
   undated: DayItem[];
-  closed: DayItem[];
+  done: DayItem[];
+  missed: DayItem[];
 }
 
 /** One named stream of already-projected items. A delivery boundary, not a semantic one. */
@@ -42,12 +47,16 @@ type BucketKey = keyof DayItemGroups;
 
 /**
  * Which bucket an item belongs to. `closed` is read first, mirroring the rule
- * `groupTasks` has encoded since unit 3; the date ladder then compares
+ * `groupTasks` has encoded since unit 3; a closed item then goes to `missed`
+ * when it is a Task whose status is `missed` and to `done` otherwise (an
+ * external calendar item is never closed, so it reaches neither). The date
+ * ladder for open items compares
  * `YYYY-MM-DD` strings, which are zero-padded, so lexicographic order is
  * chronological order.
  */
 function bucketOf(item: DayItem, today: string): BucketKey {
-  if (item.closed) return "closed";
+  if (item.closed)
+    return item.source === "task" && item.task.status === "missed" ? "missed" : "done";
   if (item.dueDate === null) return "undated";
   if (item.dueDate < today) return "overdue";
   if (item.dueDate === today) return "today";
@@ -104,7 +113,7 @@ function isBefore(candidate: DayItem, incumbent: DayItem): boolean {
 }
 
 /**
- * Partitions every source's items into the five buckets, then merges the
+ * Partitions every source's items into the six buckets, then merges the
  * sources within each bucket. One code path for any number of sources.
  */
 export function collectDayItems(sources: readonly DayItemSource[], today: string): DayItemGroups {
@@ -115,7 +124,8 @@ export function collectDayItems(sources: readonly DayItemSource[], today: string
     today: [],
     upcoming: [],
     undated: [],
-    closed: [],
+    done: [],
+    missed: [],
   };
 
   for (const source of sources) {
@@ -124,7 +134,8 @@ export function collectDayItems(sources: readonly DayItemSource[], today: string
       today: [],
       upcoming: [],
       undated: [],
-      closed: [],
+      done: [],
+      missed: [],
     };
 
     for (const item of source.items) {
@@ -141,6 +152,7 @@ export function collectDayItems(sources: readonly DayItemSource[], today: string
     today: mergeStable(streams.today),
     upcoming: mergeStable(streams.upcoming),
     undated: mergeStable(streams.undated),
-    closed: mergeStable(streams.closed),
+    done: mergeStable(streams.done),
+    missed: mergeStable(streams.missed),
   };
 }

@@ -1,7 +1,7 @@
 // One group section — the 40 px header (name + count + an optional collapse
 // toggle) plus the row list, generalized from the shipped *Concluídas*
 // markup (layout standard §2.5) so the section shape exists once and is
-// reused four times for the groups plus a fifth time for *Concluídas*.
+// reused for all six groups (*Atrasadas*, *Hoje*, *Próximas*, *Sem data*, *Concluídas*, *Não concluídas*).
 
 import type { ReactNode } from "react";
 import { ChevronDown } from "lucide-react";

@@ -34,12 +34,16 @@ import { collectDayItems, type DayItemSource } from "../src/shared/day-groups";
 
 const TODAY = "2026-08-25";
 
-const BUCKETS = ["overdue", "today", "upcoming", "undated", "closed"] as const;
+const BUCKETS = ["overdue", "today", "upcoming", "undated", "done", "missed"] as const;
 
 function task(
   id: string,
   overrides: { status?: TaskStatus; deadline?: string | null } = {},
 ): TaskDto {
+  // A missed Task is always an occurrence of a Recurrence Series (the sweep is
+  // the only writer), so its fixture carries series fields: the occurrence date
+  // is the day it was due.
+  const isMissed = overrides.status === "missed";
   return {
     id,
     title: id,
@@ -49,8 +53,8 @@ function task(
     scheduledDate: null,
     priority: null,
     lifeAreaId: null,
-    seriesId: null,
-    occurrenceDate: null,
+    seriesId: isMissed ? `series-${id}` : null,
+    occurrenceDate: isMissed ? (overrides.deadline ?? null) : null,
     detached: false,
     completedAt: null,
     createdAt: 1_700_000_000,
@@ -67,7 +71,7 @@ function ids(items: readonly DayItem[]): string[] {
 }
 
 describe("collectDayItems — zero sources", () => {
-  it("returns all five buckets, every one of them empty", () => {
+  it("returns all six buckets, every one of them empty", () => {
     const groups = collectDayItems([], TODAY);
 
     for (const bucket of BUCKETS) {
@@ -97,6 +101,7 @@ describe("collectDayItems — one source", () => {
     dayItemFromTask(task("upcoming-2", { deadline: "2026-12-31" })),
     dayItemFromTask(task("undated-1")),
     dayItemFromTask(task("closed-1", { status: "done", deadline: "2026-08-01" })),
+    dayItemFromTask(task("missed-1", { status: "missed", deadline: "2026-08-02" })),
   ];
 
   it("buckets each item by its due day against `today`", () => {
@@ -106,13 +111,15 @@ describe("collectDayItems — one source", () => {
     expect(ids(groups.today)).toEqual(["today-1"]);
     expect(ids(groups.upcoming)).toEqual(["upcoming-1", "upcoming-2"]);
     expect(ids(groups.undated)).toEqual(["undated-1"]);
-    expect(ids(groups.closed)).toEqual(["closed-1"]);
+    expect(ids(groups.done)).toEqual(["closed-1"]);
+    expect(ids(groups.missed)).toEqual(["missed-1"]);
   });
 
   it("reads closed BEFORE the dates, so a closed item never lands in a dated bucket", () => {
     const groups = collectDayItems([source("tasks", items)], TODAY);
 
     expect(ids(groups.overdue)).not.toContain("closed-1");
+    expect(ids(groups.overdue)).not.toContain("missed-1");
   });
 
   it("is the identity on the source's own order — it partitions, never sorts", () => {
@@ -232,6 +239,120 @@ describe("collectDayItems — no source-count branch", () => {
     expect(ids(collectDayItems([one], TODAY).upcoming)).toEqual(
       ids(collectDayItems(split, TODAY).upcoming),
     );
+  });
+});
+
+// PRPs/prds/missed-sweep.prd.md AC-19 Closed Tasks split into done and missed (D-G)
+describe("collectDayItems — closed items split into done and missed", () => {
+  it("puts a missed item in missed and a done item in done, never in each other's bucket", () => {
+    const groups = collectDayItems(
+      [
+        source("tasks", [
+          dayItemFromTask(task("finished", { status: "done", deadline: "2026-08-20" })),
+          dayItemFromTask(task("skipped", { status: "missed", deadline: "2026-08-21" })),
+        ]),
+      ],
+      TODAY,
+    );
+
+    expect(ids(groups.done)).toEqual(["finished"]);
+    expect(ids(groups.missed)).toEqual(["skipped"]);
+  });
+
+  it("files a missed item due today under missed, not today", () => {
+    const groups = collectDayItems(
+      [
+        source("tasks", [
+          dayItemFromTask(task("missed-today", { status: "missed", deadline: TODAY })),
+        ]),
+      ],
+      TODAY,
+    );
+
+    expect(ids(groups.missed)).toEqual(["missed-today"]);
+    expect(ids(groups.today)).toEqual([]);
+  });
+
+  it("files an undated done item under done, not undated", () => {
+    const groups = collectDayItems(
+      [source("tasks", [dayItemFromTask(task("done-undated", { status: "done" }))])],
+      TODAY,
+    );
+
+    expect(ids(groups.done)).toEqual(["done-undated"]);
+    expect(ids(groups.undated)).toEqual([]);
+  });
+
+  it("keeps the source's own order inside done and inside missed, even when done and missed interleave", () => {
+    const groups = collectDayItems(
+      [
+        source("tasks", [
+          dayItemFromTask(task("m-late", { status: "missed", deadline: "2026-08-22" })),
+          dayItemFromTask(task("d-late", { status: "done", deadline: "2026-08-24" })),
+          dayItemFromTask(task("m-early", { status: "missed", deadline: "2026-08-01" })),
+          dayItemFromTask(task("d-early", { status: "done", deadline: "2026-08-02" })),
+        ]),
+      ],
+      TODAY,
+    );
+
+    expect(ids(groups.missed)).toEqual(["m-late", "m-early"]);
+    expect(ids(groups.done)).toEqual(["d-late", "d-early"]);
+  });
+
+  it("splits closed items from several sources into the same two buckets", () => {
+    const groups = collectDayItems(
+      [
+        source("a", [
+          dayItemFromTask(task("a-missed", { status: "missed", deadline: "2026-08-20" })),
+        ]),
+        source("b", [
+          dayItemFromTask(task("b-done", { status: "done", deadline: "2026-08-20" })),
+          dayItemFromTask(task("b-missed", { status: "missed", deadline: "2026-08-20" })),
+        ]),
+      ],
+      TODAY,
+    );
+
+    expect(ids(groups.missed)).toEqual(["a-missed", "b-missed"]);
+    expect(ids(groups.done)).toEqual(["b-done"]);
+  });
+
+  it("leaves the open buckets exactly as they are when closed items surround them", () => {
+    const open = [
+      dayItemFromTask(task("o-1", { deadline: "2026-08-01" })),
+      dayItemFromTask(task("t-1", { deadline: TODAY })),
+      dayItemFromTask(task("u-1", { deadline: "2026-08-30" })),
+      dayItemFromTask(task("n-1")),
+    ];
+    const withClosed = [
+      dayItemFromTask(task("x-missed", { status: "missed", deadline: "2026-08-01" })),
+      ...open,
+      dayItemFromTask(task("x-done", { status: "done", deadline: TODAY })),
+    ];
+
+    const groups = collectDayItems([source("tasks", withClosed)], TODAY);
+    const baseline = collectDayItems([source("tasks", open)], TODAY);
+
+    expect(groups.overdue).toEqual(baseline.overdue);
+    expect(groups.today).toEqual(baseline.today);
+    expect(groups.upcoming).toEqual(baseline.upcoming);
+    expect(groups.undated).toEqual(baseline.undated);
+  });
+
+  it("conserves every item across the six buckets", () => {
+    const items = [
+      dayItemFromTask(task("a", { deadline: "2026-08-01" })),
+      dayItemFromTask(task("b", { status: "missed", deadline: "2026-08-02" })),
+      dayItemFromTask(task("c", { status: "done" })),
+      dayItemFromTask(task("d", { deadline: TODAY })),
+      dayItemFromTask(task("e", { status: "missed", deadline: "2026-08-03" })),
+    ];
+
+    const groups = collectDayItems([source("tasks", items)], TODAY);
+    const all = BUCKETS.flatMap((bucket) => ids(groups[bucket]));
+
+    expect([...all].sort()).toEqual(["a", "b", "c", "d", "e"]);
   });
 });
 

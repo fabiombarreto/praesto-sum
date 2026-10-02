@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-09-30
+last_updated: 2026-10-02
 review_trigger: "a step of UI/UX-plan activity A2 lands, an identity element (mark, tokens, voice) changes, or decision 5 is accepted"
 ---
 
@@ -94,7 +94,7 @@ Microcopy table (UI values in pt-BR — ADR-0009; the keys stay English in code)
 | Capture deck | eyebrow *Nova tarefa* · placeholder *O que precisa ser feito?* · submit *Adicionar* · offline hint `Captura indisponível sem conexão.` |
 | Row meta line | *até hoje* · *até amanhã* · *até sáb., 22/08* · *fazer hoje* · *fazer sáb., 22/08* · *atrasada · venceu ontem* · *atrasada · venceu ter., 18/08* · *atrasada · era para ter., 18/08* · *alta* / *baixa* · *não concluída* |
 | Row actions (accessible names) | *Concluir {título}* / *Reabrir {título}* · *Editar título* |
-| Section | **Concluídas** · count |
+| Section | **Concluídas** · count · **Não concluídas** · count (collapsed by default) |
 | Group headers | **Atrasadas** · **Hoje** · **Próximas** · **Sem data** — each followed by its count |
 | Quick-filter chips | *Abertas* · *Para hoje* · *Alta prioridade* — *(the trailing* Filtros… *chip was cut on 2026-08-24; the header's filter button is the only way into the sheet)* |
 | Filter icon (accessible name) | *Filtros* · with filters active, *Filtros (1 ativo)* / *Filtros (N ativos)* — singular at one, like *1 restante* |

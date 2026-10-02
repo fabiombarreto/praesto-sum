@@ -91,4 +91,4 @@ aggregate row); the three legacy rows are a separate, deeper fix left for a
 future pass (see `PRPs/plans/text-search-phase-2-the-search-route.plan.md`,
 Task 10 and its Risks entry).
 
-Cron (not HTTP): `scheduled()` in `src/worker/index.ts` now calls `runCronHeartbeat` (`src/worker/cron.ts`), which records every run — success or failure — as a `cron_runs` row, readable via `GET /api/diagnostics`. It still reads no Reminder; the due-Reminder scan, the recurrence sweep (materialize next occurrence, mark superseded ones `missed`) and the export snapshot job are unit 7+'s scope.
+Cron (not HTTP): `scheduled()` in `src/worker/index.ts` now calls `runCronHeartbeat` (`src/worker/cron.ts`), which records every run — success or failure — as a `cron_runs` row, readable via `GET /api/diagnostics`. *(Updated 2026-10-02:)* the same entry point (`runScheduledJob`) now also runs the due-Reminder sweep (unit 7) and, before it, the missed sweep (unit 10 phases 1-2, `sweepMissedOccurrences`): it marks superseded occurrences `missed` and spawns the successor, one `db.batch` per series, and no HTTP route is added. The export snapshot job remains out of scope.
