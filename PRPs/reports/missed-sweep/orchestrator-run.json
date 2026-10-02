@@ -174,5 +174,6 @@
   },
   "lane_durations_ms": {},
   "total_duration_ms": null,
-  "phase_diff_bases_note": "entry 2 re-snapshotted after the phase-1 correction so phase 3 diffs exclude it"
+  "phase_diff_bases_note": "entry 2 re-snapshotted after the phase-1 correction so phase 3 diffs exclude it",
+  "pr_url": "https://github.com/fabiombarreto/praesto-sum/pull/7"
 }
