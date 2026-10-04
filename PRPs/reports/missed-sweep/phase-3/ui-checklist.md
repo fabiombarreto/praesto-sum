@@ -75,3 +75,16 @@ are his as well.
   `documentation/40-engineering/ui-layout-standard.md`,
   `documentation/50-planning/roadmap.md`, `docs/domain/areas/tasks.md`,
   `docs/context/architecture.md`, `CLAUDE.md`.
+
+## Owner's device pass (2026-10-04)
+
+The owner ran the OWED items on his phone against production `v0.10.0` (Cloudflare
+`aa577523`) and reported **all passing** ("fiz os testes no celular. tudo ok"). This
+covers items 2, 5, 12, 13 and 14 above and the on-screen reading of AC-20. No per-item
+measurements or screenshots were handed over, so none are recorded here.
+
+**AC-21 is NOT covered by this pass.** The owner confirmed that his phone tests were the
+UI checklist only. The device proof — a real daily series deliberately left undone,
+showing as *não concluída* the next day without the app being opened, today's
+occurrence open with its Reminder armed, and a later cron run changing neither — is
+still owed. Unit 10 stays `in-progress` until it is observed.
