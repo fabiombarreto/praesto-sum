@@ -6,9 +6,11 @@ import type {
   PushSubscriptionDto,
   ReminderDto,
   RecurrenceSeriesDto,
+  SeriesAdherenceDto,
   SeriesDto,
   TaskDto,
 } from "../shared/api";
+import type { SeriesAdherence } from "../shared/adherence";
 import type {
   CronRun,
   GoogleCalendarSelection,
@@ -119,6 +121,22 @@ export function toRecurrenceSeriesDto(row: RecurrenceSeries): RecurrenceSeriesDt
  */
 export function toSeriesDto(row: RecurrenceSeries, openOccurrenceId: string | null): SeriesDto {
   return { ...toRecurrenceSeriesDto(row), openOccurrenceId };
+}
+
+/** Maps a series row plus its computed adherence for `/api/series/adherence`; a missing title becomes `""`. */
+export function toSeriesAdherenceDto(
+  row: RecurrenceSeries,
+  adherence: SeriesAdherence,
+): SeriesAdherenceDto {
+  return {
+    seriesId: row.id,
+    title: row.title ?? "",
+    status: row.status,
+    done: adherence.done,
+    closed: adherence.closed,
+    currentStreak: adherence.currentStreak,
+    recentMisses: adherence.recentMisses,
+  };
 }
 
 /**

@@ -25,6 +25,7 @@
 | POST | `/api/push/test` | Dispatch to every stored subscription, pruning any that come back `gone` (404/410). `{ ok: true, results: [{ endpoint, outcome }] }`, where `outcome` is `PushOutcome` (`delivered`/`gone`/`retryable`) verbatim; zero stored subscriptions → `{ ok: false, error: "no stored subscriptions", results: [] }`. Also persists its outcome as the `push_dispatch_attempts` singleton row (upsert), which `GET /api/diagnostics` reads as the last dispatch attempt — not persisted when there were zero stored subscriptions |
 | GET | `/api/diagnostics` | `{ lastRun: CronRunDto \| null, freshness: "fresh"\|"stale"\|"unknown", subscriptionCount: number, lastDispatch: { instant, results } \| null }`. `lastRun` is the most recent `cron_runs` row (`null` if the cron has never run); `freshness` classifies its instant against now (`fresh` under 10 minutes, `stale` at 10 minutes or more, `unknown` when `lastRun` is `null`); `lastDispatch` is the last `POST /api/push/test` outcome (`null` if never attempted) |
 | GET | `/api/push/vapid-key` | `{ publicKey: string }` — the VAPID public key the browser hands `pushManager.subscribe()`; bearer-gated like every other route |
+| GET | `/api/series/adherence` | Read-only (adherence-mirror phase 2, FR-011). `AdherenceResponse`: `{ series: SeriesAdherenceDto[], ranking: string[] }`, one entry per `task`-kind series (active and ended) with `seriesId`, `title` (`""` when none), `status`, `done`, `closed`, `currentStreak` and `recentMisses` (local `YYYY-MM-DD`, newest first) — all derived from the series' real `done`/`missed` occurrence rows via `src/shared/adherence.ts`, never from the stored counters (ADR-0006), with `today` taken in each series' own time zone. `ranking` lists series ids with recent misses, "what I keep not doing" first. Declared BEFORE `GET /api/series/:id` so `adherence` is never read as an id |
 
 ## Task read contract (frozen at unit 2)
 
@@ -75,7 +76,7 @@ Ordered by the delivery units in `documentation/50-planning/roadmap.md` — that
 | 8 `text-search` | The search route (UI) — the server-side `q` parameter shipped in phase 1. | FR-040 |
 | 9 `recurring-tasks` | Series CRUD + occurrence materialization | FR-009 |
 | 10 `missed-sweep` | Cron sweep marking `missed` and spawning the next occurrence | FR-009, FR-011 |
-| 11 `adherence-mirror` | Adherence read model per series | FR-011 |
+| 11 `adherence-mirror` | Nothing left on the API: the read model `GET /api/series/adherence` has shipped (see Implemented above) and the screen (phase 3, route `/settings/adherence`, the *Hoje* line) consumes it client-side. The unit stays `in-progress` until AC-20 is observed on the owner's device | FR-011 |
 | 12 `repeated-miss-nudge` | Repeated-miss job + per-series mute | FR-012 |
 | 13 `life-areas` | Life Area CRUD and area filters | FR-008 |
 | 14–18 (Phase 2) | Events, day/week range queries, event exceptions, event reminders, Task↔Event links | FR-020..026, FR-010 |

@@ -270,3 +270,48 @@ describe("routeFromPath and pathOf agree — the search route round-trips too", 
     expect(routeFromPath(pathOf(route))).toBe(route);
   });
 });
+
+// --- UPDATE (adherence-mirror phase 3, the adherence route) ----------------
+// PRPs/prds/adherence-mirror.prd.md AC-18 (via plan AC-A4): the Aderencia
+// screen is reachable at `/settings/adherence`. Source plan:
+// PRPs/plans/adherence-mirror-phase-3-the-screen.plan.md (Task 3 -
+// src/shared/app-route.ts: add "adherence" to AppRoute, checked before the
+// `/settings` path). Every assertion above is untouched; these are ADDITIVE.
+//
+// RED until Task 3 lands: `AppRoute` has no "adherence" member (type error on
+// the assignment below) and `routeFromPath`/`pathOf` do not know the path.
+
+describe("routeFromPath — the adherence route (PRD AC-18 via plan AC-A4)", () => {
+  it("maps /settings/adherence to adherence", () => {
+    expect(routeFromPath("/settings/adherence")).toBe("adherence");
+  });
+
+  it("accepts a trailing slash on /settings/adherence", () => {
+    expect(routeFromPath("/settings/adherence/")).toBe("adherence");
+  });
+
+  it("still maps /settings to settings", () => {
+    expect(routeFromPath("/settings")).toBe("settings");
+  });
+
+  it("resolves a path nested under /settings/adherence to today — there is exactly one segment", () => {
+    expect(routeFromPath("/settings/adherence/unknown")).toBe("today");
+  });
+
+  it("taskIdFromRoute returns null for the adherence route", () => {
+    expect(taskIdFromRoute("adherence")).toBeNull();
+  });
+});
+
+describe("pathOf — the adherence route (PRD AC-18 via plan AC-A4)", () => {
+  it("maps adherence to /settings/adherence", () => {
+    expect(pathOf("adherence")).toBe("/settings/adherence");
+  });
+});
+
+describe("routeFromPath and pathOf agree — the adherence route round-trips too", () => {
+  it("round-trips adherence", () => {
+    const route: AppRoute = "adherence";
+    expect(routeFromPath(pathOf(route))).toBe(route);
+  });
+});

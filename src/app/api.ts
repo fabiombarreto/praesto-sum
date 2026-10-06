@@ -1,4 +1,5 @@
 import type {
+  AdherenceResponse,
   CreateReminderInput,
   CreateSeriesInput,
   CreateTaskInput,
@@ -217,6 +218,11 @@ export async function createSeries(
 export async function getSeries(id: string): Promise<SeriesDto> {
   const body = await request<{ series: SeriesDto }>(`/api/series/${id}`);
   return body.series;
+}
+
+/** Reads every recurring Task's adherence record (adherence-mirror). */
+export async function fetchAdherence(): Promise<AdherenceResponse> {
+  return request<AdherenceResponse>("/api/series/adherence");
 }
 
 /**

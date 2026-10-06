@@ -1,16 +1,18 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, isNotNull } from "drizzle-orm";
 import { Hono, type Context } from "hono";
+import { computeSeriesAdherence, rankAdherence, type AdherenceRow } from "../../shared/adherence";
 import {
   EDITABLE_SERIES_FIELDS,
   isCalendarDate,
   isTaskPriority,
+  type AdherenceResponse,
   type CreateSeriesInput,
 } from "../../shared/api";
-import { PRAESTO_TIMEZONE } from "../../shared/dates";
+import { PRAESTO_TIMEZONE, todayIn } from "../../shared/dates";
 import { firstOccurrence, occurrenceReminderInstants } from "../../shared/recurrence";
 import { createDb } from "../db/client";
 import { recurrenceSeries, reminders, tasks, type Task } from "../db/schema";
-import { toSeriesDto, toTaskDto } from "../dto";
+import { toSeriesAdherenceDto, toSeriesDto, toTaskDto } from "../dto";
 
 /**
  * Series routes — Phase 2 of the recurring-tasks unit (PRD AC-11..AC-18).
@@ -246,6 +248,50 @@ seriesRoutes.get("/", async (c) => {
     rows.map(async (row) => toSeriesDto(row, await findOpenOccurrenceId(db, row.id))),
   );
   return c.json({ series });
+});
+
+/**
+ * Computes every task series' adherence from its real closed occurrence rows
+ * (two selects, grouped in memory). `now` is an argument so each series' local
+ * `today` is testable; read-only by construction.
+ */
+export async function loadSeriesAdherence(
+  db: ReturnType<typeof createDb>,
+  now: Date,
+): Promise<AdherenceResponse> {
+  const seriesRows = await db
+    .select()
+    .from(recurrenceSeries)
+    .where(eq(recurrenceSeries.kind, "task"));
+  const closedRows = await db
+    .select()
+    .from(tasks)
+    .where(and(isNotNull(tasks.seriesId), inArray(tasks.status, ["done", "missed"])));
+
+  const bySeries = new Map<string, AdherenceRow[]>();
+  for (const row of closedRows) {
+    if (row.seriesId === null || row.occurrenceDate === null) continue;
+    const list = bySeries.get(row.seriesId) ?? [];
+    list.push({ occurrenceDate: row.occurrenceDate, status: row.status });
+    bySeries.set(row.seriesId, list);
+  }
+
+  const series = seriesRows.map((row) =>
+    toSeriesAdherenceDto(
+      row,
+      computeSeriesAdherence(bySeries.get(row.id) ?? [], todayIn(now, row.timezone)),
+    ),
+  );
+  const ranking = rankAdherence(
+    series.map((s) => ({ seriesId: s.seriesId, title: s.title, recentMisses: s.recentMisses })),
+  );
+  return { series, ranking };
+}
+
+/** The record of every recurring Task, per series in its own time zone (adherence-mirror AC-11..AC-14). */
+seriesRoutes.get("/adherence", async (c) => {
+  const result = await loadSeriesAdherence(createDb(c.env), new Date());
+  return c.json(result);
 });
 
 /** Read one series with its current open occurrence id, or 404 (AC-16). */
