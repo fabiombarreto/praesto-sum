@@ -8,7 +8,7 @@
 
 import { useEffect, useReducer, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import type { ReminderDto, TaskDto } from "../../shared/api";
+import type { AdherenceResponse, ReminderDto, TaskDto } from "../../shared/api";
 import { canWrite } from "../../shared/connectivity";
 import { instantToLocalParts, PRAESTO_TIMEZONE, todayIn } from "../../shared/dates";
 import { googleFailureMessage } from "../../shared/google-failure-copy";
@@ -68,7 +68,8 @@ import { TaskSheet } from "./TaskSheet";
 import { TodayHeader } from "./TodayHeader";
 import { CalendarX } from "lucide-react";
 import { agendaForToday } from "../../shared/agenda";
-import { fetchGoogleEvents } from "../api";
+import { fetchAdherence, fetchGoogleEvents } from "../api";
+import { decideAdherenceLine } from "../../shared/adherence-line";
 import { EventRow } from "./EventRow";
 import { Banner } from "./ui/Banner";
 import { Button } from "./ui/Button";
@@ -144,6 +145,7 @@ export function TodayScreen({
   initialTaskId,
   onOpenSearch,
   onOpenSettings,
+  onOpenAdherence,
 }: {
   onUnauthorized: () => void;
   initialShare: ShareTarget | null;
@@ -157,8 +159,15 @@ export function TodayScreen({
   onOpenSearch: () => void;
   /** Threaded from `App.tsx` (plan Task 8) so `TodayHeader`'s settings icon button (Task 7) can navigate. */
   onOpenSettings: () => void;
+  /** Threaded from `App.tsx` (adherence-mirror phase 3) so the adherence line below the chip row opens `/settings/adherence`. */
+  onOpenAdherence: () => void;
 }) {
   const [tasks, setTasks] = useState<TaskDto[] | null>(null);
+  // The adherence record lives in its OWN atom, never folded into `tasks`,
+  // `loadError`, `busy` or the agenda state: a failed fetch leaves it `null`
+  // and the line is simply absent (plan AC-A3).
+  const [adherence, setAdherence] = useState<AdherenceResponse | null>(null);
+  const latestAdherenceRequest = useRef(0);
   const [loadError, setLoadError] = useState<string | null>(null);
   // Google lives in its OWN atoms, never folded into `tasks`, `loadError` or
   // `busy`. Three things depend on that separation: a failed events fetch must
@@ -350,6 +359,28 @@ export function TodayScreen({
       // the same isolation `refreshEvents` already keeps.
       setReminders(null);
       return null;
+    }
+  }
+
+  /**
+   * Fetches the adherence record for the line below the chip row. Like
+   * `refreshEvents` and `refreshReminders` it never calls `report(...)`, never
+   * toasts and never sets an error state: a failure just clears the line.
+   */
+  async function refreshAdherence(): Promise<void> {
+    // Only the newest request may write, so a slow older response cannot
+    // overwrite fresher data.
+    const mine = ++latestAdherenceRequest.current;
+    try {
+      const response = await fetchAdherence();
+      if (mine === latestAdherenceRequest.current) setAdherence(response);
+    } catch (cause) {
+      if (mine !== latestAdherenceRequest.current) return;
+      if (cause instanceof ApiError && cause.status === 401) {
+        onUnauthorized();
+        return;
+      }
+      setAdherence(null);
     }
   }
 
@@ -736,6 +767,7 @@ export function TodayScreen({
     // produce the identical list.
     void refreshEvents();
     void refreshReminders();
+    void refreshAdherence();
   }, []);
 
   useEffect(() => {
@@ -747,6 +779,7 @@ export function TodayScreen({
       // re-reading (guidelines §12.4 — there is no manual refresh gesture).
       void refreshEvents();
       void refreshReminders();
+      void refreshAdherence();
     }
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -907,6 +940,8 @@ export function TodayScreen({
       </section>
     );
 
+  const adherenceLine = adherence === null ? null : decideAdherenceLine(adherence);
+
   return (
     <div
       data-shell
@@ -944,7 +979,21 @@ export function TodayScreen({
         <div />
       )}
 
-      <FilterChips filter={filter} today={today} onToggleChip={handleToggleChip} />
+      {/* The chip row and the adherence line share ONE grid cell, so the
+          shell's row template is unchanged and an absent line reserves no
+          space (plan AC-A2). */}
+      <div>
+        <FilterChips filter={filter} today={today} onToggleChip={handleToggleChip} />
+        {adherenceLine !== null && (
+          <button
+            type="button"
+            onClick={onOpenAdherence}
+            className="min-h-12 w-full px-4 text-left font-text text-t2 text-muted"
+          >
+            {adherenceLine.text}
+          </button>
+        )}
+      </div>
 
       <main className="flex flex-col gap-2 overflow-y-auto overscroll-contain px-4 pb-2">
         {/* The agenda comes FIRST in the DOM — §10 1.3.2 makes DOM order the

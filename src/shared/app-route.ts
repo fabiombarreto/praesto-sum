@@ -27,6 +27,7 @@ export type AppRoute =
   | "settings"
   | "notifications"
   | "notifications-diagnostics"
+  | "adherence"
   | "search"
   | `task/${string}`;
 
@@ -57,6 +58,7 @@ export function routeFromPath(pathname: string): AppRoute {
   }
   if (path === "/settings/notifications/diagnostics") return "notifications-diagnostics";
   if (path === "/settings/notifications") return "notifications";
+  if (path === "/settings/adherence") return "adherence";
   if (path === "/settings") return "settings";
   if (path === "/search") return "search";
   return "today";
@@ -66,6 +68,7 @@ export function pathOf(route: AppRoute): string {
   if (route.startsWith("task/")) return `/tasks/${taskIdFromRoute(route)}`;
   if (route === "notifications-diagnostics") return "/settings/notifications/diagnostics";
   if (route === "notifications") return "/settings/notifications";
+  if (route === "adherence") return "/settings/adherence";
   if (route === "settings") return "/settings";
   if (route === "search") return "/search";
   return "/";

@@ -368,6 +368,29 @@ export interface UpdateSeriesInput {
 /** A Recurrence Series plus its current open occurrence's Task id, or `null`. */
 export type SeriesDto = RecurrenceSeriesDto & { openOccurrenceId: string | null };
 
+/** One Recurrence Series' record, derived from its real occurrence rows (adherence-mirror, ADR-0006). */
+export interface SeriesAdherenceDto {
+  seriesId: string;
+  /** Empty string when the series has no title. */
+  title: string;
+  status: "active" | "ended";
+  /** Occurrences completed. */
+  done: number;
+  /** Occurrences closed: `done` plus `missed`. */
+  closed: number;
+  /** Trailing consecutive `done` occurrences; 0 if the latest closed one is `missed`. */
+  currentStreak: number;
+  /** Local `YYYY-MM-DD` days of recent misses in the series' own time zone, newest first. */
+  recentMisses: string[];
+}
+
+/** Body of `GET /api/series/adherence`. */
+export interface AdherenceResponse {
+  series: SeriesAdherenceDto[];
+  /** Series ids ordered by "what I keep not doing" (recent misses, then recency, title, id). */
+  ranking: string[];
+}
+
 /**
  * The closed set of keys `PATCH /api/series/:id` accepts. Every rule column
  * (`freq`, `interval`, `byWeekday`, `byMonthday`, `dtstart`, `timezone`,

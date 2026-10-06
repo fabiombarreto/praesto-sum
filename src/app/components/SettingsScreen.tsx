@@ -13,6 +13,7 @@ import type { AppRoute } from "../../shared/app-route";
 import { formatAppVersion } from "../../shared/app-version";
 import { canWrite } from "../../shared/connectivity";
 import { useConnectivity } from "../hooks/useConnectivity";
+import { AdherenceEntryCard } from "./AdherenceEntryCard";
 import { DataExportCard } from "./DataExportCard";
 import { GoogleConnectionCard } from "./GoogleConnectionCard";
 import { NotificationsEntryCard } from "./NotificationsEntryCard";
@@ -110,6 +111,7 @@ export function SettingsScreen({
         <GoogleConnectionCard onUnauthorized={onUnauthorized} canWrite={canWrite(connectivity)} />
         <DataExportCard onUnauthorized={onUnauthorized} />
         <NotificationsEntryCard onOpenNotifications={() => navigate("notifications")} />
+        <AdherenceEntryCard onOpenAdherence={() => navigate("adherence")} />
 
         {/* The build stamp, in the corner of the last card rather than in the
             header: it is reference information the owner looks up when he

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { taskIdFromRoute } from "../shared/app-route";
 import type { ShareTarget } from "../shared/share-target";
 import { readToken } from "./api";
+import { AdherenceScreen } from "./components/AdherenceScreen";
 import { NotificationsDiagnosticsScreen } from "./components/NotificationsDiagnosticsScreen";
 import { NotificationsScreen } from "./components/NotificationsScreen";
 import { SearchScreen } from "./components/SearchScreen";
@@ -92,6 +93,9 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
   if (route === "notifications-diagnostics") {
     return <NotificationsDiagnosticsScreen onUnauthorized={onUnauthorized} back={back} />;
   }
+  if (route === "adherence") {
+    return <AdherenceScreen onUnauthorized={onUnauthorized} back={back} />;
+  }
   if (route === "search") {
     return <SearchScreen onUnauthorized={onUnauthorized} back={back} />;
   }
@@ -108,6 +112,7 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
       initialTaskId={taskIdFromRoute(route)}
       onOpenSearch={() => navigate("search")}
       onOpenSettings={() => navigate("settings")}
+      onOpenAdherence={() => navigate("adherence")}
     />
   );
 }
