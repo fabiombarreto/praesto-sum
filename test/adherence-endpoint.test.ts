@@ -239,6 +239,25 @@ describe("AC-12 / AC-A2 `today` per series time zone", () => {
   });
 });
 
+// ---------------------------------------------------------------- QA G-1
+
+describe("QA G-1 an unresolvable series time zone", () => {
+  it("does not take the endpoint down: the bad series falls back to the Sao Paulo day and the others are unaffected", async () => {
+    const bad = await insertSeries({ title: "Bad zone", timezone: "Mars/Olympus" });
+    await insertOccurrence(bad, "2026-09-30", "missed");
+    const good = await insertSeries({ title: "Good zone", timezone: "America/Sao_Paulo" });
+    await insertOccurrence(good, "2026-09-30", "missed");
+
+    const result = await seriesModule.loadSeriesAdherence(
+      createDb(env),
+      new Date("2026-10-15T12:00:00Z"),
+    );
+
+    expect(entryOf(result, bad.id)?.recentMisses).toEqual(["2026-09-30"]);
+    expect(entryOf(result, good.id)?.recentMisses).toEqual(["2026-09-30"]);
+  });
+});
+
 // ---------------------------------------------------------------- AC-13
 
 describe("AC-13 / AC-A3 Route ordering", () => {

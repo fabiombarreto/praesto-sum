@@ -5,7 +5,7 @@
 // `src/shared/adherence-view.ts`; the component only renders it.
 
 import { ArrowLeft } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { seriesDisplayTitle } from "../../shared/adherence-line";
 import {
   adherenceSections,
@@ -68,18 +68,31 @@ export function AdherenceScreen({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [back]);
 
+  // Only the newest request may write: a slow, older response landing last
+  // would otherwise overwrite fresher data.
+  const latestRequest = useRef(0);
+
   async function refresh(): Promise<void> {
+    const mine = ++latestRequest.current;
     try {
       const response = await fetchAdherence();
+      if (mine !== latestRequest.current) return;
       setLoad({ kind: "ready", response });
     } catch (cause) {
+      if (mine !== latestRequest.current) return;
       if (cause instanceof ApiError && cause.status === 401) {
         onUnauthorized();
         return;
       }
       // Inline and persistent (guidelines §8): the screen never blanks and the
-      // next visit to the foreground re-reads on its own.
-      setLoad({ kind: "failed", message: classifyRequestFailure(cause).message });
+      // next visit to the foreground re-reads on its own. A list already on
+      // screen survives a failed background refresh — it is still true, just
+      // not the newest.
+      setLoad((previous) =>
+        previous.kind === "ready"
+          ? previous
+          : { kind: "failed", message: classifyRequestFailure(cause).message },
+      );
     }
   }
 

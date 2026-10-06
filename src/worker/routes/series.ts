@@ -251,6 +251,19 @@ seriesRoutes.get("/", async (c) => {
 });
 
 /**
+ * `today` in a series' own zone. A zone the runtime cannot resolve must not
+ * take the whole endpoint down (one bad row would hide every series), so it
+ * falls back to the owner's zone; the app never writes an invalid one.
+ */
+function todayForSeries(now: Date, timeZone: string): string {
+  try {
+    return todayIn(now, timeZone);
+  } catch {
+    return todayIn(now, PRAESTO_TIMEZONE);
+  }
+}
+
+/**
  * Computes every task series' adherence from its real closed occurrence rows
  * (two selects, grouped in memory). `now` is an argument so each series' local
  * `today` is testable; read-only by construction.
@@ -279,7 +292,7 @@ export async function loadSeriesAdherence(
   const series = seriesRows.map((row) =>
     toSeriesAdherenceDto(
       row,
-      computeSeriesAdherence(bySeries.get(row.id) ?? [], todayIn(now, row.timezone)),
+      computeSeriesAdherence(bySeries.get(row.id) ?? [], todayForSeries(now, row.timezone)),
     ),
   );
   const ranking = rankAdherence(

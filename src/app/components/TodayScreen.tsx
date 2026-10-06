@@ -167,6 +167,7 @@ export function TodayScreen({
   // `loadError`, `busy` or the agenda state: a failed fetch leaves it `null`
   // and the line is simply absent (plan AC-A3).
   const [adherence, setAdherence] = useState<AdherenceResponse | null>(null);
+  const latestAdherenceRequest = useRef(0);
   const [loadError, setLoadError] = useState<string | null>(null);
   // Google lives in its OWN atoms, never folded into `tasks`, `loadError` or
   // `busy`. Three things depend on that separation: a failed events fetch must
@@ -367,9 +368,14 @@ export function TodayScreen({
    * toasts and never sets an error state: a failure just clears the line.
    */
   async function refreshAdherence(): Promise<void> {
+    // Only the newest request may write, so a slow older response cannot
+    // overwrite fresher data.
+    const mine = ++latestAdherenceRequest.current;
     try {
-      setAdherence(await fetchAdherence());
+      const response = await fetchAdherence();
+      if (mine === latestAdherenceRequest.current) setAdherence(response);
     } catch (cause) {
+      if (mine !== latestAdherenceRequest.current) return;
       if (cause instanceof ApiError && cause.status === 401) {
         onUnauthorized();
         return;
