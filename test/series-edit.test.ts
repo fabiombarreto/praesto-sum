@@ -107,14 +107,15 @@ describe("recurrenceDraftError — freq 'none' needs no validation at all", () =
   });
 });
 
-describe("recurrenceDraftError — a Task date is required once a repetition is chosen", () => {
-  it("returns a non-null message when the Task carries no date at all", () => {
-    const error = recurrenceDraftError(
-      taskDraft({ dateMode: "none", date: "" }),
-      recurrenceDraft({ freq: "monthly" }),
-    );
-    expect(error).not.toBeNull();
-    expect(typeof error).toBe("string");
+describe("recurrenceDraftError — a date is required unless the Task is dateless", () => {
+  // Owner decision 2026-10-08 (ADR-0014): a dateless Task repeats too.
+  it("returns null when the Task carries no date at all (dateMode 'none')", () => {
+    expect(
+      recurrenceDraftError(
+        taskDraft({ dateMode: "none", date: "" }),
+        recurrenceDraft({ freq: "monthly" }),
+      ),
+    ).toBeNull();
   });
 
   it("returns a non-null message when dateMode is set but the date string is not a valid calendar date", () => {
@@ -225,6 +226,21 @@ describe("buildCreateSeriesInput — maps the Task's own date field to dtstart/d
     );
     expect(input.dtstart).toBe("2026-11-01");
     expect(input.dateMode).toBe("scheduled");
+  });
+});
+
+describe("buildCreateSeriesInput — a dateless Task starts the series today", () => {
+  it("sends dateMode 'none' and today (in the series' zone) as dtstart", () => {
+    const input = buildCreateSeriesInput(
+      taskDraft({ dateMode: "none", date: "" }),
+      recurrenceDraft({ freq: "daily" }),
+      null,
+      "America/Sao_Paulo",
+      new Date("2026-10-08T01:30:00Z"), // still 2026-10-07 in Sao Paulo
+    );
+    expect(input.dateMode).toBe("none");
+    expect(input.dtstart).toBe("2026-10-07");
+    expect(input.endKind).toBe("never");
   });
 });
 
@@ -666,25 +682,20 @@ describe("planSeriesOccurrenceSave — splits one save between the series and th
   });
 });
 
-// Owner-confirmed 2026-09-30: once a repetition is chosen, "Sem data" is no
-// longer offered — offering it and then refusing the save with "choose a date"
-// was the same confusion the series-editing round fixed. Only the chip is
-// withdrawn; the draft's mode is NOT switched on the owner's behalf.
-describe("dateModeChoices — 'Sem data' is offered only while the Task does not repeat", () => {
-  it("offers none, deadline and scheduled, in that order, for a one-off Task", () => {
-    expect(dateModeChoices("none")).toEqual(["none", "deadline", "scheduled"]);
-  });
-
-  it.each(["daily", "weekly", "monthly", "yearly"] as const)(
-    "offers only deadline and scheduled once the Task repeats %s",
+// Owner decision 2026-10-08 (ADR-0014), reversing the 2026-09-30 one: "Sem data"
+// stays on offer whatever the repetition, because a dateless Task repeats too.
+// Withdrawing it left a draft on `none` with nothing selected and a Save that
+// silently did nothing.
+describe("dateModeChoices — 'Sem data' is always offered", () => {
+  it.each(["none", "daily", "weekly", "monthly", "yearly"] as const)(
+    "offers none, deadline and scheduled, in that order, for freq %s",
     (freq) => {
-      expect(dateModeChoices(freq)).toEqual(["deadline", "scheduled"]);
+      expect(dateModeChoices(freq)).toEqual(["none", "deadline", "scheduled"]);
     },
   );
 
-  it("still refuses a repeating draft left without a date — withdrawing the chip does not switch the mode", () => {
-    const draft: RecurrenceDraft = { ...EMPTY_RECURRENCE_DRAFT, freq: "monthly" };
-    expect(dateModeChoices(draft.freq)).not.toContain("none");
-    expect(recurrenceDraftError(taskDraft({ dateMode: "none", date: "" }), draft)).not.toBeNull();
+  it("accepts a repeating draft left on 'Sem data' — nothing is refused", () => {
+    const draft: RecurrenceDraft = { ...EMPTY_RECURRENCE_DRAFT, freq: "daily" };
+    expect(recurrenceDraftError(taskDraft({ dateMode: "none", date: "" }), draft)).toBeNull();
   });
 });

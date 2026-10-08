@@ -211,11 +211,21 @@ export function TaskSheet({
           />
 
           <p id="sheet-date-label" className="m-0 font-data text-t1 font-semibold text-muted">
-            {repeats ? "Primeira vez em" : isOccurrence ? "Data desta ocorrência" : "Data"}
+            {repeats && shownDraft.dateMode !== "none"
+              ? "Primeira vez em"
+              : isOccurrence
+                ? "Data desta ocorrência"
+                : "Data"}
           </p>
           <ChipGroup
             multiple={false}
-            label={repeats ? "Primeira vez em" : isOccurrence ? "Data desta ocorrência" : "Data"}
+            label={
+              repeats && shownDraft.dateMode !== "none"
+                ? "Primeira vez em"
+                : isOccurrence
+                  ? "Data desta ocorrência"
+                  : "Data"
+            }
             value={[shownDraft.dateMode]}
             onValueChange={(next) =>
               onDraftChange({ dateMode: (next[0] as TaskDateMode | undefined) ?? "none" })

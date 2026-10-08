@@ -137,6 +137,36 @@ describe("AC-12 / AC-A2 Reminder offsets follow the occurrence's own date field 
   });
 });
 
+describe("ADR-0014 a dateless series (dateMode 'none')", () => {
+  it("creates an occurrence with neither deadline nor scheduled date, and its successor is dateless too", async () => {
+    const created = await post(BASE, {
+      ...VALID_SERIES_BODY,
+      freq: "daily",
+      dateMode: "none",
+      reminderOffsets: [],
+    });
+    expect(created.status).toBe(201);
+    const body = (await created.json()) as { series: SeriesDto; occurrence: TaskDto };
+
+    expect(body.series.dateMode).toBe("none");
+    expect(body.occurrence.occurrenceDate).toBe("2026-10-05");
+    expect(body.occurrence.deadline).toBeNull();
+    expect(body.occurrence.scheduledDate).toBeNull();
+
+    const completed = await post(`${TASKS_BASE}/${body.occurrence.id}/complete`);
+    expect(completed.status).toBe(200);
+    const done = (await completed.json()) as { successor?: TaskDto };
+    expect(done.successor?.occurrenceDate).toBe("2026-10-06");
+    expect(done.successor?.deadline).toBeNull();
+    expect(done.successor?.scheduledDate).toBeNull();
+  });
+
+  it("still rejects an unknown dateMode", async () => {
+    const res = await post(BASE, { ...VALID_SERIES_BODY, dateMode: "whenever" });
+    expect(res.status).toBe(400);
+  });
+});
+
 describe("AC-13 / AC-A3 create validation writes nothing", () => {
   const cases: { name: string; overrides: Record<string, unknown>; expectField: string[] }[] = [
     { name: "empty title", overrides: { title: "" }, expectField: ["title"] },

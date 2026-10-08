@@ -112,7 +112,7 @@ export interface RecurrenceSeriesDto {
   description: string | null;
   priority: TaskPriority | null;
   lifeAreaId: string | null;
-  dateMode: "deadline" | "scheduled";
+  dateMode: "deadline" | "scheduled" | "none";
   /** JSON array of reminder offsets in minutes, or `null`. */
   reminderOffsets: string | null;
   /** Epoch seconds. */
@@ -327,7 +327,7 @@ export interface CreateSeriesInput {
   endKind?: "never" | "until" | "count";
   untilDate?: string | null;
   maxCount?: number | null;
-  dateMode: "deadline" | "scheduled";
+  dateMode: "deadline" | "scheduled" | "none";
   reminderOffsets?: number[] | null;
   description?: string | null;
   priority?: TaskPriority | null;

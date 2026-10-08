@@ -23,6 +23,7 @@ import {
   type UpdateSeriesInput,
   type UpdateTaskInput,
 } from "./api";
+import { todayIn } from "./dates";
 import type { ReminderDraft } from "./reminder-edit";
 import { buildTaskPatch, type TaskDateMode, type TaskDraft } from "./task-edit";
 
@@ -73,7 +74,9 @@ export function recurrenceDraftError(
 ): string | null {
   if (recurrence.freq === "none") return null;
 
-  if (taskDraft.dateMode === "none" || !isCalendarDate(taskDraft.date)) {
+  // "Sem data" repeats too (owner decision 2026-10-08, ADR-0014): the series
+  // starts today and its occurrences carry no deadline or scheduled date.
+  if (taskDraft.dateMode !== "none" && !isCalendarDate(taskDraft.date)) {
     return "Escolha uma data para a Tarefa antes de repetir.";
   }
 
@@ -92,14 +95,14 @@ export function recurrenceDraftError(
 }
 
 /**
- * The date modes the sheet's Data group offers, in display order. A repeating
- * Task needs a date — `recurrenceDraftError` refuses one without it — so "Sem
- * data" (`none`) is withdrawn once a repetition is chosen rather than offered
- * and then refused (owner-confirmed 2026-09-30). Only the choice is withdrawn:
- * a draft already on `none` keeps it, and the owner picks the mode himself.
+ * The date modes the sheet's Data group offers, in display order. "Sem data"
+ * stays available whatever the repetition: a dateless Task repeats too
+ * (owner decision 2026-10-08, ADR-0014, which reverses the 2026-09-30 choice to
+ * withdraw it — that withdrawal left a draft on `none` with nothing selected
+ * and a Save that silently did nothing).
  */
-export function dateModeChoices(freq: RecurrenceFreq): readonly TaskDateMode[] {
-  return freq === "none" ? ["none", "deadline", "scheduled"] : ["deadline", "scheduled"];
+export function dateModeChoices(_freq: RecurrenceFreq): readonly TaskDateMode[] {
+  return ["none", "deadline", "scheduled"];
 }
 
 /**
@@ -113,9 +116,9 @@ export function reminderWillCarryOver(reminderDraft: ReminderDraft | null): bool
   return reminderDraft !== null && reminderDraft.timeMode === "offset";
 }
 
-/** `taskDraft.dateMode`, narrowed to the two values `CreateSeriesInput.dateMode` accepts. */
-function resolvedDateMode(taskDraft: TaskDraft): "deadline" | "scheduled" {
-  return taskDraft.dateMode === "scheduled" ? "scheduled" : "deadline";
+/** `taskDraft.dateMode`, as the value `CreateSeriesInput.dateMode` accepts. */
+function resolvedDateMode(taskDraft: TaskDraft): "deadline" | "scheduled" | "none" {
+  return taskDraft.dateMode;
 }
 
 /**
@@ -137,11 +140,14 @@ export function buildCreateSeriesInput(
   recurrence: RecurrenceDraft,
   reminderDraft: ReminderDraft | null,
   timezone: string,
+  now: Date = new Date(),
 ): CreateSeriesInput {
   const input: CreateSeriesInput = {
     title: taskDraft.title.trim(),
     freq: recurrence.freq === "none" ? "daily" : recurrence.freq,
-    dtstart: taskDraft.date,
+    // A dateless series starts today in its own zone: the occurrence still has
+    // a day internally (the sweep and the successor need it) but never shows it.
+    dtstart: taskDraft.dateMode === "none" ? todayIn(now, timezone) : taskDraft.date,
     dateMode: resolvedDateMode(taskDraft),
     priority: taskDraft.priority,
     timezone,

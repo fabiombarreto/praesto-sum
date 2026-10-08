@@ -29,7 +29,7 @@ export const seriesRoutes = new Hono<{ Bindings: Env }>();
 
 const FREQ_VALUES = ["daily", "weekly", "monthly", "yearly"] as const;
 const END_KIND_VALUES = ["never", "until", "count"] as const;
-const DATE_MODE_VALUES = ["deadline", "scheduled"] as const;
+const DATE_MODE_VALUES = ["deadline", "scheduled", "none"] as const;
 
 function badRequest(c: Context<{ Bindings: Env }>, message: string) {
   return c.json({ error: message }, 400);
@@ -141,7 +141,7 @@ seriesRoutes.post("/", async (c) => {
 
   const dateMode = input.dateMode;
   if (dateMode === undefined || dateMode === null) {
-    return badRequest(c, "Informe o tipo de data (dateMode): 'deadline' ou 'scheduled'");
+    return badRequest(c, "Informe o tipo de data (dateMode): 'deadline', 'scheduled' ou 'none'");
   }
   if (typeof dateMode !== "string" || !(DATE_MODE_VALUES as readonly string[]).includes(dateMode)) {
     return badRequest(c, `Tipo de data desconhecido: ${String(dateMode)} (dateMode)`);

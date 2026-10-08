@@ -100,7 +100,7 @@ export const recurrenceSeries = sqliteTable(
       onDelete: "set null",
     }),
     /** Which date field the spawned occurrence carries. */
-    dateMode: text("date_mode", { enum: ["deadline", "scheduled"] })
+    dateMode: text("date_mode", { enum: ["deadline", "scheduled", "none"] })
       .notNull()
       .default("scheduled"),
     /** JSON array of reminder offsets in minutes relative to the occurrence date. */
