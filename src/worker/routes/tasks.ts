@@ -109,6 +109,12 @@ taskRoutes.get("/", async (c) => {
   // it: an empty array preserves today's no-filter query byte-for-byte, and
   // `and(...)` composes whichever subset is present.
   const clauses = [
+    // A dateless series' next occurrence exists the moment the last one closes,
+    // but it is not due until its own day (ADR-0014): it has no date to sort or
+    // hide it by, so the day it keeps internally decides when it first appears.
+    sql`not (${tasks.status} = 'open' and ${tasks.seriesId} is not null
+      and ${tasks.deadline} is null and ${tasks.scheduledDate} is null
+      and ${tasks.occurrenceDate} > ${today})`,
     status === undefined ? undefined : eq(tasks.status, status),
     from === undefined ? undefined : sql`${dueDate} >= ${from}`,
     to === undefined ? undefined : sql`${dueDate} <= ${to}`,
