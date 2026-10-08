@@ -36,7 +36,7 @@ import { env, exports } from "cloudflare:workers";
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect } from "vitest";
 import type { SeriesDto, TaskDto } from "../src/shared/api";
-import { offsetToInstant, PRAESTO_TIMEZONE } from "../src/shared/dates";
+import { offsetToInstant, PRAESTO_TIMEZONE, todayIn } from "../src/shared/dates";
 import { createDb } from "../src/worker/db/client";
 import { recurrenceSeries, reminders, tasks } from "../src/worker/db/schema";
 import { DRAIN_BUDGET_MS, isolatedIt as it, resetTaskTables } from "./isolation";
@@ -159,6 +159,30 @@ describe("ADR-0014 a dateless series (dateMode 'none')", () => {
     expect(done.successor?.occurrenceDate).toBe("2026-10-06");
     expect(done.successor?.deadline).toBeNull();
     expect(done.successor?.scheduledDate).toBeNull();
+  });
+
+  it("lists a dateless occurrence only from its own day: today's shows, the successor waits until tomorrow", async () => {
+    const today = todayIn(new Date());
+    const tomorrow = todayIn(new Date(Date.now() + 24 * 60 * 60 * 1000));
+    const created = await post(BASE, {
+      ...VALID_SERIES_BODY,
+      freq: "daily",
+      dtstart: today,
+      dateMode: "none",
+      reminderOffsets: [],
+    });
+    const body = (await created.json()) as { occurrence: TaskDto };
+
+    const openIds = async (): Promise<string[]> => {
+      const res = await get(`${TASKS_BASE}?status=open`);
+      return ((await res.json()) as { tasks: TaskDto[] }).tasks.map((t) => t.id);
+    };
+    expect(await openIds()).toContain(body.occurrence.id);
+
+    const completed = await post(`${TASKS_BASE}/${body.occurrence.id}/complete`);
+    const done = (await completed.json()) as { successor?: TaskDto };
+    expect(done.successor?.occurrenceDate).toBe(tomorrow);
+    expect(await openIds()).not.toContain(done.successor?.id);
   });
 
   it("still rejects an unknown dateMode", async () => {

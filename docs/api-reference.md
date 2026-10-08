@@ -33,6 +33,8 @@ Units 3, 5, 8, 9, 10, 11, 13, 14 and 20 all read Tasks. This is the shape they
 inherit; it is frozen so they do not each invent their own.
 
 **Order.** Order: overdue first, then today, then future by date ascending, then undated last.
+**Not yet due:** an `open` occurrence of a *dateless* series (`dateMode: "none"`, ADR-0014) whose `occurrenceDate` is after today is left out of every `GET /api/tasks` result — it exists as soon as its predecessor closes, but has no date to sort or hide it by, so it first appears on its own day.
+
 The ordering key is `COALESCE(deadline, scheduledDate)` — unambiguous because
 `tasks_single_date_chk` guarantees at most one of the two is ever set — and the
 tiebreak within a bucket is `createdAt` descending. "Today" is the local
