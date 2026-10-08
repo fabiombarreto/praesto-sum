@@ -175,6 +175,15 @@ epos\PRPs-agentic-eng`), not this project's. Nothing is missing here; the boiler
 
 ---
 
+---
+
+## [2026-10-08] A Task without a date can repeat — `dateMode: "none"`
+
+**Context:** Unit 9 required a date for any repeating Task, and the sheet withdrew *Sem data* once a repetition was chosen. A dateless draft then sat on `none` with nothing selected and a *Salvar* that silently did nothing; the owner hit it in production on 2026-10-08.
+**Decision:** A series may have `dateMode: "none"`: its occurrences carry no `deadline` or `scheduled_date` but keep `occurrence_date`; the first one starts today in the series' zone; sweep and successor are unchanged. *Sem data* stays on offer whatever the repetition. No migration (`date_mode` has no SQL `CHECK`).
+**Reason:** The owner's call: a Task with no date must repeat indefinitely. Auto-picking *Fazer em* with today would invent a date; moving the error next to *Salvar* would fix the silence but not the dead end.
+**Areas affected:** tasks · Source: `documentation/60-decisions/ADR-0014-dateless-tasks-can-repeat.md`
+
 <!-- Template for future entries:
 
 ## [YYYY-MM-DD] Title of the decision
