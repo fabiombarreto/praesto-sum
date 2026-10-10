@@ -291,7 +291,7 @@ export function TodayScreen({
   const sheetTaskReminder =
     sheetTask === null ? null : ((reminders ?? []).find((r) => r.taskId === sheetTask.id) ?? null);
   // The series side of the sheet, for an occurrence (PRD D11 amended 2026-09-29).
-  const seriesSheet = useSeriesSheet(sheetTask);
+  const seriesSheet = useSeriesSheet(sheetTask, onUnauthorized);
   // Already-sent or Task-linked Reminders do not belong on the standalone list.
   const standaloneReminders = (reminders ?? []).filter(
     (r) => r.taskId === null && r.sentAt === null,
@@ -1206,6 +1206,11 @@ export function TodayScreen({
         onApplyToChange={seriesSheet.setApplyTo}
         onSaveSeriesOccurrence={saveSeriesOccurrence}
         onEndSeries={endSheetSeries}
+        nudge={{
+          pending: seriesSheet.nudge.pending,
+          error: seriesSheet.nudge.error,
+          onChange: seriesSheet.nudge.setEnabled,
+        }}
       />
 
       {/* Never stack sheets (layout standard §3): gated on the same

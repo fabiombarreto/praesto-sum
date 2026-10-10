@@ -11,6 +11,7 @@ import {
   adherenceSections,
   formatDoneOfClosed,
   formatMissDates,
+  formatNudgeMuted,
   formatStreak,
 } from "../../shared/adherence-view";
 import type { AdherenceResponse, SeriesAdherenceDto } from "../../shared/api";
@@ -32,15 +33,21 @@ function SeriesSection({ label, series }: { label: string; series: SeriesAdheren
     <section aria-label={label} className="flex flex-col gap-2">
       <h2 className="m-0 font-text text-t3 font-semibold text-ink">{label}</h2>
       <ul className="m-0 flex list-none flex-col gap-2 p-0">
-        {series.map((s) => (
-          <li key={s.seriesId} className="flex flex-col gap-1 rounded-card bg-surface-1 p-4">
-            <p className="m-0 font-text text-t3 font-semibold text-ink">{seriesDisplayTitle(s)}</p>
-            <p className="m-0 font-data text-t2 text-ink">
-              {formatDoneOfClosed(s.done, s.closed)} · {formatStreak(s.currentStreak)}
-            </p>
-            <p className="m-0 font-data text-t2 text-muted">{formatMissDates(s.recentMisses)}</p>
-          </li>
-        ))}
+        {series.map((s) => {
+          const muted = formatNudgeMuted(s.nudgeMuted);
+          return (
+            <li key={s.seriesId} className="flex flex-col gap-1 rounded-card bg-surface-1 p-4">
+              <p className="m-0 font-text text-t3 font-semibold text-ink">
+                {seriesDisplayTitle(s)}
+              </p>
+              <p className="m-0 font-data text-t2 text-ink">
+                {formatDoneOfClosed(s.done, s.closed)} · {formatStreak(s.currentStreak)}
+              </p>
+              <p className="m-0 font-data text-t2 text-muted">{formatMissDates(s.recentMisses)}</p>
+              {muted !== null && <p className="m-0 font-data text-t2 text-muted">{muted}</p>}
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

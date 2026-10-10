@@ -8,6 +8,7 @@
  */
 import { orderByMisses, seriesDisplayTitle } from "./adherence-line";
 import type { AdherenceResponse, SeriesAdherenceDto } from "./api";
+import { NUDGE_MUTED_LABEL } from "./nudge-switch";
 
 export interface AdherenceSections {
   /** Active series with misses in the window, in ranking order. */
@@ -57,4 +58,9 @@ export function formatMissDates(recentMisses: string[]): string {
   if (recentMisses.length === 0) return "Nenhuma não concluída em 30 dias";
   const label = recentMisses.length === 1 ? "Não concluída em" : "Não concluídas em";
   return `${label} ${recentMisses.map(dayMonth).join(", ")}`;
+}
+
+/** The row line for a silenced series (either status), or `null` when its nudge is on. */
+export function formatNudgeMuted(nudgeMuted: boolean): string | null {
+  return nudgeMuted ? NUDGE_MUTED_LABEL : null;
 }

@@ -410,6 +410,7 @@ function seriesDto(overrides: Partial<SeriesDto> = {}): SeriesDto {
     maxCount: null,
     doneCount: 0,
     missedCount: 0,
+    nudgeMuted: false, // repeated-miss-nudge phase 2: SeriesDto now requires it (nudgedAt is not on this wire)
     status: "active",
     title: "Pagar aluguel",
     description: null,

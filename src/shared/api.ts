@@ -107,6 +107,10 @@ export interface RecurrenceSeriesDto {
   maxCount: number | null;
   doneCount: number;
   missedCount: number;
+  /** Epoch seconds, or null when not nudged (system state; export only). */
+  nudgedAt: number | null;
+  /** The owner silenced this series' nudge. */
+  nudgeMuted: boolean;
   status: "active" | "ended";
   title: string | null;
   description: string | null;
@@ -363,10 +367,12 @@ export interface UpdateSeriesInput {
   endKind?: "never" | "until" | "count";
   untilDate?: string | null;
   maxCount?: number | null;
+  /** Owner preference: silences the repeated-miss nudge for this series. */
+  nudgeMuted?: boolean;
 }
 
 /** A Recurrence Series plus its current open occurrence's Task id, or `null`. */
-export type SeriesDto = RecurrenceSeriesDto & { openOccurrenceId: string | null };
+export type SeriesDto = Omit<RecurrenceSeriesDto, "nudgedAt"> & { openOccurrenceId: string | null };
 
 /** One Recurrence Series' record, derived from its real occurrence rows (adherence-mirror, ADR-0006). */
 export interface SeriesAdherenceDto {
@@ -382,6 +388,8 @@ export interface SeriesAdherenceDto {
   currentStreak: number;
   /** Local `YYYY-MM-DD` days of recent misses in the series' own time zone, newest first. */
   recentMisses: string[];
+  /** The owner silenced this series' repeated-miss nudge. */
+  nudgeMuted: boolean;
 }
 
 /** Body of `GET /api/series/adherence`. */
@@ -396,7 +404,8 @@ export interface AdherenceResponse {
  * (`freq`, `interval`, `byWeekday`, `byMonthday`, `dtstart`, `timezone`,
  * `anchorMode`, `endKind`, `untilDate`, `maxCount`) is deliberately excluded —
  * that is what makes AC-17's "a rule field is rejected with 400 naming it"
- * structural rather than a runtime special case.
+ * structural rather than a runtime special case. `nudgeMuted` is an owner
+ * preference, not a rule column, so it is editable.
  */
 export const EDITABLE_SERIES_FIELDS: readonly string[] = [
   "title",
@@ -415,6 +424,7 @@ export const EDITABLE_SERIES_FIELDS: readonly string[] = [
   "endKind",
   "untilDate",
   "maxCount",
+  "nudgeMuted",
 ];
 
 export interface ApiErrorBody {

@@ -12,6 +12,13 @@ import {
 } from "./db/schema";
 import { todayIn } from "../shared/dates";
 import { planMissedSweep, type MissedSweepPlan } from "../shared/missed-sweep";
+import { decideNudge } from "../shared/nudge";
+import { buildNudgeNotification } from "../shared/nudge-copy";
+import {
+  findOpenOccurrenceId,
+  loadClosedRowsBySeries,
+  resolveSeriesZone,
+} from "./series-closed-rows";
 import { classifyPushOutcome, type PushOutcome } from "../shared/push-outcome";
 import { buildNotificationPayload } from "../shared/push-payload";
 import { pathOf, taskRouteOf } from "../shared/app-route";
@@ -163,7 +170,134 @@ export async function sweepMissedOccurrences(db: Db, now: Date): Promise<void> {
 }
 
 /**
+ * The repeated-miss nudge step (repeated-miss-nudge, phase 3): for every task
+ * series whose trailing run of `missed` occurrences reached the threshold and
+ * whose run has not been nudged, claim the run with a conditional
+ * `UPDATE ... WHERE nudged_at IS NULL` and send one notification to every
+ * stored subscription. A muted run is consumed silently (the marker is set,
+ * nothing is sent). A series without an open occurrence, or a system without a
+ * subscription, takes no claim at all. `gone` subscriptions are pruned and a
+ * `retryable` outcome releases the claim. Each series is isolated: the first
+ * failure is remembered, the loop continues, and one error is thrown at the end.
+ */
+export async function sweepRepeatedMissNudges(
+  db: Db,
+  now: Date,
+  vapid: { subject: string; publicKey: string; privateKey: string },
+): Promise<void> {
+  const seriesRows = await db
+    .select()
+    .from(recurrenceSeries)
+    .where(eq(recurrenceSeries.kind, "task"));
+  const closedBySeries = await loadClosedRowsBySeries(db);
+
+  let firstFailure: { seriesId: string; message: string } | null = null;
+
+  for (const row of seriesRows) {
+    let claimTaken = false;
+    try {
+      const decision = decideNudge(
+        {
+          status: row.status,
+          nudgeMuted: row.nudgeMuted,
+          nudgedAt: row.nudgedAt === null ? null : Math.floor(row.nudgedAt.getTime() / 1000),
+          timeZone: resolveSeriesZone(now, row.timezone),
+        },
+        closedBySeries.get(row.id) ?? [],
+        now,
+      );
+
+      if (decision.reason === "muted") {
+        await db
+          .update(recurrenceSeries)
+          .set({ nudgedAt: now })
+          .where(and(eq(recurrenceSeries.id, row.id), isNull(recurrenceSeries.nudgedAt)));
+        continue;
+      }
+      if (!decision.due) continue;
+
+      const openOccurrenceId = await findOpenOccurrenceId(db, row.id);
+      if (openOccurrenceId === null) continue;
+
+      const subscriptions = await db.select().from(pushSubscriptions);
+      if (subscriptions.length === 0) continue;
+
+      const [claimed] = await db
+        .update(recurrenceSeries)
+        .set({ nudgedAt: now })
+        .where(and(eq(recurrenceSeries.id, row.id), isNull(recurrenceSeries.nudgedAt)))
+        .returning();
+      if (claimed === undefined) continue;
+      claimTaken = true;
+
+      const payload = JSON.stringify(
+        buildNotificationPayload(
+          buildNudgeNotification({
+            seriesId: row.id,
+            seriesTitle: row.title,
+            streak: decision.streak,
+            openOccurrenceId,
+          }),
+        ),
+      );
+
+      const outcomes: PushOutcome[] = [];
+      for (const subscription of subscriptions) {
+        const result = await sendPush(
+          {
+            endpoint: subscription.endpoint,
+            keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+          },
+          payload,
+          vapid,
+        );
+        const outcome = classifyPushOutcome(result);
+        outcomes.push(outcome);
+        if (outcome.kind === "gone") {
+          await db
+            .delete(pushSubscriptions)
+            .where(eq(pushSubscriptions.endpoint, subscription.endpoint));
+        }
+      }
+
+      if (outcomes.some((outcome) => outcome.kind === "retryable")) {
+        await db
+          .update(recurrenceSeries)
+          .set({ nudgedAt: null })
+          .where(eq(recurrenceSeries.id, row.id));
+      }
+    } catch (error) {
+      if (claimTaken) {
+        try {
+          await db
+            .update(recurrenceSeries)
+            .set({ nudgedAt: null })
+            .where(eq(recurrenceSeries.id, row.id));
+        } catch {
+          // Best effort: the original failure is the one worth reporting.
+        }
+      }
+      firstFailure ??= {
+        seriesId: row.id,
+        message: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  if (firstFailure !== null) {
+    const failure: { seriesId: string; message: string } = firstFailure;
+    throw new Error(
+      `repeated-miss nudge failed for series ${failure.seriesId}: ${failure.message}`,
+    );
+  }
+}
+
+/**
  * `scheduled()`'s job body (unit 6 phase 3, PRD AC-5 / AC-6 / unit 7).
+ *
+ * After the Reminder loop it runs the repeated-miss nudge step
+ * (`sweepRepeatedMissNudges`), whose failure is deferred like the missed
+ * sweep's so it can never delay or block a due Reminder.
  *
  * The due-Reminder sweep (reminders phase 2, PRD AC-5/AC-6/AC-7/AC-9/AC-10):
  * scan `reminders` for rows whose `sentAt` is null and whose `fireAt` is at
@@ -255,7 +389,21 @@ export async function runScheduledJob(env: Env, now: Date = new Date()): Promise
     }
   }
 
+  // Runs after the missed sweep (a just-recorded third miss counts) and after
+  // the Reminder loop (a nudge can never delay a due Reminder).
+  let nudgeError: unknown = null;
+  try {
+    await sweepRepeatedMissNudges(db, now, vapid);
+  } catch (error) {
+    nudgeError = error;
+  }
+
+  if (sweepError !== null && nudgeError !== null) {
+    const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
+    throw new Error(`${messageOf(sweepError)}; ${messageOf(nudgeError)}`);
+  }
   if (sweepError !== null) throw sweepError;
+  if (nudgeError !== null) throw nudgeError;
 }
 
 /**

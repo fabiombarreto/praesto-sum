@@ -397,6 +397,7 @@ export function DesignPlayground() {
             onApplyToChange={() => {}}
             onSaveSeriesOccurrence={() => {}}
             onEndSeries={() => {}}
+            nudge={{ pending: false, error: null, onChange: () => {} }}
           />
           <div className="rounded-card border border-line bg-surface-1 px-4">
             <ConfirmView

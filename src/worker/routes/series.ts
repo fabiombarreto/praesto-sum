@@ -1,6 +1,6 @@
-import { and, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Hono, type Context } from "hono";
-import { computeSeriesAdherence, rankAdherence, type AdherenceRow } from "../../shared/adherence";
+import { computeSeriesAdherence, rankAdherence } from "../../shared/adherence";
 import {
   EDITABLE_SERIES_FIELDS,
   isCalendarDate,
@@ -13,6 +13,7 @@ import { firstOccurrence, occurrenceReminderInstants } from "../../shared/recurr
 import { createDb } from "../db/client";
 import { recurrenceSeries, reminders, tasks, type Task } from "../db/schema";
 import { toSeriesAdherenceDto, toSeriesDto, toTaskDto } from "../dto";
+import { findOpenOccurrenceId, loadClosedRowsBySeries } from "../series-closed-rows";
 
 /**
  * Series routes — Phase 2 of the recurring-tasks unit (PRD AC-11..AC-18).
@@ -33,22 +34,6 @@ const DATE_MODE_VALUES = ["deadline", "scheduled", "none"] as const;
 
 function badRequest(c: Context<{ Bindings: Env }>, message: string) {
   return c.json({ error: message }, 400);
-}
-
-/**
- * Looks up the Task id of a series' current open occurrence, or `null` when
- * none exists (Phase 3 spawns successors; this phase only ever produces at
- * most one open occurrence per series).
- */
-async function findOpenOccurrenceId(
-  db: ReturnType<typeof createDb>,
-  seriesId: string,
-): Promise<string | null> {
-  const [open] = await db
-    .select({ id: tasks.id })
-    .from(tasks)
-    .where(and(eq(tasks.seriesId, seriesId), eq(tasks.status, "open")));
-  return open?.id ?? null;
 }
 
 /**
@@ -276,18 +261,7 @@ export async function loadSeriesAdherence(
     .select()
     .from(recurrenceSeries)
     .where(eq(recurrenceSeries.kind, "task"));
-  const closedRows = await db
-    .select()
-    .from(tasks)
-    .where(and(isNotNull(tasks.seriesId), inArray(tasks.status, ["done", "missed"])));
-
-  const bySeries = new Map<string, AdherenceRow[]>();
-  for (const row of closedRows) {
-    if (row.seriesId === null || row.occurrenceDate === null) continue;
-    const list = bySeries.get(row.seriesId) ?? [];
-    list.push({ occurrenceDate: row.occurrenceDate, status: row.status });
-    bySeries.set(row.seriesId, list);
-  }
+  const bySeries = await loadClosedRowsBySeries(db);
 
   const series = seriesRows.map((row) =>
     toSeriesAdherenceDto(
@@ -325,7 +299,9 @@ seriesRoutes.get("/:id", async (c) => {
  *
  * Closed-allowlist rejection identical to `reminderRoutes.patch("/:id")`:
  * every rule column is absent from `EDITABLE_SERIES_FIELDS`, so a rule-field
- * edit is rejected by name for free.
+ * edit is rejected by name for free. `nudgeMuted` is the one owner-preference
+ * key on the list: a boolean that silences the repeated-miss nudge for this
+ * series only.
  */
 seriesRoutes.patch("/:id", async (c) => {
   const body = await readJson(c.req.raw);
@@ -470,6 +446,15 @@ seriesRoutes.patch("/:id", async (c) => {
       return badRequest(c, "A âncora deve ser 'calendar' ou 'completion' (anchorMode)");
     }
     seriesPatch.anchorMode = anchorMode;
+  }
+
+  // An owner preference, not a rule column: it never propagates to the occurrence,
+  // so it does not set `touchesTemplate`.
+  if (Object.hasOwn(body, "nudgeMuted")) {
+    if (typeof body.nudgeMuted !== "boolean") {
+      return badRequest(c, "O aviso silenciado deve ser verdadeiro ou falso (nudgeMuted)");
+    }
+    seriesPatch.nudgeMuted = body.nudgeMuted;
   }
 
   // The end condition is validated as a unit, because `recurrence_series_end_chk`

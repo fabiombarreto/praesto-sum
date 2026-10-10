@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { SeriesDto, TaskDto } from "../../shared/api";
 import {
   seriesRuleDraftFromSeries,
   type ApplyTo,
   type SeriesRuleDraft,
 } from "../../shared/series-edit";
-import { getSeries } from "../api";
+import { nudgePatch } from "../../shared/nudge-switch";
+import { classifyRequestFailure } from "../../shared/request-failure";
+import { ApiError, getSeries, updateSeries } from "../api";
 
 /**
  * The series side of a Task sheet: when the open Task is an occurrence, load its
@@ -17,8 +19,15 @@ import { getSeries } from "../api";
  * `src/shared/series-edit.ts`, pure and tested; this is only the glue that fetches
  * and holds state (`docs/context/methodology.md`, "split the logic out, then the
  * glue is exempt").
+ *
+ * It also owns the repeated-miss nudge switch's write: persisted immediately and
+ * server-first through the series PATCH, outside the Task draft and *Salvar*, and
+ * never re-seeding the rule draft (an unsaved rule edit survives a toggle).
  */
-export function useSeriesSheet(sheetTask: TaskDto | null): {
+export function useSeriesSheet(
+  sheetTask: TaskDto | null,
+  onUnauthorized: () => void,
+): {
   series: SeriesDto | null;
   /** Set when the series could not be loaded, so the sheet says so instead of going quiet. */
   seriesError: string | null;
@@ -28,6 +37,8 @@ export function useSeriesSheet(sheetTask: TaskDto | null): {
   setApplyTo: (next: ApplyTo) => void;
   /** Replace the loaded series after a successful edit, so the drafts re-seed from the truth. */
   acceptSeries: (next: SeriesDto) => void;
+  /** The nudge switch's own write state; `setEnabled(true)` means "notify me". */
+  nudge: { pending: boolean; error: string | null; setEnabled: (enabled: boolean) => void };
 } {
   const taskId = sheetTask?.id ?? null;
   const seriesId = sheetTask?.seriesId ?? null;
@@ -37,6 +48,11 @@ export function useSeriesSheet(sheetTask: TaskDto | null): {
   // Default "toda a série": the defect the owner found was an occurrence silently
   // detaching on an ordinary edit, and a template field is series-wide by nature.
   const [applyTo, setApplyTo] = useState<ApplyTo>("series");
+  const [nudgePending, setNudgePending] = useState(false);
+  const [nudgeError, setNudgeError] = useState<string | null>(null);
+  // The series id currently loaded, so a write that resolves after the sheet moved
+  // to another Task is ignored instead of landing on the wrong series.
+  const loadedSeriesId = useRef<string | null>(null);
 
   // Keyed on the Task as well as the series: every time the sheet opens, the
   // drafts start from the stored rule, never from a previous Task's half-edit.
@@ -45,6 +61,9 @@ export function useSeriesSheet(sheetTask: TaskDto | null): {
     setSeriesError(null);
     setRuleDraft(null);
     setApplyTo("series");
+    setNudgePending(false);
+    setNudgeError(null);
+    loadedSeriesId.current = seriesId;
     if (seriesId === null) return;
 
     let cancelled = false;
@@ -64,6 +83,29 @@ export function useSeriesSheet(sheetTask: TaskDto | null): {
     };
   }, [taskId, seriesId]);
 
+  function setEnabled(enabled: boolean): void {
+    if (series === null || series.status !== "active" || nudgePending) return;
+    const id = series.id;
+    setNudgePending(true);
+    setNudgeError(null);
+    updateSeries(id, nudgePatch(enabled))
+      .then((updated) => {
+        if (loadedSeriesId.current !== id) return;
+        // setSeries only: acceptSeries would re-seed ruleDraft and erase an unsaved edit.
+        setSeries(updated);
+        setNudgePending(false);
+      })
+      .catch((cause: unknown) => {
+        if (loadedSeriesId.current !== id) return;
+        setNudgePending(false);
+        if (cause instanceof ApiError && cause.status === 401) {
+          onUnauthorized();
+          return;
+        }
+        setNudgeError(classifyRequestFailure(cause).message);
+      });
+  }
+
   return {
     series,
     seriesError,
@@ -76,5 +118,6 @@ export function useSeriesSheet(sheetTask: TaskDto | null): {
       setSeries(next);
       setRuleDraft(seriesRuleDraftFromSeries(next));
     },
+    nudge: { pending: nudgePending, error: nudgeError, setEnabled },
   };
 }

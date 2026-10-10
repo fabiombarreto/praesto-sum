@@ -398,6 +398,9 @@ taskRoutes.post("/:id/complete", async (c) => {
 
   const seriesUpdate: Partial<typeof recurrenceSeries.$inferInsert> = {
     doneCount: series.doneCount + 1,
+    // Completion re-arms the repeated-miss nudge. Cleared here, in the same batch
+    // as the `done` transition; a `missed` close (the sweep) never clears it.
+    nudgedAt: null,
   };
   // Avoid a no-op `status: "ended"` write when the series was ended already
   // (e.g. via `PATCH /api/series/:id`) while this, its last open occurrence,
