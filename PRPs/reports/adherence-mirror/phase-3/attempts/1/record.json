@@ -1,0 +1,28 @@
+{
+  "attempt": 1,
+  "verdict": "IMPLEMENTATION_COMPLETE",
+  "files_changed": [
+    "docs/context/architecture.md",
+    "docs/domain/areas/tasks.md",
+    "documentation/40-engineering/ui-layout-standard.md",
+    "documentation/50-planning/roadmap.md",
+    "src/app/App.tsx",
+    "src/app/components/AdherenceEntryCard.tsx",
+    "src/app/components/AdherenceScreen.tsx",
+    "src/app/components/SettingsScreen.tsx",
+    "src/app/components/TodayScreen.tsx",
+    "src/shared/adherence-line.ts",
+    "src/shared/adherence-view.ts",
+    "src/shared/app-route.ts",
+    "test/adherence-line.test.ts",
+    "test/adherence-view.test.ts",
+    "test/app-route.test.ts"
+  ],
+  "validation": {
+    "level_1": "PASS",
+    "level_2": "PASS",
+    "level_3": "PASS"
+  },
+  "base_commit": "6fb8441dc86b1bf2c51d069ad6d90417caebd937",
+  "note": "base is phases 1-2 end-state tree; test files are the APPROVED phase-3 suite"
+}

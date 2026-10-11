@@ -1,0 +1,43 @@
+# TDD initial suite — phase 3
+# Source PRD: PRPs/prds/adherence-mirror.prd.md (Acceptance Criteria)
+# Source plan: C:/repos/assistente-pessoal/PRPs/plans/adherence-mirror-phase-3-the-screen.plan.md
+# Code root: .worktrees/adherence-mirror
+# Mode: test-first
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-10-04
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-15 (plan AC-A1) | NEW_TEST_REQUIRED | .worktrees/adherence-mirror/test/adherence-line.test.ts (decideAdherenceLine: threshold 2 vs 1, top series by orderByMisses, "+1 série"/"+N séries", untitled fallback, "não concluídas em 30 dias" wording; orderByMisses ordering and tie-breaks). The line's placement and tap are manual (React glue). |
+| AC-16 (A2) | NEW_TEST_REQUIRED | .worktrees/adherence-mirror/test/adherence-line.test.ts (null for empty, one-miss, ended-only; ended series ranking first is ignored). "No placeholder / no reserved space" rendering is manual. |
+| AC-17 (A3) | NOT_TEST_AUTHORABLE | Fetch isolation and inline persistent error are React component and network-failure behaviour; methodology.md verifies components manually and the plan routes it to the Level 3 manual check. No pure function carries a decidable contract. |
+| AC-18 (A4) | NEW_TEST_REQUIRED (+ UPDATE) | .worktrees/adherence-mirror/test/adherence-view.test.ts (adherenceSections three-way split and per-section order; formatDoneOfClosed, formatStreak, formatMissDates); .worktrees/adherence-mirror/test/app-route.test.ts (adherence route path/round-trip, additive). The screen rendering is manual. |
+| AC-19 (A5) | NEW_TEST_REQUIRED | Vocabulary and no-percentage assertions in adherence-line.test.ts and adherence-view.test.ts (pt-BR strings, "não concluída(s)", never falha/falhando/pulada, no "%"). Layout-standard amendment and UI checklist record are documentation tasks, not testable. |
+| AC-20 (A6) | NOT_TEST_AUTHORABLE | Owner-observed device proof against a production export; cannot be automated (plan marks it OWED to the owner). |
+| AC-1..AC-14 | OUT_OF_PHASE_SCOPE | (phases 1 and 2; archived at phase-2/) |
+
+## Test files written this session
+
+- .worktrees/adherence-mirror/test/adherence-line.test.ts (new)
+- .worktrees/adherence-mirror/test/adherence-view.test.ts (new)
+
+Updated: .worktrees/adherence-mirror/test/app-route.test.ts (additive describe blocks appended; no existing assertion altered).
+
+Expected RED reason: `../src/shared/adherence-line` and `../src/shared/adherence-view` do not exist (module-not-found at import) and, in app-route.test.ts, `routeFromPath("/settings/adherence")` resolves to `settings`-or-`today` rather than `adherence`, `pathOf("adherence")` is unknown, and `"adherence"` is not an `AppRoute` member (type error only; no syntax errors). All pre-existing app-route cases still pass.
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| UPDATE | EXISTING_TEST_UPDATED | test/app-route.test.ts (new describe blocks "routeFromPath — the adherence route", "pathOf — the adherence route", "routeFromPath and pathOf agree — the adherence route round-trips too") | AC-18 (plan AC-A4): the route table gains `/settings/adherence`; additive assertions appended at end of file, every existing assertion preserved verbatim. |
+
+## Formatting Outcome
+
+formatted (by the command layer, /relay-write-test A.4) — `npx prettier --write test/adherence-line.test.ts test/adherence-view.test.ts test/app-route.test.ts` (discovery source: methodology.md formatter_cmd), exit 0; adherence-line and adherence-view rewritten, app-route unchanged. RED confirmed: adherence-line/adherence-view fail with "Cannot find module" (planned new modules); app-route: 4 new assertions fail (expected 'today' to be 'adherence' / expected '/' to be '/settings/adherence'), all 37 pre-existing app-route cases still pass.
+
+## Status
+
+*Approved: 2026-10-04*
+*Status: APPROVED*

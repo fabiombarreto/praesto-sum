@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "index": 13,
+      "title": "AC-13 — `/adherence` is not read as an id",
+      "driver": "http",
+      "role": "owner",
+      "state": "declared",
+      "steps": [
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/series/adherence",
+          "expect_status": 200,
+          "expect_body_contains": "\"ranking\""
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "formatter_cmd": "npx prettier --write",
+  "discovery_source": "methodology.md formatter_cmd",
+  "files_scoped": "all tracked/untracked *.test.ts(x) in worktree",
+  "outcome": "formatted",
+  "exit_code_or_null": 0
+}

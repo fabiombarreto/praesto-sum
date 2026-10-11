@@ -1,0 +1,241 @@
+{
+  "feature": "adherence-mirror",
+  "prd_path": "PRPs/prds/adherence-mirror.prd.md",
+  "started_at": "2026-10-04T22:45:00Z",
+  "ended_at": "2026-10-04T23:42:00Z",
+  "max_plan_review_retries": 2,
+  "max_tdd_review_retries": 2,
+  "max_orchestrator_minutes": 240,
+  "lane_mode": "serial (lane_runtime_safe absent in methodology.md)",
+  "phases": [
+    {
+      "phase": 1,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/adherence-mirror-phase-1-pure-adherence.plan.md"
+    },
+    {
+      "phase": 1,
+      "stage": "worktree",
+      "outcome": "CREATED",
+      "repo": null,
+      "worktree_path": ".worktrees/adherence-mirror/",
+      "worktree_attempted": true,
+      "worktree_succeeded": true,
+      "fallback_reason": null,
+      "warning": "no .claude/settings.json at repo root; allowlist not propagated"
+    },
+    {
+      "phase": 1,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "suite_path": "PRPs/reports/adherence-mirror/test-suite.diff"
+    },
+    {
+      "phase": 1,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 1,
+      "docs_sync": "APPROVED"
+    },
+    {
+      "phase": 1,
+      "stage": "test_after",
+      "outcome": "not_applicable"
+    },
+    {
+      "phase": 1,
+      "stage": "row_status_flip",
+      "outcome": "SUCCESS",
+      "to": "implemented",
+      "by": "relay-implement D8 c"
+    },
+    {
+      "phase": 1,
+      "stage": "test",
+      "outcome": "GREEN",
+      "runner_deviation": "manual npm test; .claude/settings.json absent"
+    },
+    {
+      "phase": 1,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 1,
+      "stage": "row_status_flip",
+      "outcome": "SUCCESS",
+      "to": "tested"
+    },
+    {
+      "phase": 1,
+      "stage": "row_status_flip",
+      "outcome": "SUCCESS",
+      "to": "complete"
+    },
+    {
+      "phase": 1,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/adherence-mirror-phase-1-pure-adherence.plan.md",
+      "timestamp": "2026-10-04T23:04:30Z"
+    },
+    {
+      "phase": 2,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/adherence-mirror-phase-2-adherence-endpoint.plan.md",
+      "note": "plan-writer needed one resume (returned before its research finished)"
+    },
+    {
+      "phase": 2,
+      "stage": "worktree",
+      "outcome": "CREATED",
+      "idempotent_reuse": true,
+      "worktree_path": ".worktrees/adherence-mirror/"
+    },
+    {
+      "phase": 2,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "suite_path": "PRPs/reports/adherence-mirror/test-suite.diff"
+    },
+    {
+      "phase": 2,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 1,
+      "docs_sync": "APPROVED"
+    },
+    {
+      "phase": 2,
+      "stage": "test_after",
+      "outcome": "not_applicable"
+    },
+    {
+      "phase": 2,
+      "stage": "test",
+      "outcome": "GREEN",
+      "runner_deviation": "manual npm test; .claude/settings.json absent"
+    },
+    {
+      "phase": 2,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 2,
+      "stage": "row_status_flip",
+      "outcome": "SUCCESS",
+      "to": "tested"
+    },
+    {
+      "phase": 2,
+      "stage": "row_status_flip",
+      "outcome": "SUCCESS",
+      "to": "complete"
+    },
+    {
+      "phase": 2,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/adherence-mirror-phase-2-adherence-endpoint.plan.md",
+      "timestamp": "2026-10-04T23:18:30Z"
+    },
+    {
+      "phase": 3,
+      "stage": "plan",
+      "outcome": "CHANGES_REQUESTED",
+      "attempt": 1,
+      "failing": [
+        "R-COH-OTHER-INTERNAL-CONTRADICTION"
+      ],
+      "reason": "plan falsely claimed docs/ and documentation/ absent from the worktree"
+    },
+    {
+      "phase": 3,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "attempt": 2,
+      "plan_path": "PRPs/plans/adherence-mirror-phase-3-the-screen.plan.md"
+    },
+    {
+      "phase": 3,
+      "stage": "worktree",
+      "outcome": "CREATED",
+      "idempotent_reuse": true
+    },
+    {
+      "phase": 3,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "suite_path": "PRPs/reports/adherence-mirror/test-suite.diff"
+    },
+    {
+      "phase": 3,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 1,
+      "docs_sync": "APPROVED"
+    },
+    {
+      "phase": 3,
+      "stage": "ui_live_pass",
+      "outcome": "no ✘",
+      "by": "orchestrator, browser pane 375px dark; no screenshot rendered",
+      "record": "PRPs/reports/adherence-mirror/phase-3/ui-checklist.md"
+    },
+    {
+      "phase": 3,
+      "stage": "test_after",
+      "outcome": "not_applicable"
+    },
+    {
+      "phase": 3,
+      "stage": "test",
+      "outcome": "GREEN",
+      "runner_deviation": "manual npm test; .claude/settings.json absent"
+    },
+    {
+      "phase": 3,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 3,
+      "stage": "row_status_flip",
+      "outcome": "SUCCESS",
+      "to": "tested"
+    },
+    {
+      "phase": 3,
+      "stage": "row_status_flip",
+      "outcome": "SUCCESS",
+      "to": "complete"
+    },
+    {
+      "phase": 3,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/adherence-mirror-phase-3-the-screen.plan.md",
+      "timestamp": "2026-10-04T23:42:00Z",
+      "owed": "AC-20 device proof (owner)"
+    }
+  ],
+  "outcome": "ALL_PHASES_COMPLETE",
+  "phases_completed": [
+    1,
+    2,
+    3
+  ],
+  "worktree_attempted": true,
+  "worktree_succeeded": true,
+  "fallback_reason": null,
+  "phase_diff_bases": {
+    "1": "7f3facb4ec80772b292e12df525faaf439719d99",
+    "2": "6fb8441dc86b1bf2c51d069ad6d90417caebd937",
+    "3": "5b0c6236df523f2b3e72f56339c041ff9c11547c"
+  },
+  "lane_durations_ms": {},
+  "total_duration_ms": 3420000,
+  "merged_at": "2026-10-06T22:22:30Z",
+  "approve_outcome": "COMPLETE",
+  "docs_outcome": "APPROVED"
+}

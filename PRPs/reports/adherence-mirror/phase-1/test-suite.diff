@@ -1,0 +1,44 @@
+# TDD initial suite — phase 1
+# Source PRD: PRPs/prds/adherence-mirror.prd.md (Acceptance Criteria)
+# Source plan: C:/repos/assistente-pessoal/PRPs/plans/adherence-mirror-phase-1-pure-adherence.plan.md
+# Code root: .worktrees/adherence-mirror
+# Mode: test-first
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-10-04
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-1 (plan AC-A1) | NEW_TEST_REQUIRED | .worktrees/adherence-mirror/test/adherence.test.ts (counts) |
+| AC-2 (A2) | NEW_TEST_REQUIRED | .worktrees/adherence-mirror/test/adherence.test.ts (trailing dones) |
+| AC-3 (A3) | NEW_TEST_REQUIRED | .worktrees/adherence-mirror/test/adherence.test.ts (miss resets) |
+| AC-4 (A4) | NEW_TEST_REQUIRED | .worktrees/adherence-mirror/test/adherence.test.ts (date order, scrambled input) |
+| AC-5 (A5) | NEW_TEST_REQUIRED | .worktrees/adherence-mirror/test/adherence.test.ts (skipped cycle) |
+| AC-6 (A6) | NEW_TEST_REQUIRED | .worktrees/adherence-mirror/test/adherence.test.ts (detached done) |
+| AC-7 (A7) | NEW_TEST_REQUIRED | .worktrees/adherence-mirror/test/adherence.test.ts (30-day window, both edges) |
+| AC-8 (A8) | NEW_TEST_REQUIRED | .worktrees/adherence-mirror/test/adherence.test.ts (empty history, no NaN) |
+| AC-9 (A9) | NEW_TEST_REQUIRED | .worktrees/adherence-mirror/test/adherence.test.ts (ranking B, A, C) |
+| AC-10 (A10) | NEW_TEST_REQUIRED (behavioural half only) | .worktrees/adherence-mirror/test/adherence.test.ts (today is an argument, no input mutation); "imports nothing" and "recurrence.ts unchanged" are plan Task 4 grep/git checks, not unit-testable in workerd |
+| AC-11..AC-20 | OUT_OF_PHASE_SCOPE | (phases 2 and 3) |
+
+## Test files written this session
+
+- .worktrees/adherence-mirror/test/adherence.test.ts
+
+Expected RED reason: `../src/shared/adherence` does not exist yet (module-resolution failure), not a syntax error.
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no update/delete this session) | — | — | — |
+
+## Formatting Outcome
+
+formatted — `npx prettier --write test/adherence.test.ts` (discovery source: methodology.md formatter_cmd), exit 0; files touched: test/adherence.test.ts. RED confirmed after formatting: `npx vitest run test/adherence.test.ts` fails with "Cannot find module '../src/shared/adherence'" (module not yet implemented).
+
+## Status
+
+*Approved: 2026-10-04*
+*Status: APPROVED*

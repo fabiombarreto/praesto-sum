@@ -1,0 +1,40 @@
+# TDD initial suite — phase 2
+# Source PRD: PRPs/prds/adherence-mirror.prd.md (Acceptance Criteria)
+# Source plan: C:/repos/assistente-pessoal/PRPs/plans/adherence-mirror-phase-2-adherence-endpoint.plan.md
+# Code root: .worktrees/adherence-mirror
+# Mode: test-first
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-10-04
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-11 (plan AC-A1) | NEW_TEST_REQUIRED | .worktrees/adherence-mirror/test/adherence-endpoint.test.ts (401 no/wrong token; 200 shape with two series incl. counters-ignored, ranking, ended status; unranked clean series; task-kind only) |
+| AC-12 (A2) | NEW_TEST_REQUIRED | .worktrees/adherence-mirror/test/adherence-endpoint.test.ts (loadSeriesAdherence(db, now) at 2026-10-31T01:30Z: Sao Paulo in-window, UTC out-of-window; second now flips Sao Paulo) |
+| AC-13 (A3) | NEW_TEST_REQUIRED | .worktrees/adherence-mirror/test/adherence-endpoint.test.ts (200 `{series: [], ranking: []}` instead of :id 404; GET /:id still works) |
+| AC-14 (A4) | NEW_TEST_REQUIRED | .worktrees/adherence-mirror/test/adherence-endpoint.test.ts (full row snapshot incl. updated_at before/after, via HTTP and via loadSeriesAdherence) |
+| AC-A5 (plan only) | OUT_OF_TEST_SCOPE | suite-green and "recurrence.ts / adherence.ts unchanged" are plan Level 2/3 validation (git diff, npm test), not unit-testable |
+| AC-1..AC-10 | OUT_OF_PHASE_SCOPE | (phase 1, test/adherence.test.ts, APPROVED) |
+| AC-15..AC-20 | OUT_OF_PHASE_SCOPE | (phase 3) |
+
+## Test files written this session
+
+- .worktrees/adherence-mirror/test/adherence-endpoint.test.ts
+
+Expected RED reason: `loadSeriesAdherence` is not exported from `src/worker/routes/series.ts` (calls fail with "not a function") and `GET /api/series/adherence` is answered by `GET /:id` (404), not a syntax or import error. The two 401 cases and the `GET /:id` regression pin already pass by design.
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| (none — no update/delete this session) | — | — | — |
+
+## Formatting Outcome
+
+formatted (by the command layer, /relay-write-test A.4) — `npx prettier --write test/adherence-endpoint.test.ts` (discovery source: methodology.md formatter_cmd), exit 0; files touched: test/adherence-endpoint.test.ts. RED confirmed: `npx vitest run test/adherence-endpoint.test.ts` → 8 failed / 3 passed (the 3 passes are the two 401 pins and the GET /:id regression pin); failures are `expected 404 to be 200` (route not yet registered) and `loadSeriesAdherence is not a function` (export missing). `tsc -b` errors only on the planned seam: `AdherenceResponse` not exported from src/shared/api, `loadSeriesAdherence` absent from src/worker/routes/series (plus one TS7006 that follows from the missing type).
+
+## Status
+
+*Approved: 2026-10-04*
+*Status: APPROVED*

@@ -1,0 +1,33 @@
+{
+  "feature": "adherence-mirror",
+  "phase": 3,
+  "outcome": "GREEN",
+  "framework": "vitest",
+  "worktree": ".worktrees/adherence-mirror",
+  "command": "npm test",
+  "max_test_retries": 3,
+  "max_test_minutes": 30,
+  "attempts": 1,
+  "test_files_passed": 76,
+  "test_files_total": 76,
+  "tests_passed": 1260,
+  "tests_total": 1260,
+  "failed": 0,
+  "delta_this_phase": {
+    "test_files": 2,
+    "tests": 49,
+    "files": [
+      "test/adherence-line.test.ts",
+      "test/adherence-view.test.ts",
+      "test/app-route.test.ts (+additive)"
+    ]
+  },
+  "check": "npm run check exit 0",
+  "time_breakdown": {
+    "attempt_1_suite_ms": 51122
+  },
+  "tdd_mode": true,
+  "runner": "manual npm test in .worktrees/adherence-mirror",
+  "runner_deviation": "the relay test-runner agent was not used: .claude/settings.json is absent at the repo root, so /relay-test would HALT at its precondition 2 (missing_settings_json); creating that file is the owner's decision, so the suite was run by hand, as in missed-sweep, text-search and reminders.",
+  "ended_at": "2026-10-04T23:39:30Z"
+}
