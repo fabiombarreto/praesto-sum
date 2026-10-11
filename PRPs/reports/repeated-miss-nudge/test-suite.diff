@@ -1,0 +1,37 @@
+# TDD initial suite — phase 1
+# Source PRD: PRPs/prds/repeated-miss-nudge.prd.md (Acceptance Criteria)
+# Source plan: C:\repos\assistente-pessoal\PRPs\plans\repeated-miss-nudge-phase-1-pure-nudge-decision.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-10-10
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-1 | NEW_TEST_REQUIRED | test/nudge.test.ts (describe "trailingMissStreak — consecutive count (AC-1)") |
+| AC-2 | NEW_TEST_REQUIRED | test/nudge.test.ts (describe "trailingMissStreak — a completion resets (AC-2)") |
+| AC-3 | NEW_TEST_REQUIRED | test/nudge.test.ts (describe "trailingMissStreak — skipped cycles leave no row (AC-3)") |
+| AC-4 | NEW_TEST_REQUIRED | test/nudge.test.ts (describe "decideNudge — due decision (AC-4)", incl. reason precedence) |
+| AC-5 | NEW_TEST_REQUIRED | test/nudge.test.ts (describe "decideNudge — time-of-day gate in the series' own zone (AC-5)") |
+| AC-6..AC-17 | OUT_OF_PHASE_SCOPE | (deferred to phases 2-4) |
+
+## Test files written this session
+
+- test/nudge.test.ts (worktree: .worktrees/repeated-miss-nudge, branch feature/repeated-miss-nudge)
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| DELETE | REDUNDANT_TEST_REMOVED | test/nudge.test.ts:"reads the instant it is handed, not the ambient clock" (authored earlier in this same suite, removed on R-DUPLICATE revision) | Survivors: test/nudge.test.ts:"03:00 local is not due" and "15:00 local is due" in the AC-5 America/Sao_Paulo table (same inputs: series() default zone, THREE_MISSES, 06:00Z / 18:00Z; same due false/true assertions) |
+| DELETE | REDUNDANT_TEST_REMOVED | test/nudge.test.ts:"at 12:00Z both zones have reached 09:00 or later and are due" (R-DUPLICATE, attempt 2) | Survivors: Sao Paulo table row "09:00 local is due" (12:00Z = 09:00 local, THREE_MISSES, due:true, identical) and UTC table rows "09:00"/"15:00" (same in-window class); the two-zone same-instant test remains as the discriminative cross-zone case |
+| DELETE | REDUNDANT_TEST_REMOVED | test/nudge.test.ts:AC-5 UTC and America/Sao_Paulo tables, rows "00:10 local is not due" (both zones) | Same function, same THREE_MISSES input, same before-window class and result as rows "00:00" and "03:00" of the same table (survivors) |
+| DELETE | REDUNDANT_TEST_REMOVED | test/nudge.test.ts:AC-5 UTC and America/Sao_Paulo tables, rows "09:05 local is due" (both zones) | Same in-window class and result as rows "09:00" (boundary) and "15:00" of the same table (survivors) |
+| DELETE | REDUNDANT_TEST_REMOVED | test/nudge.test.ts:"before-window is the reason when everything else would allow it" (precedence block) | Byte-identical inputs and assertions to America/Sao_Paulo table row "03:00 local is not due" (series() default zone, THREE_MISSES, 06:00Z; due false, reason before-window, streak 3); precedence block keeps its four other cases |
+| UPDATE | EXISTING_TEST_UPDATED | test/nudge.test.ts:"follows occurrence date order, not the order rows are supplied" (AC-1) | Comment-only (R-COH-COMMENT-MISMATCH): the inline comment claimed the last-supplied row is the done one and an insertion-order implementation would answer 0; corrected to the true result (1: last-supplied is the 10-02 missed row, done is third). Executable content unchanged: same inputs, same `toBe(3)` assertion |
+| UPDATE | EXISTING_TEST_UPDATED | test/nudge.test.ts:describe "decideNudge — time-of-day gate in the series' own zone (AC-5)" | Comment-only: stale zone-offset note still listed "local 00:10 = 03:10Z" after the 00:10 rows were removed; now lists the 00:00/03:00/08:55/09:00/15:00 rows actually present. Executable content unchanged: no assertion or input touched |
+| DELETE | REDUNDANT_TEST_REMOVED | test/nudge.test.ts:"is 0 when the latest closed row is done" (AC-1 describe) | Same function, same class (trailing done after misses, result 0) as AC-2 "is 0 for missed, missed, missed, done" (survivor) |
+
+## Status
+
+*Status: APPROVED*

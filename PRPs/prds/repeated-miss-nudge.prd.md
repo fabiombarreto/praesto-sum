@@ -258,10 +258,10 @@ manually verified" line.
 
 | # | Phase | Description | Status | Repo | Parallel | Depends | PRP Plan |
 |---|-------|-------------|--------|------|----------|---------|----------|
-| 1 | Pure nudge decision | `src/shared/nudge.ts`: trailing consecutive-miss count and the due decision (threshold, active, muted, marked, local-hour gate) over plain data (AC-1..AC-5) | pending | - | - | - | - |
-| 2 | Columns, mute and wire | `nudged_at` + `nudge_muted`, migration `0006`, export manifest, `SeriesDto.nudgeMuted`, `PATCH /api/series/:id` `nudgeMuted`, completion clears the marker (AC-8, AC-11, AC-14) | pending | - | - | 1 | - |
-| 3 | The cron step | Claim-before-send dispatch after the missed sweep: payload and deep link, outcome handling, muted run consumed, failure never blocks Reminders (AC-6, AC-7, AC-9, AC-10, AC-12, AC-13) | pending | - | - | 2 | - |
-| 4 | The switch and the proof | The sheet's series-section switch and the *Aderência* row state, pt-BR copy, UI/UX checklist, documentation, device proof (AC-15..AC-17) | pending | - | - | 3 | - |
+| 1 | Pure nudge decision | `src/shared/nudge.ts`: trailing consecutive-miss count and the due decision (threshold, active, muted, marked, local-hour gate) over plain data (AC-1..AC-5) | complete | - | - | - | PRPs/plans/repeated-miss-nudge-phase-1-pure-nudge-decision.plan.md |
+| 2 | Columns, mute and wire | `nudged_at` + `nudge_muted`, migration `0006`, export manifest, `SeriesDto.nudgeMuted`, `PATCH /api/series/:id` `nudgeMuted`, completion clears the marker (AC-8, AC-11, AC-14) | complete | - | - | 1 | PRPs/plans/repeated-miss-nudge-phase-2-columns-mute-and-wire.plan.md |
+| 3 | The cron step | Claim-before-send dispatch after the missed sweep: payload and deep link, outcome handling, muted run consumed, failure never blocks Reminders (AC-6, AC-7, AC-9, AC-10, AC-12, AC-13) | complete | - | - | 2 | PRPs/plans/repeated-miss-nudge-phase-3-the-cron-step.plan.md |
+| 4 | The switch and the proof | The sheet's series-section switch and the *Aderência* row state, pt-BR copy, UI/UX checklist, documentation, device proof (AC-15..AC-17) | complete | - | - | 3 | PRPs/plans/repeated-miss-nudge-phase-4-the-switch-and-the-proof.plan.md |
 
 ### Phase Details
 

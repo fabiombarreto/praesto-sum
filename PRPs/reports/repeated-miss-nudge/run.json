@@ -1,0 +1,21 @@
+{
+  "feature": "repeated-miss-nudge",
+  "outcome": "GREEN",
+  "attempts": 1,
+  "phase": 4,
+  "record_path": "PRPs/reports/repeated-miss-nudge/phase-4/attempts/test-1/record.json",
+  "counts": {
+    "files": 81,
+    "passed": 1384,
+    "failed": 0,
+    "skipped": 0
+  },
+  "per_phase_records": [
+    "attempts/1/record.json",
+    "phase-2/attempts/1/record.json",
+    "phase-3/attempts/test-1/record.json",
+    "phase-4/attempts/test-1/record.json"
+  ],
+  "worktree": ".worktrees/repeated-miss-nudge",
+  "finished_at": "2026-10-11T01:40:00Z"
+}

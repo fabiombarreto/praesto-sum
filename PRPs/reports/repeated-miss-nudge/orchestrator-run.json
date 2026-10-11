@@ -1,0 +1,190 @@
+{
+  "feature": "repeated-miss-nudge",
+  "prd_path": "PRPs/prds/repeated-miss-nudge.prd.md",
+  "started_at": "2026-10-10T20:30:00Z",
+  "ended_at": "2026-10-11T01:30:00Z",
+  "max_plan_review_retries": 2,
+  "max_tdd_review_retries": 2,
+  "max_orchestrator_minutes": 240,
+  "phases": [
+    {
+      "phase": 1,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/completed/repeated-miss-nudge-phase-1-pure-nudge-decision.plan.md",
+      "plan_review_attempts": 2
+    },
+    {
+      "phase": 1,
+      "stage": "worktree",
+      "outcome": "CREATED",
+      "worktree_path": ".worktrees/repeated-miss-nudge/",
+      "worktree_attempted": true,
+      "worktree_succeeded": true
+    },
+    {
+      "phase": 1,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "suite_path": "PRPs/reports/repeated-miss-nudge/test-suite.diff",
+      "tdd_review_attempts": 3
+    },
+    {
+      "phase": 1,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 2,
+      "note": "attempt 1 CHANGES_REQUESTED on a test-file comment only; routed to the test pair"
+    },
+    {
+      "phase": 1,
+      "stage": "test",
+      "outcome": "GREEN"
+    },
+    {
+      "phase": 1,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 1,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/repeated-miss-nudge-phase-1-pure-nudge-decision.plan.md",
+      "timestamp": "2026-10-10T22:30:00Z"
+    },
+    {
+      "phase": 2,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/completed/repeated-miss-nudge-phase-2-columns-mute-and-wire.plan.md",
+      "plan_review_attempts": 1
+    },
+    {
+      "phase": 2,
+      "stage": "worktree",
+      "outcome": "reused"
+    },
+    {
+      "phase": 2,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "suite_path": "PRPs/reports/repeated-miss-nudge/test-suite-phase-2.diff",
+      "tdd_review_attempts": 1
+    },
+    {
+      "phase": 2,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 1
+    },
+    {
+      "phase": 2,
+      "stage": "test",
+      "outcome": "GREEN"
+    },
+    {
+      "phase": 2,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 2,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/repeated-miss-nudge-phase-2-columns-mute-and-wire.plan.md",
+      "timestamp": "2026-10-10T22:45:00Z"
+    },
+    {
+      "phase": 3,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/completed/repeated-miss-nudge-phase-3-the-cron-step.plan.md",
+      "plan_review_attempts": 1
+    },
+    {
+      "phase": 3,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "suite_path": "PRPs/reports/repeated-miss-nudge/test-suite-phase-3.diff",
+      "tdd_review_attempts": 1,
+      "note": "typing-only update after the implementer's Level 1; re-approved"
+    },
+    {
+      "phase": 3,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 2,
+      "note": "attempt 1 CHANGES_REQUESTED (R-SEM, comment spelled banned words)"
+    },
+    {
+      "phase": 3,
+      "stage": "test",
+      "outcome": "GREEN"
+    },
+    {
+      "phase": 3,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 3,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/repeated-miss-nudge-phase-3-the-cron-step.plan.md",
+      "timestamp": "2026-10-10T23:40:00Z"
+    },
+    {
+      "phase": 4,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/completed/repeated-miss-nudge-phase-4-the-switch-and-the-proof.plan.md",
+      "plan_review_attempts": 1
+    },
+    {
+      "phase": 4,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "suite_path": "PRPs/reports/repeated-miss-nudge/test-suite-phase-4.diff",
+      "tdd_review_attempts": 1
+    },
+    {
+      "phase": 4,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 1,
+      "visual_outcome": "PENDING (no browser pass; items owed to the device) \u2014 figma_track false"
+    },
+    {
+      "phase": 4,
+      "stage": "test",
+      "outcome": "GREEN"
+    },
+    {
+      "phase": 4,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 4,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/repeated-miss-nudge-phase-4-the-switch-and-the-proof.plan.md",
+      "timestamp": "2026-10-11T01:30:00Z"
+    }
+  ],
+  "outcome": "ALL_PHASES_COMPLETE",
+  "phases_completed": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "worktree_attempted": true,
+  "worktree_succeeded": true,
+  "fallback_reason": null,
+  "phase_diff_bases": {
+    "1": "1696eb1e7fad2dc6fd4976ba9f1c374b6e77cf75",
+    "2": "da6548735512f9a9026c260907bd9aca314f7767",
+    "3": "bade18860509577b9b2851d9a4364fc654ff8377"
+  },
+  "lane_durations_ms": {},
+  "total_duration_ms": null,
+  "pr_url": "https://github.com/fabiombarreto/praesto-sum/pull/11"
+}

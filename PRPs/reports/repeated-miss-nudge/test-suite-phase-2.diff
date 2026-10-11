@@ -1,0 +1,55 @@
+# TDD initial suite — phase 2
+# Source PRD: PRPs/prds/repeated-miss-nudge.prd.md (Acceptance Criteria)
+# Source plan: C:\repos\assistente-pessoal\PRPs\plans\repeated-miss-nudge-phase-2-columns-mute-and-wire.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-10-10
+# Mode: test-first (tdd: true, vitest). Test files live in the worktree
+#   C:\repos\assistente-pessoal\.worktrees\repeated-miss-nudge (branch feature/repeated-miss-nudge).
+# Phase-1 manifest PRPs/reports/repeated-miss-nudge/test-suite.diff is unchanged.
+
+## AC outcomes
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-1 | OUT_OF_PHASE_SCOPE | (phase 1, complete) |
+| AC-2 | OUT_OF_PHASE_SCOPE | (phase 1, complete) |
+| AC-3 | OUT_OF_PHASE_SCOPE | (phase 1, complete) |
+| AC-4 | OUT_OF_PHASE_SCOPE | (phase 1, complete) |
+| AC-5 | OUT_OF_PHASE_SCOPE | (phase 1, complete) |
+| AC-6 | OUT_OF_PHASE_SCOPE | (deferred to phase 3) |
+| AC-7 | OUT_OF_PHASE_SCOPE | (deferred to phase 3) |
+| AC-8 | NEW_TEST_REQUIRED | test/nudge-state.test.ts — describe "AC-8 / AC-A1 completing an occurrence clears the series' nudge marker" (clearing half only; the "three further misses nudge again" half is phase 3) |
+| AC-9 | OUT_OF_PHASE_SCOPE | (deferred to phase 3) |
+| AC-10 | OUT_OF_PHASE_SCOPE | (deferred to phase 3) |
+| AC-11 | NEW_TEST_REQUIRED | test/nudge-state.test.ts — describes "AC-11 / AC-A2 …" and "AC-11 / AC-A3 …", plus "AC-14 / AC-A6" for the wire (the "no nudge is sent for a muted series" half is phase 3) |
+| AC-12 | OUT_OF_PHASE_SCOPE | (deferred to phase 3) |
+| AC-13 | OUT_OF_PHASE_SCOPE | (deferred to phase 3) |
+| AC-14 | NEW_TEST_REQUIRED | test/nudge-state.test.ts — describes "AC-14 / AC-A4 migration 0006 …", "AC-14 / AC-A5 the FR-042 export …", "AC-14 / AC-A6 the series wire …". The restore drill itself (scripts/restore-drill.mjs) is generic and is covered by existing test/restore-values.test.ts (boolean binds 1/0) — EXISTING_TEST_COVERS test/restore-values.test.ts:18 for that sub-property |
+| AC-15 | OUT_OF_PHASE_SCOPE | (phase 4, manual/UI) |
+| AC-16 | OUT_OF_PHASE_SCOPE | (phase 4, manual/UI) |
+| AC-17 | OUT_OF_PHASE_SCOPE | (phase 4, owner device proof) |
+
+### Plan AC → test cases (test/nudge-state.test.ts)
+
+- AC-A1 (PRD AC-8): sets nudged_at null in the same op as done + successor; clears that series only; stays null when never nudged; clears when the completed occurrence is the series' last; does not touch nudge_muted; a `missed` close by `runScheduledJob` does NOT clear the marker.
+- AC-A2 (PRD AC-11): `{nudgeMuted:true}` persists on that series only and is returned; other series, the occurrence row and every Reminder row unchanged; `false` persists; travels with a template edit.
+- AC-A3 (PRD AC-11): non-boolean ("true", 1, 0, null, {}) → 400 naming nudgeMuted, row byte-equal before/after even with a valid sibling field; unknown extra key keeps the existing rejection and nudgeMuted is not applied; `nudgedAt` is not an editable key.
+- AC-A4 (PRD AC-14): exactly one 0006 migration, no DROP TABLE; its real statements replayed against a pre-0006 scratch table holding a row keep the row, nudge_muted 0, nudged_at NULL; PRAGMA table_info: nudge_muted NOT NULL, nudged_at nullable; a row inserted without the columns reads back false / null.
+- AC-A5 (PRD AC-14): GET /api/export recurrence_series rows carry nudgeMuted (boolean) and nudgedAt (epoch seconds or null).
+- AC-A6 (PRD AC-11): create/list/read/patch responses expose nudgeMuted and never the key nudgedAt, even with a marker set in D1.
+
+Expected RED reasons before the Implementer: new columns/migration 0006 absent; PATCH rejects `nudgeMuted` as an unknown key; `SeriesDto` lacks `nudgeMuted`; complete route does not clear the marker. No other RED reason.
+
+## Test files written this session
+
+- C:\repos\assistente-pessoal\.worktrees\repeated-miss-nudge\test\nudge-state.test.ts (CREATE)
+
+## Lifecycle ledger
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| UPDATE | EXISTING_TEST_UPDATED | test/series-edit.test.ts:seriesDto (fixture function, used by the seriesRuleDraft*/buildUpdateSeries*/planSeriesOccurrenceSave describes) | Driving AC: AC-11 / plan AC-A6. `SeriesDto` gains the REQUIRED `nudgeMuted: boolean` (api.ts), so the full SeriesDto literal stopped type-checking. One field added (`nudgeMuted: false`); no assertion, input or expected value changed or dropped. It is the only full SeriesDto/RecurrenceSeriesDto/RecurrenceSeries literal in test/ (scan: other sites are `as` casts, partial drizzle inserts or an empty array). |
+
+## Status
+
+*Status: APPROVED*

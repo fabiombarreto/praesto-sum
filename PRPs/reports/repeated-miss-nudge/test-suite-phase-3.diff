@@ -1,0 +1,55 @@
+# TDD initial suite — phase 3 (the cron step)
+# Source PRD: PRPs/prds/repeated-miss-nudge.prd.md (Acceptance Criteria)
+# Source plan: PRPs/plans/repeated-miss-nudge-phase-3-the-cron-step.plan.md
+# Mode: test-first (tdd: true, vitest)
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-10-10
+# Test files live in the worktree: .worktrees/repeated-miss-nudge (branch feature/repeated-miss-nudge)
+
+## AC outcomes
+
+| AC | Plan AC | Outcome | Path / mapping |
+|---|---|---|---|
+| AC-1 | (phase 1) | OUT_OF_PHASE_SCOPE | delivered by phase 1 (test/nudge.test.ts) |
+| AC-2 | (phase 1) | OUT_OF_PHASE_SCOPE | delivered by phase 1 |
+| AC-3 | (phase 1) | OUT_OF_PHASE_SCOPE | delivered by phase 1 |
+| AC-4 | (phase 1) | OUT_OF_PHASE_SCOPE | delivered by phase 1 |
+| AC-5 | (phase 1) | OUT_OF_PHASE_SCOPE | delivered by phase 1 |
+| AC-6 | AC-A1 | NEW_TEST_REQUIRED | test/repeated-miss-nudge-cron.test.ts — describe "AC-A1 (PRD AC-6)": two racing `sweepRepeatedMissNudges` (two subscriptions, one push each), two racing `runScheduledJob`, a later sequential sweep sends nothing |
+| AC-7 | AC-A2 | NEW_TEST_REQUIRED | test/repeated-miss-nudge-cron.test.ts — describe "AC-A2 (PRD AC-7)": 4th and 5th consecutive miss, two sweeps each, still one send in total and `nudged_at` unchanged |
+| AC-8 | (phase 2) | OUT_OF_PHASE_SCOPE | delivered by phase 2 (complete route clears the marker); used here only as setup in the AC-12 new-run test |
+| AC-9 | AC-A3 | NEW_TEST_REQUIRED | pure copy: test/nudge-copy.test.ts (title <= 30, tag per series, route /tasks/<id>, pt-BR count, no falha/falhando/pulada); cron half: test/repeated-miss-nudge-cron.test.ts describe "AC-A3 (PRD AC-9)": payload handed to the sender, count reached, two series => two tags/routes, no open occurrence => no send and no claim |
+| AC-10 | AC-A4 | NEW_TEST_REQUIRED | test/repeated-miss-nudge-cron.test.ts — describe "AC-A4 (PRD AC-10)": 404/410 pruned (live one kept), 429/500/503/no-status releases the claim and retries, no subscription => not marked nudged then nudged after subscribing, all-gone keeps the claim |
+| AC-11 | (phase 2) | OUT_OF_PHASE_SCOPE | delivered by phase 2 (PATCH route); the mute is seeded directly here |
+| AC-12 | AC-A5 | NEW_TEST_REQUIRED | test/repeated-miss-nudge-cron.test.ts — describe "AC-A5 (PRD AC-12)": muted at threshold => `nudged_at` set, zero sends; unmute => nothing; completion via the route then 3 new misses => exactly one nudge |
+| AC-13 | AC-A6 | NEW_TEST_REQUIRED | test/repeated-miss-nudge-cron.test.ts — describe "AC-A6 (PRD AC-13)": a real injected fault (SQLite trigger aborts the `nudged_at` claim) => due Reminder still sent, `cron_runs` records failure naming the series; one failing series does not stop another; clean run records success. Existing heartbeat / missed-sweep behaviour unchanged: EXISTING_TEST_COVERS test/cron-heartbeat.test.ts, test/missed-sweep-cron.test.ts, test/cron-sweep.test.ts (not edited; they are the plan's own regression guard) |
+| AC-14 | (phase 2) | OUT_OF_PHASE_SCOPE | delivered by phase 2 |
+| AC-15 | (phase 4) | OUT_OF_PHASE_SCOPE | deferred to phase 4 |
+| AC-16 | (phase 4) | OUT_OF_PHASE_SCOPE | deferred to phase 4 |
+| AC-17 | (phase 4) | OUT_OF_PHASE_SCOPE | deferred to phase 4 (manual device proof) |
+
+## Test files written this session
+
+- .worktrees/repeated-miss-nudge/test/nudge-copy.test.ts (seam: `buildNudgeNotification` from src/shared/nudge-copy.ts)
+- .worktrees/repeated-miss-nudge/test/repeated-miss-nudge-cron.test.ts (seams: `sweepRepeatedMissNudges`, `runScheduledJob`, `runCronHeartbeat` from src/worker/cron.ts; `sendPush` spied through the documented `vi.spyOn(sendModule, "sendPush")` idiom of test/cron-reminder-route.test.ts)
+
+## Seam notes for the reviewer
+
+- Only plan-declared seams are imported. `loadClosedRowsBySeries` / `findOpenOccurrenceId` / `resolveSeriesZone` are infrastructure with no AC of their own (plan Task 2) and are exercised only through the step.
+- No mock of the SUT: the sender (thin exempt network adapter) is the only spied seam, one level deep, every assertion checks an effect (payload content, `nudged_at`, remaining subscriptions, `cron_runs`).
+- AC-13 fault is a database trigger (dropped in afterEach), not a module mock, because the cron calls the step through a local binding that a spy cannot override.
+- Seeded misses are direct D1 inserts at `NOW` = 2026-10-04T15:00Z (12:00 America/Sao_Paulo, past the 09:00 gate) with the open occurrence on the local day, so the missed sweep leaves them untouched.
+- Message-format coupling is limited to the series id and the word "nudge" in the `cron_runs` error message (plan Task 4 step 8).
+- Intentionally not covered here (outside the in-scope ACs): the 09:00 gate and reason order (phase 1), unresolvable-zone fallback of `resolveSeriesZone` (a plan risk row, no PRD AC).
+
+## Lifecycle ledger
+
+Every UPDATE or DELETE performed this session, one row each. The series.ts refactor is behaviour-preserving (plan Task 3), so no existing test needs an update.
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| UPDATE | EXISTING_TEST_UPDATED | test/repeated-miss-nudge-cron.test.ts:(module-level `sendSpy` declaration, line 69; plus `type MockInstance` import) | Typing-only fix for `npm run check` (tsc -b TS2344 on `ReturnType<typeof vi.spyOn<...>>`): annotation changed to `MockInstance<typeof sendModule.sendPush>`. Driving ACs AC-6/7/9/10/12/13 unchanged; no assertion, input, expected value or executable statement altered. |
+
+## Status
+
+*Status: APPROVED*

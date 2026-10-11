@@ -1,0 +1,9 @@
+{
+  "formatter_cmd": "npx prettier --write",
+  "discovery_source": "methodology.md formatter_cmd",
+  "files_scoped": [
+    "test/nudge.test.ts"
+  ],
+  "outcome": "formatted",
+  "exit_code_or_null": 0
+}

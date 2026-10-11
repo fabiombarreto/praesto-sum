@@ -1,0 +1,201 @@
+
+ RUN  v4.1.10 C:/repos/assistente-pessoal/.worktrees/repeated-miss-nudge
+
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |docs| test/push-send-library-verdict.test.ts (8 tests) 9ms
+Using secrets defined in .dev.vars
+ ✓ |docs| test/source-invariants.test.ts (3 tests) 6ms
+Using secrets defined in .dev.vars
+ ✓ |docs| test/docs-consistency.test.ts (68 tests) 75ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/oauth-callback-redirect.test.ts (2 tests) 91ms
+ ✓ |worker| test/health.test.ts (3 tests) 83ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/reminders.test.ts (7 tests) 720ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-calendar-routes.test.ts (25 tests) 1577ms
+     ✓ answers 409 on invalid_grant, so the screen can say RECONNECT  517ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/nudge-state.test.ts (22 tests) 1899ms
+     ✓ travels with a template edit in one body  539ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-list-contract.test.ts (22 tests) 2155ms
+     ✓ keeps the ordering under the status filter  612ms
+     ✓ still lists an occurrence the owner has corrected  362ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/series.test.ts (30 tests) 3062ms
+     ✓ rejects 'byWeekday outside 1..7' with 400 naming the field, writing no row to recurrence_series, tasks or reminders  511ms
+     ✓ accepts freq, interval, anchorMode and the end condition as a coherent unit  340ms
+     ✓ PATCH rejects a status other than 'ended'  565ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-list-search.test.ts (22 tests) 3236ms
+     ✓ returns open, done and missed Tasks alike  629ms
+     ✓ applies `q`, `status`, `priority` and a date bound in the same request  370ms
+     ✓ matches `%` literally rather than as a wildcard  364ms
+     ✓ keeps the frozen urgency order among the Tasks `q` matches  699ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/tasks.test.ts (24 tests) 4064ms
+     ✓ closes the occurrence, increments doneCount, and spawns the template-shaped successor with its armed reminder  570ms
+     ✓ reopening the most recently completed occurrence with an untouched successor deletes the successor and its reminders, reopens the occurrence and decrements doneCount  384ms
+     ✓ refuses with 409 pt-BR and changes nothing when the successor has been detached  301ms
+     ✓ refuses with 409 and changes nothing when the successor has already been closed  731ms
+     ✓ refuses with 409 and changes nothing when the successor already had a reminder sent  477ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-list-filters.test.ts (20 tests) 4103ms
+     ✓ returns only Tasks on or before the given day, in urgency order  576ms
+     ✓ selects the closed interval when both are given  309ms
+     ✓ returns only the low-priority Tasks  389ms
+     ✓ applies status, priority and a date bound in the same request  722ms
+     ✓ takes the first N of the ORDERED FILTERED set, not of an arbitrary one  508ms
+     ✓ still rejects an invalid limit when filters are present  408ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-update.test.ts (43 tests) 5208ms
+     ✓ clears description when the key is sent as null  543ms
+     ✓ never leaves both dates set in the stored row  382ms
+     ✓ rejects id with 400 and writes nothing  576ms
+     ✓ rejects seriesId with 400 and writes nothing  318ms
+     ✓ moves a relative Reminder's fireAt with the deadline, leaving an absolute-linked Reminder on the same Task unchanged  632ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/export-ics-route.test.ts (3 tests) 115ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/missed-sweep-cron.test.ts (13 tests) 614ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-routes.test.ts (15 tests) 927ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/adherence-endpoint.test.ts (12 tests) 704ms
+Using secrets defined in .dev.vars
+stderr | test/oauth-callback.test.ts > a valid callback stores the credential exactly once (AC-3) > stores no credential when Google rejects the exchange
+[oauth-callback] token exchange failed: http_400
+
+ ✓ |worker| test/cron-sweep.test.ts (9 tests) 454ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/oauth-callback.test.ts (12 tests) 787ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-priority.test.ts (15 tests) 618ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/export.test.ts (5 tests) 570ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/diagnostics-route.test.ts (5 tests) 849ms
+     ✓ reports stale when the last cron run is 10 minutes old or more  609ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-test-route.test.ts (6 tests) 1218ms
+     ✓ keeps the row stored and reports the retryable outcome with its status code  627ms
+     ✓ upserts in place on a second call rather than accumulating rows  346ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-subscribe-route.test.ts (5 tests) 197ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/search-sql-agreement.test.ts (54 tests) 145ms
+Using secrets defined in .dev.vars
+uncaught exception; source = Uncaught (in promise); stack = Error: internal error; reference = 5mm11ol7olmh01ooe0n6hfba
+ ✓ |worker| test/push-send-spike-route.test.ts (2 tests) 109ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/cron-reminder-route.test.ts (2 tests) 63ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/series-edit.test.ts (66 tests) 36ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/cron-heartbeat.test.ts (4 tests) 56ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/nudge.test.ts (37 tests) 39ms
+Using secrets defined in .dev.vars
+uncaught exception; source = Uncaught (in promise); stack = Error: internal error; reference = a2en7tushs5uhc2pfcp6kpsh
+uncaught exception; source = Uncaught (in promise); stack = Error: internal error; reference = rqa6sgt795fuhd9r4hbnua07
+ ✓ |worker| test/push-send-adapter.test.ts (2 tests) 46ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/reminder-edit.test.ts (16 tests) 31ms
+ ✓ |worker| test/format.test.ts (38 tests) 39ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/dates.test.ts (17 tests) 38ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/recurrence.test.ts (17 tests) 33ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/diagnostics-copy.test.ts (15 tests) 26ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/agenda.test.ts (16 tests) 35ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-events.test.ts (23 tests) 39ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/export-ics.test.ts (6 tests) 31ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/adherence-line.test.ts (23 tests) 23ms
+ ✓ |worker| test/day-item-event.test.ts (8 tests) 29ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/missed-sweep.test.ts (18 tests) 17ms
+Using secrets defined in .dev.vars
+console warning; message = Called .text() on an HTTP body which does not appear to be text. The body's Content-Type is "application/x-www-form-urlencoded". The result will probably be corrupted. Consider checking the Content-Type header before interpreting entities as text.
+ ✓ |worker| test/google-calendar-client.test.ts (21 tests) 17ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/adherence-view.test.ts (19 tests) 25ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-key-encode.test.ts (10 tests) 19ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-sheet.test.ts (33 tests) 16ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/adherence.test.ts (26 tests) 12ms
+ ✓ |worker| test/task-edit.test.ts (25 tests) 12ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/day-groups.test.ts (24 tests) 15ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/app-route.test.ts (41 tests) 13ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/token-store.test.ts (21 tests) 12ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/notifications-load.test.ts (5 tests) 12ms
+Using secrets defined in .dev.vars
+console warning; message = Called .text() on an HTTP body which does not appear to be text. The body's Content-Type is "application/x-www-form-urlencoded". The result will probably be corrupted. Consider checking the Content-Type header before interpreting entities as text.
+ ✓ |worker| test/google-client.test.ts (11 tests) 9ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-groups.test.ts (20 tests) 11ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/notifications-settings.test.ts (22 tests) 10ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/snapshot-outcome.test.ts (13 tests) 8ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-filter.test.ts (22 tests) 10ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/content-disposition.test.ts (27 tests) 12ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/toast.test.ts (22 tests) 14ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-oauth.test.ts (16 tests) 11ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-settings.test.ts (12 tests) 9ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-payload-parse.test.ts (18 tests) 10ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/export-envelope.test.ts (7 tests) 8ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-failure-copy.test.ts (14 tests) 8ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-payload.test.ts (11 tests) 7ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/request-failure.test.ts (13 tests) 10ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/connectivity.test.ts (19 tests) 8ms
+ ✓ |worker| test/day-item.test.ts (14 tests) 10ms
+ ✓ |worker| test/search.test.ts (18 tests) 10ms
+ ✓ |worker| test/push-outcome.test.ts (12 tests) 8ms
+ ✓ |worker| test/cron-freshness.test.ts (8 tests) 9ms
+ ✓ |worker| test/notification-permission.test.ts (5 tests) 8ms
+ ✓ |worker| test/app-version.test.ts (8 tests) 6ms
+ ✓ |worker| test/share-target.test.ts (8 tests) 7ms
+ ✓ |worker| test/isolation.test.ts (3 tests) 6ms
+ ✓ |worker| test/export-completeness.test.ts (7 tests) 9ms
+ ✓ |worker| test/restore-values.test.ts (7 tests) 5ms
+
+ Test Files  78 passed (78)
+      Tests  1325 passed (1325)
+   Start at  18:17:52
+   Duration  47.60s (transform 20.20s, setup 230.82s, import 19.88s, tests 34.55s, environment 10ms)
+
+JUNIT report written to C:/repos/assistente-pessoal/PRPs/reports/repeated-miss-nudge/phase-2/attempts/1/junit.xml

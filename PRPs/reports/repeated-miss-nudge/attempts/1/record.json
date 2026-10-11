@@ -1,0 +1,20 @@
+{
+  "run_id": "repeated-miss-nudge-phase-1",
+  "attempt": 1,
+  "tier": "unit",
+  "framework": "vitest",
+  "outcome": "PASSED",
+  "duration_ms": 29626,
+  "counts": {
+    "passed": 1303,
+    "failed": 0,
+    "skipped": 0,
+    "total": 1303
+  },
+  "failures": [],
+  "coverage": null,
+  "artifacts": {
+    "junit_xml": "C:\\repos\\assistente-pessoal\\PRPs\\reports\\repeated-miss-nudge\\attempts\\1\\junit.xml"
+  },
+  "generated_at": "2026-10-10T20:59:11.371Z"
+}

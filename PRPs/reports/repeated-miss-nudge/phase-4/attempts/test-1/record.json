@@ -1,0 +1,1 @@
+{"schema":"v1","framework":"vitest","tier":"unit","attempt":1,"status":"PASSED","counts":{"total":1384,"passed":1384,"failed":0,"skipped":0,"files":81},"failures":[],"artifacts":{"junit":"junit.xml","stdout":"stdout.log"},"notes":"npm test exit 0; junit from separate vitest --reporter=junit run (exit 0, 1384 tests, 0 failures). Normalizer script not used."}
