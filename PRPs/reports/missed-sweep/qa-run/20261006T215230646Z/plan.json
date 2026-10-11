@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "index": 23,
+      "title": "G-2 — Completing an already-`missed` occurrence is refused",
+      "driver": "http",
+      "role": "owner",
+      "state": "declared",
+      "steps": [
+        { "action": "request", "method": "POST", "path": "/api/tasks/{{task_id}}/complete", "expect_status": 404, "expect_body_contains": "open Task" },
+        { "action": "query", "source": "d1-local", "sql": "SELECT id FROM recurrence_series WHERE id = '{{series_id}}' AND done_count = {{done_count}} AND missed_count = {{missed_count}}", "expect_rows": 1 },
+        { "action": "query", "source": "d1-local", "sql": "SELECT count(*) AS n FROM tasks WHERE series_id = '{{series_id}}' HAVING count(*) = {{task_count}}", "expect_rows": 1 },
+        { "action": "query", "source": "d1-local", "sql": "SELECT id FROM tasks WHERE id = '{{task_id}}' AND status = 'missed' AND completed_at IS NULL", "expect_rows": 1 }
+      ]
+    }
+  ]
+}

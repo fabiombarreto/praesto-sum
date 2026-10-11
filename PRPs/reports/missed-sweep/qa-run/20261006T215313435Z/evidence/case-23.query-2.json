@@ -1,0 +1,13 @@
+{
+  "source": "d1-local",
+  "kind": "wrangler-d1",
+  "read_only_control": "none (lexical guard and --local only)",
+  "statement": "SELECT id FROM recurrence_series WHERE id = '98ecc9d6-f054-4c42-a039-72aa8afeae61' AND done_count = 0 AND missed_count = 1",
+  "row_count": 1,
+  "truncated": false,
+  "rows": [
+    {
+      "id": "98ecc9d6-f054-4c42-a039-72aa8afeae61"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "index": 20,
+      "title": "AC-20 — On screen: *Não concluídas* (manual)",
+      "driver": "browser",
+      "role": "owner",
+      "state": "declared",
+      "steps": [
+        { "action": "goto", "path": "/" },
+        { "action": "expect_visible", "role": "heading", "name": "Concluídas" },
+        { "action": "expect_visible", "role": "region", "name": "Não concluídas" },
+        { "action": "expect_visible", "role": "heading", "name": "Não concluídas" }
+      ],
+      "human_remainder": {
+        "reason": "Only the presence of the separate Concluídas and Não concluídas groups on Hoje (steps 3-4) is expressible. 'Lists only completed Tasks' is an absence check; 'collapsed by default' and 'shows its count' have no assertion in the vocabulary, and the header's accessible name embeds the count, which the seed changes between plan and run; the expanded rows (step 5) and the search results (step 6) appear only after an interaction, so they cannot be grounded; steps 7-8 are subjective (pt-BR reading, UI/UX checklist)."
+      }
+    },
+    {
+      "index": 23,
+      "title": "G-2 — Completing an already-`missed` occurrence is refused",
+      "driver": "http",
+      "role": "owner",
+      "state": "declared",
+      "steps": [
+        { "action": "request", "method": "POST", "path": "/api/tasks/{{task_id}}/complete", "expect_status": 404, "expect_body_contains": "open Task" },
+        { "action": "query", "source": "d1-local", "sql": "SELECT id FROM recurrence_series WHERE id = '{{series_id}}' AND done_count = {{done_count}} AND missed_count = {{missed_count}}", "expect_rows": 1 },
+        { "action": "query", "source": "d1-local", "sql": "SELECT count(*) AS n FROM tasks WHERE series_id = '{{series_id}}' HAVING count(*) = {{task_count}}", "expect_rows": 1 },
+        { "action": "query", "source": "d1-local", "sql": "SELECT id FROM tasks WHERE id = '{{task_id}}' AND status = 'missed' AND completed_at IS NULL", "expect_rows": 1 }
+      ]
+    }
+  ]
+}

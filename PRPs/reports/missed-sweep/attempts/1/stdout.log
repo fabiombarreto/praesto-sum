@@ -1,0 +1,192 @@
+
+ RUN  v4.1.10 C:/repos/assistente-pessoal
+
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |docs| test/source-invariants.test.ts (3 tests) 8ms
+Using secrets defined in .dev.vars
+ ✓ |docs| test/push-send-library-verdict.test.ts (8 tests) 8ms
+Using secrets defined in .dev.vars
+ ✓ |docs| test/docs-consistency.test.ts (67 tests) 203ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-test-route.test.ts (6 tests) 263ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/reminders.test.ts (7 tests) 353ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-routes.test.ts (15 tests) 477ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/missed-sweep-cron.test.ts (13 tests) 925ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-calendar-routes.test.ts (25 tests) 1728ms
+     ✓ queries primary alone when the owner has never chosen  603ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-list-contract.test.ts (22 tests) 2739ms
+     ✓ takes the first N of the ORDERED set, not of an arbitrary one  665ms
+     ✓ combines with the status filter  382ms
+     ✓ accepts the ceiling itself  381ms
+     ✓ rejects a non-numeric string with 400 rather than clamping it  315ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/series.test.ts (27 tests) 2802ms
+     ✓ PATCH /:id with no token returns 401 and writes nothing  616ms
+     ✓ reads each series with its open occurrence id, or null once it closes; an unknown id is 404  454ms
+     ✓ PATCH template edit propagates to the open occurrence, leaves a closed row untouched, and rejects a rule field naming it  407ms
+     ✓ moves the day of the cycle without touching the open occurrence's own date  363ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-list-search.test.ts (22 tests) 3784ms
+     ✓ narrows a `q` match set by `status`  664ms
+     ✓ applies `q`, `status`, `priority` and a date bound in the same request  496ms
+     ✓ takes the first N of the ORDERED, `q`-FILTERED set when `limit` is present  814ms
+     ✓ rejects a `q` longer than 100 characters with 400  527ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/tasks.test.ts (24 tests) 3905ms
+     ✓ two concurrent completes on the same open occurrence leave exactly one successor, with no request surfacing a 500  647ms
+     ✓ until end condition: completing past untilDate spawns no successor and ends the series  331ms
+     ✓ completing a detached occurrence spawns a successor carrying the series template's title, not the edited one  413ms
+     ✓ deleting an already-closed series row is a plain delete with no successor spawn  380ms
+     ✓ refuses with 409 and changes nothing when the successor has already been closed  667ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-list-filters.test.ts (20 tests) 4043ms
+     ✓ never places an undated Task inside a date range  652ms
+     ✓ answers an inverted range with an empty list, not an error  368ms
+     ✓ rejects a `from` that is not zero-padded ISO  355ms
+     ✓ rejects an empty value rather than treating it as no filter  385ms
+     ✓ applies status, priority and a date bound in the same request  716ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-update.test.ts (43 tests) 5238ms
+     ✓ distinguishes the two in a single body: one field cleared, one untouched  629ms
+     ✓ rejects a non-string title with 400 and writes nothing  381ms
+     ✓ rejects an out-of-enum priority with 400 and writes nothing  319ms
+     ✓ rejects status with 400 and writes nothing  543ms
+     ✓ leaves a done Task done when it is edited (PRD Open Question 2)  521ms
+     ✓ does not recompute a relative Reminder's fireAt when the deadline is resubmitted unchanged  352ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/export-ics-route.test.ts (3 tests) 149ms
+Using secrets defined in .dev.vars
+stderr | test/oauth-callback.test.ts > a valid callback stores the credential exactly once (AC-3) > stores no credential when Google rejects the exchange
+[oauth-callback] token exchange failed: http_400
+
+ ✓ |worker| test/oauth-callback.test.ts (12 tests) 425ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-priority.test.ts (15 tests) 363ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/cron-sweep.test.ts (9 tests) 517ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/export.test.ts (5 tests) 643ms
+     ✓ carries Content-Disposition: attachment with a dated filename, and application/json  361ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/search-sql-agreement.test.ts (54 tests) 191ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-subscribe-route.test.ts (5 tests) 1317ms
+     ✓ updates the existing row's keys in place and leaves the row count for that endpoint at 1  652ms
+     ✓ rejects a missing endpoint with 400  501ms
+Using secrets defined in .dev.vars
+uncaught exception; source = Uncaught (in promise); stack = Error: internal error; reference = 2ltksk4v1lfp4q35t4bu790h
+uncaught exception; source = Uncaught (in promise); stack = Error: internal error; reference = 8hmvquiggtcoupcgkusm3729
+ ✓ |worker| test/push-send-adapter.test.ts (2 tests) 170ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/diagnostics-route.test.ts (5 tests) 178ms
+Using secrets defined in .dev.vars
+uncaught exception; source = Uncaught (in promise); stack = Error: internal error; reference = ukk71aedgoq6tfjhuhv4efkj
+ ✓ |worker| test/push-send-spike-route.test.ts (2 tests) 111ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/cron-reminder-route.test.ts (2 tests) 80ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/cron-heartbeat.test.ts (4 tests) 60ms
+ ✓ |worker| test/oauth-callback-redirect.test.ts (2 tests) 88ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/format.test.ts (38 tests) 48ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/dates.test.ts (17 tests) 64ms
+ ✓ |worker| test/reminder-edit.test.ts (16 tests) 63ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/day-item-event.test.ts (8 tests) 33ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/recurrence.test.ts (17 tests) 42ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/agenda.test.ts (16 tests) 35ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/export-ics.test.ts (6 tests) 35ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-events.test.ts (23 tests) 45ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/health.test.ts (3 tests) 37ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/missed-sweep.test.ts (18 tests) 23ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-key-encode.test.ts (10 tests) 19ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/diagnostics-copy.test.ts (15 tests) 33ms
+ ✓ |worker| test/day-groups.test.ts (24 tests) 17ms
+ ✓ |worker| test/task-sheet.test.ts (33 tests) 15ms
+ ✓ |worker| test/series-edit.test.ts (65 tests) 25ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+console warning; message = Called .text() on an HTTP body which does not appear to be text. The body's Content-Type is "application/x-www-form-urlencoded". The result will probably be corrupted. Consider checking the Content-Type header before interpreting entities as text.
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-calendar-client.test.ts (21 tests) 20ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-edit.test.ts (25 tests) 14ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/notifications-load.test.ts (5 tests) 13ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/token-store.test.ts (21 tests) 12ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/app-route.test.ts (34 tests) 15ms
+Using secrets defined in .dev.vars
+console warning; message = Called .text() on an HTTP body which does not appear to be text. The body's Content-Type is "application/x-www-form-urlencoded". The result will probably be corrupted. Consider checking the Content-Type header before interpreting entities as text.
+ ✓ |worker| test/google-client.test.ts (11 tests) 13ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-settings.test.ts (12 tests) 12ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/request-failure.test.ts (13 tests) 12ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/notifications-settings.test.ts (22 tests) 13ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/toast.test.ts (22 tests) 15ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/snapshot-outcome.test.ts (13 tests) 11ms
+ ✓ |worker| test/task-groups.test.ts (20 tests) 12ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-filter.test.ts (22 tests) 12ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/connectivity.test.ts (19 tests) 9ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/cron-freshness.test.ts (8 tests) 7ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-oauth.test.ts (16 tests) 11ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-payload.test.ts (11 tests) 13ms
+ ✓ |worker| test/export-completeness.test.ts (7 tests) 9ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/search.test.ts (18 tests) 11ms
+ ✓ |worker| test/day-item.test.ts (14 tests) 12ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/content-disposition.test.ts (27 tests) 13ms
+ ✓ |worker| test/share-target.test.ts (8 tests) 7ms
+ ✓ |worker| test/export-envelope.test.ts (7 tests) 11ms
+ ✓ |worker| test/notification-permission.test.ts (5 tests) 7ms
+ ✓ |worker| test/push-outcome.test.ts (12 tests) 10ms
+ ✓ |worker| test/restore-values.test.ts (7 tests) 6ms
+ ✓ |worker| test/app-version.test.ts (8 tests) 5ms
+ ✓ |worker| test/isolation.test.ts (3 tests) 4ms
+ ✓ |worker| test/google-failure-copy.test.ts (14 tests) 7ms
+ ✓ |worker| test/push-payload-parse.test.ts (18 tests) 9ms
+
+ Test Files  72 passed (72)
+      Tests  1174 passed (1174)
+   Start at  00:02:02
+   Duration  44.08s (transform 48.07s, setup 206.78s, import 15.59s, tests 31.63s, environment 14ms)
+
+JUNIT report written to C:/repos/assistente-pessoal/PRPs/reports/missed-sweep/attempts/1/junit.xml
+exit=0

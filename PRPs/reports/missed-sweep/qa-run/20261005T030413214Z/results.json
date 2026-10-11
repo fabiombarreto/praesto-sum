@@ -1,0 +1,410 @@
+{
+  "schema_version": 1,
+  "feature": "missed-sweep",
+  "run_id": "20261005T030413214Z",
+  "report_path": "PRPs/reports/missed-sweep/qa-report.md",
+  "report_sha256_before": "c1808dd54c67df1704c1c4224edff8bbe5e7cb6663ca9a24c2e99120a1a92b6e",
+  "report_sha256_after": "c1808dd54c67df1704c1c4224edff8bbe5e7cb6663ca9a24c2e99120a1a92b6e",
+  "started_at": "2026-10-05T03:04:19.238Z",
+  "finished_at": "2026-10-05T03:04:19.728Z",
+  "duration_ms": 490,
+  "base_url_origin": "http://127.0.0.1:5173",
+  "counts": {
+    "pass": 19,
+    "fail": 0,
+    "blocked": 0,
+    "needs-human": 4
+  },
+  "record_resolved": 19,
+  "aborted": null,
+  "warnings": [],
+  "human_gate": {
+    "status": "open",
+    "review_file": "PRPs/reports/missed-sweep/qa-report.md"
+  },
+  "cases": [
+    {
+      "index": 1,
+      "title": "AC-1 — Pure and clock-free",
+      "risk": "Medium",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/missed-sweep/attempts/1/record.json (run 95bd79d6-7965-4731-8970-3a3530ecfc7f, attempt 1, generated 2026-10-05T03:02:53.660Z); 18 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.239Z",
+      "finished_at": "2026-10-05T03:04:19.537Z",
+      "duration_ms": 298,
+      "evidence": [
+        "PRPs/reports/missed-sweep/qa-run/20261005T030413214Z/evidence/case-1.record.json"
+      ],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 2,
+      "title": "AC-2 — Not yet superseded is a no-op",
+      "risk": "Critical — a false early miss writes `missed` on a cycle still running, and that row is terminal and system-written. Units 11 and 12 read exactly these rows.",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/missed-sweep/attempts/1/record.json (run 95bd79d6-7965-4731-8970-3a3530ecfc7f, attempt 1, generated 2026-10-05T03:02:53.660Z); 18 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.537Z",
+      "finished_at": "2026-10-05T03:04:19.550Z",
+      "duration_ms": 13,
+      "evidence": [
+        "PRPs/reports/missed-sweep/qa-run/20261005T030413214Z/evidence/case-2.record.json"
+      ],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 3,
+      "title": "AC-3 — Catch-up leaves one row per whole cycle",
+      "risk": "Critical — this is the history record itself; a duplicate or a gap is unrecoverable by the honest mirror.",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/missed-sweep/attempts/1/record.json (run 95bd79d6-7965-4731-8970-3a3530ecfc7f, attempt 1, generated 2026-10-05T03:02:53.660Z); 18 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.550Z",
+      "finished_at": "2026-10-05T03:04:19.574Z",
+      "duration_ms": 24,
+      "evidence": [
+        "PRPs/reports/missed-sweep/qa-run/20261005T030413214Z/evidence/case-3.record.json"
+      ],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 4,
+      "title": "AC-4 — Catch-up is bounded",
+      "risk": "High — an unbounded loop or a 400-cycle write blows the free plan's CPU budget and the cron stops being reliable.",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/missed-sweep/attempts/1/record.json (run 95bd79d6-7965-4731-8970-3a3530ecfc7f, attempt 1, generated 2026-10-05T03:02:53.660Z); 31 test case(s) in 2 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.574Z",
+      "finished_at": "2026-10-05T03:04:19.585Z",
+      "duration_ms": 11,
+      "evidence": [
+        "PRPs/reports/missed-sweep/qa-run/20261005T030413214Z/evidence/case-4.record.json"
+      ],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 5,
+      "title": "AC-5 — Completion anchor",
+      "risk": "Medium",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/missed-sweep/attempts/1/record.json (run 95bd79d6-7965-4731-8970-3a3530ecfc7f, attempt 1, generated 2026-10-05T03:02:53.660Z); 18 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.586Z",
+      "finished_at": "2026-10-05T03:04:19.597Z",
+      "duration_ms": 11,
+      "evidence": [
+        "PRPs/reports/missed-sweep/qa-run/20261005T030413214Z/evidence/case-5.record.json"
+      ],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 6,
+      "title": "AC-6 — A `count` series ends on its last miss",
+      "risk": "High — D6 says a `count` end condition counts done + missed; getting this wrong leaves a series alive past its own limit or kills it early.",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/missed-sweep/attempts/1/record.json (run 95bd79d6-7965-4731-8970-3a3530ecfc7f, attempt 1, generated 2026-10-05T03:02:53.660Z); 18 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.597Z",
+      "finished_at": "2026-10-05T03:04:19.605Z",
+      "duration_ms": 8,
+      "evidence": [
+        "PRPs/reports/missed-sweep/qa-run/20261005T030413214Z/evidence/case-6.record.json"
+      ],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 7,
+      "title": "AC-7 — An `until` series stops at its limit",
+      "risk": "High",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/missed-sweep/attempts/1/record.json (run 95bd79d6-7965-4731-8970-3a3530ecfc7f, attempt 1, generated 2026-10-05T03:02:53.660Z); 18 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.605Z",
+      "finished_at": "2026-10-05T03:04:19.616Z",
+      "duration_ms": 11,
+      "evidence": [
+        "PRPs/reports/missed-sweep/qa-run/20261005T030413214Z/evidence/case-7.record.json"
+      ],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 8,
+      "title": "AC-8 — A series the owner ended",
+      "risk": "Medium",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/missed-sweep/attempts/1/record.json (run 95bd79d6-7965-4731-8970-3a3530ecfc7f, attempt 1, generated 2026-10-05T03:02:53.660Z); 18 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.616Z",
+      "finished_at": "2026-10-05T03:04:19.624Z",
+      "duration_ms": 8,
+      "evidence": [
+        "PRPs/reports/missed-sweep/qa-run/20261005T030413214Z/evidence/case-8.record.json"
+      ],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 9,
+      "title": "AC-9 — Repair starts fresh",
+      "risk": "High — ADR-0006 names the idempotent repair as a non-optional mitigation for dead series. Without it a series silently stops existing for the owner.",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/missed-sweep/attempts/1/record.json (run 95bd79d6-7965-4731-8970-3a3530ecfc7f, attempt 1, generated 2026-10-05T03:02:53.660Z); 18 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.624Z",
+      "finished_at": "2026-10-05T03:04:19.634Z",
+      "duration_ms": 10,
+      "evidence": [
+        "PRPs/reports/missed-sweep/qa-run/20261005T030413214Z/evidence/case-9.record.json"
+      ],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 10,
+      "title": "AC-10 — One batch writes the plan",
+      "risk": "Critical — the actual write. Everything above is a plan; this is the row that lands in the owner's data.",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/missed-sweep/attempts/1/record.json (run 95bd79d6-7965-4731-8970-3a3530ecfc7f, attempt 1, generated 2026-10-05T03:02:53.660Z); 13 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.634Z",
+      "finished_at": "2026-10-05T03:04:19.642Z",
+      "duration_ms": 8,
+      "evidence": [
+        "PRPs/reports/missed-sweep/qa-run/20261005T030413214Z/evidence/case-10.record.json"
+      ],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 11,
+      "title": "AC-11 — Running it twice changes nothing",
+      "risk": "Critical — the cron fires every five minutes. A non-idempotent sweep multiplies the owner's rows 288 times a day.",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/missed-sweep/attempts/1/record.json (run 95bd79d6-7965-4731-8970-3a3530ecfc7f, attempt 1, generated 2026-10-05T03:02:53.660Z); 13 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.642Z",
+      "finished_at": "2026-10-05T03:04:19.652Z",
+      "duration_ms": 10,
+      "evidence": [
+        "PRPs/reports/missed-sweep/qa-run/20261005T030413214Z/evidence/case-11.record.json"
+      ],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 12,
+      "title": "AC-12 — A race with a manual completion is harmless",
+      "risk": "High — the owner completing an occurrence while the cron sweeps it is a real, unavoidable concurrency window.",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/missed-sweep/attempts/1/record.json (run 95bd79d6-7965-4731-8970-3a3530ecfc7f, attempt 1, generated 2026-10-05T03:02:53.660Z); 13 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.652Z",
+      "finished_at": "2026-10-05T03:04:19.663Z",
+      "duration_ms": 11,
+      "evidence": [
+        "PRPs/reports/missed-sweep/qa-run/20261005T030413214Z/evidence/case-12.record.json"
+      ],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 13,
+      "title": "AC-13 — One series cannot block another",
+      "risk": "High — one poisoned series must not stop the owner's other series from advancing.",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/missed-sweep/attempts/1/record.json (run 95bd79d6-7965-4731-8970-3a3530ecfc7f, attempt 1, generated 2026-10-05T03:02:53.660Z); 13 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.663Z",
+      "finished_at": "2026-10-05T03:04:19.672Z",
+      "duration_ms": 9,
+      "evidence": [
+        "PRPs/reports/missed-sweep/qa-run/20261005T030413214Z/evidence/case-13.record.json"
+      ],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 14,
+      "title": "AC-14 — The sweep runs before the Reminder sweep",
+      "risk": "High — otherwise the owner's phone rings for an occurrence that was just marked missed. Ordering is the whole mitigation.",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/missed-sweep/attempts/1/record.json (run 95bd79d6-7965-4731-8970-3a3530ecfc7f, attempt 1, generated 2026-10-05T03:02:53.660Z); 13 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.672Z",
+      "finished_at": "2026-10-05T03:04:19.682Z",
+      "duration_ms": 10,
+      "evidence": [
+        "PRPs/reports/missed-sweep/qa-run/20261005T030413214Z/evidence/case-14.record.json"
+      ],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 15,
+      "title": "AC-15 — \"Today\" is the series' local day",
+      "risk": "High — a UTC comparison marks a miss a day early or late, every day, for every series. DST makes it worse.",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/missed-sweep/attempts/1/record.json (run 95bd79d6-7965-4731-8970-3a3530ecfc7f, attempt 1, generated 2026-10-05T03:02:53.660Z); 13 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.682Z",
+      "finished_at": "2026-10-05T03:04:19.691Z",
+      "duration_ms": 9,
+      "evidence": [
+        "PRPs/reports/missed-sweep/qa-run/20261005T030413214Z/evidence/case-15.record.json"
+      ],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 16,
+      "title": "AC-16 — A detached occurrence is missed like any other",
+      "risk": "Medium",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/missed-sweep/attempts/1/record.json (run 95bd79d6-7965-4731-8970-3a3530ecfc7f, attempt 1, generated 2026-10-05T03:02:53.660Z); 13 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.691Z",
+      "finished_at": "2026-10-05T03:04:19.699Z",
+      "duration_ms": 8,
+      "evidence": [
+        "PRPs/reports/missed-sweep/qa-run/20261005T030413214Z/evidence/case-16.record.json"
+      ],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 17,
+      "title": "AC-17 — The repair runs in the cron",
+      "risk": "High",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/missed-sweep/attempts/1/record.json (run 95bd79d6-7965-4731-8970-3a3530ecfc7f, attempt 1, generated 2026-10-05T03:02:53.660Z); 13 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.699Z",
+      "finished_at": "2026-10-05T03:04:19.708Z",
+      "duration_ms": 9,
+      "evidence": [
+        "PRPs/reports/missed-sweep/qa-run/20261005T030413214Z/evidence/case-17.record.json"
+      ],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 18,
+      "title": "AC-18 — One-off Tasks are untouched",
+      "risk": "Critical — the blast radius is every non-recurring Task the owner has, which today is almost all of them. A sweep that touches `series_id = null` rows corrupts the bulk of the owner's data.",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/missed-sweep/attempts/1/record.json (run 95bd79d6-7965-4731-8970-3a3530ecfc7f, attempt 1, generated 2026-10-05T03:02:53.660Z); 13 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.708Z",
+      "finished_at": "2026-10-05T03:04:19.717Z",
+      "duration_ms": 9,
+      "evidence": [
+        "PRPs/reports/missed-sweep/qa-run/20261005T030413214Z/evidence/case-18.record.json"
+      ],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 19,
+      "title": "AC-19 — Closed Tasks split into done and missed",
+      "risk": "High — if a missed occurrence lands under *Concluídas* the screen tells the owner he did something he did not do. That is the dishonesty this unit exists to remove.",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/missed-sweep/attempts/1/record.json (run 95bd79d6-7965-4731-8970-3a3530ecfc7f, attempt 1, generated 2026-10-05T03:02:53.660Z); 44 test case(s) in 2 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.717Z",
+      "finished_at": "2026-10-05T03:04:19.728Z",
+      "duration_ms": 11,
+      "evidence": [
+        "PRPs/reports/missed-sweep/qa-run/20261005T030413214Z/evidence/case-19.record.json"
+      ],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 20,
+      "title": "AC-20 — On screen: *Não concluídas* (manual)",
+      "risk": "High",
+      "outcome": "needs-human",
+      "reason_code": "NO_PLAN_ENTRY",
+      "reason": "no plan entry covers this case; the manual steps are reproduced verbatim",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.728Z",
+      "finished_at": "2026-10-05T03:04:19.728Z",
+      "duration_ms": 0,
+      "evidence": [],
+      "manual_steps_verbatim": "  1. Start `npm run dev` and open the app with a valid bearer token in IndexedDB.\n  2. Ensure at least one `missed` occurrence exists (see required state).\n  3. Open *Hoje*. Confirm *Concluídas* lists **only** completed Tasks.\n  4. Confirm a separate *Não concluídas* group exists, is **collapsed by default**, and shows its count in the header.\n  5. Expand it and confirm the missed occurrence is listed there with its *não concluída* meta line and a disabled complete control.\n  6. Repeat steps 3–5 on the search screen.\n  7. Confirm every visible string is pt-BR (ADR-0009).\n  8. Run the UI/UX review checklist in `documentation/40-engineering/ui-ux-guidelines.md` and paste the ✔/✘ result before the merge."
+    },
+    {
+      "index": 21,
+      "title": "AC-21 — Exit signal on the owner's device (manual)",
+      "risk": "Critical — this is the unit's exit signal and the only evidence the sweep works where it matters: a real cron, a real device, no app open.",
+      "outcome": "needs-human",
+      "reason_code": "NO_PLAN_ENTRY",
+      "reason": "no plan entry covers this case; the manual steps are reproduced verbatim",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.728Z",
+      "finished_at": "2026-10-05T03:04:19.728Z",
+      "duration_ms": 0,
+      "evidence": [],
+      "manual_steps_verbatim": "  1. Merge and deploy the unit (`npm run deploy`).\n  2. In production, create a daily recurring Task and let today's occurrence stand undone.\n  3. Do **not** open the app for the rest of the day.\n  4. After local midnight, open the app. Confirm yesterday's occurrence shows as *não concluída*.\n  5. Confirm today's occurrence is open with its Reminder armed.\n  6. Open the diagnostics screen and confirm a later cron run has happened.\n  7. Confirm that later run changed neither row.\n  8. Record the observation in the roadmap's Delivery history as the unit's device proof."
+    },
+    {
+      "index": 22,
+      "title": "G-1 — A non-conflict sweep failure still ships Reminders, then records a failure",
+      "risk": "High — if the rethrow at `src/worker/cron.ts:258` were ever dropped, a crashing sweep would record `outcome: \"success\"` in `cron_runs` and the diagnostics screen would lie to the owner. Telling the truth in `cron_runs` is exactly what unit 6 was closed on.",
+      "outcome": "needs-human",
+      "reason_code": "NO_PLAN_ENTRY",
+      "reason": "no plan entry covers this case; the manual steps are reproduced verbatim",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.728Z",
+      "finished_at": "2026-10-05T03:04:19.728Z",
+      "duration_ms": 0,
+      "evidence": [],
+      "manual_steps_verbatim": "not reproducible by hand without injecting a fault into the sweep, so no manual procedure is proposed. **Recommendation:** add one automated test before the merge — force `sweepMissedOccurrences` to throw a non-conflict error, then assert (a) the due Reminders still went out, and (b) `cron_runs` records `outcome: \"failure\"` with the error message."
+    },
+    {
+      "index": 23,
+      "title": "G-2 — Completing an already-`missed` occurrence is refused",
+      "risk": "Medium — ADR-0006 allows late completion only *until* the next occurrence arrives. After the sweep the row is terminal, and `POST /api/tasks/:id/complete` must not resurrect it or double-count it.",
+      "outcome": "needs-human",
+      "reason_code": "NO_PLAN_ENTRY",
+      "reason": "no plan entry covers this case; the manual steps are reproduced verbatim",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-05T03:04:19.728Z",
+      "finished_at": "2026-10-05T03:04:19.728Z",
+      "duration_ms": 0,
+      "evidence": [],
+      "manual_steps_verbatim": "  1. With `npm run dev` running, set a series occurrence to `missed` via `wrangler d1` and note its id.\n  2. Send `POST /api/tasks/<id>/complete` with the `Authorization: Bearer <token>` header.\n  3. Confirm the response is `404` and the body names no open Task.\n  4. Confirm `recurrence_series.done_count` and `missed_count` are unchanged, and that no successor row was spawned."
+    }
+  ]
+}

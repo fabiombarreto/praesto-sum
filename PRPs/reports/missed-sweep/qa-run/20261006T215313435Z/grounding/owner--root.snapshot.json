@@ -1,0 +1,327 @@
+{
+  "schema_version": 1,
+  "role": "owner",
+  "route": "/",
+  "entries": [
+    {
+      "kind": "role",
+      "role": "heading",
+      "name": "Hoje",
+      "matches": 2
+    },
+    {
+      "kind": "text",
+      "text": "ter., 06/10 2 restantes",
+      "matches": 0
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Filtros",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Pesquisar",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Configurações",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Abertas",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Para hoje",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Alta prioridade",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "region",
+      "name": "Agenda",
+      "matches": 2
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Agenda 2",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "heading",
+      "name": "Agenda",
+      "matches": 1
+    },
+    {
+      "kind": "text",
+      "text": "\"2\"",
+      "matches": 0
+    },
+    {
+      "kind": "role",
+      "role": "region",
+      "name": "Lembretes",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "heading",
+      "name": "Lembretes",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Novo lembrete",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "region",
+      "name": "Atrasadas",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Atrasadas 1",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "heading",
+      "name": "Atrasadas",
+      "matches": 1
+    },
+    {
+      "kind": "text",
+      "text": "\"1\"",
+      "matches": 0
+    },
+    {
+      "kind": "role",
+      "role": "checkbox",
+      "name": "Concluir teste recorrencia 1",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "teste recorrencia 1 Repete atrasada · venceu sáb., 03/10",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Editar título de teste recorrencia 1",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "region",
+      "name": "Hoje",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "checkbox",
+      "name": "Concluir QA missed-sweep 737c189d",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "QA missed-sweep 737c189d Repete fazer hoje",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Editar título de QA missed-sweep 737c189d",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "region",
+      "name": "Concluídas",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Concluídas 9",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "heading",
+      "name": "Concluídas",
+      "matches": 1
+    },
+    {
+      "kind": "text",
+      "text": "\"9\"",
+      "matches": 0
+    },
+    {
+      "kind": "role",
+      "role": "checkbox",
+      "name": "Reabrir Pagar o condomínio",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Pagar o condomínio",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "checkbox",
+      "name": "Reabrir Renovar o seguro do carro",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Renovar o seguro do carro",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "checkbox",
+      "name": "Reabrir Comprar café",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Comprar café",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "checkbox",
+      "name": "Reabrir Levar o notebook na assistência",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Levar o notebook na assistência",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "checkbox",
+      "name": "Reabrir Responder o e-mail do contador",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Responder o e-mail do contador",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "checkbox",
+      "name": "Reabrir sabão",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "sabão",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "checkbox",
+      "name": "Reabrir Oftalmo",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Oftalmo",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "checkbox",
+      "name": "Reabrir Organizar as fotos do celular",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Organizar as fotos do celular",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "checkbox",
+      "name": "Reabrir Ler o artigo sobre Workers",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Ler o artigo sobre Workers",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "region",
+      "name": "Não concluídas",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Não concluídas 1",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "heading",
+      "name": "Não concluídas",
+      "matches": 1
+    },
+    {
+      "kind": "text",
+      "text": "Nova tarefa",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "textbox",
+      "name": "Nova tarefa",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Adicionar",
+      "matches": 1
+    }
+  ],
+  "withheld": 0
+}

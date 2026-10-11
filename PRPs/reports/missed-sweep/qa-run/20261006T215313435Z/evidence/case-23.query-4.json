@@ -1,0 +1,13 @@
+{
+  "source": "d1-local",
+  "kind": "wrangler-d1",
+  "read_only_control": "none (lexical guard and --local only)",
+  "statement": "SELECT id FROM tasks WHERE id = '81804e43-1906-4576-8236-c54714edf4d8' AND status = 'missed' AND completed_at IS NULL",
+  "row_count": 1,
+  "truncated": false,
+  "rows": [
+    {
+      "id": "81804e43-1906-4576-8236-c54714edf4d8"
+    }
+  ]
+}

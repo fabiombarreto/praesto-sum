@@ -1,0 +1,13 @@
+{
+  "source": "d1-local",
+  "kind": "wrangler-d1",
+  "read_only_control": "none (lexical guard and --local only)",
+  "statement": "SELECT count(*) AS n FROM tasks WHERE series_id = '98ecc9d6-f054-4c42-a039-72aa8afeae61' HAVING count(*) = 2",
+  "row_count": 1,
+  "truncated": false,
+  "rows": [
+    {
+      "n": 2
+    }
+  ]
+}

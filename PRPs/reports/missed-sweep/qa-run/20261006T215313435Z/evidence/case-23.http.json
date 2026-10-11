@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/api/tasks/81804e43-1906-4576-8236-c54714edf4d8/complete"
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "content-type": "application/json",
+      "content-length": "37"
+    },
+    "body": {
+      "error": "No open Task with that id"
+    }
+  }
+}

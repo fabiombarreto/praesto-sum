@@ -1,0 +1,20 @@
+{
+  "run_id": "95bd79d6-7965-4731-8970-3a3530ecfc7f",
+  "attempt": 1,
+  "tier": "unit",
+  "framework": "vitest",
+  "outcome": "PASSED",
+  "duration_ms": 31627,
+  "counts": {
+    "passed": 1174,
+    "failed": 0,
+    "skipped": 0,
+    "total": 1174
+  },
+  "failures": [],
+  "coverage": null,
+  "artifacts": {
+    "junit_xml": "C:\\repos\\assistente-pessoal\\PRPs\\reports\\missed-sweep\\attempts\\1\\junit.xml"
+  },
+  "generated_at": "2026-10-05T03:02:53.660Z"
+}
