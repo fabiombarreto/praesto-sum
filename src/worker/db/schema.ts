@@ -86,6 +86,10 @@ export const recurrenceSeries = sqliteTable(
     maxCount: integer("max_count"),
     doneCount: integer("done_count").notNull().default(0),
     missedCount: integer("missed_count").notNull().default(0),
+    /** System state: claim marker of the repeated-miss nudge. */
+    nudgedAt: integer("nudged_at", { mode: "timestamp" }),
+    /** Owner preference: silences the nudge for this series only. */
+    nudgeMuted: integer("nudge_muted", { mode: "boolean" }).notNull().default(false),
 
     status: text("status", { enum: ["active", "ended"] })
       .notNull()

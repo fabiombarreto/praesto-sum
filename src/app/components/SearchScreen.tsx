@@ -89,7 +89,7 @@ export function SearchScreen({
   const sheetTaskReminder =
     sheetTask === null ? null : ((reminders ?? []).find((r) => r.taskId === sheetTask.id) ?? null);
   // Same series editing as *Hoje* — one hook, so the two sheets cannot drift.
-  const seriesSheet = useSeriesSheet(sheetTask);
+  const seriesSheet = useSeriesSheet(sheetTask, onUnauthorized);
 
   /** A 401 routes to the token gate; otherwise returns the failure's message. */
   function handleFailure(cause: unknown): string | null {
@@ -528,6 +528,11 @@ export function SearchScreen({
         onApplyToChange={seriesSheet.setApplyTo}
         onSaveSeriesOccurrence={saveSeriesOccurrence}
         onEndSeries={endSheetSeries}
+        nudge={{
+          pending: seriesSheet.nudge.pending,
+          error: seriesSheet.nudge.error,
+          onChange: seriesSheet.nudge.setEnabled,
+        }}
       />
     </div>
   );

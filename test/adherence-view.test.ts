@@ -15,6 +15,7 @@ import {
   adherenceSections,
   formatDoneOfClosed,
   formatMissDates,
+  formatNudgeMuted,
   formatStreak,
 } from "../src/shared/adherence-view";
 
@@ -26,6 +27,7 @@ function series(over: Partial<SeriesAdherenceDto> & { seriesId: string }): Serie
     closed: 0,
     currentStreak: 0,
     recentMisses: [],
+    nudgeMuted: false,
     ...over,
   };
 }
@@ -195,5 +197,23 @@ describe("formatMissDates (AC-18, AC-19)", () => {
       expect(out).not.toMatch(/falha|falhando|pulada/i);
       expect(out).not.toContain("%");
     }
+  });
+});
+
+// PRPs/prds/repeated-miss-nudge.prd.md AC-15 The Aderencia row marks a silenced
+// series (plan PRPs/plans/repeated-miss-nudge-phase-4-the-switch-and-the-proof.plan.md AC-A3).
+describe("formatNudgeMuted (repeated-miss-nudge AC-15)", () => {
+  it("says 'Avisos silenciados' for a muted series", () => {
+    expect(formatNudgeMuted(true)).toBe("Avisos silenciados");
+  });
+
+  it("returns null for an unmuted series so the row renders no extra line", () => {
+    expect(formatNudgeMuted(false)).toBeNull();
+  });
+
+  it("never uses the forbidden vocabulary or a percentage", () => {
+    const out = formatNudgeMuted(true) ?? "";
+    expect(out).not.toMatch(/falha|falhando|pulada/i);
+    expect(out).not.toContain("%");
   });
 });

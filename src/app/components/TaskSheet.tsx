@@ -16,6 +16,7 @@ import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { ReminderDto, SeriesDto, TaskDto, TaskPriority } from "../../shared/api";
 import { instantToLocalParts } from "../../shared/dates";
+import { nudgeSwitchView } from "../../shared/nudge-switch";
 import { draftFromReminder, type ReminderDraft } from "../../shared/reminder-edit";
 import {
   dateModeChoices,
@@ -77,6 +78,7 @@ export function TaskSheet({
   onApplyToChange,
   onSaveSeriesOccurrence,
   onEndSeries,
+  nudge,
 }: {
   task: TaskDto | null;
   open: boolean;
@@ -121,6 +123,11 @@ export function TaskSheet({
   /** Fired instead of `onSave` for a series occurrence. */
   onSaveSeriesOccurrence: () => void;
   onEndSeries: () => void;
+  /**
+   * The repeated-miss nudge switch's own write state - persisted immediately by the
+   * parent, never part of the Task draft.
+   */
+  nudge: { pending: boolean; error: string | null; onChange: (enabled: boolean) => void };
 }) {
   // Ending a series cannot be undone (there is no way back to "active"), so it
   // asks once more in place — the same rule the checklist applies to deletion.
@@ -148,6 +155,7 @@ export function TaskSheet({
   const repeats = canRepeat && recurrenceDraft.freq !== "none";
   /** An occurrence of an existing series: its sheet edits the series too. */
   const isOccurrence = !canRepeat;
+  const nudgeView = nudgeSwitchView(series);
   const seriesRuleError =
     isOccurrence && seriesRuleDraft !== null && series?.status === "active"
       ? seriesRuleDraftError(seriesRuleDraft)
@@ -533,6 +541,30 @@ export function TaskSheet({
                     <p role="alert" className="m-0 font-text text-t2 text-overdue">
                       {seriesRuleError}
                     </p>
+                  )}
+
+                  {nudgeView !== null && (
+                    <div className="flex flex-col gap-1">
+                      <label className="flex min-h-12 items-center gap-3 font-text text-t2 text-ink">
+                        <input
+                          type="checkbox"
+                          role="switch"
+                          className="size-6 accent-accent"
+                          checked={nudgeView.checked}
+                          disabled={busy || nudge.pending}
+                          onChange={(event) => nudge.onChange(event.target.checked)}
+                        />
+                        {nudgeView.label}
+                      </label>
+                      <p role="status" className="m-0 font-text text-t1 text-muted">
+                        {nudgeView.statusText}
+                      </p>
+                      {nudge.error !== null && (
+                        <p role="alert" className="m-0 font-text text-t2 text-overdue">
+                          {nudge.error}
+                        </p>
+                      )}
+                    </div>
                   )}
 
                   {confirmEnd ? (

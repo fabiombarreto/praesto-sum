@@ -80,11 +80,13 @@ export function toLifeAreaDto(row: LifeArea): LifeAreaDto {
 }
 
 /**
- * Maps a Recurrence Series row for the FR-042 export. `dtstart` and
- * `untilDate` are calendar days and export verbatim (see the conventions
- * header of `db/schema.ts`); `createdAt`/`updatedAt` are genuine instants.
+ * The series fields shared by the export row and the `/api/series` wire — every
+ * one written out explicitly, and deliberately without `nudgedAt` (system state:
+ * it travels in the export only). `dtstart` and `untilDate` are calendar days
+ * and export verbatim (see the conventions header of `db/schema.ts`);
+ * `createdAt`/`updatedAt` are genuine instants.
  */
-export function toRecurrenceSeriesDto(row: RecurrenceSeries): RecurrenceSeriesDto {
+function seriesWireFields(row: RecurrenceSeries): Omit<RecurrenceSeriesDto, "nudgedAt"> {
   return {
     id: row.id,
     kind: row.kind,
@@ -100,6 +102,7 @@ export function toRecurrenceSeriesDto(row: RecurrenceSeries): RecurrenceSeriesDt
     maxCount: row.maxCount,
     doneCount: row.doneCount,
     missedCount: row.missedCount,
+    nudgeMuted: row.nudgeMuted,
     status: row.status,
     title: row.title,
     description: row.description,
@@ -112,15 +115,20 @@ export function toRecurrenceSeriesDto(row: RecurrenceSeries): RecurrenceSeriesDt
   };
 }
 
+/** Maps a Recurrence Series row for the FR-042 export; carries `nudgedAt` too. */
+export function toRecurrenceSeriesDto(row: RecurrenceSeries): RecurrenceSeriesDto {
+  return { ...seriesWireFields(row), nudgedAt: toEpochSeconds(row.nudgedAt) };
+}
+
 /**
  * Maps a Recurrence Series row for `/api/series`, composing
- * `toRecurrenceSeriesDto` rather than re-declaring any of its fields by hand
+ * `seriesWireFields` rather than re-declaring any of its fields by hand
  * (docs/anti-patterns.md — "Hand-duplicated entity types"), and spreading on
  * the series' current open occurrence's Task id (or `null`), which the route
  * looks up separately since it is not a `recurrenceSeries` column.
  */
 export function toSeriesDto(row: RecurrenceSeries, openOccurrenceId: string | null): SeriesDto {
-  return { ...toRecurrenceSeriesDto(row), openOccurrenceId };
+  return { ...seriesWireFields(row), openOccurrenceId };
 }
 
 /** Maps a series row plus its computed adherence for `/api/series/adherence`; a missing title becomes `""`. */
@@ -136,6 +144,7 @@ export function toSeriesAdherenceDto(
     closed: adherence.closed,
     currentStreak: adherence.currentStreak,
     recentMisses: adherence.recentMisses,
+    nudgeMuted: row.nudgeMuted,
   };
 }
 

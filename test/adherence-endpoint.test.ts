@@ -165,6 +165,7 @@ describe("AC-11 / AC-A1 Shape and auth", () => {
       closed: 4,
       currentStreak: 0,
       recentMisses: ["2026-10-12", "2026-10-10"],
+      nudgeMuted: false,
     });
     expect(entryOf(body, beta.id)).toEqual({
       seriesId: beta.id,
@@ -174,6 +175,7 @@ describe("AC-11 / AC-A1 Shape and auth", () => {
       closed: 2,
       currentStreak: 1,
       recentMisses: ["2026-10-13"],
+      nudgeMuted: false,
     });
     // Alfa has 2 misses in the window, Beta 1: ranked by misses descending.
     expect(body.ranking).toEqual([alfa.id, beta.id]);
@@ -255,6 +257,57 @@ describe("QA G-1 an unresolvable series time zone", () => {
 
     expect(entryOf(result, bad.id)?.recentMisses).toEqual(["2026-09-30"]);
     expect(entryOf(result, good.id)?.recentMisses).toEqual(["2026-09-30"]);
+  });
+});
+
+// ---------------------------------------------------------------- repeated-miss-nudge AC-15 (wire half)
+// PRPs/prds/repeated-miss-nudge.prd.md AC-15: the Aderencia route can mark a
+// silenced series, which needs `nudgeMuted` per series on this wire.
+// Plan: PRPs/plans/repeated-miss-nudge-phase-4-the-switch-and-the-proof.plan.md (AC-A3).
+
+describe("repeated-miss-nudge AC-15 / AC-A3 nudgeMuted on the adherence wire", () => {
+  it("answers nudgeMuted true for a muted series and false for an unmuted one", async () => {
+    const muted = await insertSeries({ title: "Silenciada", nudgeMuted: true });
+    await insertOccurrence(muted, "2026-10-14", "missed");
+    const loud = await insertSeries({ title: "Avisando" });
+    await insertOccurrence(loud, "2026-10-14", "missed");
+
+    const body = (await (await getAdherence()).json()) as AdherenceResponse;
+
+    expect(entryOf(body, muted.id)?.nudgeMuted).toBe(true);
+    expect(entryOf(body, loud.id)?.nudgeMuted).toBe(false);
+  });
+
+  it("carries the flag for an ended series too", async () => {
+    const ended = await insertSeries({ title: "Encerrada", status: "ended", nudgeMuted: true });
+    await insertOccurrence(ended, "2026-10-13", "done");
+
+    const body = (await (await getAdherence()).json()) as AdherenceResponse;
+
+    expect(entryOf(body, ended.id)?.nudgeMuted).toBe(true);
+  });
+
+  it("carries the flag from loadSeriesAdherence directly", async () => {
+    const muted = await insertSeries({ title: "Silenciada", nudgeMuted: true });
+    const result = await seriesModule.loadSeriesAdherence(
+      createDb(env),
+      new Date("2026-10-15T12:00:00Z"),
+    );
+    expect(entryOf(result, muted.id)?.nudgeMuted).toBe(true);
+  });
+
+  it("does not expose the system-owned nudgedAt marker on the wire", async () => {
+    await insertSeries({
+      title: "Alfa",
+      nudgeMuted: true,
+      nudgedAt: new Date("2026-10-14T12:00:00Z"),
+    });
+
+    const body = (await (await getAdherence()).json()) as AdherenceResponse;
+
+    const entry = body.series[0] as unknown as Record<string, unknown>;
+    expect(entry).not.toHaveProperty("nudgedAt");
+    expect(entry).not.toHaveProperty("nudged_at");
   });
 });
 

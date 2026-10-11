@@ -43,6 +43,13 @@
       "when": 1790255035632,
       "tag": "0005_quiet_rogue",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1791666513776,
+      "tag": "0006_goofy_zombie",
+      "breakpoints": true
     }
   ]
 }

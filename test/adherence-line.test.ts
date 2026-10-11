@@ -31,6 +31,7 @@ function series(over: Partial<SeriesAdherenceDto> & { seriesId: string }): Serie
     closed: 0,
     currentStreak: 0,
     recentMisses: [],
+    nudgeMuted: false,
     ...over,
   };
 }
