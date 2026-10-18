@@ -1,10 +1,10 @@
 # Device proof — AC-24 (life-areas, phase 4)
 
-Status: OWED
+Status: OBSERVED (AC-24, the owner's report of 2026-10-18); AC-18 still OWED
 
-This is the owner's proof, on his phone, against production, once unit 13 is deployed. Unit 13 is
-not deployed, nothing below has been performed, and the roadmap row stays `in-progress` until he
-records it.
+This is the owner's proof, on his phone, against production. Unit 13 was deployed on 2026-10-18 as
+`v0.13.0` and the owner reported the same day that his phone test went all OK (see Observation).
+The roadmap row stays `in-progress` until the rest of the procedure is recorded and he decides.
 
 ## Procedure
 
@@ -64,4 +64,12 @@ Open, not settled — each is a proposal an agent wrote, and none is validated u
 
 ## Observation (owner)
 
-Empty until the owner records it. Nothing has been observed and nothing is claimed.
+2026-10-18 — the owner tested on his phone, against production `v0.13.0` (Cloudflare version
+`d555372d`), and reported *tudo ok*. That is the whole report: no area name, no count of assigned
+items, no account of individual steps and no number of days of use was given, so none is recorded
+here and none is inferred.
+
+What this settles: PRD AC-24's observation (create an area, assign an existing Task, filter *Hoje*).
+What it does not settle: step 7's week of use (at least three assigned items on at least three
+days), step 8 (the restore drill on a real production snapshot, PRD AC-18) and step 9 (flipping the
+unit on his decision), nor the decisions listed above.

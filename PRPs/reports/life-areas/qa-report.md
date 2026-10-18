@@ -37,7 +37,7 @@ Generated 2026-10-13 by `/relay-qa-report` in PRD mode, from `PRPs/prds/life-are
 | AC-21 | The filter sheet *Área* group | High | manual | `test/life-area-assign.test.ts` (pure half) | `pending` |
 | AC-22 | Degraded states | Medium | manual | `test/life-area-assign.test.ts` (pure half) | `pending` |
 | AC-23 | Invariants | High | automated | `npm run check` and `npm test` | `pending` |
-| AC-24 | Device proof | Critical | manual | — | `pending` |
+| AC-24 | Device proof | Critical | manual | — | `passed` |
 | AC-25 | Documentation synced | Medium | manual | `test/docs-consistency.test.ts` (partial) | `pending` |
 | G-1 | The foreground refetch keeps the area filter | High | manual | — | `pending` |
 | G-2 | Clearing the applied chip keeps focus | Medium | manual | — | `pending` |
@@ -365,12 +365,13 @@ Generated 2026-10-13 by `/relay-qa-report` in PRD mode, from `PRPs/prds/life-are
 - **Required state:** unit 13 **deployed** to production (it is not); the owner on his phone
 - **Coverage:** manual
 - **Automated test path:** — (none; owner-gated)
-- **Manual status:** `pending`
+- **Manual status:** `passed`
 - **Manual step-by-step:**
   1. Deploy, then on the phone create an area he chose himself.
   2. Assign an existing Task to it and filter *Hoje* by it; only that area's Tasks are listed and *Sem área* lists the rest.
   3. Record the observation in `PRPs/reports/life-areas/device-proof.md` (today `Status: OWED`, empty).
 - **Status today:** this is the exit signal and the only thing that moves the unit to `shipped`; the reversal clause (a week of use or the unit becomes `dropped`) applies.
+- **Owner's report:** 2026-10-18, on his phone against production `v0.13.0`: *tudo ok* (no further detail given).
 
 ### AC-25 — Documentation synced
 
