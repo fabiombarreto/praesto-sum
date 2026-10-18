@@ -201,5 +201,6 @@
     "docs_review": "APPROVED (docs-review.jsonl line 4)",
     "unit_status": "in-progress (AC-18 on a real production snapshot and AC-24 device proof OWED)",
     "end_tree": "18562e22cce116c613b9988d13af1af7290ee62c"
-  }
+  },
+  "pr_url": "https://github.com/fabiombarreto/praesto-sum/pull/12"
 }
