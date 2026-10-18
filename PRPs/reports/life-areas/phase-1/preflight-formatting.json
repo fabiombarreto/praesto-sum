@@ -1,0 +1,7 @@
+{
+  "formatter_cmd": "npx prettier --write",
+  "discovery_source": "methodology.md formatter_cmd",
+  "files_scoped": "86 test-glob files from git ls-files (cached + others, R-X pathspec set)",
+  "outcome": "formatted (every file already clean)",
+  "exit_code_or_null": 0
+}

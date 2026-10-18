@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-12
+last_updated: 2026-10-12
 review_trigger: "the owner validates the seeded requirements or confirms the MVP scope, or a scope change / accepted backlog idea touches any FR"
 ---
 
@@ -38,7 +38,7 @@ review_trigger: "the owner validates the seeded requirements or confirms the MVP
 | FR-005 | A Task can carry an optional **deadline** (a date to complete *by*) *or* an optional **scheduled date** (the specific date it is to be done *on*). | Must | accepted |
 | FR-006 | A Task can carry an optional priority level. | Should | accepted |
 | FR-007 | The owner can list Tasks and filter them by completion status, dates and priority. | Must | accepted |
-| FR-008 | A Task can be assigned to a Life Area. | Could | accepted |
+| FR-008 | A Task or a Recurrence Series can be assigned to at most one Life Area, which the owner creates himself; an item may carry none. | Could | accepted |
 | FR-009 | A Task can recur on a schedule (e.g. "pay rent on the 5th"), per the model in [ADR-0006](../60-decisions/ADR-0006-recurrence-model.md): shared rule, materialized current occurrence (at most one open per series), occurrences superseded without completion recorded as `missed`. | Should | accepted |
 | FR-010 | A Task can be linked to any number of Events and vice versa (N:N); the link is navigable from both sides. | Should | accepted |
 | FR-011 | Missed occurrences of recurring Tasks are permanently recorded and constantly visible: per-series adherence (miss counts, streaks, completion rate) and a view of recent misses. | Should | accepted |

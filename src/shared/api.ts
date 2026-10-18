@@ -74,7 +74,10 @@ export interface GoogleConnectionDto {
   scope: string;
 }
 
-/** A Life Area, as the export sees it (FR-042). Mirrors `LifeArea` in `src/worker/db/schema.ts` field for field. */
+/**
+ * A Life Area, as the export sees it (FR-042) and as `/api/life-areas` create and
+ * rename answer it. Mirrors `LifeArea` in `src/worker/db/schema.ts` field for field.
+ */
 export interface LifeAreaDto {
   id: string;
   name: string;
@@ -83,6 +86,43 @@ export interface LifeAreaDto {
   createdAt: number;
   /** Epoch seconds. */
   updatedAt: number;
+}
+
+/** `POST /api/life-areas` body. The name is trimmed server-side and must be 1-40 characters. */
+export interface CreateLifeAreaInput {
+  name: string;
+}
+
+/** `PATCH /api/life-areas/:id` body. `name` is the only editable key (renaming keeps the id). */
+export interface UpdateLifeAreaInput {
+  name?: string;
+}
+
+/**
+ * The closed set of keys `PATCH /api/life-areas/:id` accepts. `description` stays
+ * in the schema and the export but is deliberately not exposed (ADR-0015), so it
+ * and the server-owned fields are rejected with 400 rather than silently ignored.
+ */
+export const EDITABLE_LIFE_AREA_FIELDS: readonly string[] = ["name"];
+
+/**
+ * One item of `GET /api/life-areas`: the area plus what it holds. `openTaskCount`
+ * counts open Tasks only, `taskCount` Tasks of every status and `seriesCount`
+ * the area's Recurrence Series.
+ */
+export type LifeAreaSummaryDto = LifeAreaDto & {
+  openTaskCount: number;
+  taskCount: number;
+  seriesCount: number;
+};
+
+/**
+ * `GET /api/life-areas` body: the areas in pt-BR alphabetical order, plus the
+ * count of open Tasks that have no area (`noArea` is a count, never a stored area).
+ */
+export interface LifeAreasResponse {
+  lifeAreas: LifeAreaSummaryDto[];
+  noArea: { openTaskCount: number };
 }
 
 /**
@@ -236,13 +276,15 @@ export interface UpdateTaskInput {
   deadline?: string | null;
   scheduledDate?: string | null;
   priority?: TaskPriority | null;
+  lifeAreaId?: string | null;
 }
 
 /**
  * The closed set of keys `PATCH /api/tasks/:id` accepts. Anything else — the
  * server-owned fields (`id`, `status`, `createdAt`, `completedAt`, `seriesId`,
- * `occurrenceDate`, `detached`), `lifeAreaId` (unit 13 owns it), or a typo — is
- * rejected with 400 rather than silently ignored.
+ * `occurrenceDate`, `detached`) or a typo — is rejected with 400 rather than
+ * silently ignored. `lifeAreaId` is editable since unit 13 (an id that matches
+ * no area is a 400 naming it).
  */
 export const EDITABLE_TASK_FIELDS: readonly string[] = [
   "title",
@@ -250,6 +292,7 @@ export const EDITABLE_TASK_FIELDS: readonly string[] = [
   "deadline",
   "scheduledDate",
   "priority",
+  "lifeAreaId",
 ];
 
 /**

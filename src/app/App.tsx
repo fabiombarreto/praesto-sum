@@ -3,6 +3,7 @@ import { taskIdFromRoute } from "../shared/app-route";
 import type { ShareTarget } from "../shared/share-target";
 import { readToken } from "./api";
 import { AdherenceScreen } from "./components/AdherenceScreen";
+import { LifeAreasScreen } from "./components/LifeAreasScreen";
 import { NotificationsDiagnosticsScreen } from "./components/NotificationsDiagnosticsScreen";
 import { NotificationsScreen } from "./components/NotificationsScreen";
 import { SearchScreen } from "./components/SearchScreen";
@@ -96,8 +97,17 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
   if (route === "adherence") {
     return <AdherenceScreen onUnauthorized={onUnauthorized} back={back} />;
   }
+  if (route === "life-areas") {
+    return <LifeAreasScreen onUnauthorized={onUnauthorized} back={back} />;
+  }
   if (route === "search") {
-    return <SearchScreen onUnauthorized={onUnauthorized} back={back} />;
+    return (
+      <SearchScreen
+        onUnauthorized={onUnauthorized}
+        back={back}
+        onOpenLifeAreas={() => navigate("life-areas")}
+      />
+    );
   }
   // A notification for a Task-linked Reminder lands on `/tasks/<id>`
   // (`src/worker/cron.ts` builds the payload; `src/sw.ts` opens it). The route
@@ -113,6 +123,7 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
       onOpenSearch={() => navigate("search")}
       onOpenSettings={() => navigate("settings")}
       onOpenAdherence={() => navigate("adherence")}
+      onOpenLifeAreas={() => navigate("life-areas")}
     />
   );
 }

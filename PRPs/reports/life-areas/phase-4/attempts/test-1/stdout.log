@@ -1,0 +1,173 @@
+
+> praesto@0.12.0 test
+> vitest run --reporter=default --reporter=junit --outputFile.junit=C:/repos/assistente-pessoal/.worktrees/life-areas/PRPs/reports/life-areas/phase-4/attempts/test-1/junit.xml
+
+
+ RUN  v4.1.10 C:/repos/assistente-pessoal/.worktrees/life-areas
+
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |docs| test/push-send-library-verdict.test.ts (8 tests) 8ms
+Using secrets defined in .dev.vars
+ ✓ |docs| test/docs-consistency.test.ts (69 tests) 33ms
+Using secrets defined in .dev.vars
+ ✓ |docs| test/source-invariants.test.ts (3 tests) 6ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-subscribe-route.test.ts (5 tests) 110ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/reminders.test.ts (7 tests) 264ms
+ ✓ |worker| test/task-priority.test.ts (15 tests) 280ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/repeated-miss-nudge-cron.test.ts (22 tests) 1250ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/life-areas-task-routes.test.ts (24 tests) 2044ms
+     ✓ answers 200 with an empty list for an id that matches no area  606ms
+     ✓ narrows an area by status and text, finding the word in title or description  314ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/series.test.ts (30 tests) 2634ms
+     ✓ rejects 'byMonthday 32' with 400 naming the field, writing no row to recurrence_series, tasks or reminders  651ms
+     ✓ reads each series with its open occurrence id, or null once it closes; an unknown id is 404  347ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-list-search.test.ts (22 tests) 2884ms
+     ✓ still finds a Task by title when its description is NULL  700ms
+     ✓ narrows a `q` match set by `status`  353ms
+     ✓ takes the first N of the ORDERED, `q`-FILTERED set when `limit` is present  390ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/tasks.test.ts (24 tests) 3280ms
+     ✓ closes the occurrence, increments doneCount, and spawns the template-shaped successor with its armed reminder  706ms
+     ✓ count end condition: completing the last allowed occurrence spawns no successor and ends the series  358ms
+     ✓ deletes the row and its reminders, spawns the successor with reminders armed, and leaves doneCount/missedCount unchanged  311ms
+     ✓ refuses with 409 and changes nothing when the successor has already been closed  393ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-list-filters.test.ts (20 tests) 3671ms
+     ✓ returns only Tasks on or before the given day, in urgency order  753ms
+     ✓ never places an undated Task inside a date range  334ms
+     ✓ takes the first N of the ORDERED FILTERED set, not of an arbitrary one  426ms
+     ✓ still rejects an invalid limit when filters are present  454ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/life-areas-routes.test.ts (46 tests) 4419ms
+     ✓ does not mistake a longer name that merely starts the same for a duplicate  652ms
+     ✓ rejects renaming to a duplicate differing only by case and accent with 409  302ms
+     ✓ accepts the same create once one area has been deleted  331ms
+     ✓ answers 204 and removes the area  316ms
+     ✓ answers 401 for 'PATCH /api/life-areas/:id' without a token or with a wrong one, and touches nothing  346ms
+     ✓ answers 401 for 'DELETE /api/life-areas/:id' without a token or with a wrong one, and touches nothing  369ms
+     ✓ answers validation, conflict and not-found errors in Portuguese  334ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-update.test.ts (51 tests) 5463ms
+     ✓ clears description when the key is sent as null  692ms
+     ✓ distinguishes the two in a single body: one field cleared, one untouched  319ms
+     ✓ rejects the whole body when one key is non-editable, even alongside a valid key  323ms
+     ✓ leaves a done Task done when it is edited (PRD Open Question 2)  373ms
+     ✓ moves a relative Reminder's fireAt with the deadline, leaving an absolute-linked Reminder on the same Task unchanged  362ms
+     ✓ keeps sentAt set and does not recompute fireAt for an already-sent, relative Reminder when its Task's deadline is edited  364ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/export.test.ts (5 tests) 203ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-routes.test.ts (15 tests) 466ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/missed-sweep-cron.test.ts (13 tests) 831ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/nudge-state.test.ts (22 tests) 1979ms
+     ✓ persists true on that series only, returns it, and leaves the other series, the occurrence and every Reminder untouched  348ms
+     ✓ rejects the number 1 with 400 naming nudgeMuted, and writes nothing — not even a valid sibling field  346ms
+Using secrets defined in .dev.vars
+stderr | test/oauth-callback.test.ts > a valid callback stores the credential exactly once (AC-3) > stores no credential when Google rejects the exchange
+[oauth-callback] token exchange failed: http_400
+
+ ✓ |worker| test/oauth-callback.test.ts (12 tests) 397ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/oauth-callback-redirect.test.ts (2 tests) 73ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/health.test.ts (3 tests) 59ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-list-contract.test.ts (22 tests) 2490ms
+     ✓ returns overdue, then today, then future ascending, then undated  366ms
+     ✓ returns everything when no limit is supplied  400ms
+     ✓ accepts the ceiling itself  545ms
+     ✓ still lists an occurrence the owner has corrected  316ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/life-areas-series.test.ts (13 tests) 1821ms
+     ✓ moves the series and its open, non-detached occurrence to the new area  341ms
+     ✓ leaves the closed done and missed rows with the area they had  574ms
+     ✓ rejects a non-string id with 400 naming lifeAreaId  309ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-calendar-routes.test.ts (25 tests) 2480ms
+     ✓ answers 200 when every calendar fails, not an outage-shaped status  501ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/cron-sweep.test.ts (9 tests) 534ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-test-route.test.ts (6 tests) 240ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/adherence-endpoint.test.ts (16 tests) 733ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/life-areas-export.test.ts (3 tests) 560ms
+     ✓ carries the area's id on the Task and on the series assigned to it  347ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/diagnostics-route.test.ts (5 tests) 658ms
+Using secrets defined in .dev.vars
+uncaught exception; source = Uncaught (in promise); stack = Error: internal error; reference = qj5e7emqjcm8hfqn9rinle7c
+ ✓ |worker| test/push-send-spike-route.test.ts (2 tests) 101ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/search-sql-agreement.test.ts (54 tests) 152ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/cron-reminder-route.test.ts (2 tests) 78ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/cron-heartbeat.test.ts (4 tests) 48ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/export-ics-route.test.ts (3 tests) 110ms
+Using secrets defined in .dev.vars
+uncaught exception; source = Uncaught (in promise); stack = Error: internal error; reference = oc96atj4s6rn4o6kncpc0el1
+uncaught exception; source = Uncaught (in promise); stack = Error: internal error; reference = 3icbu8r4fp9gk92li12v38h1
+ ✓ |worker| test/push-send-adapter.test.ts (2 tests) 43ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/series-edit.test.ts (94 tests) 34ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/format.test.ts (79 tests) 32ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/nudge.test.ts (37 tests) 23ms
+ ✓ |worker| test/dates.test.ts (17 tests) 31ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-events.test.ts (23 tests) 25ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/recurrence.test.ts (17 tests) 23ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/reminder-edit.test.ts (16 tests) 24ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/agenda.test.ts (16 tests) 22ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/day-item-event.test.ts (8 tests) 16ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/life-areas-list.test.ts (48 tests) 17ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/export-ics.test.ts (6 tests) 20ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/missed-sweep.test.ts (18 tests) 21ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/diagnostics-copy.test.ts (15 tests) 19ms
+Using secrets defined in .dev.vars
+console warning; message = Called .text() on an HTTP body which does not appear to be text. The body's Content-Type is "application/x-www-form-urlencoded". The result will probably be corrupted. Consider checking the Content-Type header before interpreting entities as text.
+ ✓ |worker| test/google-calendar-client.test.ts (21 tests) 21ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/notifications-load.test.ts (5 tests) 10ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/day-groups.test.ts (24 tests) 16ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/app-route.test.ts (49 tests) 13ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-sheet.test.ts (33 tests) 16ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-edit.test.ts (38 tests) 20ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-key-encode.test.ts (10 tests) 23ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/life-area-assign.test.ts (32 tests) 15ms
+Using secrets defined in .dev.vars

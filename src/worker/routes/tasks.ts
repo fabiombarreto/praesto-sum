@@ -14,6 +14,7 @@ import { buildSearchClauses } from "../../shared/search";
 import { createDb } from "../db/client";
 import { recurrenceSeries, reminders, tasks, type Task } from "../db/schema";
 import { toTaskDto } from "../dto";
+import { checkLifeAreaId } from "../life-area-check";
 import { buildRecurrenceRule, buildSuccessorStatements, isUniqueConflict } from "../successor";
 
 /**
@@ -52,6 +53,13 @@ export const taskRoutes = new Hono<{ Bindings: Env }>();
  * `priority=normal` also matches a `NULL` priority, because an unset priority
  * means "not set" and sorts as normal (`docs/domain/areas/tasks.md`) — a plain
  * equality would hide most of the real table.
+ *
+ * `lifeAreaId=<id>` keeps only that area's Tasks (every status) and
+ * `lifeAreaId=none` only the area-less ones. It is one more clause in the same
+ * AND as `status`, `priority`, `from`/`to` and `q`, so an absent parameter
+ * leaves the query byte-for-byte unchanged. The id is not checked against
+ * `life_areas`: an id matching no area is an ordinary empty result, and an
+ * empty value is a 400 naming `lifeAreaId`.
  */
 taskRoutes.get("/", async (c) => {
   const status = c.req.query("status");
@@ -96,6 +104,15 @@ taskRoutes.get("/", async (c) => {
     qClauses = result.clauses;
   }
 
+  // `lifeAreaId` filter (life-areas PRD AC-11): read and rejected in the same
+  // pre-DB block, after `q`, so no earlier error's precedence moves. An EMPTY
+  // value is a 400 rather than a dropped filter — a caller that sent
+  // `?lifeAreaId=` believes one was applied.
+  const lifeAreaId = c.req.query("lifeAreaId");
+  if (lifeAreaId !== undefined && lifeAreaId.trim() === "") {
+    return c.json({ error: "O filtro de área não pode ser vazio (lifeAreaId)" }, 400);
+  }
+
   const today = todayIn(new Date());
   const dueDate = sql`coalesce(${tasks.deadline}, ${tasks.scheduledDate})`;
   const urgencyBucket = sql`case
@@ -123,6 +140,13 @@ taskRoutes.get("/", async (c) => {
       : priority === "normal"
         ? sql`(${tasks.priority} = 'normal' or ${tasks.priority} is null)`
         : eq(tasks.priority, priority),
+    // `none` is the reserved literal for "no area" (ids are `crypto.randomUUID()`);
+    // any other value is an id, and one matching no area is just an empty result.
+    lifeAreaId === undefined
+      ? undefined
+      : lifeAreaId === "none"
+        ? isNull(tasks.lifeAreaId)
+        : eq(tasks.lifeAreaId, lifeAreaId),
     ...qClauses,
   ].filter((clause) => clause !== undefined);
 
@@ -169,6 +193,12 @@ taskRoutes.post("/", async (c) => {
   }
 
   const db = createDb(c.env);
+
+  // An id that matches no area is a 400 naming `lifeAreaId` (life-areas AC-8),
+  // never the foreign key's 500. Absent and `null` both mean "no area".
+  const area = await checkLifeAreaId(db, input.lifeAreaId);
+  if (!area.ok) return c.json({ error: area.error }, 400);
+
   const [row] = await db
     .insert(tasks)
     .values({
@@ -178,7 +208,7 @@ taskRoutes.post("/", async (c) => {
       deadline,
       scheduledDate,
       priority,
-      lifeAreaId: input.lifeAreaId ?? null,
+      lifeAreaId: area.lifeAreaId,
     })
     .returning();
 
@@ -189,7 +219,7 @@ taskRoutes.post("/", async (c) => {
 /**
  * FR-002 — edit any editable attribute of a Task.
  *
- * This route owns three rules the client must never own:
+ * This route owns four rules the client must never own:
  *
  * 1. An omitted key is NOT a `null`. Keys are read with `Object.hasOwn` off the
  *    raw parsed body, because `body.key ?? null` would collapse "not mentioned"
@@ -203,9 +233,14 @@ taskRoutes.post("/", async (c) => {
  *    correction. Unit 9 gives that flag its consumer; honouring it here costs
  *    one line and saves a retrofit over real data.
  *
- * `status`, `completedAt`, `seriesId`, `occurrenceDate`, `createdAt` and
- * `lifeAreaId` are never written here. `updatedAt` is written by the schema's
- * own `$onUpdate`.
+ * 4. `lifeAreaId` is editable since unit 13: a string must match an existing
+ *    area (400 naming `lifeAreaId` otherwise, before anything is written) and
+ *    `null` clears it. Editing the area of an occurrence detaches it (rule 3)
+ *    and never writes the series row — moving a whole series goes through
+ *    `PATCH /api/series/:id`.
+ *
+ * `status`, `completedAt`, `seriesId`, `occurrenceDate` and `createdAt` are never
+ * written here. `updatedAt` is written by the schema's own `$onUpdate`.
  */
 taskRoutes.patch("/:id", async (c) => {
   const body = await readJson(c.req.raw);
@@ -218,6 +253,10 @@ taskRoutes.patch("/:id", async (c) => {
   if (Object.keys(body).length === 0) {
     return c.json({ error: "At least one editable field is required" }, 400);
   }
+
+  // Created here, ahead of the field blocks, because `lifeAreaId` needs it for
+  // its existence check (life-areas AC-9) before anything is written.
+  const db = createDb(c.env);
 
   const patch: Partial<typeof tasks.$inferInsert> = {};
 
@@ -259,6 +298,12 @@ taskRoutes.patch("/:id", async (c) => {
     patch.priority = priority;
   }
 
+  if (Object.hasOwn(body, "lifeAreaId")) {
+    const area = await checkLifeAreaId(db, body.lifeAreaId);
+    if (!area.ok) return c.json({ error: area.error }, 400);
+    patch.lifeAreaId = area.lifeAreaId;
+  }
+
   // Same rule, same wording as the create route: never both at once.
   if (patch.deadline != null && patch.scheduledDate != null) {
     return c.json({ error: "A Task carries either a deadline or a scheduled date" }, 400);
@@ -267,7 +312,6 @@ taskRoutes.patch("/:id", async (c) => {
   if (patch.deadline != null) patch.scheduledDate = null;
   if (patch.scheduledDate != null) patch.deadline = null;
 
-  const db = createDb(c.env);
   const [existing] = await db
     .select()
     .from(tasks)

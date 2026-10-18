@@ -1,0 +1,37 @@
+{
+  "attempt": 2,
+  "verdict": "IMPLEMENTATION_COMPLETE",
+  "files_changed": [
+    "CLAUDE.md",
+    "PRPs/reports/data-export/c6-restore-drill.md",
+    "PRPs/reports/life-areas/c6-drill-output.txt",
+    "PRPs/reports/life-areas/c6-restore-drill.md",
+    "PRPs/reports/life-areas/device-proof.md",
+    "PRPs/reports/life-areas/phase-4/base-tree.txt",
+    "PRPs/reports/life-areas/phase-4/chip-overflow-measurement.md",
+    "PRPs/reports/life-areas/phase-4/close-out.md",
+    "PRPs/reports/life-areas/phase-4/live-browser-pass.md",
+    "PRPs/reports/life-areas/phase-4/ui-checklist.md",
+    "docs/context/architecture.md",
+    "docs/domain/areas/life-areas.md",
+    "docs/domain/areas/tasks.md",
+    "docs/domain/glossary.md",
+    "documentation/10-product/glossary.md",
+    "documentation/20-requirements/functional-requirements.md",
+    "documentation/30-architecture/domain-model.md",
+    "documentation/40-engineering/ui-layout-standard.md",
+    "documentation/50-planning/roadmap.md",
+    "src/app/components/FilterChips.tsx",
+    "src/app/components/FilterSheet.tsx",
+    "src/app/components/TodayScreen.tsx",
+    "src/shared/life-area-assign.ts",
+    "src/shared/task-filter.ts"
+  ],
+  "validation": {
+    "level_1": "PASS",
+    "level_2": "PASS",
+    "level_3": "PASS"
+  },
+  "base_commit": "4d4735890fbf08c7469f25338601c4aedc90d00b",
+  "note": "revision after the orchestrator live browser pass: focus after clearing the applied chip, label cap on the applied chip"
+}

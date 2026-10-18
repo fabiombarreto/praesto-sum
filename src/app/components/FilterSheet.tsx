@@ -1,5 +1,5 @@
-// The filter sheet (layout standard §3, PRD AC-15): Status, Prioridade and
-// Período over the existing `Sheet`, light-dismissible — the one surface
+// The filter sheet (layout standard §3, PRD AC-15): Status, Prioridade, Área
+// and Período over the existing `Sheet`, light-dismissible — the one surface
 // layout standard §3 allows that on. Every change applies IMMEDIATELY
 // through `onChange` (there is no *Aplicar* button and no draft to lose),
 // which is what makes light dismiss safe here, unlike the detail editor
@@ -8,8 +8,19 @@
 // `TaskSheet.tsx`'s own `ChipGroup` usage for the detail editor's date-mode
 // and priority dimensions — this sheet and the chip row are two VIEWS of
 // the one filter state `TodayScreen` owns, never a second copy of it.
+//
+// The *Área* group (life-areas PRD AC-21) offers *Sem área* and each area,
+// alphabetically, on as many rows as it needs. It is ABSENT — not a
+// placeholder — when the owner has no areas and when the areas request has
+// failed: a filter with nothing to pick, or one that would say "you have no
+// areas" about a list that is merely unknown, is worse than silence. Its chip
+// values are the filter's own: `NO_AREA_VALUE` IS the value that means "the
+// Tasks with no area", so nothing is mapped between the chip and the filter —
+// `null` there means "no filter", which is exactly an unpressed group.
 
 import type { TaskPriority, TaskStatus } from "../../shared/api";
+import { decideAreaGroup, NO_AREA_VALUE, type AreaOption } from "../../shared/life-area-assign";
+import { NO_AREA_LABEL } from "../../shared/life-areas-view";
 import { EMPTY_FILTER, type TaskFilter } from "../../shared/task-filter";
 import { Button } from "./ui/Button";
 import { Chip, ChipGroup } from "./ui/Chip";
@@ -20,12 +31,21 @@ export function FilterSheet({
   onOpenChange,
   filter,
   onChange,
+  areas,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   filter: TaskFilter;
   onChange: (next: TaskFilter) => void;
+  /**
+   * The owner's areas as `useLifeAreas` holds them. `null` or absent means unknown
+   * or failed, and the *Área* group is then not rendered. Optional so any other
+   * caller compiles unchanged.
+   */
+  areas?: readonly AreaOption[] | null;
 }) {
+  const areaGroup = decideAreaGroup(areas ?? null);
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange} title="Filtros" lightDismiss>
       <div className="flex flex-col gap-4">
@@ -60,6 +80,26 @@ export function FilterSheet({
             <Chip value="low">Baixa</Chip>
           </ChipGroup>
         </div>
+
+        {areaGroup.kind === "choices" && (
+          <div className="flex flex-col gap-1">
+            <p className="m-0 font-data text-t1 font-semibold text-muted">Área</p>
+            <ChipGroup
+              multiple={false}
+              wrap
+              label="Área"
+              value={filter.lifeAreaId === null ? [] : [filter.lifeAreaId]}
+              onValueChange={(next) => onChange({ ...filter, lifeAreaId: next[0] ?? null })}
+            >
+              <Chip value={NO_AREA_VALUE}>{NO_AREA_LABEL}</Chip>
+              {areaGroup.options.map((option) => (
+                <Chip key={option.id} value={option.id}>
+                  {option.name}
+                </Chip>
+              ))}
+            </ChipGroup>
+          </div>
+        )}
 
         <div className="flex flex-col gap-1">
           <p className="m-0 font-data text-t1 font-semibold text-muted">Período</p>

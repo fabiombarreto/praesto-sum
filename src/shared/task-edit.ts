@@ -20,8 +20,9 @@ import { isCalendarDate, type TaskDto, type TaskPriority, type UpdateTaskInput }
 export type TaskDateMode = "none" | "deadline" | "scheduled";
 
 /**
- * The current value of every control on the edit surface. Every field is
- * required: a form always has a value, even when that value is empty.
+ * The current value of every control on the edit surface. The five members
+ * below are required: a form always has a value, even when that value is empty.
+ * The sixth, `lifeAreaId`, is the one optional member and is documented there.
  */
 export interface TaskDraft {
   title: string;
@@ -29,6 +30,17 @@ export interface TaskDraft {
   dateMode: TaskDateMode;
   date: string;
   priority: TaskPriority | null;
+  /**
+   * The Life Area the owner has CHOSEN in this edit session. Absent means he has
+   * not touched the control, so nothing is sent and nothing is overwritten;
+   * `null` is an explicit *Sem área*; a string is an area id.
+   *
+   * Deliberately not seeded by `draftFromTask`: a kept draft must never re-send an
+   * area id that changed or vanished on the server since the sheet first opened,
+   * and an unchosen area must never detach an occurrence (ADR-0006). Read the
+   * effective value through `effectiveLifeAreaId`.
+   */
+  lifeAreaId?: string | null;
 }
 
 export function dateModeOf(task: TaskDto): TaskDateMode {
@@ -61,9 +73,28 @@ export function buildTaskPatch(original: TaskDto, draft: TaskDraft): UpdateTaskI
 
   if (draft.priority !== original.priority) patch.priority = draft.priority;
 
+  // Emitted only when the owner chose a value that differs from the Task's own
+  // (set, change, or clear with `null`): an unchanged area is never sent, because
+  // any key on this PATCH detaches an occurrence from its series (ADR-0006).
+  if (draft.lifeAreaId !== undefined && draft.lifeAreaId !== original.lifeAreaId) {
+    patch.lifeAreaId = draft.lifeAreaId;
+  }
+
   applyDate(patch, original, draft);
 
   return patch;
+}
+
+/**
+ * The area the sheet shows as selected and a conversion to a series must carry:
+ * the Task's own when the draft holds no choice, the draft's otherwise (`null`
+ * being an explicit *Sem área*).
+ */
+export function effectiveLifeAreaId(
+  draft: Pick<TaskDraft, "lifeAreaId">,
+  task: Pick<TaskDto, "lifeAreaId">,
+): string | null {
+  return draft.lifeAreaId === undefined ? task.lifeAreaId : draft.lifeAreaId;
 }
 
 /**

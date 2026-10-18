@@ -19,18 +19,21 @@
  *   `Intl.DateTimeFormat(...).formatToParts`, assembled as `<weekday>, <dd>/<mm>`;
  *   the weekday is normalised to end in exactly one `.` because ICU builds
  *   disagree on whether the short form already carries one.
- * - `taskMetaLine`: `missed` always reads "não concluída" (overdue); `done`
- *   always reads nothing; an open Task's date phrase comes from `deadline`
- *   (verb "venceu"/"até") or `scheduledDate` (verb "era para"/"fazer") — at
- *   most one is set by the schema's CHECK — relative to `today`, with `hoje`
- *   / `amanhã` / `ontem` special-cased and every other day going through
- *   `formatDayShort`; `priority: "high"` appends " · alta", `"low"` appends
- *   " · baixa", `"normal"` and `null` append nothing. Day arithmetic (the
- *   `amanhã` / `ontem` check) is done on the `YYYY-MM-DD` strings through
- *   UTC noon (`Date.UTC` + `setUTCDate`), never through local time, so a
- *   month or year boundary never misfires the relative word; before/after
- *   `today` is a plain string comparison, which sorts correctly for
- *   zero-padded ISO dates.
+ * - `taskMetaLine` / `taskMetaParts`: `missed` always reads "não concluída"
+ *   (overdue); `done` always reads nothing; an open Task's date phrase comes
+ *   from `deadline` (verb "venceu"/"até") or `scheduledDate` (verb "era
+ *   para"/"fazer") — at most one is set by the schema's CHECK — relative to
+ *   `today`, with `hoje` / `amanhã` / `ontem` special-cased and every other day
+ *   going through `formatDayShort`; `priority: "high"` appends " · alta",
+ *   `"low"` appends " · baixa", `"normal"` and `null` append nothing; the Life
+ *   Area's name, when the caller has one, ends an OPEN Task's line (" · Casa")
+ *   and a closed row never shows it. `taskMetaParts` keeps the three parts
+ *   apart so the row can place the priority glyph without splitting a string;
+ *   `taskMetaLine` is their ` · ` join. Day arithmetic (the `amanhã` / `ontem`
+ *   check) is done on the `YYYY-MM-DD` strings through UTC noon (`Date.UTC` +
+ *   `setUTCDate`), never through local time, so a month or year boundary never
+ *   misfires the relative word; before/after `today` is a plain string
+ *   comparison, which sorts correctly for zero-padded ISO dates.
  */
 
 import type { EventMoment, TaskDto } from "./api";
@@ -122,19 +125,33 @@ function dayWord(date: string, today: string): string {
 }
 
 /**
- * The row meta line: `null` for a `done` Task or an open, undated Task with
- * no priority word to show; `{ text: "não concluída", overdue: true }` for a
- * `missed` Task (nothing else appended); otherwise a date phrase built from
- * `deadline` or `scheduledDate` (at most one is set) relative to `today`,
- * with the priority word appended when the Task carries one. See the module
- * header for the full rule set and the day-arithmetic discipline.
+ * The pieces of an open Task's meta line, kept apart so the row can place the
+ * priority glyph beside its word without splitting a string. `overdue` comes
+ * from the date phrase alone and is `false` when there is none.
  */
-export function taskMetaLine(
+export interface TaskMetaParts {
+  phrase: string | null;
+  priorityWord: "alta" | "baixa" | null;
+  areaName: string | null;
+  overdue: boolean;
+}
+
+/**
+ * The row's meta line as structured parts: `null` for a `done` Task, or for an
+ * open Task with no date phrase, no priority word and no area name to show;
+ * `{ phrase: "não concluída", priorityWord: null, areaName: null, overdue: true }`
+ * for a `missed` Task (a closed row never shows the area); otherwise the date
+ * phrase built from `deadline` or `scheduledDate` (at most one is set) relative
+ * to `today`, the priority word, and the `areaName` the caller supplied. See the
+ * module header for the full rule set and the day-arithmetic discipline.
+ */
+export function taskMetaParts(
   task: TaskDto,
   today: string,
-): { text: string; overdue: boolean } | null {
+  areaName: string | null = null,
+): TaskMetaParts | null {
   if (task.status === "missed") {
-    return { text: "não concluída", overdue: true };
+    return { phrase: "não concluída", priorityWord: null, areaName: null, overdue: true };
   }
   if (task.status === "done") {
     return null;
@@ -157,12 +174,35 @@ export function taskMetaLine(
 
   const priorityWord = task.priority === "high" ? "alta" : task.priority === "low" ? "baixa" : null;
 
-  if (phrase === null) {
-    return priorityWord === null ? null : { text: priorityWord, overdue: false };
-  }
-  return priorityWord === null
-    ? phrase
-    : { text: `${phrase.text} · ${priorityWord}`, overdue: phrase.overdue };
+  if (phrase === null && priorityWord === null && areaName === null) return null;
+
+  return {
+    phrase: phrase === null ? null : phrase.text,
+    priorityWord,
+    areaName,
+    overdue: phrase === null ? false : phrase.overdue,
+  };
+}
+
+/**
+ * The row meta line: `null` for a `done` Task or an open Task with nothing to
+ * show; `{ text: "não concluída", overdue: true }` for a `missed` Task (nothing
+ * else appended); otherwise the present parts of `taskMetaParts` — date phrase,
+ * priority word, area name — joined by ` · `, with the date phrase's `overdue`.
+ * Called with two arguments it returns exactly what it did before areas existed.
+ */
+export function taskMetaLine(
+  task: TaskDto,
+  today: string,
+  areaName: string | null = null,
+): { text: string; overdue: boolean } | null {
+  const parts = taskMetaParts(task, today, areaName);
+  if (parts === null) return null;
+
+  const present = [parts.phrase, parts.priorityWord, parts.areaName].filter(
+    (part): part is string => part !== null,
+  );
+  return { text: present.join(" · "), overdue: parts.overdue };
 }
 
 /**

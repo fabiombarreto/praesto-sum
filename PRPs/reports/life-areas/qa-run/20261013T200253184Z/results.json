@@ -1,0 +1,640 @@
+{
+  "schema_version": 1,
+  "feature": "life-areas",
+  "run_id": "20261013T200253184Z",
+  "report_path": "PRPs/reports/life-areas/qa-report.md",
+  "report_sha256_before": "2ce7673ee2fd13ee73d12c8e304a7b068fbc4314f570659be17c3284e3344a39",
+  "report_sha256_after": "2ce7673ee2fd13ee73d12c8e304a7b068fbc4314f570659be17c3284e3344a39",
+  "started_at": "2026-10-13T20:03:37.772Z",
+  "finished_at": "2026-10-13T20:03:45.978Z",
+  "duration_ms": 8206,
+  "base_url_origin": "http://127.0.0.1:5173",
+  "counts": {
+    "pass": 17,
+    "fail": 0,
+    "blocked": 0,
+    "needs-human": 14
+  },
+  "record_resolved": 17,
+  "partially_executed": 3,
+  "aborted": null,
+  "warnings": [],
+  "human_gate": {
+    "status": "open",
+    "review_file": "PRPs/reports/life-areas/qa-report.md"
+  },
+  "cases": [
+    {
+      "index": 1,
+      "title": "AC-1 — Create and list an area",
+      "risk": "High",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/life-areas/record.json (run 12558650-a464-4f1c-ab39-17fc1014d23e, attempt 2, generated 2026-10-12T18:15:19.104Z); 46 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:37.773Z",
+      "finished_at": "2026-10-13T20:03:38.098Z",
+      "duration_ms": 325,
+      "evidence": [
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-1.record.json"
+      ],
+      "steps": [],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 2,
+      "title": "AC-2 — Name rules (blank, longer than 40, duplicate)",
+      "risk": "High",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/life-areas/record.json (run 12558650-a464-4f1c-ab39-17fc1014d23e, attempt 2, generated 2026-10-12T18:15:19.104Z); 127 test case(s) in 3 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:38.098Z",
+      "finished_at": "2026-10-13T20:03:38.118Z",
+      "duration_ms": 20,
+      "evidence": [
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-2.record.json"
+      ],
+      "steps": [],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 3,
+      "title": "AC-3 — At most twelve areas",
+      "risk": "Medium",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/life-areas/record.json (run 12558650-a464-4f1c-ab39-17fc1014d23e, attempt 2, generated 2026-10-12T18:15:19.104Z); 94 test case(s) in 2 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:38.118Z",
+      "finished_at": "2026-10-13T20:03:38.139Z",
+      "duration_ms": 21,
+      "evidence": [
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-3.record.json"
+      ],
+      "steps": [],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 4,
+      "title": "AC-4 — Rename keeps the id and the items",
+      "risk": "High",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/life-areas/record.json (run 12558650-a464-4f1c-ab39-17fc1014d23e, attempt 2, generated 2026-10-12T18:15:19.104Z); 46 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:38.139Z",
+      "finished_at": "2026-10-13T20:03:38.152Z",
+      "duration_ms": 13,
+      "evidence": [
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-4.record.json"
+      ],
+      "steps": [],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 5,
+      "title": "AC-5 — Delete unassigns, it never deletes an item",
+      "risk": "Critical",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/life-areas/record.json (run 12558650-a464-4f1c-ab39-17fc1014d23e, attempt 2, generated 2026-10-12T18:15:19.104Z); 46 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:38.152Z",
+      "finished_at": "2026-10-13T20:03:38.165Z",
+      "duration_ms": 13,
+      "evidence": [
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-5.record.json"
+      ],
+      "steps": [],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 6,
+      "title": "AC-6 — List shape, order and counts",
+      "risk": "Medium",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/life-areas/record.json (run 12558650-a464-4f1c-ab39-17fc1014d23e, attempt 2, generated 2026-10-12T18:15:19.104Z); 46 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:38.165Z",
+      "finished_at": "2026-10-13T20:03:38.178Z",
+      "duration_ms": 13,
+      "evidence": [
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-6.record.json"
+      ],
+      "steps": [],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 7,
+      "title": "AC-7 — The bearer gate on every area route",
+      "risk": "Critical",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/life-areas/record.json (run 12558650-a464-4f1c-ab39-17fc1014d23e, attempt 2, generated 2026-10-12T18:15:19.104Z); 46 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:38.178Z",
+      "finished_at": "2026-10-13T20:03:38.191Z",
+      "duration_ms": 13,
+      "evidence": [
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-7.record.json"
+      ],
+      "steps": [],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 8,
+      "title": "AC-8 — Task create validates the area",
+      "risk": "High",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/life-areas/record.json (run 12558650-a464-4f1c-ab39-17fc1014d23e, attempt 2, generated 2026-10-12T18:15:19.104Z); 24 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:38.191Z",
+      "finished_at": "2026-10-13T20:03:38.204Z",
+      "duration_ms": 13,
+      "evidence": [
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-8.record.json"
+      ],
+      "steps": [],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 9,
+      "title": "AC-9 — Task edit carries the area",
+      "risk": "High",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/life-areas/record.json (run 12558650-a464-4f1c-ab39-17fc1014d23e, attempt 2, generated 2026-10-12T18:15:19.104Z); 89 test case(s) in 2 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:38.204Z",
+      "finished_at": "2026-10-13T20:03:38.218Z",
+      "duration_ms": 14,
+      "evidence": [
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-9.record.json"
+      ],
+      "steps": [],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 10,
+      "title": "AC-10 — Series carries the area",
+      "risk": "High",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/life-areas/record.json (run 12558650-a464-4f1c-ab39-17fc1014d23e, attempt 2, generated 2026-10-12T18:15:19.104Z); 13 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:38.218Z",
+      "finished_at": "2026-10-13T20:03:38.230Z",
+      "duration_ms": 12,
+      "evidence": [
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-10.record.json"
+      ],
+      "steps": [],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 11,
+      "title": "AC-11 — The `lifeAreaId` list filter",
+      "risk": "High",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/life-areas/record.json (run 12558650-a464-4f1c-ab39-17fc1014d23e, attempt 2, generated 2026-10-12T18:15:19.104Z); 24 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:38.230Z",
+      "finished_at": "2026-10-13T20:03:38.243Z",
+      "duration_ms": 13,
+      "evidence": [
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-11.record.json"
+      ],
+      "steps": [],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 12,
+      "title": "AC-12 — Shared helpers",
+      "risk": "Medium",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/life-areas/record.json (run 12558650-a464-4f1c-ab39-17fc1014d23e, attempt 2, generated 2026-10-12T18:15:19.104Z); 17 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:38.243Z",
+      "finished_at": "2026-10-13T20:03:38.255Z",
+      "duration_ms": 12,
+      "evidence": [
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-12.record.json"
+      ],
+      "steps": [],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 13,
+      "title": "AC-13 — Filter dimension",
+      "risk": "High",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/life-areas/record.json (run 12558650-a464-4f1c-ab39-17fc1014d23e, attempt 2, generated 2026-10-12T18:15:19.104Z); 42 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:38.255Z",
+      "finished_at": "2026-10-13T20:03:38.267Z",
+      "duration_ms": 12,
+      "evidence": [
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-13.record.json"
+      ],
+      "steps": [],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 14,
+      "title": "AC-14 — Capture inherits the filter",
+      "risk": "Medium",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/life-areas/record.json (run 12558650-a464-4f1c-ab39-17fc1014d23e, attempt 2, generated 2026-10-12T18:15:19.104Z); 32 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:38.267Z",
+      "finished_at": "2026-10-13T20:03:38.281Z",
+      "duration_ms": 14,
+      "evidence": [
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-14.record.json"
+      ],
+      "steps": [],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 15,
+      "title": "AC-15 — The area name closes an open Task's row",
+      "risk": "Medium",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/life-areas/record.json (run 12558650-a464-4f1c-ab39-17fc1014d23e, attempt 2, generated 2026-10-12T18:15:19.104Z); 111 test case(s) in 2 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:38.281Z",
+      "finished_at": "2026-10-13T20:03:38.292Z",
+      "duration_ms": 11,
+      "evidence": [
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-15.record.json"
+      ],
+      "steps": [],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 16,
+      "title": "AC-16 — Occurrence save plan",
+      "risk": "High",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/life-areas/record.json (run 12558650-a464-4f1c-ab39-17fc1014d23e, attempt 2, generated 2026-10-12T18:15:19.104Z); 94 test case(s) in 1 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:38.293Z",
+      "finished_at": "2026-10-13T20:03:38.304Z",
+      "duration_ms": 11,
+      "evidence": [
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-16.record.json"
+      ],
+      "steps": [],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 17,
+      "title": "AC-17 — Export carries the area",
+      "risk": "Critical",
+      "outcome": "pass",
+      "reason_code": "AUTOMATED_EVIDENCE",
+      "reason": "resolved from PRPs/reports/life-areas/record.json (run 12558650-a464-4f1c-ab39-17fc1014d23e, attempt 2, generated 2026-10-12T18:15:19.104Z); 10 test case(s) in 2 file(s), none failed",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:38.304Z",
+      "finished_at": "2026-10-13T20:03:38.317Z",
+      "duration_ms": 13,
+      "evidence": [
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-17.record.json"
+      ],
+      "steps": [],
+      "manual_steps_verbatim": null
+    },
+    {
+      "index": 18,
+      "title": "AC-18 — Restore drill on a production snapshot",
+      "risk": "Critical",
+      "outcome": "needs-human",
+      "reason_code": "NO_PLAN_ENTRY",
+      "reason": "no plan entry covers this case; the manual steps are reproduced verbatim",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:38.317Z",
+      "finished_at": "2026-10-13T20:03:38.317Z",
+      "duration_ms": 0,
+      "evidence": [],
+      "steps": [],
+      "manual_steps_verbatim": "  1. Pull a real snapshot with `scripts/pull-export-snapshot.mjs` (needs the production credential; owner-only).\n  2. Run `scripts/restore-drill.mjs` against it; expect `restore-drill: PASS`, equal row counts and every field of every row identical, `life_areas` included.\n  3. Record the result under `PRPs/reports/life-areas/`."
+    },
+    {
+      "index": 19,
+      "title": "AC-19 — The *Áreas* screen",
+      "risk": "High",
+      "outcome": "needs-human",
+      "reason_code": "PARTIAL_REMAINDER",
+      "reason": "the objective steps passed; the remaining steps are human work and are reproduced verbatim",
+      "driver": "browser",
+      "role": "owner",
+      "started_at": "2026-10-13T20:03:38.317Z",
+      "finished_at": "2026-10-13T20:03:42.631Z",
+      "duration_ms": 4314,
+      "evidence": [
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-19.query-4.json",
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-19.png"
+      ],
+      "steps": [
+        {
+          "index": 1,
+          "action": "goto",
+          "result": "passed",
+          "evidence": null
+        },
+        {
+          "index": 2,
+          "action": "expect_url",
+          "result": "passed",
+          "evidence": null
+        },
+        {
+          "index": 3,
+          "action": "expect_visible",
+          "result": "passed",
+          "evidence": null
+        },
+        {
+          "index": 4,
+          "action": "query",
+          "result": "passed",
+          "evidence": "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-19.query-4.json"
+        },
+        {
+          "index": 5,
+          "action": "human_remainder",
+          "result": "human",
+          "evidence": null
+        }
+      ],
+      "manual_steps_verbatim": "  1. Open *Configurações*, then *Áreas*; expect `/settings/life-areas`, areas alphabetical with open counts and a read-only *Sem área* row.\n  2. Add one, rename one in place, delete one; the delete asks once, repeats the verb and says how many Tarefas and séries lose the area.\n  3. Press Esc and use the back gesture; both return to *Configurações*.\n  4. With no area, the empty state invites the first one; make the request fail and expect an inline persistent error with *Tentar de novo*.\n  5. Every control is at least 48 px and the copy is pt-BR."
+    },
+    {
+      "index": 20,
+      "title": "AC-20 — The Task sheet *Área* group",
+      "risk": "High",
+      "outcome": "needs-human",
+      "reason_code": "PARTIAL_REMAINDER",
+      "reason": "the objective steps passed; the remaining steps are human work and are reproduced verbatim",
+      "driver": "browser",
+      "role": "owner",
+      "started_at": "2026-10-13T20:03:42.631Z",
+      "finished_at": "2026-10-13T20:03:44.182Z",
+      "duration_ms": 1551,
+      "evidence": [
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-20.png"
+      ],
+      "steps": [
+        {
+          "index": 1,
+          "action": "goto",
+          "result": "passed",
+          "evidence": null
+        },
+        {
+          "index": 2,
+          "action": "expect_url",
+          "result": "passed",
+          "evidence": "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-20.png"
+        },
+        {
+          "index": 3,
+          "action": "human_remainder",
+          "result": "human",
+          "evidence": null
+        }
+      ],
+      "manual_steps_verbatim": "  1. Open a one-off Task's sheet; an *Área* group (*Sem área* and the areas) sits after the priority.\n  2. Choose an area and save; reopen and confirm it persisted.\n  3. On a series occurrence, confirm the choice follows *Aplicar a* (AC-16).\n  4. With no areas, the group is replaced by one line and a button that opens *Áreas*.\n  5. Save a Task with no area; nothing is mandatory."
+    },
+    {
+      "index": 21,
+      "title": "AC-21 — The filter sheet *Área* group",
+      "risk": "High",
+      "outcome": "needs-human",
+      "reason_code": "PARTIAL_REMAINDER",
+      "reason": "the objective steps passed; the remaining steps are human work and are reproduced verbatim",
+      "driver": "browser",
+      "role": "owner",
+      "started_at": "2026-10-13T20:03:44.182Z",
+      "finished_at": "2026-10-13T20:03:45.958Z",
+      "duration_ms": 1776,
+      "evidence": [
+        "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-21.png"
+      ],
+      "steps": [
+        {
+          "index": 1,
+          "action": "goto",
+          "result": "passed",
+          "evidence": null
+        },
+        {
+          "index": 2,
+          "action": "expect_url",
+          "result": "passed",
+          "evidence": null
+        },
+        {
+          "index": 3,
+          "action": "expect_visible",
+          "result": "passed",
+          "evidence": "PRPs/reports/life-areas/qa-run/20261013T200253184Z/evidence/case-21.png"
+        },
+        {
+          "index": 4,
+          "action": "human_remainder",
+          "result": "human",
+          "evidence": null
+        }
+      ],
+      "manual_steps_verbatim": "  1. Open the filter sheet; an *Área* group offers *Sem área* and each area.\n  2. Pick one; *Hoje* filters at once, the header badge rises and a selected chip appears with *Limpar filtros*.\n  3. Kill the app and reopen it; it starts unfiltered.\n  4. With the area applied, delete it from another device and bring the app to the foreground; the list reads *Nenhuma tarefa com esse filtro.* with *Limpar filtros*.\n  5. With no areas, or with the areas request failing, the group is absent."
+    },
+    {
+      "index": 22,
+      "title": "AC-22 — Degraded states",
+      "risk": "Medium",
+      "outcome": "needs-human",
+      "reason_code": "NO_PLAN_ENTRY",
+      "reason": "no plan entry covers this case; the manual steps are reproduced verbatim",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:45.959Z",
+      "finished_at": "2026-10-13T20:03:45.959Z",
+      "duration_ms": 0,
+      "evidence": [],
+      "steps": [],
+      "manual_steps_verbatim": "  1. Block `/api/life-areas`, then load *Hoje*.\n  2. Tasks list normally and no row shows an area name.\n  3. The Task sheet offers no *Área* group and no banner or toast appears.\n  4. With the request healthy and no area filter, an area-less open Task's row carries no *Sem área* marker."
+    },
+    {
+      "index": 23,
+      "title": "AC-23 — Invariants",
+      "risk": "High",
+      "outcome": "needs-human",
+      "reason_code": "NO_PLAN_ENTRY",
+      "reason": "no plan entry covers this case; the manual steps are reproduced verbatim",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:45.959Z",
+      "finished_at": "2026-10-13T20:03:45.978Z",
+      "duration_ms": 19,
+      "evidence": [],
+      "steps": [],
+      "manual_steps_verbatim": "  1. `git diff --quiet f06d56f -- src/shared/recurrence.ts src/shared/adherence.ts` exits 0.\n  2. `git diff --name-only f06d56f -- migrations` is empty and so is `git ls-files --others --exclude-standard -- migrations`.\n  3. `git diff --diff-filter=D --name-only f06d56f -- test` is empty and the added test lines carry no `.skip`, `.only` or `.todo`.\n  4. Run `npm run check` and `npm test`; both exit 0.\n  5. Confirm the UI/UX ✔/✘ list in `phase-4/ui-checklist.md` has no ✘."
+    },
+    {
+      "index": 24,
+      "title": "AC-24 — Device proof",
+      "risk": "Critical",
+      "outcome": "needs-human",
+      "reason_code": "NO_PLAN_ENTRY",
+      "reason": "no plan entry covers this case; the manual steps are reproduced verbatim",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:45.978Z",
+      "finished_at": "2026-10-13T20:03:45.978Z",
+      "duration_ms": 0,
+      "evidence": [],
+      "steps": [],
+      "manual_steps_verbatim": "  1. Deploy, then on the phone create an area he chose himself.\n  2. Assign an existing Task to it and filter *Hoje* by it; only that area's Tasks are listed and *Sem área* lists the rest.\n  3. Record the observation in `PRPs/reports/life-areas/device-proof.md` (today `Status: OWED`, empty)."
+    },
+    {
+      "index": 25,
+      "title": "AC-25 — Documentation synced",
+      "risk": "Medium",
+      "outcome": "needs-human",
+      "reason_code": "NO_PLAN_ENTRY",
+      "reason": "no plan entry covers this case; the manual steps are reproduced verbatim",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:45.978Z",
+      "finished_at": "2026-10-13T20:03:45.978Z",
+      "duration_ms": 0,
+      "evidence": [],
+      "steps": [],
+      "manual_steps_verbatim": "  1. Read FR-008 in `documentation/`: it names Tasks and recurrence series.\n  2. Read the glossary and `domain-model.md`: a Life Area is a named grouping the owner creates, with *Sem área* as the pt-BR copy of the implicit \"Unsorted\".\n  3. Read `ui-layout-standard.md` §2.3, §2.6 and §6: a dated amendment replaces the \"area dot\" with the area name.\n  4. Confirm `docs/api-reference.md` documents `/api/life-areas` and `lifeAreaId` on `GET /api/tasks`, and the derived `docs/` area files agree.\n  5. Confirm the roadmap row records `shipped` or `dropped`."
+    },
+    {
+      "index": 26,
+      "title": "G-1 — The foreground refetch keeps the area filter",
+      "risk": "High",
+      "outcome": "needs-human",
+      "reason_code": "NO_PLAN_ENTRY",
+      "reason": "no plan entry covers this case; the manual steps are reproduced verbatim",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:45.978Z",
+      "finished_at": "2026-10-13T20:03:45.978Z",
+      "duration_ms": 0,
+      "evidence": [],
+      "steps": [],
+      "manual_steps_verbatim": "  1. Apply an area, switch to another tab or app and come back.\n  2. In the network panel, `GET /api/tasks` carries `lifeAreaId=<id>`, and the list is still filtered."
+    },
+    {
+      "index": 27,
+      "title": "G-2 — Clearing the applied chip keeps keyboard focus",
+      "risk": "Medium",
+      "outcome": "needs-human",
+      "reason_code": "NO_PLAN_ENTRY",
+      "reason": "no plan entry covers this case; the manual steps are reproduced verbatim",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:45.978Z",
+      "finished_at": "2026-10-13T20:03:45.978Z",
+      "duration_ms": 0,
+      "evidence": [],
+      "steps": [],
+      "manual_steps_verbatim": "  1. Tab to the applied area chip at the head of the quick row and press Space.\n  2. The filter clears and focus lands on *Abertas*, not on the page body.\n  3. Clear it with a tap instead; no stray focus ring remains."
+    },
+    {
+      "index": 28,
+      "title": "G-3 — A 40-character name at 375 px",
+      "risk": "Low",
+      "outcome": "needs-human",
+      "reason_code": "NO_PLAN_ENTRY",
+      "reason": "no plan entry covers this case; the manual steps are reproduced verbatim",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:45.978Z",
+      "finished_at": "2026-10-13T20:03:45.978Z",
+      "duration_ms": 0,
+      "evidence": [],
+      "steps": [],
+      "manual_steps_verbatim": "  1. Open the filter sheet; the chip is fully visible, never clipped; pressed, it leaves the 16 px gutter by about 10 to 14 px.\n  2. Apply it; the applied chip is capped at 10 rem with an ellipsis and *Abertas* is fully on screen.\n  3. Open a Task of that area; the row's meta line wraps inside the row."
+    },
+    {
+      "index": 29,
+      "title": "G-4 — An area deleted while it is the active filter",
+      "risk": "Medium",
+      "outcome": "needs-human",
+      "reason_code": "NO_PLAN_ENTRY",
+      "reason": "no plan entry covers this case; the manual steps are reproduced verbatim",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:45.978Z",
+      "finished_at": "2026-10-13T20:03:45.978Z",
+      "duration_ms": 0,
+      "evidence": [],
+      "steps": [],
+      "manual_steps_verbatim": "  1. After the refetch, the applied chip reads the neutral label *Área* and the badge still counts it.\n  2. The list is empty with *Nenhuma tarefa com esse filtro.* and *Limpar filtros*; the Tasks of A were unassigned, none deleted.\n  3. Try to capture a Task in this state; the create answers 400 naming `lifeAreaId` (a known edge, documented in `docs/domain/areas/life-areas.md`).\n  4. Press *Limpar filtros*; the list returns."
+    },
+    {
+      "index": 30,
+      "title": "G-5 — Filter sheet with no areas or a failed request",
+      "risk": "Medium",
+      "outcome": "needs-human",
+      "reason_code": "NO_PLAN_ENTRY",
+      "reason": "no plan entry covers this case; the manual steps are reproduced verbatim",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:45.978Z",
+      "finished_at": "2026-10-13T20:03:45.978Z",
+      "duration_ms": 0,
+      "evidence": [],
+      "steps": [],
+      "manual_steps_verbatim": "  1. With no areas, open the filter sheet; there is no *Área* group and no placeholder.\n  2. With `/api/life-areas` blocked, open the sheet; same, and no toast or banner."
+    },
+    {
+      "index": 31,
+      "title": "G-6 — *Período* \"Até\" overflows the filter sheet (pre-existing)",
+      "risk": "Low",
+      "outcome": "needs-human",
+      "reason_code": "NO_PLAN_ENTRY",
+      "reason": "no plan entry covers this case; the manual steps are reproduced verbatim",
+      "driver": null,
+      "role": null,
+      "started_at": "2026-10-13T20:03:45.978Z",
+      "finished_at": "2026-10-13T20:03:45.978Z",
+      "duration_ms": 0,
+      "evidence": [],
+      "steps": [],
+      "manual_steps_verbatim": "  1. Open the filter sheet at 375 px and scroll the dialog sideways.\n  2. The *Período* \"Até\" date input is 15 px beyond the viewport (region 390 against 375); no chip causes it."
+    }
+  ]
+}

@@ -34,6 +34,7 @@ import {
   formatHeaderDate,
   formatRemaining,
   taskMetaLine,
+  taskMetaParts,
 } from "../src/shared/format";
 
 /** A minimal open, undated, unprioritised Task; override only what a case needs. */
@@ -335,5 +336,234 @@ describe("formatEventTime (unit 4 phase 4)", () => {
     const moment = { dateTime: Date.parse("2026-08-28T11:11:00-03:00"), timeZone: null };
 
     expect(formatEventTime(moment)).toBe(formatEventTime(moment));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The area name on an open Task's meta line (added 2026-10-12, unit 13 life-areas,
+// phase 3).
+//
+// PRPs/prds/life-areas.prd.md AC-15 Row text — "Given an open Task whose area is `Casa`,
+// when its meta line is built, then it ends with `Casa` after the date and priority
+// phrases, and with neither date nor priority it is just `Casa`; a Task with no area
+// gets exactly the line it gets today, and `done` and `missed` rows keep today's text."
+//
+// Source plan: PRPs/plans/life-areas-phase-3-assign-and-show.plan.md (Task 4; plan
+// AC-A2). The plan pins `2026-08-24` against TODAY 2026-08-21 (a Friday), so the
+// target day is a Monday and reads `seg., 24/08`; the PRD's `seg., 18/08` example is
+// illustrative only — 2026-08-18 is a Tuesday and reads `ter., 18/08`, as above.
+//
+// `taskMetaLine` gains an OPTIONAL third argument, the area's name, and `taskMetaParts`
+// is the structured form the row renders from (so the priority glyph survives whatever
+// the name is, including an area named `alta`). Every case above is a two-argument call
+// and stays untouched: a call without a name must keep returning exactly what it did.
+// ---------------------------------------------------------------------------
+
+describe("taskMetaLine — the area name closes an open Task's line (life-areas PRD AC-15)", () => {
+  it("ends the line with the area name after the date and priority phrases", () => {
+    const line = taskMetaLine(task({ deadline: "2026-08-24", priority: "high" }), TODAY, "Casa");
+
+    expect(line).toEqual({ text: "até seg., 24/08 · alta · Casa", overdue: false });
+  });
+
+  it("ends the line with the area name after a date phrase alone", () => {
+    expect(taskMetaLine(task({ deadline: "2026-08-24" }), TODAY, "Casa")).toEqual({
+      text: "até seg., 24/08 · Casa",
+      overdue: false,
+    });
+  });
+
+  it("ends the line with the area name after the priority word when there is no date", () => {
+    expect(taskMetaLine(task({ priority: "low" }), TODAY, "Casa")).toEqual({
+      text: "baixa · Casa",
+      overdue: false,
+    });
+  });
+
+  it("is just the area name with neither date nor priority, and not overdue", () => {
+    expect(taskMetaLine(task(), TODAY, "Casa")).toEqual({ text: "Casa", overdue: false });
+  });
+
+  it("appends nothing for a normal priority, so the name follows the date phrase directly", () => {
+    const line = taskMetaLine(task({ deadline: "2026-08-24", priority: "normal" }), TODAY, "Casa");
+
+    expect(line).toEqual({ text: "até seg., 24/08 · Casa", overdue: false });
+  });
+
+  it("keeps the overdue flag of an overdue deadline and still ends with the name", () => {
+    expect(taskMetaLine(task({ deadline: "2026-08-18" }), TODAY, "Casa")).toEqual({
+      text: "atrasada · venceu ter., 18/08 · Casa",
+      overdue: true,
+    });
+  });
+
+  it("ends a scheduled phrase with the name too", () => {
+    expect(taskMetaLine(task({ scheduledDate: "2026-08-22" }), TODAY, "Casa")).toEqual({
+      text: "fazer amanhã · Casa",
+      overdue: false,
+    });
+  });
+
+  it("does not confuse an area named like a priority word with the priority", () => {
+    expect(taskMetaLine(task({ priority: "high" }), TODAY, "alta")).toEqual({
+      text: "alta · alta",
+      overdue: false,
+    });
+  });
+});
+
+describe("taskMetaLine — no area name leaves today's line untouched (life-areas PRD AC-15, AC-22)", () => {
+  const WITHOUT_AREA: Array<[string, TaskDto, { text: string; overdue: boolean } | null]> = [
+    [
+      "a deadline with a priority",
+      task({ deadline: "2026-08-24", priority: "high" }),
+      { text: "até seg., 24/08 · alta", overdue: false },
+    ],
+    [
+      "an overdue scheduled date",
+      task({ scheduledDate: "2026-08-18" }),
+      { text: "atrasada · era para ter., 18/08", overdue: true },
+    ],
+    ["an open Task with nothing to show", task(), null],
+    ["a missed Task", task({ status: "missed" }), { text: "não concluída", overdue: true }],
+  ];
+
+  it.each(WITHOUT_AREA)("gives %s its two-argument line for a null name", (_label, t, line) => {
+    expect(taskMetaLine(t, TODAY, null)).toEqual(line);
+    expect(taskMetaLine(t, TODAY, null)).toEqual(taskMetaLine(t, TODAY));
+  });
+});
+
+describe("taskMetaLine — closed rows never show the area (life-areas PRD AC-15, D-Q)", () => {
+  it("yields null for a done Task even when its area has a name", () => {
+    expect(
+      taskMetaLine(
+        task({ status: "done", deadline: "2026-08-18", priority: "high", completedAt: 1 }),
+        TODAY,
+        "Casa",
+      ),
+    ).toBeNull();
+  });
+
+  it("keeps 'não concluída' for a missed Task and appends no name", () => {
+    const line = taskMetaLine(
+      task({ status: "missed", deadline: "2026-08-18", priority: "high" }),
+      TODAY,
+      "Casa",
+    );
+
+    expect(line).toEqual({ text: "não concluída", overdue: true });
+  });
+});
+
+describe("taskMetaParts — the row's meta line as structured parts (life-areas PRD AC-15)", () => {
+  it("keeps the date phrase, the priority word and the area name apart", () => {
+    const parts = taskMetaParts(task({ deadline: "2026-08-24", priority: "high" }), TODAY, "Casa");
+
+    expect(parts).toEqual({
+      phrase: "até seg., 24/08",
+      priorityWord: "alta",
+      areaName: "Casa",
+      overdue: false,
+    });
+  });
+
+  it("holds only the area name for an open Task with neither date nor priority", () => {
+    expect(taskMetaParts(task(), TODAY, "Casa")).toEqual({
+      phrase: null,
+      priorityWord: null,
+      areaName: "Casa",
+      overdue: false,
+    });
+  });
+
+  it("holds only the priority word for an undated Task with no area", () => {
+    expect(taskMetaParts(task({ priority: "low" }), TODAY, null)).toEqual({
+      phrase: null,
+      priorityWord: "baixa",
+      areaName: null,
+      overdue: false,
+    });
+  });
+
+  it("takes overdue from the date phrase alone", () => {
+    expect(taskMetaParts(task({ deadline: "2026-08-18" }), TODAY, "Casa")).toEqual({
+      phrase: "atrasada · venceu ter., 18/08",
+      priorityWord: null,
+      areaName: "Casa",
+      overdue: true,
+    });
+  });
+
+  it("keeps a priority word and an area name of the same spelling as two parts", () => {
+    expect(taskMetaParts(task({ priority: "high" }), TODAY, "alta")).toEqual({
+      phrase: null,
+      priorityWord: "alta",
+      areaName: "alta",
+      overdue: false,
+    });
+  });
+
+  it("holds no area name when none is given", () => {
+    expect(taskMetaParts(task({ deadline: "2026-08-24" }), TODAY)).toEqual({
+      phrase: "até seg., 24/08",
+      priorityWord: null,
+      areaName: null,
+      overdue: false,
+    });
+  });
+
+  it("is null for an open Task with nothing to show", () => {
+    expect(taskMetaParts(task(), TODAY)).toBeNull();
+    expect(taskMetaParts(task(), TODAY, null)).toBeNull();
+    expect(taskMetaParts(task({ priority: "normal" }), TODAY)).toBeNull();
+  });
+
+  it("is null for a done Task, even with a name", () => {
+    expect(taskMetaParts(task({ status: "done", completedAt: 1 }), TODAY, "Casa")).toBeNull();
+  });
+
+  it("holds only the missed phrase for a missed Task — no priority word, no area name", () => {
+    const parts = taskMetaParts(
+      task({ status: "missed", deadline: "2026-08-18", priority: "high" }),
+      TODAY,
+      "Casa",
+    );
+
+    expect(parts).toEqual({
+      phrase: "não concluída",
+      priorityWord: null,
+      areaName: null,
+      overdue: true,
+    });
+  });
+});
+
+describe("taskMetaLine is the join of taskMetaParts (life-areas PRD AC-15)", () => {
+  const TASKS: Array<[string, TaskDto]> = [
+    ["an open Task with nothing to show", task()],
+    ["a prioritised undated Task", task({ priority: "high" })],
+    ["a deadline", task({ deadline: "2026-08-24" })],
+    ["an overdue low-priority deadline", task({ deadline: "2026-08-18", priority: "low" })],
+    ["a missed Task", task({ status: "missed" })],
+    ["a done Task", task({ status: "done", completedAt: 1 })],
+  ];
+  const NAMES: Array<string | null> = [null, "Casa", "alta"];
+  const GRID = TASKS.flatMap(([label, t]) =>
+    NAMES.map((name): [string, TaskDto, string | null] => [`${label}, name ${name}`, t, name]),
+  );
+
+  it.each(GRID)("%s: the line is the present parts joined by ' · '", (_label, t, name) => {
+    const parts = taskMetaParts(t, TODAY, name);
+    const line = taskMetaLine(t, TODAY, name);
+
+    if (parts === null) {
+      expect(line).toBeNull();
+      return;
+    }
+    const present = [parts.phrase, parts.priorityWord, parts.areaName].filter(
+      (part): part is string => part !== null,
+    );
+    expect(line).toEqual({ text: present.join(" · "), overdue: parts.overdue });
   });
 });

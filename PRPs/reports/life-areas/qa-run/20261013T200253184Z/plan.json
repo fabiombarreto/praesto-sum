@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "index": 19,
+      "title": "AC-19 — The *Áreas* screen",
+      "driver": "browser",
+      "role": "owner",
+      "state": "declared",
+      "steps": [
+        { "action": "goto", "path": "/settings/life-areas" },
+        { "action": "expect_url", "path": "/settings/life-areas" },
+        { "action": "expect_visible", "role": "heading", "name": "Áreas" },
+        {
+          "action": "query",
+          "source": "d1-local",
+          "sql": "SELECT name FROM life_areas ORDER BY name",
+          "expect_rows": 3
+        }
+      ],
+      "human_remainder": {
+        "reason": "The alphabetical list with open counts, the read-only Sem área row, add, rename, delete with its confirmation, Esc and the back gesture, the 48 px targets and the pt-BR copy need a person: elements that appear after an interaction cannot be grounded, and the area names are not stated by the report."
+      }
+    },
+    {
+      "index": 20,
+      "title": "AC-20 — The Task sheet *Área* group",
+      "driver": "browser",
+      "role": "owner",
+      "state": "declared",
+      "steps": [
+        { "action": "goto", "path": "/" },
+        { "action": "expect_url", "path": "/" }
+      ],
+      "human_remainder": {
+        "reason": "Only the seed, the owner session and the route opening are objective; the sheet and its Área group appear after a tap and cannot be grounded."
+      }
+    },
+    {
+      "index": 21,
+      "title": "AC-21 — The filter sheet *Área* group",
+      "driver": "browser",
+      "role": "owner",
+      "state": "declared",
+      "steps": [
+        { "action": "goto", "path": "/" },
+        { "action": "expect_url", "path": "/" },
+        { "action": "expect_visible", "role": "button", "name": "Filtros" }
+      ],
+      "human_remainder": {
+        "reason": "The Área group, the badge, the applied chip, the cold start and the deleted-area case appear after interactions or across sessions and cannot be grounded or expressed."
+      }
+    }
+  ]
+}

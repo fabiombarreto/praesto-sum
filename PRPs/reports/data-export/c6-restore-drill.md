@@ -110,3 +110,17 @@ empty and close at their own triggers (unit 13; a Google calendar selection).
 
 *Status: PASS (2026-09-30) — recurrence_series exercised; life_areas and google_calendar_selections still empty*
 
+---
+
+## Re-run 2026-10-12 — unit 13 close-out, on a synthetic fixture
+
+The full record is `PRPs/reports/life-areas/c6-restore-drill.md` (drill output:
+`PRPs/reports/life-areas/c6-drill-output.txt`). In one paragraph: the drill passed on rows produced
+through the real routes of a LOCAL worker (2 `life_areas`, 1 `recurrence_series`, 5 `tasks`, seven
+migrations applied, every field identical), which exercises the `life_areas` round trip for the
+first time. **That is a synthetic fixture, not production data:** `life_areas` is **still not
+exercised on production data**, and the run on a real production snapshot (PRD AC-18) is OWED until
+unit 13 is deployed and the owner has created and assigned a real area.
+
+*Status: SYNTHETIC FIXTURE PASS (2026-10-12) — life_areas still not exercised on production data*
+

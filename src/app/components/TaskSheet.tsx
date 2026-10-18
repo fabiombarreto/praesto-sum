@@ -1,7 +1,8 @@
 // The detail editor inside `Sheet` (A5 phase 3, replacing the old full-screen editor):
 // title / description fields, the date chips + native date input, the
-// priority chips, *Cancelar / Salvar*, the distant *Excluir*, and the
-// in-place delete confirmation, in the layout standard §3 field order. The
+// priority chips, the *Área* chips (life-areas phase 3), *Cancelar / Salvar*,
+// the distant *Excluir*, and the in-place delete confirmation, in the layout
+// standard §3 field order. The
 // parent (`TodayScreen.tsx` / `DesignPlayground.tsx`) owns the draft and the
 // requests — this component is glue: it renders the current draft and calls
 // back on every change, it never holds state of its own beyond what it last
@@ -16,6 +17,14 @@ import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { ReminderDto, SeriesDto, TaskDto, TaskPriority } from "../../shared/api";
 import { instantToLocalParts } from "../../shared/dates";
+import {
+  areaChoiceValue,
+  decideAreaGroup,
+  lifeAreaIdFromChoice,
+  NO_AREA_VALUE,
+  type AreaOption,
+} from "../../shared/life-area-assign";
+import { NO_AREA_LABEL } from "../../shared/life-areas-view";
 import { nudgeSwitchView } from "../../shared/nudge-switch";
 import { draftFromReminder, type ReminderDraft } from "../../shared/reminder-edit";
 import {
@@ -30,7 +39,7 @@ import {
   type SeriesFreq,
   type SeriesRuleDraft,
 } from "../../shared/series-edit";
-import type { TaskDateMode, TaskDraft } from "../../shared/task-edit";
+import { effectiveLifeAreaId, type TaskDateMode, type TaskDraft } from "../../shared/task-edit";
 import { draftFromTask, type SheetView } from "../../shared/task-sheet";
 import { ReminderForm } from "./ReminderForm";
 import { Button } from "./ui/Button";
@@ -79,6 +88,8 @@ export function TaskSheet({
   onSaveSeriesOccurrence,
   onEndSeries,
   nudge,
+  lifeAreas,
+  onOpenLifeAreas,
 }: {
   task: TaskDto | null;
   open: boolean;
@@ -117,7 +128,7 @@ export function TaskSheet({
   seriesError: string | null;
   seriesRuleDraft: SeriesRuleDraft | null;
   onSeriesRuleDraftChange: (changes: Partial<SeriesRuleDraft>) => void;
-  /** Where title, description and priority go when a series occurrence is saved. */
+  /** Where title, description, priority and area go when a series occurrence is saved. */
   applyTo: ApplyTo;
   onApplyToChange: (next: ApplyTo) => void;
   /** Fired instead of `onSave` for a series occurrence. */
@@ -128,6 +139,16 @@ export function TaskSheet({
    * parent, never part of the Task draft.
    */
   nudge: { pending: boolean; error: string | null; onChange: (enabled: boolean) => void };
+  /**
+   * The owner's Life Areas (life-areas phase 3). `null` or absent means unknown or
+   * failed to load, so the *Área* group is absent and says nothing — "you have no
+   * areas" would be false. An empty list shows one line and a button instead.
+   * Optional so a caller that does not know about areas (the dev playground)
+   * simply offers none.
+   */
+  lifeAreas?: readonly AreaOption[] | null;
+  /** Opens *Áreas*; offered only from the zero-areas line, so areas are created in one place. */
+  onOpenLifeAreas?: () => void;
 }) {
   // Ending a series cannot be undone (there is no way back to "active"), so it
   // asks once more in place — the same rule the checklist applies to deletion.
@@ -155,6 +176,9 @@ export function TaskSheet({
   const repeats = canRepeat && recurrenceDraft.freq !== "none";
   /** An occurrence of an existing series: its sheet edits the series too. */
   const isOccurrence = !canRepeat;
+  // Absent when the areas request failed, one line when he has none, the choices
+  // otherwise (`src/shared/life-area-assign.ts`).
+  const areaGroup = decideAreaGroup(lifeAreas ?? null);
   const nudgeView = nudgeSwitchView(series);
   const seriesRuleError =
     isOccurrence && seriesRuleDraft !== null && series?.status === "active"
@@ -272,6 +296,46 @@ export function TaskSheet({
             <Chip value="low">Baixa</Chip>
           </ChipGroup>
 
+          {areaGroup.kind !== "hidden" && (
+            <>
+              <p className="m-0 font-data text-t1 font-semibold text-muted">Área</p>
+              {areaGroup.kind === "empty" ? (
+                <div className="flex flex-col items-start gap-2">
+                  <p className="m-0 font-text text-t2 text-muted">
+                    Você ainda não criou nenhuma área.
+                  </p>
+                  {onOpenLifeAreas !== undefined && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={onOpenLifeAreas}
+                      disabled={busy}
+                    >
+                      Criar áreas
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <ChipGroup
+                  multiple={false}
+                  wrap
+                  label="Área"
+                  value={[areaChoiceValue(effectiveLifeAreaId(shownDraft, shown))]}
+                  onValueChange={(next) =>
+                    onDraftChange({ lifeAreaId: lifeAreaIdFromChoice(next) })
+                  }
+                >
+                  <Chip value={NO_AREA_VALUE}>{NO_AREA_LABEL}</Chip>
+                  {areaGroup.options.map((option) => (
+                    <Chip key={option.id} value={option.id}>
+                      {option.name}
+                    </Chip>
+                  ))}
+                </ChipGroup>
+              )}
+            </>
+          )}
+
           {canRepeat && (
             <>
               <p className="m-0 font-data text-t1 font-semibold text-muted">Repetir</p>
@@ -383,11 +447,11 @@ export function TaskSheet({
               )}
 
               <p className="m-0 font-data text-t1 font-semibold text-muted">
-                Aplicar título, descrição e prioridade a
+                Aplicar título, descrição, prioridade e área a
               </p>
               <ChipGroup
                 multiple={false}
-                label="Aplicar título, descrição e prioridade a"
+                label="Aplicar título, descrição, prioridade e área a"
                 value={[applyTo]}
                 onValueChange={(next) =>
                   onApplyToChange((next[0] as ApplyTo | undefined) ?? applyTo)

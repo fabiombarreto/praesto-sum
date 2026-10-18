@@ -351,10 +351,10 @@ tested first. AC-18 is a script run and AC-25 an inspection of the documentation
 
 | # | Phase | Description | Status | Repo | Parallel | Depends | PRP Plan |
 |---|-------|-------------|--------|------|----------|---------|----------|
-| 1 | Areas API and the filter | `src/shared/life-areas.ts`, `/api/life-areas` create/list/rename/delete, existence validation on Task and series writes, `lifeAreaId` on `PATCH /api/tasks/:id`, the `lifeAreaId` list filter, `docs/api-reference.md`, export test (AC-1..AC-12, AC-17) | pending | - | - | - | - |
-| 2 | The Áreas screen | `/settings/life-areas` route, entry card in *Configurações*, create/rename/delete with the counted confirmation, list reducer, client wrappers (AC-19) | pending | - | - | 1 | - |
-| 3 | Assign and show | *Área* in the Task sheet with *Aplicar a*, capture inherits the active area, area name on the row, zero-areas and failure states (AC-14, AC-15, AC-16, AC-20, AC-22) | pending | - | - | 2 | - |
-| 4 | Filter and close-out | `TaskFilter.lifeAreaId`, the *Área* group in the filter sheet and the applied chip, UI/UX checklist, docs sync, chore C6 on a snapshot with areas, device proof (AC-13, AC-18, AC-21, AC-23, AC-24, AC-25) | pending | - | - | 3 | - |
+| 1 | Areas API and the filter | `src/shared/life-areas.ts`, `/api/life-areas` create/list/rename/delete, existence validation on Task and series writes, `lifeAreaId` on `PATCH /api/tasks/:id`, the `lifeAreaId` list filter, `docs/api-reference.md`, export test (AC-1..AC-12, AC-17) | complete | - | - | - | PRPs/plans/life-areas-phase-1-areas-api-and-the-filter.plan.md |
+| 2 | The Áreas screen | `/settings/life-areas` route, entry card in *Configurações*, create/rename/delete with the counted confirmation, list reducer, client wrappers (AC-19) | complete | - | - | 1 | PRPs/plans/life-areas-phase-2-the-reas-screen.plan.md |
+| 3 | Assign and show | *Área* in the Task sheet with *Aplicar a*, capture inherits the active area, area name on the row, zero-areas and failure states (AC-14, AC-15, AC-16, AC-20, AC-22) | complete | - | - | 2 | PRPs/plans/life-areas-phase-3-assign-and-show.plan.md |
+| 4 | Filter and close-out | `TaskFilter.lifeAreaId`, the *Área* group in the filter sheet and the applied chip, UI/UX checklist, docs sync, chore C6 on a snapshot with areas, device proof (AC-13, AC-18, AC-21, AC-23, AC-24, AC-25) | complete | - | - | 3 | PRPs/plans/life-areas-phase-4-filter-and-close-out.plan.md |
 
 ### Phase Details
 

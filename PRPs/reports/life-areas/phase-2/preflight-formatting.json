@@ -1,0 +1,7 @@
+{
+  "formatter_cmd": "npx prettier --write",
+  "discovery_source": "methodology.md formatter_cmd",
+  "files_scoped": "test/life-areas-list.test.ts, test/life-areas-view.test.ts, test/app-route.test.ts (the new/updated suites; phase 1's 86 test-glob files were already clean and untouched)",
+  "outcome": "formatted (every file already clean)",
+  "exit_code_or_null": 0
+}

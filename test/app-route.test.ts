@@ -315,3 +315,60 @@ describe("routeFromPath and pathOf agree — the adherence route round-trips too
     expect(routeFromPath(pathOf(route))).toBe(route);
   });
 });
+
+// --- UPDATE (life-areas phase 2, the life-areas route) ---------------------
+// PRPs/prds/life-areas.prd.md AC-19 (via plan AC-A1): the Áreas screen is
+// reachable at `/settings/life-areas` as a real history entry, the way Aderência
+// is at `/settings/adherence`. Source plan:
+// PRPs/plans/life-areas-phase-2-the-reas-screen.plan.md (Task 3 —
+// src/shared/app-route.ts: add "life-areas" to AppRoute, checked before the
+// `/settings` path). The tap on *Abrir*, the `Esc` key, the header *Voltar* and
+// the Android back gesture are React glue and device behaviour, verified in the
+// phase's UI checklist, never here. Every assertion above is untouched; these
+// are ADDITIVE.
+//
+// RED until Task 3 lands: `AppRoute` has no "life-areas" member (type error on
+// the assignment below) and `routeFromPath`/`pathOf` do not know the path.
+
+describe("routeFromPath — the life-areas route (PRD AC-19 via plan AC-A1)", () => {
+  it("maps /settings/life-areas to life-areas", () => {
+    expect(routeFromPath("/settings/life-areas")).toBe("life-areas");
+  });
+
+  it("accepts a trailing slash on /settings/life-areas", () => {
+    expect(routeFromPath("/settings/life-areas/")).toBe("life-areas");
+  });
+
+  it("keeps /settings as settings — the new path is a different route, not its alias", () => {
+    expect([routeFromPath("/settings"), routeFromPath("/settings/life-areas")]).toEqual([
+      "settings",
+      "life-areas",
+    ]);
+  });
+
+  it("resolves a path nested under /settings/life-areas to today — there is exactly one segment", () => {
+    expect(routeFromPath("/settings/life-areas/unknown")).toBe("today");
+  });
+
+  it("taskIdFromRoute returns null for the life-areas route", () => {
+    expect(taskIdFromRoute("life-areas")).toBeNull();
+  });
+});
+
+describe("pathOf — the life-areas route (PRD AC-19 via plan AC-A1)", () => {
+  it("maps life-areas to /settings/life-areas", () => {
+    expect(pathOf("life-areas")).toBe("/settings/life-areas");
+  });
+});
+
+describe("routeFromPath and pathOf agree — the life-areas route round-trips too", () => {
+  it("round-trips life-areas", () => {
+    const route: AppRoute = "life-areas";
+    expect(routeFromPath(pathOf(route))).toBe(route);
+  });
+
+  it("round-trips the path /settings/life-areas", () => {
+    const p = "/settings/life-areas";
+    expect(pathOf(routeFromPath(p))).toBe(p);
+  });
+});

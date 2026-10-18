@@ -1,0 +1,42 @@
+{
+  "attempt": 3,
+  "verdict": "IMPLEMENTATION_COMPLETE",
+  "files_changed": [
+    "CLAUDE.md",
+    "PRPs/plans/life-areas-phase-4-filter-and-close-out.code-review.jsonl",
+    "PRPs/reports/data-export/c6-restore-drill.md",
+    "PRPs/reports/life-areas/c6-drill-output.txt",
+    "PRPs/reports/life-areas/c6-restore-drill.md",
+    "PRPs/reports/life-areas/device-proof.md",
+    "PRPs/reports/life-areas/orchestrator-run.json",
+    "PRPs/reports/life-areas/phase-2/ui-checklist.md",
+    "PRPs/reports/life-areas/phase-3/ui-checklist.md",
+    "PRPs/reports/life-areas/phase-4/attempts/2/record.json",
+    "PRPs/reports/life-areas/phase-4/base-tree.txt",
+    "PRPs/reports/life-areas/phase-4/chip-overflow-measurement.md",
+    "PRPs/reports/life-areas/phase-4/close-out.md",
+    "PRPs/reports/life-areas/phase-4/live-browser-pass.md",
+    "PRPs/reports/life-areas/phase-4/ui-checklist.md",
+    "docs/context/architecture.md",
+    "docs/domain/areas/life-areas.md",
+    "docs/domain/areas/tasks.md",
+    "docs/domain/glossary.md",
+    "documentation/10-product/glossary.md",
+    "documentation/20-requirements/functional-requirements.md",
+    "documentation/30-architecture/domain-model.md",
+    "documentation/40-engineering/ui-layout-standard.md",
+    "documentation/50-planning/roadmap.md",
+    "src/app/components/FilterChips.tsx",
+    "src/app/components/FilterSheet.tsx",
+    "src/app/components/TodayScreen.tsx",
+    "src/shared/life-area-assign.ts",
+    "src/shared/task-filter.ts"
+  ],
+  "validation": {
+    "level_1": "PASS",
+    "level_2": "PASS",
+    "level_3": "PASS"
+  },
+  "base_commit": "4d4735890fbf08c7469f25338601c4aedc90d00b",
+  "note": "records and docs only: stale pending-measurement statements and residual pending-second-look wording"
+}

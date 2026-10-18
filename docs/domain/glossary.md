@@ -7,7 +7,7 @@
 | **Task** | Something the owner intends to do. Has a completion state (`open → done`) and no fixed time slot; may carry a **deadline** (complete *by*) OR a **scheduled date** (do *on*) — distinct semantics. | to-do, todo item, action item, chore |
 | **Event** | Something that happens at a specific date/time (or range). Occupies a calendar slot; has NO completion state — it occurs or is cancelled, never "done". | appointment, meeting, calendar entry |
 | **Reminder** | A notification that directs the owner's attention at a chosen moment — about a Task, about an Event, or **standalone** (e.g. "drink water at 3pm"). Never an item of work itself. | alert, alarm, notification (as a domain term) |
-| **Life Area** | A domain of personal life the assistant organizes. Now: Calendar, Tasks. Leading later candidate: Notes/personal information. | module, category, domain, section |
+| **Life Area** | A named grouping the owner creates (for example *Casa*, *Saúde*) that a Task or a Recurrence Series may belong to — at most one, and optionally none. An item with none surfaces under *Sem área*, the pt-BR copy (ADR-0009) of the implicit "Unsorted" grouping; no default area is stored. Calendar and Tasks are product capabilities, not Life Area records. *(Proposed 2026-10-12, awaiting the owner's confirmation — life-areas PRD Open Question 1. The wording this replaces: "A domain of personal life the assistant organizes. Now: Calendar, Tasks. Leading later candidate: Notes/personal information.")* | module, category, domain, section |
 
 ## Resolved distinctions (owner-validated)
 

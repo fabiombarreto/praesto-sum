@@ -1,5 +1,6 @@
 import type {
   AdherenceResponse,
+  CreateLifeAreaInput,
   CreateReminderInput,
   CreateSeriesInput,
   CreateTaskInput,
@@ -7,11 +8,14 @@ import type {
   GoogleCalendarDto,
   GoogleConnectionDto,
   GoogleEventsDto,
+  LifeAreaDto,
+  LifeAreasResponse,
   PushSubscriptionDto,
   ReminderDto,
   SeriesDto,
   SubscribePushInput,
   TaskDto,
+  UpdateLifeAreaInput,
   UpdateReminderInput,
   UpdateSeriesInput,
   UpdateTaskInput,
@@ -223,6 +227,38 @@ export async function getSeries(id: string): Promise<SeriesDto> {
 /** Reads every recurring Task's adherence record (adherence-mirror). */
 export async function fetchAdherence(): Promise<AdherenceResponse> {
   return request<AdherenceResponse>("/api/series/adherence");
+}
+
+/**
+ * The four Life Area wrappers the *Áreas* screen (life-areas phase 2) calls
+ * through — one-liners over `request<T>()` like the Reminder wrappers above: no
+ * local types, no error re-mapping (a failure already arrives as `ApiError`
+ * carrying `status`; a 204 answers `undefined`). `fetchLifeAreas` returns the
+ * whole body because the screen needs `noArea`; create and rename answer the
+ * area with no counts.
+ */
+export async function fetchLifeAreas(): Promise<LifeAreasResponse> {
+  return request<LifeAreasResponse>("/api/life-areas");
+}
+
+export async function createLifeArea(input: CreateLifeAreaInput): Promise<LifeAreaDto> {
+  const body = await request<{ lifeArea: LifeAreaDto }>("/api/life-areas", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return body.lifeArea;
+}
+
+export async function updateLifeArea(id: string, input: UpdateLifeAreaInput): Promise<LifeAreaDto> {
+  const body = await request<{ lifeArea: LifeAreaDto }>(`/api/life-areas/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+  return body.lifeArea;
+}
+
+export async function deleteLifeArea(id: string): Promise<void> {
+  await request<void>(`/api/life-areas/${id}`, { method: "DELETE" });
 }
 
 /**

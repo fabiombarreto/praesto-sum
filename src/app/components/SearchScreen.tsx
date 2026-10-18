@@ -13,6 +13,7 @@ import type { ReminderDto, TaskDto } from "../../shared/api";
 import { PRAESTO_TIMEZONE, todayIn } from "../../shared/dates";
 import { collectDayItems } from "../../shared/day-groups";
 import { assertNeverDaySource, dayItemFromTask, type DayItem } from "../../shared/day-item";
+import { lifeAreaNameOf } from "../../shared/life-area-assign";
 import { classifyRequestFailure } from "../../shared/request-failure";
 import {
   buildCreateReminderInput,
@@ -27,7 +28,7 @@ import {
   planSeriesOccurrenceSave,
   type RecurrenceDraft,
 } from "../../shared/series-edit";
-import { buildTaskPatch } from "../../shared/task-edit";
+import { buildTaskPatch, effectiveLifeAreaId } from "../../shared/task-edit";
 import { EMPTY_FILTER } from "../../shared/task-filter";
 import { currentDraft, INITIAL_TASK_SHEET_STATE, reduceTaskSheet } from "../../shared/task-sheet";
 import {
@@ -45,6 +46,7 @@ import {
   updateTask,
 } from "../api";
 import { useConnectivity } from "../hooks/useConnectivity";
+import { useLifeAreas } from "../hooks/useLifeAreas";
 import { useSeriesSheet } from "../hooks/useSeriesSheet";
 import { TaskGroup } from "./TaskGroup";
 import { TaskRow } from "./TaskRow";
@@ -59,9 +61,12 @@ const SEARCH_DEBOUNCE_MS = 300;
 export function SearchScreen({
   onUnauthorized,
   back,
+  onOpenLifeAreas,
 }: {
   onUnauthorized: () => void;
   back: () => void;
+  /** Threaded from `App.tsx` (life-areas phase 3); opens `/settings/life-areas` from the Task sheet's zero-areas button. */
+  onOpenLifeAreas: () => void;
 }) {
   const { state: connectivity } = useConnectivity();
   const [query, setQuery] = useState("");
@@ -90,6 +95,10 @@ export function SearchScreen({
     sheetTask === null ? null : ((reminders ?? []).find((r) => r.taskId === sheetTask.id) ?? null);
   // Same series editing as *Hoje* — one hook, so the two sheets cannot drift.
   const seriesSheet = useSeriesSheet(sheetTask, onUnauthorized);
+  // The same areas atom as *Hoje*: rows show the name and the sheet offers the
+  // group, exactly as there. Search has no area control of its own (PRD D-P) and a
+  // failed request is plain absence.
+  const { lifeAreas } = useLifeAreas(onUnauthorized);
 
   /** A 401 routes to the token gate; otherwise returns the failure's message. */
   function handleFailure(cause: unknown): string | null {
@@ -270,8 +279,11 @@ export function SearchScreen({
    */
   function saveSheetWithRecurrence(): void {
     if (sheetTask === null) return;
+    // Resolved before the series is built, exactly as *Hoje* does, so a one-off's
+    // area survives the create-then-delete.
+    const draft = currentDraft(sheet, sheetTask);
     const input = buildCreateSeriesInput(
-      currentDraft(sheet, sheetTask),
+      { ...draft, lifeAreaId: effectiveLifeAreaId(draft, sheetTask) },
       recurrenceDraft,
       sheetTaskReminder === null ? null : draftFromReminder(sheetTaskReminder),
       PRAESTO_TIMEZONE,
@@ -349,6 +361,7 @@ export function SearchScreen({
                   today={today}
                   busy={busy}
                   editing={editingId === task.id}
+                  areaName={lifeAreaNameOf(lifeAreas, task.lifeAreaId)}
                   onToggle={(next) => void (next ? complete(task.id) : reopen(task.id))}
                   onOpen={() => openSheet(task)}
                   onEdit={() => setEditingId(task.id)}
@@ -533,6 +546,8 @@ export function SearchScreen({
           error: seriesSheet.nudge.error,
           onChange: seriesSheet.nudge.setEnabled,
         }}
+        lifeAreas={lifeAreas}
+        onOpenLifeAreas={onOpenLifeAreas}
       />
     </div>
   );
