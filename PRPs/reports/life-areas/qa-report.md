@@ -1,4 +1,4 @@
-# QA support report — life-areas (unit 13)
+# QA support report — life-areas (unit 13)`passed` |`passed` |`passed` |`passed` |`passed` |`passed` |`passed` |`passed` |`passed` |
 
 Generated 2026-10-13 by `/relay-qa-report` in PRD mode, from `PRPs/prds/life-areas.prd.md` (APPROVED, phases 1 to 4 `complete`). Worktree `.worktrees/life-areas`, branch `feature/life-areas`, **nothing committed, nothing deployed**.
 
@@ -8,6 +8,7 @@ Generated 2026-10-13 by `/relay-qa-report` in PRD mode, from `PRPs/prds/life-are
 - **Grounding.** There is no feature-level `PRPs/reports/life-areas/record.json`. The latest attempt record is `PRPs/reports/life-areas/phase-4/attempts/test-2/record.json`: run `12558650-a464-4f1c-ab39-17fc1014d23e`, tier `unit`, framework `vitest`, **1719 passed / 0 failed / 0 skipped / 89 files**, `failures: []`. An empty `failures[]` names no test, so the automated-coverage column comes from searching the test files; each cited `describe` was read in place, not guessed.
 - There is no browser tier in this project (rejected, see `CLAUDE.md`), so every screen behaviour is `manual`; where the decision was extracted into a pure function, that function's test is cited as the automated half.
 - `Manual status` is `pending` for every entry: this is a first generation and **no human has run any manual step**. The live browser pass (`phase-4/live-browser-pass.md`) was a Chromium pane emulating 375 and 1280 px against a local worker with synthetic rows; it is evidence, not a manual pass by the owner, and nothing was seen on his phone.
+- **Manual statuses marked on the owner's word, 2026-10-18.** He ran the manual tests on the local Docker dev server and on his phone against production `v0.13.0` and reported all of them OK; on that report AC-19 to AC-22, AC-24 and G-1 to G-5 are `passed`. No agent observed those runs and no per-case detail was given. Left `pending` on purpose: AC-1 to AC-17 and AC-23 (their evidence is the test suite and the inspection record), AC-18 (the restore drill on a real production snapshot is still OWED), AC-25 (the roadmap clause waits for the exit signal) and G-6 (pre-existing, not this unit's).
 - Cases `G-1` to `G-6` are not PRD ACs: they are behaviours the phases found, fixed or left open, so a tester does not have to read the close-out to know about them.
 
 ## Summary table
@@ -32,18 +33,18 @@ Generated 2026-10-13 by `/relay-qa-report` in PRD mode, from `PRPs/prds/life-are
 | AC-16 | Occurrence save plan | High | automated | `test/series-edit.test.ts` | `pending` |
 | AC-17 | Export carries the area | Critical | automated | `test/life-areas-export.test.ts` | `pending` |
 | AC-18 | Restore drill on a production snapshot | Critical | manual | — (script run) | `pending` |
-| AC-19 | The *Áreas* screen | High | manual | `test/life-areas-list.test.ts` (pure half) | `pending` |
-| AC-20 | The Task sheet *Área* group | High | manual | `test/life-area-assign.test.ts` (pure half) | `pending` |
-| AC-21 | The filter sheet *Área* group | High | manual | `test/life-area-assign.test.ts` (pure half) | `pending` |
-| AC-22 | Degraded states | Medium | manual | `test/life-area-assign.test.ts` (pure half) | `pending` |
+| AC-19 | The *Áreas* screen | High | manual | `test/life-areas-list.test.ts` (pure half) | `passed` |
+| AC-20 | The Task sheet *Área* group | High | manual | `test/life-area-assign.test.ts` (pure half) | `passed` |
+| AC-21 | The filter sheet *Área* group | High | manual | `test/life-area-assign.test.ts` (pure half) | `passed` |
+| AC-22 | Degraded states | Medium | manual | `test/life-area-assign.test.ts` (pure half) | `passed` |
 | AC-23 | Invariants | High | automated | `npm run check` and `npm test` | `pending` |
 | AC-24 | Device proof | Critical | manual | — | `passed` |
 | AC-25 | Documentation synced | Medium | manual | `test/docs-consistency.test.ts` (partial) | `pending` |
-| G-1 | The foreground refetch keeps the area filter | High | manual | — | `pending` |
-| G-2 | Clearing the applied chip keeps focus | Medium | manual | — | `pending` |
-| G-3 | A 40-character name at 375 px | Low | manual | — | `pending` |
-| G-4 | An area deleted while it is the filter | Medium | manual | `test/life-area-assign.test.ts` (pure half) | `pending` |
-| G-5 | Filter sheet with no areas or a failed request | Medium | manual | `test/life-area-assign.test.ts` (pure half) | `pending` |
+| G-1 | The foreground refetch keeps the area filter | High | manual | — | `passed` |
+| G-2 | Clearing the applied chip keeps focus | Medium | manual | — | `passed` |
+| G-3 | A 40-character name at 375 px | Low | manual | — | `passed` |
+| G-4 | An area deleted while it is the filter | Medium | manual | `test/life-area-assign.test.ts` (pure half) | `passed` |
+| G-5 | Filter sheet with no areas or a failed request | Medium | manual | `test/life-area-assign.test.ts` (pure half) | `passed` |
 | G-6 | *Período* "Até" overflows the filter sheet (pre-existing) | Low | none | — | `pending` |
 
 ---
@@ -289,7 +290,7 @@ Generated 2026-10-13 by `/relay-qa-report` in PRD mode, from `PRPs/prds/life-are
 - **Required state:** three areas with Tasks, some open Tasks with no area; a second run with zero areas
 - **Coverage:** manual
 - **Automated test path:** `test/life-areas-list.test.ts`, `test/life-areas-view.test.ts` (reducer and copy), `test/app-route.test.ts` — `routeFromPath — the life-areas route` (the pure half)
-- **Manual status:** `pending`
+- **Manual status:** `passed`
 - **Manual step-by-step:**
   1. Open *Configurações*, then *Áreas*; expect `/settings/life-areas`, areas alphabetical with open counts and a read-only *Sem área* row.
   2. Add one, rename one in place, delete one; the delete asks once, repeats the verb and says how many Tarefas and séries lose the area.
@@ -304,7 +305,7 @@ Generated 2026-10-13 by `/relay-qa-report` in PRD mode, from `PRPs/prds/life-are
 - **Required state:** at least one area; a one-off Task and an occurrence of a series; a second run with no areas
 - **Coverage:** manual
 - **Automated test path:** `test/life-area-assign.test.ts` — `decideAreaGroup`, `areaChoiceValue and lifeAreaIdFromChoice`; `test/task-edit.test.ts` — `effectiveLifeAreaId`
-- **Manual status:** `pending`
+- **Manual status:** `passed`
 - **Manual step-by-step:**
   1. Open a one-off Task's sheet; an *Área* group (*Sem área* and the areas) sits after the priority.
   2. Choose an area and save; reopen and confirm it persisted.
@@ -319,7 +320,7 @@ Generated 2026-10-13 by `/relay-qa-report` in PRD mode, from `PRPs/prds/life-are
 - **Required state:** at least one area; the app in the foreground on *Hoje*
 - **Coverage:** manual
 - **Automated test path:** `test/life-area-assign.test.ts` — `decideAreaFilterChip — whether the applied area chip shows and what names it (PRD AC-21)`; `test/task-filter.test.ts`
-- **Manual status:** `pending`
+- **Manual status:** `passed`
 - **Manual step-by-step:**
   1. Open the filter sheet; an *Área* group offers *Sem área* and each area.
   2. Pick one; *Hoje* filters at once, the header badge rises and a selected chip appears with *Limpar filtros*.
@@ -334,7 +335,7 @@ Generated 2026-10-13 by `/relay-qa-report` in PRD mode, from `PRPs/prds/life-are
 - **Required state:** the areas request made to fail (DevTools network block of `/api/life-areas`); an area-less open Task
 - **Coverage:** manual
 - **Automated test path:** `test/life-area-assign.test.ts` — `lifeAreaNameOf`, `decideAreaGroup`; `test/format.test.ts` — `no area name leaves today's line untouched`
-- **Manual status:** `pending`
+- **Manual status:** `passed`
 - **Manual step-by-step:**
   1. Block `/api/life-areas`, then load *Hoje*.
   2. Tasks list normally and no row shows an area name.
@@ -398,7 +399,7 @@ Generated 2026-10-13 by `/relay-qa-report` in PRD mode, from `PRPs/prds/life-are
 - **Required state:** an area applied on *Hoje*
 - **Coverage:** manual
 - **Automated test path:** — (glue in `TodayScreen.tsx`; a defect that predated the unit, fixed in phase 4 with a latest-callback ref)
-- **Manual status:** `pending`
+- **Manual status:** `passed`
 - **Manual step-by-step:**
   1. Apply an area, switch to another tab or app and come back.
   2. In the network panel, `GET /api/tasks` carries `lifeAreaId=<id>`, and the list is still filtered.
@@ -409,7 +410,7 @@ Generated 2026-10-13 by `/relay-qa-report` in PRD mode, from `PRPs/prds/life-are
 - **Required state:** an area applied; a hardware keyboard
 - **Coverage:** manual
 - **Automated test path:** — (focus handling, not a decision)
-- **Manual status:** `pending`
+- **Manual status:** `passed`
 - **Manual step-by-step:**
   1. Tab to the applied area chip at the head of the quick row and press Space.
   2. The filter clears and focus lands on *Abertas*, not on the page body.
@@ -421,7 +422,7 @@ Generated 2026-10-13 by `/relay-qa-report` in PRD mode, from `PRPs/prds/life-are
 - **Required state:** an area with a 40-character name, on a 375 px wide viewport
 - **Coverage:** manual
 - **Automated test path:** — (layout)
-- **Manual status:** `pending`
+- **Manual status:** `passed`
 - **Manual step-by-step:**
   1. Open the filter sheet; the chip is fully visible, never clipped; pressed, it leaves the 16 px gutter by about 10 to 14 px.
   2. Apply it; the applied chip is capped at 10 rem with an ellipsis and *Abertas* is fully on screen.
@@ -434,7 +435,7 @@ Generated 2026-10-13 by `/relay-qa-report` in PRD mode, from `PRPs/prds/life-are
 - **Required state:** area A applied as the filter; A then deleted from another device or the API
 - **Coverage:** manual
 - **Automated test path:** `test/life-area-assign.test.ts` — `decideAreaFilterChip` (the `unknown` state)
-- **Manual status:** `pending`
+- **Manual status:** `passed`
 - **Manual step-by-step:**
   1. After the refetch, the applied chip reads the neutral label *Área* and the badge still counts it.
   2. The list is empty with *Nenhuma tarefa com esse filtro.* and *Limpar filtros*; the Tasks of A were unassigned, none deleted.
@@ -447,7 +448,7 @@ Generated 2026-10-13 by `/relay-qa-report` in PRD mode, from `PRPs/prds/life-are
 - **Required state:** zero areas; then the areas request failing
 - **Coverage:** manual
 - **Automated test path:** `test/life-area-assign.test.ts` — `decideAreaGroup` (the pure half)
-- **Manual status:** `pending`
+- **Manual status:** `passed`
 - **Manual step-by-step:**
   1. With no areas, open the filter sheet; there is no *Área* group and no placeholder.
   2. With `/api/life-areas` blocked, open the sheet; same, and no toast or banner.
