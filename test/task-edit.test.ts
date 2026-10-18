@@ -11,8 +11,13 @@
 // sending a key the owner never touched.
 
 import { describe, expect, it } from "vitest";
-import type { TaskDto } from "../src/shared/api";
-import { buildTaskPatch, dateModeOf, type TaskDraft } from "../src/shared/task-edit";
+import { EDITABLE_TASK_FIELDS, type TaskDto } from "../src/shared/api";
+import {
+  buildTaskPatch,
+  dateModeOf,
+  effectiveLifeAreaId,
+  type TaskDraft,
+} from "../src/shared/task-edit";
 
 function task(overrides: Partial<TaskDto> = {}): TaskDto {
   return {
@@ -241,5 +246,166 @@ describe("buildTaskPatch never exceeds the editable field set (PRD AC-8)", () =>
       "scheduledDate",
       "title",
     ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The Life Area key (added 2026-10-12, unit 13 life-areas, phase 3).
+//
+// PRPs/prds/life-areas.prd.md AC-9 Task edit carries the area — the client half: the
+// server accepts `lifeAreaId` on PATCH /api/tasks/:id and detaches an occurrence on ANY
+// key, so the SPA must never send the area unless the owner chose a different one.
+// PRPs/prds/life-areas.prd.md AC-20 Task sheet — "saving persists the choice".
+//
+// Source plan: PRPs/plans/life-areas-phase-3-assign-and-show.plan.md (Task 1;
+// plan AC-A4, AC-A5, AC-A6).
+//
+// These cases are appended beside the key-set check above and change none of its
+// assertions: a draft built WITHOUT an area decision (every `draftOf` call above) still
+// emits exactly the four keys it always did. `TaskDraft.lifeAreaId` is optional and is
+// deliberately not seeded from the Task — present only once the owner has chosen — so
+// "absent" below means "the owner never touched the control".
+// ---------------------------------------------------------------------------
+
+describe("buildTaskPatch sends the area only when the owner chose a different one (life-areas PRD AC-9, AC-20)", () => {
+  it("sends no area key when the owner made no area choice, even for a Task that has an area", () => {
+    // The re-save of an occurrence: any key on the Task PATCH detaches it (ADR-0006).
+    const original = task({ lifeAreaId: "area-a" });
+
+    const patch = buildTaskPatch(original, draftOf(original));
+
+    expect(patch).toEqual({});
+    expect(patch).not.toHaveProperty("lifeAreaId");
+  });
+
+  it("keeps an unrelated edit free of the area key", () => {
+    const original = task({ lifeAreaId: "area-a" });
+
+    const patch = buildTaskPatch(original, draftOf(original, { title: "New title" }));
+
+    expect(patch).toEqual({ title: "New title" });
+  });
+
+  it("sends no area key when the chosen area is the one the Task already has", () => {
+    const original = task({ lifeAreaId: "area-a" });
+
+    const patch = buildTaskPatch(original, draftOf(original, { lifeAreaId: "area-a" }));
+
+    expect(patch).toEqual({});
+  });
+
+  it("sends no area key when the owner chooses Sem área on a Task that has none", () => {
+    const original = task({ lifeAreaId: null });
+
+    const patch = buildTaskPatch(original, draftOf(original, { lifeAreaId: null }));
+
+    expect(patch).toEqual({});
+  });
+
+  it("sets an area on an area-less Task", () => {
+    const original = task({ lifeAreaId: null });
+
+    expect(buildTaskPatch(original, draftOf(original, { lifeAreaId: "area-a" }))).toEqual({
+      lifeAreaId: "area-a",
+    });
+  });
+
+  it("changes the area between two areas", () => {
+    const original = task({ lifeAreaId: "area-a" });
+
+    expect(buildTaskPatch(original, draftOf(original, { lifeAreaId: "area-b" }))).toEqual({
+      lifeAreaId: "area-b",
+    });
+  });
+
+  it("clears the area with an explicit null", () => {
+    const original = task({ lifeAreaId: "area-a" });
+
+    expect(buildTaskPatch(original, draftOf(original, { lifeAreaId: null }))).toEqual({
+      lifeAreaId: null,
+    });
+  });
+
+  it("carries the area beside another changed key without disturbing it", () => {
+    const original = task({ lifeAreaId: null });
+
+    const patch = buildTaskPatch(
+      original,
+      draftOf(original, { title: "New title", lifeAreaId: "area-b" }),
+    );
+
+    expect(patch).toEqual({ title: "New title", lifeAreaId: "area-b" });
+  });
+});
+
+describe("buildTaskPatch's key set with the area stays inside the editable field set (life-areas PRD AC-9)", () => {
+  it("emits no key outside EDITABLE_TASK_FIELDS when every editable field changes with the area", () => {
+    const original = task({
+      description: "d",
+      deadline: "2026-09-01",
+      priority: "low",
+      lifeAreaId: "area-a",
+    });
+
+    const patch = buildTaskPatch(
+      original,
+      draftOf(original, {
+        title: "Everything",
+        description: "changed",
+        dateMode: "scheduled",
+        date: "2026-09-05",
+        priority: "high",
+        lifeAreaId: "area-b",
+      }),
+    );
+
+    expect(Object.keys(patch).sort()).toEqual([
+      "description",
+      "lifeAreaId",
+      "priority",
+      "scheduledDate",
+      "title",
+    ]);
+    for (const key of Object.keys(patch)) expect(EDITABLE_TASK_FIELDS).toContain(key);
+  });
+});
+
+describe("effectiveLifeAreaId — the area the sheet shows selected and a series conversion carries (life-areas PRD AC-20)", () => {
+  const withArea = task({ lifeAreaId: "area-a" });
+  const withoutArea = task({ lifeAreaId: null });
+
+  it("falls back to the Task's own area when the draft carries no choice", () => {
+    expect(effectiveLifeAreaId({}, withArea)).toBe("area-a");
+    expect(effectiveLifeAreaId({}, withoutArea)).toBeNull();
+  });
+
+  it("is null when the owner chose Sem área on a Task that has an area", () => {
+    expect(effectiveLifeAreaId({ lifeAreaId: null }, withArea)).toBeNull();
+  });
+
+  it("is the chosen area when it differs from the Task's own", () => {
+    expect(effectiveLifeAreaId({ lifeAreaId: "area-b" }, withArea)).toBe("area-b");
+    expect(effectiveLifeAreaId({ lifeAreaId: "area-b" }, withoutArea)).toBe("area-b");
+  });
+
+  it("agrees with buildTaskPatch: the patch carries the area exactly when the effective area differs", () => {
+    const choices: Array<string | null | undefined> = [undefined, null, "area-a", "area-b"];
+
+    for (const lifeAreaId of [null, "area-a"]) {
+      for (const choice of choices) {
+        const original = task({ lifeAreaId });
+        const draft =
+          choice === undefined ? draftOf(original) : draftOf(original, { lifeAreaId: choice });
+
+        const effective = effectiveLifeAreaId(draft, original);
+        const patch = buildTaskPatch(original, draft);
+
+        if (effective === original.lifeAreaId) {
+          expect(patch).not.toHaveProperty("lifeAreaId");
+        } else {
+          expect(patch).toHaveProperty("lifeAreaId", effective);
+        }
+      }
+    }
   });
 });

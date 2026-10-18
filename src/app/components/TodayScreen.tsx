@@ -12,6 +12,7 @@ import type { AdherenceResponse, ReminderDto, TaskDto } from "../../shared/api";
 import { canWrite } from "../../shared/connectivity";
 import { instantToLocalParts, PRAESTO_TIMEZONE, todayIn } from "../../shared/dates";
 import { googleFailureMessage } from "../../shared/google-failure-copy";
+import { captureAreaFields, lifeAreaNameOf } from "../../shared/life-area-assign";
 import { classifyRequestFailure } from "../../shared/request-failure";
 import {
   buildCreateReminderInput,
@@ -26,7 +27,7 @@ import {
   type RecurrenceDraft,
 } from "../../shared/series-edit";
 import type { ShareTarget } from "../../shared/share-target";
-import { buildTaskPatch } from "../../shared/task-edit";
+import { buildTaskPatch, effectiveLifeAreaId } from "../../shared/task-edit";
 import {
   activeCount,
   EMPTY_FILTER,
@@ -54,6 +55,7 @@ import {
   updateTask,
 } from "../api";
 import { useConnectivity } from "../hooks/useConnectivity";
+import { useLifeAreas } from "../hooks/useLifeAreas";
 import { useSeriesSheet } from "../hooks/useSeriesSheet";
 import { dismissToast, showToast, useToast } from "../toast-store";
 import { CaptureDeck } from "./CaptureDeck";
@@ -146,6 +148,7 @@ export function TodayScreen({
   onOpenSearch,
   onOpenSettings,
   onOpenAdherence,
+  onOpenLifeAreas,
 }: {
   onUnauthorized: () => void;
   initialShare: ShareTarget | null;
@@ -161,6 +164,8 @@ export function TodayScreen({
   onOpenSettings: () => void;
   /** Threaded from `App.tsx` (adherence-mirror phase 3) so the adherence line below the chip row opens `/settings/adherence`. */
   onOpenAdherence: () => void;
+  /** Threaded from `App.tsx` (life-areas phase 3); opens `/settings/life-areas` from the Task sheet's zero-areas button. */
+  onOpenLifeAreas: () => void;
 }) {
   const [tasks, setTasks] = useState<TaskDto[] | null>(null);
   // The adherence record lives in its OWN atom, never folded into `tasks`,
@@ -273,10 +278,17 @@ export function TodayScreen({
   const today = todayIn(new Date());
   const now = new Date();
 
+  // The owner's Life Areas, in their own atom (never folded into `tasks` or an
+  // error state): absent when the request fails, so *Hoje* then behaves exactly
+  // as before — no names on the rows, no group in the sheet, no banner (AC-22).
+  const { lifeAreas, refresh: refreshLifeAreas } = useLifeAreas(onUnauthorized);
+
   const { state: connectivity, report } = useConnectivity({
     onOnline: () => {
       void refresh();
       void refreshEvents();
+      // A first load that failed offline recovers on reconnect.
+      void refreshLifeAreas();
     },
   });
   const toast = useToast();
@@ -459,8 +471,12 @@ export function TodayScreen({
   function submitCapture(): void {
     const trimmed = title.trim();
     if (trimmed === "" || busy) return;
+    // Capture inherits the active area filter (life-areas PRD AC-14, D-M):
+    // `captureAreaFields` decides what the new Task takes — no `lifeAreaId` key
+    // at all for no filter, an explicit `null` for *Sem área*, the id for an area
+    // — so a Task captured inside a filtered view lands in the list being viewed.
     void run(async () => {
-      await createTask({ title: trimmed });
+      await createTask({ title: trimmed, ...captureAreaFields(filter.lifeAreaId) });
       // FR-045 invariant, locked in explicitly: `setTitle("")` is sequenced
       // AFTER the awaited `createTask(...)` call above, never before or
       // unconditionally — a thrown failure exits this callback before this
@@ -635,8 +651,11 @@ export function TodayScreen({
    */
   function saveSheetWithRecurrence(): void {
     if (sheetTask === null) return;
+    // The area is resolved BEFORE the series is built: a one-off that already has
+    // an area, or one the owner just chose, must not lose it in create-then-delete.
+    const draft = currentDraft(sheet, sheetTask);
     const input = buildCreateSeriesInput(
-      currentDraft(sheet, sheetTask),
+      { ...draft, lifeAreaId: effectiveLifeAreaId(draft, sheetTask) },
       recurrenceDraft,
       sheetTaskReminder === null ? null : draftFromReminder(sheetTaskReminder),
       PRAESTO_TIMEZONE,
@@ -770,10 +789,19 @@ export function TodayScreen({
     void refreshAdherence();
   }, []);
 
+  // The effect below is registered ONCE, so a bare `refresh()` inside it would
+  // be the first render's function, closing over the first render's `filter`
+  // (`EMPTY_FILTER`) forever: coming back to the app would refetch the whole
+  // list under chips that still say it is filtered. A ref to the latest render's
+  // `refresh` keeps the registration single and the filter current — the idiom
+  // `useConnectivity` uses for `onOnline`.
+  const refreshRef = useRef(refresh);
+  refreshRef.current = refresh;
+
   useEffect(() => {
     function handleVisibilityChange(): void {
       if (document.visibilityState !== "visible") return;
-      void refresh();
+      void refreshRef.current();
       // The agenda goes stale on wall-clock time rather than on anything the
       // owner did, so coming back to the app is exactly when it is worth
       // re-reading (guidelines §12.4 — there is no manual refresh gesture).
@@ -862,6 +890,7 @@ export function TodayScreen({
                   today={today}
                   busy={busy || !writable}
                   editing={editingId === task.id}
+                  areaName={lifeAreaNameOf(lifeAreas, task.lifeAreaId)}
                   onToggle={(next) => void (next ? complete(task.id) : reopen(task.id))}
                   onOpen={() => openSheet(task)}
                   onEdit={() => setEditingId(task.id)}
@@ -983,7 +1012,13 @@ export function TodayScreen({
           shell's row template is unchanged and an absent line reserves no
           space (plan AC-A2). */}
       <div>
-        <FilterChips filter={filter} today={today} onToggleChip={handleToggleChip} />
+        <FilterChips
+          filter={filter}
+          today={today}
+          onToggleChip={handleToggleChip}
+          areas={lifeAreas}
+          onClearArea={() => setFilter((current) => ({ ...current, lifeAreaId: null }))}
+        />
         {adherenceLine !== null && (
           <button
             type="button"
@@ -1211,6 +1246,8 @@ export function TodayScreen({
           error: seriesSheet.nudge.error,
           onChange: seriesSheet.nudge.setEnabled,
         }}
+        lifeAreas={lifeAreas}
+        onOpenLifeAreas={onOpenLifeAreas}
       />
 
       {/* Never stack sheets (layout standard §3): gated on the same
@@ -1220,6 +1257,7 @@ export function TodayScreen({
         onOpenChange={setFiltersOpen}
         filter={filter}
         onChange={setFilter}
+        areas={lifeAreas}
       />
 
       {/* Never stack sheets (layout standard §3): the Task sheet and the

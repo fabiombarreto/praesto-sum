@@ -1,0 +1,23 @@
+{
+  "run_id": "c7214817-b4e0-40c2-8a1b-a3bb10892499",
+  "feature": "life-areas",
+  "started_at": "2026-10-12T04:15:25.197Z",
+  "ended_at": "2026-10-12T04:18:09.382Z",
+  "elapsed_ms": 164185,
+  "max_test_retries": 3,
+  "max_test_minutes": 30,
+  "attempts": [
+    {
+      "n": 1,
+      "verdict": "GREEN",
+      "record": "phase-2/attempts/test-1/record.json",
+      "implementer_diff": null
+    }
+  ],
+  "outcome": "GREEN",
+  "phase": 2,
+  "time_breakdown": {
+    "attempt_1_suite_ms": 57918
+  },
+  "tdd_mode": true
+}

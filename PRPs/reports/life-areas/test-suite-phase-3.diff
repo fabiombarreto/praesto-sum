@@ -1,0 +1,217 @@
+# TDD initial suite — phase 3
+# Source PRD: PRPs/prds/life-areas.prd.md (Acceptance Criteria)
+# Source plan: C:/repos/assistente-pessoal/.worktrees/life-areas/PRPs/plans/life-areas-phase-3-assign-and-show.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-10-12
+# Mode: test-first (docs/context/methodology.md: tdd true, test_frameworks ["vitest"]; plan phase_type feature)
+# Code root: C:/repos/assistente-pessoal/.worktrees/life-areas (branch feature/life-areas)
+# Manifest name: the protocol's default `test-suite.diff` is already phase 1's APPROVED manifest and
+#   `test-suite-phase-2.diff` is phase 2's; both are untouched. This file is the phase-3 sibling, named
+#   after the same project convention (test-suite.diff, test-suite-phase-2.diff, test-suite-phase-3.diff).
+
+## AC outcomes
+
+The PRD ACs in this phase's row are AC-14, AC-15 and AC-16 (the three pure decisions, "tested without the
+DOM") and AC-20 and AC-22 (the two criteria the PRD names "(manual)"). AC-14, AC-15 and AC-16 are
+test-first-authorable as written. AC-20 and AC-22 stay manually verified (methodology.md: UI stays manual,
+a purely visual clause legitimately produces no test file), but the plan extracts the decidable logic behind
+them into src/shared and pins its names, inputs and outputs in its Notes "for the test pair" — the same
+split methodology.md records under "Browser-API work: split the logic out, then the glue is exempt". The
+suite therefore covers each AC's OBSERVABLE clauses plus those pinned decisions; no name was invented.
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-14 | NEW_TEST_REQUIRED | test/life-area-assign.test.ts (NO_AREA_VALUE, captureAreaFields: null -> {} with no key, "none" -> { lifeAreaId: null }, an id -> { lifeAreaId: id }, and the create body of `marcar consulta` under each) |
+| AC-15 | NEW_TEST_REQUIRED (delta) | test/format.test.ts, appended: taskMetaLine's optional third argument (the area name) and taskMetaParts. The two-argument lines are EXISTING_TEST_COVERS at test/format.test.ts:118-279 (every date phrase, priority word, `done` null and `missed` "não concluída") and stay untouched |
+| AC-16 | NEW_TEST_REQUIRED | test/series-edit.test.ts, appended: planSeriesOccurrenceSave under both *Aplicar a* choices, buildUpdateSeriesTemplate's area, buildCreateSeriesInput's carried area. Every pre-existing case is a draft with no area decision and keeps its expectation (test/series-edit.test.ts:530-563 and :574-684) |
+| AC-20 | NEW_TEST_REQUIRED (decidable half; the visual remainder is manual, see "Manual clauses") | test/life-area-assign.test.ts (decideAreaGroup, areaChoiceValue, lifeAreaIdFromChoice), test/task-edit.test.ts (effectiveLifeAreaId, buildTaskPatch carries the choice only when it differs), test/series-edit.test.ts (the choice follows *Aplicar a*; the conversion carries a chosen area) |
+| AC-22 | NEW_TEST_REQUIRED (decidable half; the visual remainder is manual) | test/life-area-assign.test.ts (decideAreaGroup(null) is `hidden`, never `empty`; lifeAreaNameOf(null, id) is null), test/format.test.ts (an area-less open Task gets exactly today's line, so there is no "Sem área" marker) |
+| AC-9 | OUT_OF_PHASE_SCOPE for the route; NEW_TEST_REQUIRED for the client half | The route contract is phase 1, complete. The client half (an unchosen or unchanged area is never sent, so an ordinary re-save never detaches an occurrence; the key set stays inside EDITABLE_TASK_FIELDS) is plan AC-A4: test/task-edit.test.ts, appended |
+| AC-10 | OUT_OF_PHASE_SCOPE for the route; NEW_TEST_REQUIRED for the client half | The route contract is phase 1, complete. The "series and its first occurrence carry A" client half (a one-off's area survives conversion to a series) is plan AC-A6: buildCreateSeriesInput in test/series-edit.test.ts |
+| AC-1..AC-8, AC-11, AC-12, AC-17 | OUT_OF_PHASE_SCOPE | (phase 1, complete: route contract, shared helpers, export) |
+| AC-13 | OUT_OF_PHASE_SCOPE | (deferred to phase 4: TaskFilter.lifeAreaId; Level 2 of the plan fails the phase if the filter files mention lifeAreaId) |
+| AC-18 | OUT_OF_PHASE_SCOPE | (phase 4: the restore drill is a script run, not a test file) |
+| AC-19 | OUT_OF_PHASE_SCOPE | (phase 2, complete: the *Áreas* screen) |
+| AC-21 | OUT_OF_PHASE_SCOPE | (phase 4: manual UI criterion, the filter sheet) |
+| AC-23 | OUT_OF_PHASE_SCOPE | (this phase's slice, plan AC-A8, is Level 1/2 shell checks and the ui-checklist.md record, not a test file; the unit-level inspection is phase 4's) |
+| AC-24, AC-25 | OUT_OF_PHASE_SCOPE | (phase 4: device proof, documentation inspection) |
+
+### Plan AC -> test cases
+
+- AC-A1 (PRD AC-14, capture inherits the filter): test/life-area-assign.test.ts "NO_AREA_VALUE" and
+  "captureAreaFields" — no filter adds no key (checked by `Object.keys`, not only by equality, so an
+  `undefined`-valued key fails); Sem área adds an explicit null; an id adds the id; only the exact reserved
+  value `"none"` means Sem área (a string that merely starts with it is an id); and the spread into
+  `{ title: "marcar consulta", ... }` yields exactly `["title"]`, `{ title, lifeAreaId: null }` and
+  `{ title, lifeAreaId: <id> }`. The wiring (the one-line seam in TodayScreen.submitCapture) is manual.
+- AC-A2 (PRD AC-15, row text): test/format.test.ts — `até seg., 24/08 · alta · Casa` against TODAY 2026-08-21
+  (the plan's pinned value; the PRD's `seg., 18/08` is illustrative), the same without priority, `baixa · Casa`,
+  just `Casa` with neither, a normal priority appending nothing, an overdue deadline keeping `overdue: true`,
+  a scheduled phrase, an area named `alta` beside a high priority reading `alta · alta`; a null name returning
+  exactly the two-argument line (4 Tasks, literal and relative); `done` with a name -> null; `missed` with a
+  name -> "não concluída" with no name; taskMetaParts' four fields in every one of those shapes, and the grid
+  that makes taskMetaLine the ` · ` join of taskMetaParts (18 task-and-name combinations). test/life-area-
+  assign.test.ts lifeAreaNameOf — the id-to-name lookup that feeds the row (null areas, null id, unknown id,
+  an empty list, a hit anywhere in the list).
+- AC-A3 (PRD AC-16, occurrence save plan): test/series-edit.test.ts "planSeriesOccurrenceSave — the area
+  follows Aplicar a" (series: area to the series PATCH and `{}` to the Task; occurrence: the reverse; both
+  for a change and for a clear; with a rule edit one body `{ byMonthday: 10, lifeAreaId: "area-b" }`; an area
+  edit plus a date edit are split), "an unchanged area is never sent" (the occurrence's own area chosen again
+  or never touched, under both choices, with and without a title edit, 8 cases) and "a detached
+  occurrence's own area is not the series'" (a chosen area reaches both requests; an unrelated edit and a
+  re-choice of the occurrence's own area do not rewrite the series' area). buildUpdateSeriesTemplate: six
+  cases (set, change, clear, equal -> null, absent -> null, beside another field).
+- AC-A4 (PRD AC-9, AC-20, buildTaskPatch): test/task-edit.test.ts "buildTaskPatch sends the area only when
+  the owner chose a different one" (no choice, unrelated edit, same area, Sem área on an area-less Task,
+  set, change, clear, beside another key) and "buildTaskPatch's key set with the area stays inside the
+  editable field set" (sorted keys `description, lifeAreaId, priority, scheduledDate, title`, each one in
+  EDITABLE_TASK_FIELDS).
+- AC-A5 (PRD AC-20, the sheet): test/life-area-assign.test.ts decideAreaGroup (`hidden` / `empty` /
+  `choices`, a single area is still `choices`, pt-BR order not bytewise, case and accent insensitive, the
+  argument never mutated: it is frozen), areaChoiceValue and lifeAreaIdFromChoice (including the
+  round-trip); test/task-edit.test.ts effectiveLifeAreaId (falls back to the Task's own area, null for an
+  explicit Sem área, the chosen id otherwise, and agreement with buildTaskPatch over a 2 x 4 grid).
+- AC-A6 (PRD AC-20 and AC-10, the conversion): test/series-edit.test.ts "buildCreateSeriesInput — a chosen
+  area is carried" (the chosen id is carried; `null` and an absent choice leave no key and build one and the
+  same body; carrying an area changes nothing else in the body).
+- AC-A7 (PRD AC-22, degraded states): test/life-area-assign.test.ts decideAreaGroup(null) is `{ kind:
+  "hidden" }` and decideAreaGroup([]) is `{ kind: "empty" }` — a failed request is never "you have no
+  areas"; lifeAreaNameOf(null, id) is null — rows show no name. The hook itself (own atom, newest request
+  wins, 401 routing, silent failure) is component glue and manual.
+- AC-A8 (PRD AC-23): not a test file. "No test removed, skipped or loosened" is held by this manifest's
+  ledger: three additive UPDATE rows, no DELETE.
+
+### Manual clauses (no test written, on purpose)
+
+Each is purely visual, about focus/keyboard/touch targets, a literal of pt-BR copy, or glue over a React
+effect, so it follows methodology.md's "UI verification stays manual" line and is recorded in plan Task 11's
+PRPs/reports/life-areas/phase-3/ui-checklist.md. The plan exports no symbol that carries any of the pt-BR
+strings (they are literals in TaskSheet.tsx, verified by Task 8's VALIDATE greps), so none is pinned here.
+
+| Clause | Why no test | Where it is recorded |
+|---|---|---|
+| AC-20: the *Área* group sits after *Prioridade*, wraps inside the sheet, shows *Sem área* first then the areas | Markup and layout. The ORDER of the areas and the value each chip carries ARE tested (decideAreaGroup, areaChoiceValue) | checklist items 1, 2, 12 |
+| AC-20: *Aplicar a* label and accessible name now name the area (`Aplicar título, descrição, prioridade e área a`) | A pt-BR literal inside a component, no exported constant | checklist item 4; Task 8's literal greps |
+| AC-20: the zero-areas line `Você ainda não criou nenhuma área.` and the *Criar áreas* button that opens *Áreas* | Copy and navigation glue; WHEN it appears (an empty list, never a failed request) IS tested (decideAreaGroup) | checklist items 4, 5 |
+| AC-20: "saving persists the choice" end to end | The PATCH/POST contract is phase 1 (route suites); the sheet's save call is glue. WHAT is sent is tested (buildTaskPatch, planSeriesOccurrenceSave, buildCreateSeriesInput) | checklist item 11 |
+| AC-20: nothing is mandatory, a Task saves with no area | Decidable half tested: a draft with no area choice produces a patch with no area key | AC-20 walk |
+| AC-22: no banner or toast, Tasks list independently of the areas request | Wiring of useLifeAreas; the plan's Level 2 greps the hook for showToast/report/useConnectivity | checklist items 9, 11; AC-22 walk |
+| AC-22: a slow request shows Tasks first, names after | Timing of two independent atoms in React state | checklist item 11 |
+| AC-22: a 401 routes to the token gate, a stale response never overwrites a fresher one, a refetch on return to the foreground and on reconnect | Component effects; the same idiom the adherence atom ships | checklist items 9, 11 |
+| AC-15: the row keeps its priority glyph and series glyph, ` · ` placement inside the span | Rendering of TaskRow; the structured parts it renders from ARE tested (taskMetaParts) | checklist items 1, 3 |
+| AC-14's observable half: a capture inside a filtered view lands in that area | The filter dimension is phase 4's; this phase ships the pure decision and one documented seam, so the half is not claimable until phase 4 | AC-22 walk line stating it; phase 4 AC-13/AC-21 |
+
+## Test files written this session
+
+Created:
+- test/life-area-assign.test.ts
+
+Updated (additive; every pre-existing assertion preserved verbatim, none edited, dropped or loosened):
+- test/task-edit.test.ts
+- test/series-edit.test.ts
+- test/format.test.ts
+
+Not touched: test/task-sheet.test.ts (its four exact-`toEqual` `draftFromTask` assertions stay valid because the
+plan deliberately does NOT seed the draft with `lifeAreaId`; the plan names nothing to add there),
+test/task-filter.test.ts (`EMPTY_FILTER` keeps its five keys: the filter dimension is phase 4's), every phase-1
+suite (test/life-areas.test.ts, test/life-areas-routes.test.ts, test/life-areas-task-routes.test.ts,
+test/life-areas-series.test.ts, test/life-areas-export.test.ts, test/task-update.test.ts), every phase-2 suite
+(test/life-areas-list.test.ts, test/life-areas-view.test.ts, test/app-route.test.ts) and test/isolation.ts (the
+new cases are pure and need no D1 fixture).
+
+## Notes for the reviewer
+
+Expected RED reasons before the Implementer (the suite was authored but not executed by the writer, which has
+no run tool; the dynamic RED check is test-reviewer's):
+
+- test/life-area-assign.test.ts (26 cases): the module src/shared/life-area-assign.ts does not resolve (plan
+  Task 3). The whole file fails to load; no other RED reason is expected.
+- test/task-edit.test.ts (13 new cases): 9 fail until plan Task 1 — the four cases that set, change, clear or
+  combine an area get `{}` or the other keys without `lifeAreaId`; the key-set case lacks `lifeAreaId`; the four
+  effectiveLifeAreaId cases hit `effectiveLifeAreaId is not a function` (a missing named export from an
+  existing module is `undefined` under the Vite SSR transform, so the file still loads and every pre-existing
+  case stays green). 4 are GREEN before, on purpose, as regression guards (see below).
+- test/series-edit.test.ts (28 new cases): 13 fail until plan Task 2 — the six routing cases, the one
+  detached case that chooses a new area, four template cases (set, change, clear, beside another field) and
+  two buildCreateSeriesInput cases (the chosen id; "changes nothing else"). 15 are GREEN before, on purpose.
+- test/format.test.ts (41 new cases): 35 fail until plan Task 4 — the 8 name-closing cases get the line without
+  the name (the extra argument is ignored by the current two-parameter function), and the 9 taskMetaParts
+  cases plus the 18-row join grid hit `taskMetaParts is not a function`. 6 are GREEN before, on purpose.
+- `tsc -b` over test/ additionally reports the unknown `lifeAreaId` on TaskDraft, the unknown exports and the
+  unknown third argument until Tasks 1 to 4, as it did for the adherence and life-areas routes.
+
+Cases expected GREEN before the Implementer, on purpose (25 of 108). Each pins the property the plan calls out
+as the defect to prevent — an over-eager implementation fails them — so they are guards, not trivial asserts:
+- test/task-edit.test.ts: no area choice sends nothing even for a Task that has an area; an unrelated edit
+  carries no area key; the chosen area equal to the Task's own sends nothing; Sem área chosen on an area-less
+  Task sends nothing. An implementation that seeds the draft with the Task's area, or always echoes it, fails.
+- test/series-edit.test.ts: the 8 "unchanged area is never sent" rows; the two detached-occurrence rows that must
+  not rewrite the series' area; buildUpdateSeriesTemplate returning null for an equal or absent choice;
+  buildCreateSeriesInput leaving no key for `null` and for no choice, and building one and the same body.
+  An implementation that compares the area against the SERIES instead of the occurrence fails the detached
+  rows after Task 2.
+- test/format.test.ts: the 4 "no name leaves today's line untouched" rows and the 2 closed-row rows (`done`
+  null, `missed` "não concluída"). An implementation that joins a null name into the line, or shows the name
+  on a closed row, fails them.
+
+Assertions that go beyond the literal PRD text, each taken from the plan or from a rule it names, so R-IMPL-LEAK
+can judge them:
+- captureAreaFields("none-of-these") is an id, not Sem área — plan Task 3: "any other string is an area id".
+- lifeAreaIdFromChoice([a, b]) reads the first element — plan Task 3: "else the first element" (the mirror of
+  *Prioridade*'s `next[0]`). The pair ["none", id] is deliberately NOT pinned: the plan does not say.
+- decideAreaGroup never mutates its argument (asserted with a frozen array) and returns a different array —
+  plan Task 3: "a COPY of the input sorted by compareLifeAreaNames, never mutating the argument".
+- Clearing the area under *Só esta ocorrência* sends `{ lifeAreaId: null }` to the Task alone (the plan pins the
+  clear only under *Toda a série*) — the symmetric consequence of AC-16's second clause and buildTaskPatch's
+  pinned clear.
+- An area edit and a date edit in one save are split (area to the series, date to the occurrence) — the
+  existing "a date change is always the occurrence's own" rule applied to the new key; not literally pinned by
+  the plan's Notes, but it is exactly what TEMPLATE_TASK_FIELDS gaining `lifeAreaId` implies.
+- A normal priority appends nothing before the area name — the existing priority rule composed with the new
+  argument.
+- effectiveLifeAreaId and buildTaskPatch agree (the patch carries the area exactly when the effective area
+  differs from the Task's own) — the plan describes effectiveLifeAreaId as "what the sheet shows as selected
+  and what a conversion to a series must carry" and buildTaskPatch as sending only a differing choice.
+- buildCreateSeriesInput carrying an area changes nothing else in the body — AC-A6's "an area-less draft produces
+  a request body with no `lifeAreaId` key at all", read as "byte-identical to today's apart from the area".
+
+Names, shapes and values taken from the plan rather than the PRD (PRD AC-14/15/16 name behaviour, AC-20/22 are
+manual and name no function): every export of src/shared/life-area-assign.ts and its signatures, the
+AreaGroupView kinds `hidden` / `empty` / `choices`, `TaskMetaParts` (`phrase`, `priorityWord`, `areaName`,
+`overdue`), `taskMetaLine`'s optional third argument, `TaskDraft.lifeAreaId` (optional, unseeded) and the
+reserved literal `"none"`. No pt-BR sentence of the sheet is pinned; the only pt-BR strings asserted are the
+row's date and priority phrases the plan pins (`até seg., 24/08 · alta · Casa` and its siblings) and test-data
+area names.
+
+Not encoded as tests, by the PRD's own TDD routing and the methodology's scope: the visual and interaction
+clauses listed under "Manual clauses", the glossary-vocabulary scan and the sibling-only-imports scan (both
+Level 2 shell checks in the plan), the `wrap` option of ChipGroup, the useLifeAreas hook and every React
+wiring change (src/app is outside the test project).
+
+## Lifecycle ledger
+
+Every UPDATE or DELETE performed this session, one row each.
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| UPDATE | EXISTING_TEST_UPDATED | test/task-edit.test.ts (new describes "buildTaskPatch sends the area only when the owner chose a different one (life-areas PRD AC-9, AC-20)", "buildTaskPatch's key set with the area stays inside the editable field set (life-areas PRD AC-9)", "effectiveLifeAreaId — the area the sheet shows selected and a series conversion carries (life-areas PRD AC-20)"; the api import gains the runtime constant EDITABLE_TASK_FIELDS and the task-edit import gains `effectiveLifeAreaId`) | Driving AC: life-areas PRD AC-9 and AC-20 (plan AC-A4, AC-A5): `TaskDraft` gains an optional `lifeAreaId`, `buildTaskPatch` emits it only when the owner chose a different value, and `effectiveLifeAreaId` is new. Additive blocks appended at the end of the file, beside the existing key-set check; every existing assertion — including the exact four-key set at the original lines 223-245 — is preserved verbatim, none is edited, dropped or loosened, because a draft built without an area decision still emits exactly those four keys. |
+| UPDATE | EXISTING_TEST_UPDATED | test/series-edit.test.ts (new top-level helpers `areaOccurrence`, `areaChoice`, `LEFT_ALONE` and new describes "planSeriesOccurrenceSave — the area follows Aplicar a (life-areas PRD AC-16)", "planSeriesOccurrenceSave — an unchanged area is never sent (life-areas PRD AC-16, AC-9)", "planSeriesOccurrenceSave — a detached occurrence's own area is not the series' (life-areas PRD AC-16, ADR-0006)", "buildUpdateSeriesTemplate — the area is a template field (life-areas PRD AC-16)", "buildCreateSeriesInput — a chosen area is carried into the converted series (life-areas PRD AC-10, AC-20)") | Driving AC: life-areas PRD AC-16 (plan AC-A3) and AC-20 / AC-10 (plan AC-A6): `lifeAreaId` joins the template fields, `planSeriesOccurrenceSave` routes it with *Aplicar a* and counts it as changed only against the occurrence on screen, and `buildCreateSeriesInput` carries a chosen area. Additive blocks appended at the end of the file with no import change; every existing assertion (the original lines 530-563 and 574-684 included) is preserved verbatim, none is edited, dropped or loosened, because every existing draft carries no area decision. |
+| UPDATE | EXISTING_TEST_UPDATED | test/format.test.ts (new describes "taskMetaLine — the area name closes an open Task's line (life-areas PRD AC-15)", "taskMetaLine — no area name leaves today's line untouched (life-areas PRD AC-15, AC-22)", "taskMetaLine — closed rows never show the area (life-areas PRD AC-15, D-Q)", "taskMetaParts — the row's meta line as structured parts (life-areas PRD AC-15)", "taskMetaLine is the join of taskMetaParts (life-areas PRD AC-15)"; the format import gains `taskMetaParts`) | Driving AC: life-areas PRD AC-15 (plan AC-A2): `taskMetaLine` gains an optional area-name argument and `taskMetaParts` is new. Additive blocks appended at the end of the file; every existing assertion — the original lines 118-279 included, every one a two-argument call — is preserved verbatim, none is edited, dropped or loosened, because a call without a name must keep returning exactly what it did. |
+
+No DELETE (OBSOLETE_TEST_REMOVED or REDUNDANT_TEST_REMOVED) was performed this session. No existing assertion's
+expected value was changed.
+
+## Formatting Outcome
+
+Not run by the writer: this agent has no shell tool in this session. The four touched files were hand-formatted
+to .prettierrc (printWidth 100, double quotes, trailing commas "all", 2-space indent), with long
+`it.each(...)` titles shortened so each call fits one line. Per methodology.md `formatter_cmd` the command
+layer should run `npx prettier --write test/life-area-assign.test.ts test/task-edit.test.ts
+test/series-edit.test.ts test/format.test.ts` (scoped to those four files, never `.`) before the reviewer.
+
+Command-layer result: formatted — `npx prettier --write` (discovery source: methodology.md `formatter_cmd`), scoped to the four files above, exit 0; Prettier reported every file `(unchanged)`, so the writer's hand formatting already matched.
+
+## Status
+
+*Approved: 2026-10-12*
+*Status: APPROVED*

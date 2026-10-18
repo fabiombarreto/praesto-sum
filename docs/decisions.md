@@ -184,6 +184,15 @@ epos\PRPs-agentic-eng`), not this project's. Nothing is missing here; the boiler
 **Reason:** The owner's call: a Task with no date must repeat indefinitely. Auto-picking *Fazer em* with today would invent a date; moving the error next to *Salvar* would fix the silence but not the dead end.
 **Areas affected:** tasks · Source: `documentation/60-decisions/ADR-0014-dateless-tasks-can-repeat.md`
 
+---
+
+## [2026-10-11] Life Areas are owner-named, single-membership groupings; deleting one unassigns its items
+
+**Context:** The `life_areas` table and the `life_area_id` columns on `tasks` and `recurrence_series` existed since migration `0000` with no behaviour decided: how many areas an item may carry, what an area holds, what deleting one does, and whether re-assigning a series rewrites its history. The roadmap's exit signal for unit 13 carries a revert clause, so a cheap revert is part of the requirement.
+**Decision:** At most ONE area per Task and per Recurrence Series (the series template carries it, each occurrence copies it) — no tags, no join table. An area is a name only (1–40 characters, unique ignoring case and diacritics, at most 12, alphabetical pt-BR); `description` stays in schema and export, unexposed; no colour, icon, archive or sort order, so no migration. Deleting an area is a real delete that leaves its items area-less (`ON DELETE SET NULL`) and loses nothing; the confirmation names how many. A series' area applies from the open occurrence on — `done` and `missed` rows keep theirs (ADR-0006). *Sem área* is the filter value `lifeAreaId=none` and a count row, never a stored area or a grouping axis on *Hoje*.
+**Reason:** One FK column per table already exists and capture must never force a taxonomy choice; colour needs a migration, a categorical palette (ADR-0010) and a contrast measurement for a unit that may be reverted, and the name has to sit beside any colour anyway (WCAG 1.4.1); Things trashes an Area's children, which is destructive here, and archive costs a column and filtered reads; rewriting closed rows would be a bulk write over the permanent record. Weakly evidenced and flagged in the PRD: the 12-area limit.
+**Areas affected:** life-areas, tasks · Source: `documentation/60-decisions/ADR-0015-life-areas-owner-named-single-membership.md`, `PRPs/prds/life-areas.prd.md` Decisions Log (D-E, D-F, D-J, D-K)
+
 <!-- Template for future entries:
 
 ## [YYYY-MM-DD] Title of the decision

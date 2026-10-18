@@ -1,0 +1,25 @@
+restore-drill: applied 7 migrations
+
+restore-drill: per-table row counts
+  table                        snapshot  restored
+  life_areas                          2         2  OK
+  recurrence_series                   1         1  OK
+  tasks                               5         5  OK
+  reminders                           0         0  OK
+  google_calendar_selections          0         0  OK
+
+restore-drill: excluded tables (schema present, no rows restored)
+  google_connections                  0  OK
+  push_subscriptions                  0  OK
+  oauth_states                        0  OK
+  cron_runs                           0  OK
+  push_dispatch_attempts              0  OK
+
+restore-drill: field-level comparison, every row of every table
+  life_areas                      2 rows, every field identical  OK
+  recurrence_series               1 rows, every field identical  OK
+  tasks                           5 rows, every field identical  OK
+  reminders                    no rows in this snapshot — restore path NOT exercised
+  google_calendar_selections   no rows in this snapshot — restore path NOT exercised
+
+restore-drill: PASS — the snapshot rebuilds into an empty schema intact.

@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-09-08
+last_updated: 2026-10-11
 review_trigger: "an ADR is created or changes state, or a pending decision is added, reordered or resolved"
 ---
 
@@ -43,3 +43,4 @@ Decision 4 was resolved on 2026-08-04 by [ADR-0007](ADR-0007-google-calendar-bid
 | [ADR-0012](ADR-0012-optional-docker-compose-local-dev-runtime.md) | Offer Docker Compose as an optional second way to run the local dev server | accepted | 2026-08-24 |
 | [ADR-0013](ADR-0013-swap-web-push-for-webcrypto-web-push.md) | Swap `web-push` for `@block65/webcrypto-web-push` — supersedes ADR-0005's naming of `web-push` | accepted | 2026-09-07 |
 | [ADR-0014](ADR-0014-dateless-tasks-can-repeat.md) | A Task without a date can repeat — `dateMode: "none"` | accepted | 2026-10-08 |
+| [ADR-0015](ADR-0015-life-areas-owner-named-single-membership.md) | Life Areas are owner-named, single-membership groupings; deleting one unassigns its items | accepted | 2026-10-11 |

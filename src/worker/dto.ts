@@ -3,6 +3,7 @@ import type {
   GoogleCalendarSelectionDto,
   GoogleConnectionDto,
   LifeAreaDto,
+  LifeAreaSummaryDto,
   PushSubscriptionDto,
   ReminderDto,
   RecurrenceSeriesDto,
@@ -76,6 +77,24 @@ export function toLifeAreaDto(row: LifeArea): LifeAreaDto {
     description: row.description,
     createdAt: toEpochSeconds(row.createdAt) ?? 0,
     updatedAt: toEpochSeconds(row.updatedAt) ?? 0,
+  };
+}
+
+/**
+ * Maps a Life Area row plus the counts the route computed for `GET
+ * /api/life-areas`, composing `toLifeAreaDto` rather than re-declaring any of
+ * its fields by hand (docs/anti-patterns.md — "Hand-duplicated entity types").
+ * The counts are not columns, so the route looks them up separately.
+ */
+export function toLifeAreaSummaryDto(
+  row: LifeArea,
+  counts: { openTaskCount: number; taskCount: number; seriesCount: number },
+): LifeAreaSummaryDto {
+  return {
+    ...toLifeAreaDto(row),
+    openTaskCount: counts.openTaskCount,
+    taskCount: counts.taskCount,
+    seriesCount: counts.seriesCount,
   };
 }
 

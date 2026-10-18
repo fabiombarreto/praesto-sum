@@ -4,36 +4,19 @@
 
 import { ChevronDown, ChevronUp, Pencil, Repeat } from "lucide-react";
 import { useState } from "react";
-import type { TaskDto, TaskPriority } from "../../shared/api";
-import { taskMetaLine } from "../../shared/format";
+import type { TaskDto } from "../../shared/api";
+import { taskMetaParts } from "../../shared/format";
 import { InlineTitle } from "./InlineTitle";
 import { Button } from "./ui/Button";
 import { cn } from "./ui/cn";
 import { CompleteControl } from "./ui/CompleteControl";
-
-/**
- * Splits a formatted meta line into its prefix and the trailing priority
- * word, so the priority glyph can be inserted right before that word
- * without re-deriving it from `task.priority` and `taskMetaLine` twice.
- */
-function splitMeta(
-  meta: { text: string; overdue: boolean },
-  priority: TaskPriority | null,
-): { prefix: string; priorityWord: "alta" | "baixa" | null } {
-  if (priority === "high" && meta.text.endsWith("alta")) {
-    return { prefix: meta.text.slice(0, meta.text.length - "alta".length), priorityWord: "alta" };
-  }
-  if (priority === "low" && meta.text.endsWith("baixa")) {
-    return { prefix: meta.text.slice(0, meta.text.length - "baixa".length), priorityWord: "baixa" };
-  }
-  return { prefix: meta.text, priorityWord: null };
-}
 
 export function TaskRow({
   task,
   today,
   busy,
   editing,
+  areaName = null,
   onToggle,
   onOpen,
   onEdit,
@@ -44,6 +27,13 @@ export function TaskRow({
   today: string;
   busy: boolean;
   editing: boolean;
+  /**
+   * The name of the Task's Life Area, resolved by the parent from its areas atom
+   * (`lifeAreaNameOf`), or `null` when the Task has none or the areas are unknown.
+   * Optional so a caller that does not know about areas shows none; a closed row
+   * ignores it (`taskMetaParts`).
+   */
+  areaName?: string | null;
   onToggle: (next: boolean) => void;
   onOpen: () => void;
   onEdit: () => void;
@@ -57,8 +47,14 @@ export function TaskRow({
   // stage there.
   const [completing, setCompleting] = useState(false);
   const isOpen = task.status === "open";
-  const meta = taskMetaLine(task, today);
-  const metaSplit = meta === null ? null : splitMeta(meta, task.priority);
+  // Structured parts, never a string to be taken apart: the priority glyph sits
+  // beside its own word whatever the area is called, even an area named `alta`.
+  const parts = taskMetaParts(task, today, areaName);
+  // Whether anything sits before the area name inside the meta span, so the
+  // separator is drawn only between two things.
+  const nameFollowsSomething =
+    task.seriesId !== null ||
+    (parts !== null && (parts.phrase !== null || parts.priorityWord !== null));
 
   return (
     <li
@@ -106,11 +102,14 @@ export function TaskRow({
           >
             {task.title}
           </span>
-          {meta !== null && metaSplit !== null && (
+          {parts !== null && (
             <span
               className={cn(
                 "font-data text-t1 font-medium text-muted tabular-nums",
-                meta.overdue && "text-overdue",
+                parts.overdue && "text-overdue",
+                // A name can be one unbroken token up to 40 characters, wider than
+                // the text column at 375 px; only a row that shows one pays for this.
+                parts.areaName !== null && "break-words",
               )}
             >
               {task.seriesId !== null && (
@@ -118,14 +117,16 @@ export function TaskRow({
                   <Repeat className="inline size-3" aria-hidden="true" /> Repete{" "}
                 </>
               )}
-              {metaSplit.prefix}
-              {metaSplit.priorityWord === "alta" && (
+              {parts.phrase}
+              {parts.phrase !== null && parts.priorityWord !== null && " · "}
+              {parts.priorityWord === "alta" && (
                 <ChevronUp className="inline size-3" aria-hidden="true" />
               )}
-              {metaSplit.priorityWord === "baixa" && (
+              {parts.priorityWord === "baixa" && (
                 <ChevronDown className="inline size-3" aria-hidden="true" />
               )}
-              {metaSplit.priorityWord !== null && ` ${metaSplit.priorityWord}`}
+              {parts.priorityWord !== null && ` ${parts.priorityWord}`}
+              {parts.areaName !== null && `${nameFollowsSomething ? " · " : ""}${parts.areaName}`}
             </span>
           )}
         </button>

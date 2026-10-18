@@ -1,0 +1,169 @@
+# TDD initial suite — phase 2
+# Source PRD: PRPs/prds/life-areas.prd.md (Acceptance Criteria)
+# Source plan: C:/repos/assistente-pessoal/.worktrees/life-areas/PRPs/plans/life-areas-phase-2-the-reas-screen.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-10-12
+# Mode: test-first (docs/context/methodology.md: tdd true, test_frameworks ["vitest"]; plan phase_type feature)
+# Code root: C:/repos/assistente-pessoal/.worktrees/life-areas (branch feature/life-areas)
+# Phase-1 manifest PRPs/reports/life-areas/test-suite.diff is unchanged (this file is the phase-2 sibling, named after the
+#   project convention test-suite.diff, test-suite-phase-2.diff, ...).
+
+## AC outcomes
+
+The only PRD AC in this phase's row is AC-19, which the PRD names "(manual)" and whose TDD routing keeps the screen
+manually verified (methodology.md: UI stays manual, a purely visual clause legitimately produces no test file). The
+suite therefore covers the DECIDABLE pure logic the plan extracts into src/shared — the same split methodology.md
+records under "Browser-API work: split the logic out, then the glue is exempt" — derived clause by clause from AC-19,
+plus the name rules and the limit (PRD AC-2, AC-3) as the screen applies them.
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-19 | NEW_TEST_REQUIRED (decidable half; the visual remainder is manual, see "Manual clauses") | test/life-areas-list.test.ts (the list reducer and the name guards), test/life-areas-view.test.ts (pt-BR copy, delete confirmation, failure mapping), test/app-route.test.ts (the `life-areas` route, additive) |
+| AC-2 | EXISTING_TEST_COVERS | test/life-areas-routes.test.ts describes "name rules on create" and "name rules on rename (PRD AC-2)" (the 400/409 contract) and test/life-areas.test.ts:40 (validateLifeAreaName), :69 (lifeAreaNameKey). Delta authored here under AC-19: the SCREEN refuses before sending (checkLifeAreaName in test/life-areas-list.test.ts) |
+| AC-3 | EXISTING_TEST_COVERS | test/life-areas-routes.test.ts describe "at most twelve (PRD AC-3)" and test/life-areas.test.ts:30 (the two constants). Delta authored here under AC-19: canCreateLifeArea at 11, 12 and after a delete, and the limit notice |
+| AC-1, AC-4..AC-7 | OUT_OF_PHASE_SCOPE | (phase 1, complete: the route contract) |
+| AC-8..AC-12, AC-17 | OUT_OF_PHASE_SCOPE | (phase 1, complete) |
+| AC-13 | OUT_OF_PHASE_SCOPE | (deferred to phase 4: TaskFilter.lifeAreaId) |
+| AC-14, AC-15, AC-16 | OUT_OF_PHASE_SCOPE | (deferred to phase 3: capture inheritance, row text, planSeriesOccurrenceSave) |
+| AC-18 | OUT_OF_PHASE_SCOPE | (phase 4: restore drill is a script run, not a test file) |
+| AC-20, AC-22 | OUT_OF_PHASE_SCOPE | (phase 3: manual UI criteria) |
+| AC-21 | OUT_OF_PHASE_SCOPE | (phase 4: manual UI criterion) |
+| AC-23 | OUT_OF_PHASE_SCOPE | (phase 4 owns the unit-level inspection; this phase's slice, plan AC-A8, is Level 1/2 shell checks and the ui-checklist.md record, not a test file) |
+| AC-24, AC-25 | OUT_OF_PHASE_SCOPE | (phase 4: device proof, documentation inspection) |
+
+### Plan AC -> test cases
+
+Plan AC-A1..AC-A7 are the clauses of PRD AC-19 split by observable behaviour; AC-A8 cites PRD AC-23.
+
+- AC-A1 (route): test/app-route.test.ts, three new describe blocks at the end of the file — `/settings/life-areas` and its
+  trailing-slash form map to `life-areas`; `/settings` and `/settings/life-areas` are two different routes; a path nested
+  under it resolves to `today`; `pathOf("life-areas")` is `/settings/life-areas`; the route and the path round-trip;
+  `taskIdFromRoute("life-areas")` is null.
+- AC-A2 (list, counts, Sem área): test/life-areas-list.test.ts "loaded" (pt-BR order, not bytewise; id, name and three
+  counts kept; Sem área count from noArea; empty response is ready and empty; response not reordered; recovery from
+  failed; refetch replaces) and the "created / renamed / deleted" describes (a created area lands in its alphabetical
+  place with zero counts; a rename keeps the counts and re-sorts; a delete removes the area and adds its OPEN count, not
+  its Task count, to Sem área); test/life-areas-view.test.ts "NO_AREA_LABEL" and "formatOpenTaskCount" (0, 1, N).
+- AC-A3 (add): test/life-areas-list.test.ts checkLifeAreaName (blank, over 40, exactly 40, trimmed length, case-,
+  accent-, padding- and decomposed-accent duplicates, a merely similar name is not a duplicate) and canCreateLifeArea
+  (false while loading or failed, true at 11, false at 12, true again after a delete); test/life-areas-view.test.ts the
+  three field messages and the limit notice.
+- AC-A4 (rename in place): test/life-areas-list.test.ts isLifeAreaRenameNoop (exact and padded match skip the request;
+  case-only, accent-only, different and blank do not), checkLifeAreaName with `ownId` (own name in another case or
+  without an accent is accepted; another area's name is still refused; blank and too_long still reported) and the
+  "renamed" describe (counts kept, case-only rename, unknown id ignored).
+- AC-A5 (delete): test/life-areas-view.test.ts formatLifeAreaDeleteTitle (verb Excluir, curved quotes, the name
+  verbatim), formatLifeAreaDeleteBody ({0,0}, {3,0}, {1,0}, {5,1}, {0,2}, {1,1}, {0,1}), formatLifeAreaDeletedNotice;
+  test/life-areas-list.test.ts "deleted" (open count added to Sem área, last area leaves a ready empty list, unknown id
+  ignored so a repeat adds nothing).
+- AC-A6 (states): test/life-areas-list.test.ts "load-failed" (loading -> failed with the message; failed -> failed with
+  the newest; a list on screen survives a failed refresh), `loaded` with an empty list (the empty state is derivable),
+  created/renamed/deleted ignored on loading and failed; test/life-areas-view.test.ts the empty title and body and
+  lifeAreaWriteFailure (400, 404, 409, any other status, network, non-numeric status, null/undefined/primitive causes,
+  the server's text never shown).
+- AC-A7 (48 px, aria-labels, labels, pt-BR, focus): rendering and focus are manual. The pt-BR strings the functions
+  choose are pinned in test/life-areas-view.test.ts (see AC-A2..AC-A6).
+- AC-A8 (PRD AC-23): not a test file. "No test removed, skipped or loosened" is held by this manifest's ledger: one
+  additive UPDATE, no DELETE.
+
+### Manual clauses (no test written, on purpose)
+
+Each is purely visual, about focus/keyboard/touch targets, or glue over a browser API, so it follows methodology.md's
+"UI verification stays manual" line and is recorded in plan Task 9's PRPs/reports/life-areas/phase-2/ui-checklist.md.
+
+| AC-19 clause | Why no test | Where it is recorded |
+|---|---|---|
+| The *Sem área* row is read-only (no control of any kind) | A DOM property of the screen; its label and count text ARE tested (NO_AREA_LABEL, formatOpenTaskCount, reducer) | checklist items 1, 3; AC-19 walk |
+| Delete asks ONCE, the confirm button repeats the verb *Excluir*, focus defaults to *Cancelar* | Props of the shipped ConfirmView and a focus rule; the title's verb and the body's counts ARE tested | checklist items 4, 8 |
+| *Esc* and the back gesture return to *Configurações*; *Esc* in the rename field cancels without leaving | window key listener, `preventDefault` ordering and the Android back gesture (history API, owner's device); only the route mapping is decidable and is tested | checklist item 5; back gesture owed to the owner's device |
+| *Tentar de novo* retry button, inline persistent `role="alert"` | The label is a literal in LifeAreasScreen.tsx; the plan exports no symbol that carries it (Task 5's VALIDATE greps it). The failed STATE and its message are tested | checklist items 1, 11 |
+| Every control at least 48 px with 8 px between neighbours | Layout; measured with getBoundingClientRect in the browser pane | checklist item 2 |
+| Offline banner and disabled write controls while reads stay | Wiring of the existing `canWrite`/`useConnectivity` (already covered by test/connectivity.test.ts) | checklist item 11 |
+| Rename in place with explicit *Salvar* / *Cancelar*, `Enter` saves, focus returns to the opener | React form and focus handling | checklist items 5, 6 |
+| Stale-response guard (`latestRequest`), 401 -> token gate, refetch on `visibilitychange`/reconnect | Component effects; the same idiom AdherenceScreen ships | checklist item 9, 11 |
+
+## Test files written this session
+
+Created:
+- test/life-areas-list.test.ts
+- test/life-areas-view.test.ts
+
+Updated:
+- test/app-route.test.ts (additive describe blocks appended; no existing assertion altered)
+
+Not touched: every phase-1 suite (test/life-areas.test.ts, test/life-areas-routes.test.ts,
+test/life-areas-task-routes.test.ts, test/life-areas-series.test.ts, test/life-areas-export.test.ts,
+test/task-update.test.ts), test/request-failure.test.ts (the failure mapping composes classifyRequestFailure and the new
+test asserts equality with its output rather than re-pinning its sentences), test/connectivity.test.ts and
+test/isolation.ts (the new suites are pure and need no D1 fixture).
+
+## Notes for the reviewer
+
+Expected RED reasons before the Implementer (the suite was authored but not executed by the writer, which has no run
+tool; the dynamic RED check is test-reviewer's):
+- test/life-areas-list.test.ts: the module src/shared/life-areas-list.ts does not resolve (plan Task 1). The whole file
+  fails to load; no other RED reason is expected.
+- test/life-areas-view.test.ts: the module src/shared/life-areas-view.ts does not resolve (plan Task 2). Its only other
+  imports, src/shared/request-failure.ts and the type-only src/shared/life-areas-list.ts, are already present or erased.
+- test/app-route.test.ts: six of the eight new cases fail until plan Task 3 — `/settings/life-areas` and its
+  trailing-slash form resolve to `today`, the `/settings` + `/settings/life-areas` pair reads `["settings","today"]`,
+  `pathOf("life-areas")` falls through to `/`, and both round-trips break. `tsc -b` over test/ also reports the unknown
+  `AppRoute` member until Task 3, as it did for the adherence route.
+
+Cases expected GREEN before the Implementer, on purpose: the nested-path case (`/settings/life-areas/unknown` is
+`today` today as well) and `taskIdFromRoute("life-areas")` (null at runtime) — they pin the paths the new line sits on, so
+a prefix-match implementation of the route fails them after Task 3. Every pre-existing app-route case stays green.
+
+New-case count: about 88 (life-areas-list 47, life-areas-view 33, app-route 8; it.each rows counted individually).
+
+Names, shapes and copy taken from the plan rather than the PRD (PRD AC-19 is manual and names no function): the two
+modules' exports and signatures, the state kinds `loading` / `ready { areas, noAreaOpenTaskCount }` / `failed { message }`,
+the event types `loaded` / `load-failed` / `created` / `renamed` / `deleted`, `LifeAreaNameProblem`
+(`blank` | `too_long` | `duplicate`), and every pt-BR sentence pinned verbatim — each is fixed in Task 1 or Task 2's ACTION
+and in the plan's Notes ("For the test pair"). No wording the plan leaves to the Implementer is pinned.
+
+Assertions that go beyond the literal PRD text, each taken from the plan or from a risk it names, so R-IMPL-LEAK can judge
+them:
+- `loaded` returns a COPY: the response array handed in is not reordered (plan Task 1 "a COPY ... sorted");
+- the reducer does not mutate a frozen ready state for created, renamed and deleted (the useReducer contract; plan Task 1
+  mirrors google-settings.ts, whose reducer is pure the same way);
+- `created` is idempotent by id and never zeroes the counts of an area a refetch already brought in (plan Risks row 2);
+- `renamed` keeps the three counts because PATCH answers none, and `deleted` adds `openTaskCount`, never `taskCount`, to
+  Sem área (plan Task 1 and Risks rows 3 and 4);
+- a delete or rename of an id the list does not hold changes nothing, so a repeated event cannot double-count (plan
+  Task 1 "only when an area has that id");
+- an accent-only or case-only rename is NOT a no-op and is sent (plan Task 1 item 6: only an exact no-op is skipped);
+- renaming an area to its own name in another case is accepted by checkLifeAreaName, while another area's name is still a
+  duplicate (plan Task 1 item 5; PRD AC-4 "casa" case);
+- the server's own error text, which carries a tool-facing field marker such as `(name)`, never reaches the owner (plan
+  Task 2 last sentences; decision 2 in the plan's Notes).
+
+Not encoded as tests, by the PRD's own TDD routing and the methodology's scope: the visual and interaction clauses listed
+under "Manual clauses", the glossary-vocabulary scan and the sibling-only-imports scan (both are Level 2 shell checks in the
+plan, not test files) and the four client wrappers in src/app/api.ts (src/app is outside the test project).
+
+## Lifecycle ledger
+
+Every UPDATE or DELETE performed this session, one row each.
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| UPDATE | EXISTING_TEST_UPDATED | test/app-route.test.ts (new describe blocks "routeFromPath — the life-areas route (PRD AC-19 via plan AC-A1)", "pathOf — the life-areas route (PRD AC-19 via plan AC-A1)", "routeFromPath and pathOf agree — the life-areas route round-trips too") | Driving AC: life-areas PRD AC-19 (plan AC-A1): the route table gains `/settings/life-areas`. Additive blocks appended at the end of the file, the same way the adherence, search, Task and notifications routes were added; every existing assertion is preserved verbatim, none is edited, dropped or loosened. The file holds no table that enumerates every AppRoute member exhaustively, so no existing row needed to change. |
+
+No DELETE (OBSOLETE_TEST_REMOVED or REDUNDANT_TEST_REMOVED) was performed this session.
+
+## Formatting Outcome
+
+Not run by the writer: this agent has no shell tool. The three touched files were hand-formatted to .prettierrc
+(printWidth 100, double quotes, trailing commas "all", 2-space indent). Per methodology.md `formatter_cmd` the command
+layer should run `npx prettier --write test/life-areas-list.test.ts test/life-areas-view.test.ts test/app-route.test.ts`
+(scoped to those three files, never `.`) before the reviewer.
+
+## Formatting Outcome
+
+Formatted — `npx prettier --write` (discovery source: methodology.md `formatter_cmd`), scoped to the three touched files: test/life-areas-list.test.ts, test/life-areas-view.test.ts, test/app-route.test.ts. Exit 0; Prettier reported every file `(unchanged)`, so the writer's hand formatting already matched.
+
+## Status
+
+*Approved: 2026-10-12*
+*Status: APPROVED*

@@ -1,0 +1,25 @@
+{
+  "attempt": 1,
+  "verdict": "IMPLEMENTATION_COMPLETE",
+  "files_changed": [
+    "PRPs/reports/life-areas/phase-3/base-tree.txt",
+    "PRPs/reports/life-areas/phase-3/ui-checklist.md",
+    "src/app/App.tsx",
+    "src/app/components/SearchScreen.tsx",
+    "src/app/components/TaskRow.tsx",
+    "src/app/components/TaskSheet.tsx",
+    "src/app/components/TodayScreen.tsx",
+    "src/app/components/ui/Chip.tsx",
+    "src/app/hooks/useLifeAreas.ts",
+    "src/shared/format.ts",
+    "src/shared/life-area-assign.ts",
+    "src/shared/series-edit.ts",
+    "src/shared/task-edit.ts"
+  ],
+  "validation": {
+    "level_1": "PASS",
+    "level_2": "PASS",
+    "level_3": "PASS"
+  },
+  "base_commit": "22dfda51dc140600f4291754f7a69bebd067bbe8"
+}

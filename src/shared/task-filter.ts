@@ -16,7 +16,7 @@
 
 import type { TaskPriority, TaskStatus } from "./api";
 
-/** The whole filter state: five independent, nullable dimensions. `null` means "not set". */
+/** The whole filter state: six independent, nullable dimensions. `null` means "not set". */
 export interface TaskFilter {
   status: TaskStatus | null;
   priority: TaskPriority | null;
@@ -24,6 +24,12 @@ export interface TaskFilter {
   to: string | null;
   /** Text search (PRD AC-1..AC-9, text-search unit, phase 1). */
   q: string | null;
+  /**
+   * Life Area (life-areas PRD AC-13, phase 4): `null` is no area filter, `"none"`
+   * (`NO_AREA_VALUE` in `life-area-assign.ts`) is the Tasks that have no area, and
+   * any other string is an area id. Here `null` means "no filter", never "no area".
+   */
+  lifeAreaId: string | null;
 }
 
 /** The filter a screen starts with — every dimension unset. Never seeded from storage (layout standard §2.3). */
@@ -33,6 +39,7 @@ export const EMPTY_FILTER: TaskFilter = {
   from: null,
   to: null,
   q: null,
+  lifeAreaId: null,
 };
 
 /** The three quick-filter chips of layout standard §2.3, each backed by exactly one `TaskFilter` dimension. */
@@ -43,11 +50,11 @@ export type QuickChip = "open" | "today" | "high";
  * the case that keeps an unfiltered load byte-identical to the request the
  * screen issued before filters existed — otherwise `?` plus the set
  * parameters in the FIXED order `status`, `from`, `to`, `priority`, `q`,
- * built with `URLSearchParams` so every value is encoded rather than
- * concatenated raw. The fixed order is what makes the output assertable and
- * keeps two callers building the same filter from ever producing two
- * different URLs. `q` sits last so no existing assertion's expected string
- * changes.
+ * `lifeAreaId`, built with `URLSearchParams` so every value is encoded rather
+ * than concatenated raw. The fixed order is what makes the output assertable
+ * and keeps two callers building the same filter from ever producing two
+ * different URLs. `q` and then `lifeAreaId` sit last — each appended after the
+ * rest — so no existing assertion's expected string changes.
  */
 export function toQuery(filter: TaskFilter): string {
   const params = new URLSearchParams();
@@ -56,6 +63,7 @@ export function toQuery(filter: TaskFilter): string {
   if (filter.to !== null) params.set("to", filter.to);
   if (filter.priority !== null) params.set("priority", filter.priority);
   if (filter.q !== null) params.set("q", filter.q);
+  if (filter.lifeAreaId !== null) params.set("lifeAreaId", filter.lifeAreaId);
   return params.size === 0 ? "" : `?${params.toString()}`;
 }
 
@@ -65,13 +73,16 @@ export function toQuery(filter: TaskFilter): string {
  * dimension, and `from`/`to` together are one *period*: a range counts once,
  * whether one end is set or both, because the badge answers "how many
  * questions are narrowing the list?", not "how many fields hold a value?".
- * Range: 0–3.
+ * The Life Area is one more dimension (an id and `"none"` both count once).
+ * `q` counts for nothing: the search screen owns it and the header badge never
+ * saw it. Range: 0–4.
  */
 export function activeCount(filter: TaskFilter): number {
   let count = 0;
   if (filter.status !== null) count += 1;
   if (filter.priority !== null) count += 1;
   if (filter.from !== null || filter.to !== null) count += 1;
+  if (filter.lifeAreaId !== null) count += 1;
   return count;
 }
 

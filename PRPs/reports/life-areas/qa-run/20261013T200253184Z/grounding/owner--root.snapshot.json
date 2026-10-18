@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "role": "owner",
+  "route": "/",
+  "entries": [
+    {
+      "kind": "role",
+      "role": "heading",
+      "name": "Hoje",
+      "matches": 2
+    },
+    {
+      "kind": "text",
+      "text": "ter., 13/10 9 restantes",
+      "matches": 0
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Filtros",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Pesquisar",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Configurações",
+      "matches": 1
+    },
+    {
+      "kind": "text",
+      "text": "Suas tarefas estão aqui; os compromissos do Google não carregaram.",
+      "matches": 0
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Abertas",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Para hoje",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Alta prioridade",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "region",
+      "name": "Agenda",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "region",
+      "name": "Lembretes",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "heading",
+      "name": "Lembretes",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Novo lembrete",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "region",
+      "name": "Hoje",
+      "matches": 1
+    },
+    {
+      "kind": "text",
+      "text": "\"1\"",
+      "matches": 0
+    },
+    {
+      "kind": "role",
+      "role": "checkbox",
+      "name": "Concluir Regar as plantas",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Regar as plantas Repete fazer hoje",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Editar título de Regar as plantas",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "region",
+      "name": "Sem data",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Sem data 8",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "heading",
+      "name": "Sem data",
+      "matches": 1
+    },
+    {
+      "kind": "text",
+      "text": "\"8\"",
+      "matches": 0
+    },
+    {
+      "kind": "role",
+      "role": "region",
+      "name": "Concluídas",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Concluídas 1",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "heading",
+      "name": "Concluídas",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "checkbox",
+      "name": "Reabrir Regar as plantas",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Regar as plantas",
+      "matches": 1
+    },
+    {
+      "kind": "text",
+      "text": "Nova tarefa",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "textbox",
+      "name": "Nova tarefa",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Adicionar",
+      "matches": 1
+    }
+  ],
+  "withheld": 0
+}

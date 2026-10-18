@@ -14,12 +14,20 @@ export function ChipGroup({
   children,
   label,
   multiple = true,
+  wrap = false,
 }: {
   value: string[];
   onValueChange: (next: string[]) => void;
   children: ReactNode;
   label: string;
   multiple?: boolean;
+  /**
+   * Opt-in: lay the chips out on as many rows as they need instead of one
+   * horizontally scrolling row. For groups whose length is the owner's own (his
+   * areas), which could otherwise hide chips off to the side. Off by default, so
+   * every existing group renders exactly as before.
+   */
+  wrap?: boolean;
 }) {
   return (
     <ToggleGroup
@@ -27,7 +35,11 @@ export function ChipGroup({
       value={value}
       onValueChange={onValueChange}
       aria-label={label}
-      className="flex gap-2 overflow-x-auto px-4 py-1 [scrollbar-width:none]"
+      className={
+        wrap
+          ? "flex flex-wrap gap-2 px-4 py-1"
+          : "flex gap-2 overflow-x-auto px-4 py-1 [scrollbar-width:none]"
+      }
     >
       {children}
     </ToggleGroup>

@@ -1,6 +1,6 @@
 ---
 status: draft
-last_updated: 2026-08-15
+last_updated: 2026-10-12
 review_trigger: "a new domain concept appears, an ambiguity is resolved, or the glossary changes"
 ---
 
@@ -81,11 +81,12 @@ An "only this" deviation of a recurring Event: the original occurrence start plu
 
 ### Life Area
 
-A named domain of the owner's personal life that groups Tasks and Events.
+A named grouping the owner creates (for example *Casa*, *Saúde*) that Tasks and Recurrence Series — and, once Events ship, Events — may belong to, at most one each and optionally none. Calendar and Tasks are product capabilities, not Life Area records. *(Proposed 2026-10-12, awaiting the owner's confirmation — life-areas PRD Open Question 1. The wording this replaces: "A named domain of the owner's personal life that groups Tasks and Events.")*
 
 - Name
 - Description (optional)
 - Initial set of Life Areas: none pre-created — the owner creates areas as needed (resolved 2026-08-03).
+- Membership and deletion are decided in [ADR-0015](../60-decisions/ADR-0015-life-areas-owner-named-single-membership.md): one area at most per Task and per Recurrence Series, and deleting an area leaves its items area-less.
 
 ## Domain rules and invariants
 
@@ -93,7 +94,7 @@ A named domain of the owner's personal life that groups Tasks and Events.
 
 1. A Reminder never points to both a Task and an Event at once; it points to one of them or to nothing (standalone) — resolved 2026-08-03.
 2. A Task with a deadline or a scheduled date DOES appear on the calendar views alongside Events, visually distinct (day-level item, no time slot) — resolved 2026-08-03.
-3. A Task or Event MAY exist without a Life Area; area-less items surface in an implicit "Unsorted" grouping in the UI — no default area is stored — resolved 2026-08-03.
+3. A Task or Event MAY exist without a Life Area; area-less items surface in an implicit "Unsorted" grouping in the UI — no default area is stored — resolved 2026-08-03. That grouping is shown as *Sem área*, the pt-BR copy (ADR-0009); it is a filter value and a count row, never a stored area or a grouping axis ([ADR-0015](../60-decisions/ADR-0015-life-areas-owner-named-single-membership.md)). *(The *Sem área* sentence: proposed 2026-10-12, awaiting the owner's confirmation — life-areas PRD Open Question 1.)*
 4. Tasks and Events are always distinct and never convert into one another; they relate through an N:N link — resolved 2026-08-03.
 5. At most ONE open occurrence exists per active Recurrence Series; an occurrence superseded without completion becomes `missed` (terminal), and every skipped cycle leaves a permanent record — resolved 2026-08-03 ([ADR-0006](../60-decisions/ADR-0006-recurrence-model.md)).
 6. An external Event is identified by the pair (external calendar id, external event id) and never by title or time — resolved 2026-08-04 ([ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md)).

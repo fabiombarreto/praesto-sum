@@ -1,0 +1,22 @@
+{
+  "resolved_from": "test-runner-record",
+  "record": "PRPs/reports/life-areas/record.json",
+  "record_run_id": "12558650-a464-4f1c-ab39-17fc1014d23e",
+  "record_attempt": 2,
+  "record_generated_at": "2026-10-12T18:15:19.104Z",
+  "junit_artifact": "C:\\repos\\assistente-pessoal\\.worktrees\\life-areas\\PRPs\\reports\\life-areas\\phase-4\\attempts\\test-2\\junit.xml",
+  "junit_artifact_mtime": "2026-10-12T18:15:14.893Z",
+  "files": [
+    {
+      "cited": "test/life-areas-export.test.ts",
+      "testcases": 3,
+      "failed": []
+    },
+    {
+      "cited": "test/export-completeness.test.ts",
+      "testcases": 7,
+      "failed": []
+    }
+  ],
+  "granularity": "file"
+}

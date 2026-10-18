@@ -1,0 +1,98 @@
+# TDD initial suite — phase 1
+# Source PRD: PRPs/prds/life-areas.prd.md (Acceptance Criteria)
+# Source plan: C:/repos/assistente-pessoal/.worktrees/life-areas/PRPs/plans/life-areas-phase-1-areas-api-and-the-filter.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-10-11
+# Mode: test-first (docs/context/methodology.md: tdd true, test_frameworks ["vitest"])
+
+## AC outcomes
+
+Plan AC-A1..AC-A13 map to PRD AC-1..AC-12 and AC-17 one for one (AC-A13 is PRD AC-17).
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-1 | NEW_TEST_REQUIRED | test/life-areas-routes.test.ts (describe "Life areas — create and list (PRD AC-1)") |
+| AC-2 | NEW_TEST_REQUIRED | test/life-areas-routes.test.ts (describes "name rules on create" and "name rules on rename (PRD AC-2)") |
+| AC-3 | NEW_TEST_REQUIRED | test/life-areas-routes.test.ts (describe "at most twelve (PRD AC-3)") |
+| AC-4 | NEW_TEST_REQUIRED | test/life-areas-routes.test.ts (describe "rename (PRD AC-4)") |
+| AC-5 | NEW_TEST_REQUIRED | test/life-areas-routes.test.ts (describe "delete unassigns, it never deletes an item (PRD AC-5)") |
+| AC-6 | NEW_TEST_REQUIRED | test/life-areas-routes.test.ts (describe "list shape, order and counts (PRD AC-6)") |
+| AC-7 | NEW_TEST_REQUIRED | test/life-areas-routes.test.ts (describe "every route stays behind the bearer gate (PRD AC-7)") |
+| AC-8 | NEW_TEST_REQUIRED | test/life-areas-task-routes.test.ts (describe "Task create — the area is validated (PRD AC-8)") |
+| AC-9 | EXISTING_TEST_UPDATED | test/task-update.test.ts — the pinned lifeAreaId case is retired from the non-editable table and replaced in the same file by describe "Task update — lifeAreaId is editable and validated (life-areas.prd.md AC-9)" (see Lifecycle ledger) |
+| AC-10 | NEW_TEST_REQUIRED | test/life-areas-series.test.ts |
+| AC-11 | NEW_TEST_REQUIRED | test/life-areas-task-routes.test.ts (describes "the lifeAreaId filter", "composes as an AND with the other filters", "without lifeAreaId the response is the frozen one") |
+| AC-11 | EXISTING_TEST_COVERS | test/task-list-contract.test.ts:88 (partial: ordering, and limit at :152, for area-less Tasks only; the delta — area-bearing Tasks stay listed and the wire shape is unchanged — is the new file above) |
+| AC-12 | NEW_TEST_REQUIRED | test/life-areas.test.ts |
+| AC-17 | NEW_TEST_REQUIRED | test/life-areas-export.test.ts |
+| AC-17 | EXISTING_TEST_COVERS | test/export.test.ts:64 (partial: table presence only) and test/export-completeness.test.ts:44 (the completeness guard, no manifest change) |
+| AC-13 | OUT_OF_PHASE_SCOPE | (deferred to phase 4: TaskFilter.lifeAreaId) |
+| AC-14 | OUT_OF_PHASE_SCOPE | (deferred to phase 3: capture inherits the filter) |
+| AC-15 | OUT_OF_PHASE_SCOPE | (deferred to phase 3: row text) |
+| AC-16 | OUT_OF_PHASE_SCOPE | (deferred to phase 3: planSeriesOccurrenceSave) |
+| AC-18 | OUT_OF_PHASE_SCOPE | (phase 4: restore drill is a script run, not a test file) |
+| AC-19 | OUT_OF_PHASE_SCOPE | (phase 2: manual UI criterion) |
+| AC-20 | OUT_OF_PHASE_SCOPE | (phase 3: manual UI criterion) |
+| AC-21 | OUT_OF_PHASE_SCOPE | (phase 4: manual UI criterion) |
+| AC-22 | OUT_OF_PHASE_SCOPE | (phase 3: manual UI criterion) |
+| AC-23 | OUT_OF_PHASE_SCOPE | (phase 4: diff inspection and npm run check / npm test) |
+| AC-24 | OUT_OF_PHASE_SCOPE | (phase 4: device proof) |
+| AC-25 | OUT_OF_PHASE_SCOPE | (phase 4: documentation inspection) |
+
+## Test files written this session
+
+Created:
+- test/life-areas.test.ts
+- test/life-areas-routes.test.ts
+- test/life-areas-task-routes.test.ts
+- test/life-areas-series.test.ts
+- test/life-areas-export.test.ts
+
+Updated:
+- test/task-update.test.ts
+
+Not touched: test/isolation.ts (the new suites wipe life_areas themselves, after resetTaskTables), test/task-list-contract.test.ts, test/task-list-filters.test.ts, test/series.test.ts, test/export.test.ts, test/export-completeness.test.ts, test/task-edit.test.ts (its :224 key-set test is a client-side buildTaskPatch check and is unaffected until a later phase).
+
+## Notes for the reviewer
+
+Expected RED reasons before the Implementer (the suite was authored but not executed by the writer, which has no run tool; the dynamic RED check is test-reviewer's):
+- test/life-areas.test.ts: the module src/shared/life-areas.ts does not resolve (plan Task 1).
+- test/life-areas-routes.test.ts and test/life-areas-export.test.ts: /api/life-areas is not mounted, so every request answers 404 (plan Tasks 5 and 6). AC-7 carries a positive control (the same request with the right token must reach the route) so the existing 401 of the global gate cannot make it pass alone.
+- test/life-areas-task-routes.test.ts: an unknown lifeAreaId is not validated on POST /api/tasks, and the list ignores lifeAreaId, answering every Task and answering 200 for an empty lifeAreaId= (plan Tasks 7 and 8).
+- test/life-areas-series.test.ts: an unknown or empty lifeAreaId on POST and PATCH /api/series is not validated (plan Tasks 4 and 9).
+- test/task-update.test.ts: lifeAreaId is still refused as "not editable", so set and clear answer 400 and the refusal of an unknown id carries the wrong reason (asserted not to match /editable/).
+
+Cases expected GREEN before the Implementer, on purpose, because the behaviour already exists in code and no test covered it: Task create with an existing area and with the key absent or null; series create stamping the series and its first occurrence and the successor copying the area (src/worker/successor.ts:74); series PATCH moving the series and its open non-detached occurrence only, leaving a detached occurrence and the closed rows alone, and clearing with null; the omitted-key case on Task PATCH; a non-string lifeAreaId on series PATCH. They pin the paths the new existence check sits on. The AC-7 refusals are green on their own for the same reason test/reminders.test.ts documents; each is paired with a control that is red now.
+
+Names taken from the plan rather than the PRD (PRD AC-12 left them open): LIFE_AREA_NAME_MAX, LIFE_AREA_LIMIT, validateLifeAreaName returning "blank" or "too_long" or null, lifeAreaNameKey, compareLifeAreaNames, the list body { lifeAreas, noArea: { openTaskCount } }, per-area openTaskCount, taskCount and seriesCount, create and rename answering { lifeArea }, filter value none, delete answering 204. The tests import the type LifeAreasResponse from src/shared/api (plan Task 2); tsc -b over test/ fails until plan Tasks 1 and 2 land, as test/series.test.ts did for SeriesDto.
+
+Assertions that go beyond the literal PRD text, each taken from the plan or from a risk it names, so R-IMPL-LEAK can judge them:
+- a decomposed accent (u plus combining acute) equals the precomposed one in lifeAreaNameKey and is a 409 duplicate on create (plan Risks row, NFC step);
+- PATCH /api/life-areas/:id refuses id, description and a typo with 400 naming the key, and an empty body with 400 (plan Task 5 closed allowlist; PRD What We're NOT Building keeps description unexposed);
+- an ended series with no occurrence rows still counts in its area's seriesCount (PRD AC-6 "its Recurrence Series"; an ended series loses the area on delete too);
+- an empty-string or non-string lifeAreaId is 400 naming lifeAreaId on all four write paths (plan Task 4 helper: only absent or null means no area);
+- ADR-0009 guard: the 400, 404 and 409 messages of the new route and of the unknown-area refusals match no English marker word; only the field name is pinned, never a whole sentence;
+- GET /api/tasks without lifeAreaId lists area-bearing Tasks and serialises a Task with exactly the thirteen documented fields (PRD AC-11 "byte-identical"; the existing contract suite only holds area-less Tasks and could not tell a missing filter from one defaulting to none);
+- lifeAreaId=none composes with limit as the first N of the ordered filtered set, and with priority=normal counting an unset priority as normal (the frozen read contract).
+
+Not encoded as tests, by the PRD's own TDD routing and the methodology's scope: the documentation half of AC-11 (docs/api-reference.md amended) is verified by plan Task 10's VALIDATE checks, not a test file.
+
+The formatter named in methodology.md (npx prettier --write) is for the command to run, scoped to the six files above; the writer had no shell and hand-formatted to printWidth 100.
+
+## Lifecycle ledger
+
+Every UPDATE or DELETE performed this session, one row each.
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| UPDATE | EXISTING_TEST_UPDATED | test/task-update.test.ts:rejects %s with 400 and writes nothing (the lifeAreaId case, was line 363, in describe "non-editable fields are rejected, not ignored (PRD AC-9)") | Driving AC: life-areas PRD AC-9 — "lifeAreaId is in EDITABLE_TASK_FIELDS while every other non-editable key (status, seriesId, detached, a typo) is still 400". The row asserted the superseded contract (the key is refused as non-editable) and is retired from that table. What it observed is preserved, not loosened: the same input { lifeAreaId: "area-x" } is still answered 400 and still writes nothing, now as the first case of "rejects %s with 400 naming lifeAreaId and writes nothing" in the new describe, which additionally asserts the refusal is for the id and not for a closed key. The shared assertion that lifeAreaId stays null after a rejected non-editable edit (was line 378) is kept unchanged for the remaining rows. Positive AC-9 behaviour (set, clear, omit, mixed body, occurrence detaches and series untouched) was added beside it. |
+| UPDATE | EXISTING_TEST_UPDATED | test/task-update.test.ts:beforeEach (suite-level hook) | Supporting edit for the row above, no assertion changed: adds a life_areas wipe after resetTaskTables, because the replacement describe seeds life_areas and the shared barrier owns only tasks and recurrence_series; same pattern as test/export.test.ts. Also adds the AC-9 trace line to the header and widens the schema import by lifeAreas. |
+
+## Formatting Outcome
+
+Formatted — `npx prettier --write` (discovery source: methodology.md `formatter_cmd`), scoped to the six touched files: test/life-areas.test.ts, test/life-areas-routes.test.ts, test/life-areas-task-routes.test.ts, test/life-areas-series.test.ts, test/life-areas-export.test.ts, test/task-update.test.ts. Exit 0; Prettier reported every file `(unchanged)`, so the writer's hand formatting already matched.
+
+## Status
+
+*Approved: 2026-10-12*
+*Status: APPROVED*

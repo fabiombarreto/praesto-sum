@@ -1,0 +1,116 @@
+{
+  "states": {
+    "no Life Areas; a valid bearer token": {
+      "command": null,
+      "gap": "No package script empties the life_areas table of local D1 (npm run db:migrate only applies migrations and never clears data); the bearer token is a role of PRPs/auth/login.config.json, not a seed."
+    },
+    "one area named `Saúde`": {
+      "command": null,
+      "gap": "No package script or seed script creates a Life Area in local D1; scripts/qa/seed-missed-occurrence.mjs seeds only a missed occurrence."
+    },
+    "12 areas": {
+      "command": null,
+      "gap": "No package script or seed script creates Life Areas in local D1, let alone twelve (the limit state)."
+    },
+    "area `Casa` with at least two Tasks assigned": {
+      "command": null,
+      "gap": "No package script or seed script creates a Life Area or assigns Tasks to one in local D1."
+    },
+    "area A holding one open Task, one `done` Task and one series with its open occurrence": {
+      "command": null,
+      "gap": "No package script or seed script creates an area with open and done Tasks and a series assigned to it in local D1."
+    },
+    "areas `Trabalho`, `Casa`, `Ética`; open Tasks in some, others with no area": {
+      "command": null,
+      "gap": "No package script or seed script creates several Life Areas with a mix of assigned and area-less open Tasks in local D1."
+    },
+    "area A exists": {
+      "command": null,
+      "gap": "No package script or seed script creates a Life Area in local D1."
+    },
+    "one one-off Task; one occurrence of a series": {
+      "command": null,
+      "gap": "No package script or seed script creates a one-off Task together with a series occurrence in local D1; scripts/qa/seed-missed-occurrence.mjs seeds only a missed occurrence."
+    },
+    "area A and area B; one series with an open occurrence; one detached open occurrence of another series": {
+      "command": null,
+      "gap": "No package script or seed script creates two Life Areas, a series with an open occurrence and a detached open occurrence in local D1."
+    },
+    "Tasks in areas A and B and in none; one A Task open with the word `consulta` in its title": {
+      "command": null,
+      "gap": "No package script or seed script creates Tasks spread across two Life Areas and none, with a chosen title word, in local D1."
+    },
+    "an area A; the *Hoje* screen": {
+      "command": null,
+      "gap": "No package script or seed script creates a Life Area in local D1; the Hoje screen needs the owner's token in IndexedDB, which only a login script can place."
+    },
+    "an open Task in `Casa` with a deadline and `alta` priority; one with neither; one with no area; a `done` and a `missed` Task in an area": {
+      "command": null,
+      "gap": "No package script or seed script creates this mix of dated, prioritized, area-less, done and missed Tasks under a Life Area in local D1."
+    },
+    "an occurrence of an active series; two areas": {
+      "command": null,
+      "gap": "No package script or seed script creates an active series occurrence and two Life Areas in local D1."
+    },
+    "an area, a Task and a series assigned to it": {
+      "command": null,
+      "gap": "No package script or seed script creates a Life Area with a Task and a series assigned to it in local D1."
+    },
+    "a **production** snapshot holding at least one `life_areas` row and one assigned Task": {
+      "command": null,
+      "gap": "Production data cannot be seeded by a project command: the row exists only after unit 13 is deployed and the owner creates an area and assigns a Task; scripts/pull-export-snapshot.mjs pulls an existing snapshot and scripts/restore-drill.mjs consumes one."
+    },
+    "three areas with Tasks, some open Tasks with no area; a second run with zero areas": {
+      "command": null,
+      "gap": "No package script or seed script creates three Life Areas with Tasks, nor empties them again for the second run, in local D1."
+    },
+    "at least one area; a one-off Task and an occurrence of a series; a second run with no areas": {
+      "command": null,
+      "gap": "No package script or seed script creates a Life Area, a one-off Task and a series occurrence, nor empties the areas for the second run, in local D1."
+    },
+    "at least one area; the app in the foreground on *Hoje*": {
+      "command": null,
+      "gap": "No package script or seed script creates a Life Area in local D1; bringing the app to the foreground is a browser interaction, not a command."
+    },
+    "the areas request made to fail (DevTools network block of `/api/life-areas`); an area-less open Task": {
+      "command": null,
+      "gap": "The failure is a DevTools network block, not data: no project command or flag makes /api/life-areas fail, and none creates the area-less open Task."
+    },
+    "the worktree at the unit's complete diff against `main`": {
+      "command": null,
+      "gap": "A checked-out tree, not data: there is nothing to seed; the state is inspected with git diff against main."
+    },
+    "unit 13 **deployed** to production (it is not); the owner on his phone": {
+      "command": null,
+      "gap": "Deploying is the owner's production act (npm run deploy), the target is not local and the observation needs his phone: no command produces this state for the runner."
+    },
+    "the worktree": {
+      "command": null,
+      "gap": "A checked-out tree, not data: there is nothing to seed."
+    },
+    "an area applied on *Hoje*": {
+      "command": null,
+      "gap": "The filter is client state set in the filter sheet and not persisted; no command applies it, and none creates the area it names."
+    },
+    "an area applied; a hardware keyboard": {
+      "command": null,
+      "gap": "Client filter state plus a physical keyboard; no command applies the filter, creates the area or presses keys."
+    },
+    "an area with a 40-character name, on a 375 px wide viewport": {
+      "command": null,
+      "gap": "No package script or seed script creates a Life Area with a 40-character name in local D1; the 375 px width is a browser viewport setting."
+    },
+    "area A applied as the filter; A then deleted from another device or the API": {
+      "command": null,
+      "gap": "A two-step interaction across clients (apply in the app, then delete through the API or another device); no project command creates the area or orchestrates the sequence."
+    },
+    "zero areas; then the areas request failing": {
+      "command": null,
+      "gap": "No package script empties the life_areas table of local D1, and the request failure is a DevTools network block, not a command."
+    },
+    "the filter sheet on a 375 px wide viewport": {
+      "command": null,
+      "gap": "A browser viewport width; the sheet needs no seeded data, so no command is needed or available."
+    }
+  }
+}

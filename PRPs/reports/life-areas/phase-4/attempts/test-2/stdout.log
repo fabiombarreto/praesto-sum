@@ -1,0 +1,227 @@
+
+> praesto@0.12.0 test
+> vitest run --reporter=default --reporter=junit --outputFile.junit=C:/repos/assistente-pessoal/.worktrees/life-areas/PRPs/reports/life-areas/phase-4/attempts/test-2/junit.xml
+
+
+ RUN  v4.1.10 C:/repos/assistente-pessoal/.worktrees/life-areas
+
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |docs| test/push-send-library-verdict.test.ts (8 tests) 8ms
+Using secrets defined in .dev.vars
+ ✓ |docs| test/source-invariants.test.ts (3 tests) 9ms
+Using secrets defined in .dev.vars
+ ✓ |docs| test/docs-consistency.test.ts (69 tests) 63ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-calendar-routes.test.ts (25 tests) 539ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/life-areas-series.test.ts (13 tests) 546ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-list-contract.test.ts (22 tests) 771ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/life-areas-task-routes.test.ts (24 tests) 1433ms
+     ✓ keeps the envelope and every Task's field set exactly as documented  381ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/nudge-state.test.ts (22 tests) 1535ms
+     ✓ does not touch the owner's mute when it clears the marker  652ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-list-search.test.ts (22 tests) 2295ms
+     ✓ matches `_` literally rather than as a single-character wildcard  651ms
+     ✓ keeps the frozen urgency order among the Tasks `q` matches  375ms
+ ✓ |worker| test/series.test.ts (30 tests) 2301ms
+     ✓ moves the day of the cycle without touching the open occurrence's own date  652ms
+     ✓ reports detached true only after the occurrence is edited individually  373ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/tasks.test.ts (24 tests) 3409ms
+     ✓ reopening the most recently completed occurrence with an untouched successor deletes the successor and its reminders, reopens the occurrence and decrements doneCount  430ms
+     ✓ refuses with 409 pt-BR and changes nothing when the successor has been detached  669ms
+     ✓ refuses with 409 and changes nothing when the successor has already been closed  441ms
+     ✓ refuses with 409 and changes nothing when the successor already had a reminder sent  454ms
+     ✓ a one-off Task's reopen response carries only task (delta over test/tasks.test.ts:58-76)  559ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-list-filters.test.ts (20 tests) 3478ms
+     ✓ counts an unset priority as normal  713ms
+     ✓ applies status, priority and a date bound in the same request  486ms
+     ✓ takes the first N of the ORDERED FILTERED set, not of an arbitrary one  515ms
+     ✓ still rejects an invalid limit when filters are present  694ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/life-areas-routes.test.ts (46 tests) 4312ms
+     ✓ accepts renaming Casa to its own name as casa  562ms
+     ✓ counts the open Tasks that have no area under noArea  496ms
+     ✓ answers validation, conflict and not-found errors in Portuguese  345ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-update.test.ts (51 tests) 5260ms
+     ✓ never leaves both dates set in the stored row  664ms
+     ✓ rejects id with 400 and writes nothing  313ms
+     ✓ rejects detached with 400 and writes nothing  532ms
+     ✓ moves a relative Reminder's fireAt with the deadline, leaving an absolute-linked Reminder on the same Task unchanged  414ms
+     ✓ does not recompute a relative Reminder's fireAt when the deadline is resubmitted unchanged  350ms
+     ✓ sets the area when the id matches an area  301ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-routes.test.ts (15 tests) 372ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/oauth-callback-redirect.test.ts (2 tests) 81ms
+Using secrets defined in .dev.vars
+stderr | test/oauth-callback.test.ts > a valid callback stores the credential exactly once (AC-3) > stores no credential when Google rejects the exchange
+[oauth-callback] token exchange failed: http_400
+
+ ✓ |worker| test/adherence-endpoint.test.ts (16 tests) 458ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/oauth-callback.test.ts (12 tests) 379ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/missed-sweep-cron.test.ts (13 tests) 767ms
+ ✓ |worker| test/cron-sweep.test.ts (9 tests) 492ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/export-ics-route.test.ts (3 tests) 364ms
+ ✓ |worker| test/repeated-miss-nudge-cron.test.ts (22 tests) 1632ms
+     ✓ nudges a new run of three after a completion, once unmuted  518ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/life-areas-export.test.ts (3 tests) 2490ms
+     ✓ dumps the area field for field  793ms
+     ✓ carries the area's id on the Task and on the series assigned to it  520ms
+     ✓ keeps formatVersion at 1, the area needing no format change  1173ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/export.test.ts (5 tests) 464ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-priority.test.ts (15 tests) 274ms
+Using secrets defined in .dev.vars
+uncaught exception; source = Uncaught (in promise); stack = Error: internal error; reference = d2vq9vh8oi1v1aup4ad6v328
+ ✓ |worker| test/push-send-spike-route.test.ts (2 tests) 84ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/diagnostics-route.test.ts (5 tests) 137ms
+ ✓ |worker| test/health.test.ts (3 tests) 34ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/cron-reminder-route.test.ts (2 tests) 87ms
+ ✓ |worker| test/push-test-route.test.ts (6 tests) 200ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/cron-heartbeat.test.ts (4 tests) 58ms
+ ✓ |worker| test/search-sql-agreement.test.ts (54 tests) 159ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-subscribe-route.test.ts (5 tests) 1587ms
+     ✓ rejects a missing keys.p256dh with 400  1261ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/reminders.test.ts (7 tests) 1814ms
+     ✓ deletes a Task's Reminders when the Task itself is deleted (the existing onDelete: cascade)  1519ms
+Using secrets defined in .dev.vars
+uncaught exception; source = Uncaught (in promise); stack = Error: internal error; reference = s3kstkt25qqu8lhku46v024t
+uncaught exception; source = Uncaught (in promise); stack = Error: internal error; reference = ls5o9ll4sm2sh4esqtbgv5kc
+ ✓ |worker| test/push-send-adapter.test.ts (2 tests) 45ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/format.test.ts (79 tests) 36ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/nudge.test.ts (37 tests) 22ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-events.test.ts (23 tests) 21ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/dates.test.ts (17 tests) 27ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/reminder-edit.test.ts (16 tests) 22ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/app-route.test.ts (49 tests) 17ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/series-edit.test.ts (94 tests) 45ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/recurrence.test.ts (17 tests) 28ms
+Using secrets defined in .dev.vars
+console warning; message = Called .text() on an HTTP body which does not appear to be text. The body's Content-Type is "application/x-www-form-urlencoded". The result will probably be corrupted. Consider checking the Content-Type header before interpreting entities as text.
+ ✓ |worker| test/google-calendar-client.test.ts (21 tests) 15ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/missed-sweep.test.ts (18 tests) 27ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/agenda.test.ts (16 tests) 21ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-key-encode.test.ts (10 tests) 21ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/export-ics.test.ts (6 tests) 21ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-sheet.test.ts (33 tests) 16ms
+ ✓ |worker| test/task-edit.test.ts (38 tests) 22ms
+ ✓ |worker| test/diagnostics-copy.test.ts (15 tests) 22ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/day-item-event.test.ts (8 tests) 19ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/life-areas-list.test.ts (48 tests) 16ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/token-store.test.ts (21 tests) 18ms
+ ✓ |worker| test/life-area-assign.test.ts (32 tests) 14ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-filter.test.ts (42 tests) 14ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/notifications-load.test.ts (5 tests) 17ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/day-groups.test.ts (24 tests) 13ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/adherence.test.ts (26 tests) 20ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/life-areas-view.test.ts (33 tests) 16ms
+ ✓ |worker| test/task-groups.test.ts (20 tests) 11ms
+ ✓ |worker| test/toast.test.ts (22 tests) 12ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/adherence-line.test.ts (23 tests) 11ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-oauth.test.ts (16 tests) 15ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-settings.test.ts (12 tests) 14ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/content-disposition.test.ts (27 tests) 13ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/adherence-view.test.ts (22 tests) 11ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/notifications-settings.test.ts (22 tests) 12ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-payload-parse.test.ts (18 tests) 9ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/connectivity.test.ts (19 tests) 10ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/nudge-switch.test.ts (11 tests) 9ms
+ ✓ |worker| test/request-failure.test.ts (13 tests) 8ms
+ ✓ |worker| test/search.test.ts (18 tests) 8ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+console warning; message = Called .text() on an HTTP body which does not appear to be text. The body's Content-Type is "application/x-www-form-urlencoded". The result will probably be corrupted. Consider checking the Content-Type header before interpreting entities as text.
+ ✓ |worker| test/google-client.test.ts (11 tests) 13ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/export-completeness.test.ts (7 tests) 9ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/day-item.test.ts (14 tests) 10ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/export-envelope.test.ts (7 tests) 8ms
+ ✓ |worker| test/google-failure-copy.test.ts (14 tests) 6ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/life-areas.test.ts (17 tests) 8ms
+ ✓ |worker| test/nudge-copy.test.ts (19 tests) 10ms
+ ✓ |worker| test/push-payload.test.ts (11 tests) 10ms
+ ✓ |worker| test/push-outcome.test.ts (12 tests) 13ms
+ ✓ |worker| test/restore-values.test.ts (7 tests) 7ms
+ ✓ |worker| test/share-target.test.ts (8 tests) 8ms
+ ✓ |worker| test/app-version.test.ts (8 tests) 7ms
+ ✓ |worker| test/cron-freshness.test.ts (8 tests) 6ms
+ ✓ |worker| test/isolation.test.ts (3 tests) 11ms
+ ✓ |worker| test/snapshot-outcome.test.ts (13 tests) 13ms
+ ✓ |worker| test/notification-permission.test.ts (5 tests) 7ms
+
+ Test Files  89 passed (89)
+      Tests  1719 passed (1719)
+   Start at  15:14:05
+   Duration  53.47s (transform 21.03s, setup 225.80s, import 23.93s, tests 38.76s, environment 9ms)
+
+JUNIT report written to C:/repos/assistente-pessoal/.worktrees/life-areas/PRPs/reports/life-areas/phase-4/attempts/test-2/junit.xml

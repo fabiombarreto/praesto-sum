@@ -1,0 +1,8 @@
+{
+  "life-areas": {
+    "declared_base": "--base HEAD (explicit override of the D11 chain)",
+    "resolved_ref": "HEAD (local main)",
+    "sha": "f06d56f608ecb4083fbf6ef9c59d9f2f4ef6eca9",
+    "reason": "origin/main is one commit behind local main (f06d56f: APPROVED PRD, ADR-0015, roadmap); the D11 chain would have cut the worktree without them"
+  }
+}

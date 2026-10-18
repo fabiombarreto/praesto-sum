@@ -163,6 +163,11 @@ export function buildCreateSeriesInput(
     input.maxCount = Number.parseInt(recurrence.maxCount, 10);
   }
 
+  // The area joins the template only when one is set: an absent or `null` area
+  // leaves no key, so an area-less draft builds exactly today's body. Callers pass
+  // a draft whose area is already resolved by `effectiveLifeAreaId`.
+  if (typeof taskDraft.lifeAreaId === "string") input.lifeAreaId = taskDraft.lifeAreaId;
+
   return input;
 }
 
@@ -339,10 +344,16 @@ export function buildUpdateSeriesTemplate(
   const priority: TaskPriority | null = taskDraft.priority;
   if (priority !== series.priority) body.priority = priority;
 
+  // An absent choice means the owner never touched the area control: nothing to
+  // send. A choice equal to the series' own adds nothing either.
+  if (taskDraft.lifeAreaId !== undefined && taskDraft.lifeAreaId !== series.lifeAreaId) {
+    body.lifeAreaId = taskDraft.lifeAreaId;
+  }
+
   return Object.keys(body).length === 0 ? null : body;
 }
 
-/** Where "Aplicar a" sends title, description and priority on a series occurrence. */
+/** Where "Aplicar a" sends title, description, priority and area on a series occurrence. */
 export type ApplyTo = "series" | "occurrence";
 
 /** The two requests one save of a series occurrence may need; either can be empty. */
@@ -353,21 +364,25 @@ export interface SeriesOccurrenceSavePlan {
   taskChanges: UpdateTaskInput;
 }
 
-const TEMPLATE_TASK_FIELDS = ["title", "description", "priority"] as const;
+const TEMPLATE_TASK_FIELDS = ["title", "description", "priority", "lifeAreaId"] as const;
 
 /**
  * Splits one save of a series occurrence between the series and the occurrence.
  *
  * The rule always goes to the series and never moves the open occurrence (D11
  * option (a)). A date change is always an edit to THIS occurrence — it is the one
- * field a series cannot own for a single cycle. Title, description and priority
- * follow "Aplicar a": "series" sends them to the template, from which the route
- * propagates them to the open occurrence WITHOUT detaching it; "occurrence" sends
- * them to the occurrence alone, which detaches it.
+ * field a series cannot own for a single cycle. Title, description, priority and
+ * area follow "Aplicar a": "series" sends them to the template, from which the
+ * route propagates them to the open occurrence WITHOUT detaching it; "occurrence"
+ * sends them to the occurrence alone, which detaches it.
  *
  * An occurrence that is already detached no longer receives template propagation,
  * so with "series" it also takes the template fields directly — otherwise the
  * owner's edit would reach every future cycle except the one on screen.
+ *
+ * The area counts as changed only against the OCCURRENCE on screen: a detached
+ * occurrence may hold an area different from its series', and an edit to anything
+ * else must never rewrite the series' area.
  */
 export function planSeriesOccurrenceSave(
   task: TaskDto,
@@ -377,7 +392,15 @@ export function planSeriesOccurrenceSave(
   applyTo: ApplyTo,
 ): SeriesOccurrenceSavePlan {
   const ruleBody = ruleDraft === null ? null : buildUpdateSeriesRule(series, ruleDraft);
-  const templateBody = applyTo === "series" ? buildUpdateSeriesTemplate(taskDraft, series) : null;
+  let templateBody = applyTo === "series" ? buildUpdateSeriesTemplate(taskDraft, series) : null;
+  if (
+    templateBody !== null &&
+    (taskDraft.lifeAreaId === undefined || taskDraft.lifeAreaId === task.lifeAreaId)
+  ) {
+    templateBody = { ...templateBody };
+    delete templateBody.lifeAreaId;
+    if (Object.keys(templateBody).length === 0) templateBody = null;
+  }
   const merged: UpdateSeriesInput = { ...(ruleBody ?? {}), ...(templateBody ?? {}) };
 
   const taskChanges: UpdateTaskInput = { ...buildTaskPatch(task, taskDraft) };

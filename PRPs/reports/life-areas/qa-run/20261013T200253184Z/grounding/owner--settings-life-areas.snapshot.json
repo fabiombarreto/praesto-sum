@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "role": "owner",
+  "route": "/settings/life-areas",
+  "entries": [
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Voltar",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "heading",
+      "name": "Áreas",
+      "matches": 1
+    },
+    {
+      "kind": "text",
+      "text": "Nova área",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "textbox",
+      "name": "Nova área",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Adicionar",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Renomear Casa",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Excluir Casa",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Renomear Ética",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Excluir Ética",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Renomear Trabalho",
+      "matches": 1
+    },
+    {
+      "kind": "role",
+      "role": "button",
+      "name": "Excluir Trabalho",
+      "matches": 1
+    },
+    {
+      "kind": "text",
+      "text": "Sem área 7 tarefas abertas",
+      "matches": 0
+    }
+  ],
+  "withheld": 0
+}

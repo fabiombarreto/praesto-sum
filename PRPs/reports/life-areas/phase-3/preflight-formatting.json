@@ -1,0 +1,7 @@
+{
+  "formatter_cmd": "npx prettier --write",
+  "discovery_source": "methodology.md formatter_cmd",
+  "files_scoped": "test/life-area-assign.test.ts, test/task-edit.test.ts, test/series-edit.test.ts, test/format.test.ts (the new/updated suites; earlier phases' files already clean)",
+  "outcome": "formatted (every file already clean)",
+  "exit_code_or_null": 0
+}

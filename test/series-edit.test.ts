@@ -700,3 +700,365 @@ describe("dateModeChoices — 'Sem data' is always offered", () => {
     expect(recurrenceDraftError(taskDraft({ dateMode: "none", date: "" }), draft)).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// The Life Area on a series (added 2026-10-12, unit 13 life-areas, phase 3).
+//
+// PRPs/prds/life-areas.prd.md AC-16 Occurrence save plan — "when the owner changes only
+// the area and *Aplicar a* is *Toda a série*, planSeriesOccurrenceSave sends lifeAreaId
+// to the series PATCH and nothing to the Task PATCH; when it is *Só esta ocorrência*, it
+// sends it to the Task PATCH and the occurrence is detached; when the area is unchanged
+// neither request carries it."
+// PRPs/prds/life-areas.prd.md AC-20 Task sheet — the conversion of a one-off Task to a
+// series keeps the area (with AC-10: "the series and its first occurrence carry A").
+//
+// Source plan: PRPs/plans/life-areas-phase-3-assign-and-show.plan.md (Task 2; plan
+// AC-A3, AC-A6).
+//
+// The cases are appended and change none of the assertions above: every draft built by
+// `taskDraft()` carries no area decision, which is "the owner never touched the control"
+// (`TaskDraft.lifeAreaId` is optional and not seeded), and every one of the older cases
+// must keep its exact expectation.
+//
+// One save of an occurrence can touch the series and the occurrence, and any key sent to
+// the Task PATCH detaches the occurrence (ADR-0006) — so the area is counted as changed
+// only against the OCCURRENCE the owner is looking at, never against the series.
+// ---------------------------------------------------------------------------
+
+function areaOccurrence(overrides: Partial<TaskDto> = {}): TaskDto {
+  return {
+    id: "t1",
+    title: "Pagar aluguel",
+    description: null,
+    status: "open",
+    deadline: "2026-10-05",
+    scheduledDate: null,
+    priority: null,
+    lifeAreaId: null,
+    seriesId: "s1",
+    occurrenceDate: "2026-10-05",
+    detached: false,
+    completedAt: null,
+    createdAt: 0,
+    ...overrides,
+  };
+}
+
+/** The part of a draft that exists only once the owner chose an area (the sheet's own rule). */
+function areaChoice(choice: string | null | undefined): Partial<TaskDraft> {
+  return choice === undefined ? {} : { lifeAreaId: choice };
+}
+
+/** The two ways an owner can leave the occurrence's own area as it is. */
+const LEFT_ALONE: Array<[string, string | undefined]> = [
+  ["makes no area choice", undefined],
+  ["chooses the occurrence's own area again", "area-a"],
+];
+
+describe("planSeriesOccurrenceSave — the area follows Aplicar a (life-areas PRD AC-16)", () => {
+  const series = seriesDto({ lifeAreaId: "area-a" });
+  const occurrence = areaOccurrence({ lifeAreaId: "area-a" });
+
+  it("toda a série: an area change alone goes to the series and nothing to the occurrence", () => {
+    const plan = planSeriesOccurrenceSave(
+      occurrence,
+      taskDraft({ lifeAreaId: "area-b" }),
+      series,
+      null,
+      "series",
+    );
+
+    expect(plan.seriesBody).toEqual({ lifeAreaId: "area-b" });
+    // Nothing on the Task PATCH, so the occurrence is not detached; the route's own
+    // template propagation gives it the area.
+    expect(plan.taskChanges).toEqual({});
+  });
+
+  it("só esta ocorrência: an area change alone goes to the occurrence, which detaches it", () => {
+    const plan = planSeriesOccurrenceSave(
+      occurrence,
+      taskDraft({ lifeAreaId: "area-b" }),
+      series,
+      null,
+      "occurrence",
+    );
+
+    expect(plan.seriesBody).toBeNull();
+    expect(plan.taskChanges).toEqual({ lifeAreaId: "area-b" });
+  });
+
+  it("toda a série: clearing the area sends an explicit null to the series alone", () => {
+    const plan = planSeriesOccurrenceSave(
+      occurrence,
+      taskDraft({ lifeAreaId: null }),
+      series,
+      null,
+      "series",
+    );
+
+    expect(plan.seriesBody).toEqual({ lifeAreaId: null });
+    expect(plan.taskChanges).toEqual({});
+  });
+
+  it("só esta ocorrência: clearing the area sends an explicit null to the occurrence alone", () => {
+    const plan = planSeriesOccurrenceSave(
+      occurrence,
+      taskDraft({ lifeAreaId: null }),
+      series,
+      null,
+      "occurrence",
+    );
+
+    expect(plan.seriesBody).toBeNull();
+    expect(plan.taskChanges).toEqual({ lifeAreaId: null });
+  });
+
+  it("an area change and a rule edit travel in one series body", () => {
+    const ruleDraft = { ...seriesRuleDraftFromSeries(series), dayOfMonth: "10" };
+
+    const plan = planSeriesOccurrenceSave(
+      occurrence,
+      taskDraft({ lifeAreaId: "area-b" }),
+      series,
+      ruleDraft,
+      "series",
+    );
+
+    expect(plan.seriesBody).toEqual({ byMonthday: 10, lifeAreaId: "area-b" });
+    expect(plan.taskChanges).toEqual({});
+  });
+
+  it("an area change and a date change in one save are split: the area to the series, the date to the occurrence", () => {
+    const plan = planSeriesOccurrenceSave(
+      occurrence,
+      taskDraft({ lifeAreaId: "area-b", date: "2026-10-08" }),
+      series,
+      null,
+      "series",
+    );
+
+    expect(plan.seriesBody).toEqual({ lifeAreaId: "area-b" });
+    expect(plan.taskChanges).toEqual({ deadline: "2026-10-08" });
+  });
+});
+
+describe("planSeriesOccurrenceSave — an unchanged area is never sent (life-areas PRD AC-16, AC-9)", () => {
+  const series = seriesDto({ lifeAreaId: "area-a" });
+  const occurrence = areaOccurrence({ lifeAreaId: "area-a" });
+
+  it.each(LEFT_ALONE)("series: title edit goes to the series when he %s", (_label, choice) => {
+    const plan = planSeriesOccurrenceSave(
+      occurrence,
+      taskDraft({ title: "Pagar o aluguel", ...areaChoice(choice) }),
+      series,
+      null,
+      "series",
+    );
+
+    expect(plan.seriesBody).toEqual({ title: "Pagar o aluguel" });
+    expect(plan.taskChanges).toEqual({});
+  });
+
+  it.each(LEFT_ALONE)("occurrence: title edit goes to the Task when he %s", (_label, choice) => {
+    const plan = planSeriesOccurrenceSave(
+      occurrence,
+      taskDraft({ title: "Pagar o aluguel", ...areaChoice(choice) }),
+      series,
+      null,
+      "occurrence",
+    );
+
+    expect(plan.seriesBody).toBeNull();
+    expect(plan.taskChanges).toEqual({ title: "Pagar o aluguel" });
+  });
+
+  it.each(LEFT_ALONE)("series: nothing is sent anywhere when he %s", (_label, choice) => {
+    const plan = planSeriesOccurrenceSave(
+      occurrence,
+      taskDraft({ ...areaChoice(choice) }),
+      series,
+      null,
+      "series",
+    );
+
+    expect(plan.seriesBody).toBeNull();
+    expect(plan.taskChanges).toEqual({});
+  });
+
+  it.each(LEFT_ALONE)("occurrence: nothing is sent anywhere when he %s", (_label, choice) => {
+    const plan = planSeriesOccurrenceSave(
+      occurrence,
+      taskDraft({ ...areaChoice(choice) }),
+      series,
+      null,
+      "occurrence",
+    );
+
+    expect(plan.seriesBody).toBeNull();
+    expect(plan.taskChanges).toEqual({});
+  });
+});
+
+describe("planSeriesOccurrenceSave — a detached occurrence's own area is not the series' (life-areas PRD AC-16, ADR-0006)", () => {
+  // A detached occurrence may legitimately hold an area other than its series'.
+  const series = seriesDto({ lifeAreaId: "area-y" });
+  const detached = areaOccurrence({ detached: true, lifeAreaId: "area-x" });
+
+  it("toda a série: a chosen area reaches the series and this occurrence, which no longer receives propagation", () => {
+    const plan = planSeriesOccurrenceSave(
+      detached,
+      taskDraft({ lifeAreaId: "area-z" }),
+      series,
+      null,
+      "series",
+    );
+
+    expect(plan.seriesBody).toEqual({ lifeAreaId: "area-z" });
+    expect(plan.taskChanges).toEqual({ lifeAreaId: "area-z" });
+  });
+
+  it("toda a série: an unrelated edit does not rewrite the series' area with the occurrence's own", () => {
+    const plan = planSeriesOccurrenceSave(
+      detached,
+      taskDraft({ title: "Pagar o aluguel" }),
+      series,
+      null,
+      "series",
+    );
+
+    expect(plan.seriesBody).toEqual({ title: "Pagar o aluguel" });
+    expect(plan.taskChanges).toEqual({ title: "Pagar o aluguel" });
+  });
+
+  it("toda a série: choosing the occurrence's own area again does not rewrite the series' area either", () => {
+    const plan = planSeriesOccurrenceSave(
+      detached,
+      taskDraft({ title: "Pagar o aluguel", lifeAreaId: "area-x" }),
+      series,
+      null,
+      "series",
+    );
+
+    expect(plan.seriesBody).toEqual({ title: "Pagar o aluguel" });
+    expect(plan.taskChanges).toEqual({ title: "Pagar o aluguel" });
+  });
+});
+
+describe("buildUpdateSeriesTemplate — the area is a template field (life-areas PRD AC-16)", () => {
+  it("sends a chosen area on a series that has none", () => {
+    const series = seriesDto({ lifeAreaId: null });
+
+    expect(buildUpdateSeriesTemplate(taskDraft({ lifeAreaId: "area-a" }), series)).toEqual({
+      lifeAreaId: "area-a",
+    });
+  });
+
+  it("sends a different area", () => {
+    const series = seriesDto({ lifeAreaId: "area-a" });
+
+    expect(buildUpdateSeriesTemplate(taskDraft({ lifeAreaId: "area-b" }), series)).toEqual({
+      lifeAreaId: "area-b",
+    });
+  });
+
+  it("sends an explicit null to clear the series' area", () => {
+    const series = seriesDto({ lifeAreaId: "area-a" });
+
+    expect(buildUpdateSeriesTemplate(taskDraft({ lifeAreaId: null }), series)).toEqual({
+      lifeAreaId: null,
+    });
+  });
+
+  it("returns null when the chosen area is the series' own", () => {
+    expect(
+      buildUpdateSeriesTemplate(
+        taskDraft({ lifeAreaId: "area-a" }),
+        seriesDto({ lifeAreaId: "area-a" }),
+      ),
+    ).toBeNull();
+    expect(
+      buildUpdateSeriesTemplate(taskDraft({ lifeAreaId: null }), seriesDto({ lifeAreaId: null })),
+    ).toBeNull();
+  });
+
+  it("returns null when the draft carries no area choice, whatever the series' area is", () => {
+    expect(buildUpdateSeriesTemplate(taskDraft(), seriesDto({ lifeAreaId: "area-a" }))).toBeNull();
+    expect(buildUpdateSeriesTemplate(taskDraft(), seriesDto({ lifeAreaId: null }))).toBeNull();
+  });
+
+  it("sends the area beside another changed template field", () => {
+    const series = seriesDto({ lifeAreaId: null });
+
+    expect(
+      buildUpdateSeriesTemplate(
+        taskDraft({ title: "Pagar o aluguel", lifeAreaId: "area-a" }),
+        series,
+      ),
+    ).toEqual({ title: "Pagar o aluguel", lifeAreaId: "area-a" });
+  });
+});
+
+describe("buildCreateSeriesInput — a chosen area is carried into the converted series (life-areas PRD AC-10, AC-20)", () => {
+  it("carries the chosen area id", () => {
+    const input = buildCreateSeriesInput(
+      taskDraft({ lifeAreaId: "area-a" }),
+      recurrenceDraft(),
+      null,
+      "America/Sao_Paulo",
+    );
+
+    expect(input.lifeAreaId).toBe("area-a");
+  });
+
+  it("leaves no area key for a draft whose area is Sem área", () => {
+    const input = buildCreateSeriesInput(
+      taskDraft({ lifeAreaId: null }),
+      recurrenceDraft(),
+      null,
+      "America/Sao_Paulo",
+    );
+
+    expect(input).not.toHaveProperty("lifeAreaId");
+  });
+
+  it("leaves no area key for a draft that carries no area choice", () => {
+    const input = buildCreateSeriesInput(taskDraft(), recurrenceDraft(), null, "America/Sao_Paulo");
+
+    expect(input).not.toHaveProperty("lifeAreaId");
+  });
+
+  it("builds one and the same body for an explicit Sem área and for no choice at all", () => {
+    const withNull = buildCreateSeriesInput(
+      taskDraft({ lifeAreaId: null }),
+      recurrenceDraft(),
+      reminderDraft(),
+      "America/Sao_Paulo",
+    );
+    const withoutKey = buildCreateSeriesInput(
+      taskDraft(),
+      recurrenceDraft(),
+      reminderDraft(),
+      "America/Sao_Paulo",
+    );
+
+    expect(withNull).toEqual(withoutKey);
+  });
+
+  it("changes nothing else in the body when an area is carried", () => {
+    const withoutArea = buildCreateSeriesInput(
+      taskDraft({ priority: "high" }),
+      recurrenceDraft({ freq: "weekly", endOption: "count", maxCount: "3" }),
+      reminderDraft(),
+      "America/Sao_Paulo",
+    );
+    const { lifeAreaId, ...rest } = buildCreateSeriesInput(
+      taskDraft({ priority: "high", lifeAreaId: "area-a" }),
+      recurrenceDraft({ freq: "weekly", endOption: "count", maxCount: "3" }),
+      reminderDraft(),
+      "America/Sao_Paulo",
+    );
+
+    expect(lifeAreaId).toBe("area-a");
+    expect(rest).toEqual(withoutArea);
+  });
+});

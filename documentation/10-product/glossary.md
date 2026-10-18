@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-08-15
+last_updated: 2026-10-12
 review_trigger: "a new domain concept appears or an ambiguity between terms is resolved"
 ---
 
@@ -18,7 +18,7 @@ review_trigger: "a new domain concept appears or an ambiguity between terms is r
 | **Task** | Something the owner intends to do. Has a completion state (done / not done) and no fixed time slot of its own; it may carry a due date, but a due date is not a time slot. | to-do, todo item, action item, chore |
 | **Event** | Something that happens at a specific date and time (or a date/time range). Occupies a slot on the calendar and has no completion state — it occurs (or is cancelled), it is not "done". | appointment, meeting, calendar entry |
 | **Reminder** | A notification that directs the owner's attention at a chosen moment — about a Task, about an Event, or standalone (e.g. "drink water at 3pm"). It is never an item of work in itself. | alert, alarm, notification (as a domain term) |
-| **Life Area** | A domain of personal life the assistant organizes (e.g. Calendar, Tasks now; others later). The top-level unit of scope in the [vision](vision.md). | module, category, domain, section |
+| **Life Area** | A named grouping the owner creates (for example *Casa*, *Saúde*) that a Task or a Recurrence Series may belong to — at most one, and optionally none. An item with none surfaces under *Sem área*, the pt-BR copy (ADR-0009) of the implicit "Unsorted" grouping; no default area is stored. Calendar and Tasks are product capabilities, not Life Area records. *(Proposed 2026-10-12, awaiting the owner's confirmation — life-areas PRD Open Question 1. The wording this replaces: "A domain of personal life the assistant organizes (e.g. Calendar, Tasks now; others later). The top-level unit of scope in the [vision](vision.md).")* | module, category, domain, section |
 | **Priority** | An optional level a Task carries to say how much it matters (FR-006). Exactly three values: high, normal, low. `NULL` means the owner has not set one, and an unset priority sorts as `normal` — it is deliberately distinguishable from a deliberate `normal`. | importance, urgency, severity, P1/P2/P3, a numeric scale |
 
 Formerly open points, resolved by the owner on 2026-08-03:

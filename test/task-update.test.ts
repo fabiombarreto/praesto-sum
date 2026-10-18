@@ -5,6 +5,7 @@
 // PRPs/prds/task-detail-and-dates.prd.md AC-9 unknown-field-is-rejected
 // PRPs/prds/reminders.prd.md AC-11 deadline-edit-recomputes-relative-reminders
 // PRPs/prds/reminders.prd.md AC-12 an-already-sent-reminder-is-not-resurrected
+// PRPs/prds/life-areas.prd.md AC-9 task-edit-carries-the-area
 //
 // Phase 2 adds PATCH /api/tasks/:id. Its whole difficulty is semantic: a
 // partial update must distinguish "I did not mention this field" from "I am
@@ -31,7 +32,7 @@ import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect } from "vitest";
 import type { ReminderDto, TaskDto } from "../src/shared/api";
 import { createDb } from "../src/worker/db/client";
-import { recurrenceSeries, reminders, tasks } from "../src/worker/db/schema";
+import { lifeAreas, recurrenceSeries, reminders, tasks } from "../src/worker/db/schema";
 import { DRAIN_BUDGET_MS, isolatedIt as it, resetTaskTables } from "./isolation";
 
 const BASE = "https://example.com/api/tasks";
@@ -97,9 +98,14 @@ async function listReminders(): Promise<ReminderDto[]> {
 // `reminders` is additionally wiped every test — mirroring
 // test/reminders.test.ts's own `beforeEach`, since the barrier itself only
 // knows about `tasks`/`recurrenceSeries`.
+// Extended again (life-areas AC-9): the `lifeAreaId` describe block at the bottom
+// seeds `life_areas`, which the barrier does not own either, so it is wiped here,
+// after the drain — as test/export.test.ts does.
 beforeEach(async () => {
   await resetTaskTables();
-  await createDb(env).delete(reminders);
+  const db = createDb(env);
+  await db.delete(reminders);
+  await db.delete(lifeAreas);
 }, DRAIN_BUDGET_MS);
 
 describe("Task update — the edit persists (FR-002, PRD AC-1)", () => {
@@ -360,7 +366,6 @@ describe("Task update — non-editable fields are rejected, not ignored (PRD AC-
     ["seriesId", { seriesId: "series-x" }],
     ["occurrenceDate", { occurrenceDate: "2026-08-03" }],
     ["detached", { detached: true }],
-    ["lifeAreaId", { lifeAreaId: "area-x" }],
     ["an unknown key", { nonsense: "value" }],
   ])("rejects %s with 400 and writes nothing", async (_label, body) => {
     const task = await create({ title: "Protected" });
@@ -477,5 +482,142 @@ describe("Task update — an already-sent Reminder is not resurrected by a deadl
     // already-sent row was silently made eligible to fire again.
     expect(after?.sentAt).toBe(sentAtEpoch);
     expect(after?.fireAt).toBe(sent.fireAt);
+  });
+});
+
+// life-areas.prd.md AC-9 (phase 1, test-first). `lifeAreaId` became an editable
+// key, so the `["lifeAreaId", { lifeAreaId: "area-x" }]` row that used to sit in the
+// non-editable table above — pinned under the old "unit 13 owns it" contract — moved
+// here. What that row asserted is preserved, not loosened: an id that matches no
+// area is still answered 400 and still writes nothing (the first `it.each` case is
+// that exact input), now for the right reason and naming the field. The assertion
+// that `lifeAreaId` stays null after a REJECTED non-editable edit stays in the
+// table's body, untouched.
+//
+// Expected RED before the Implementer: the key is still refused as "not editable",
+// so setting and clearing the area answer 400, and the refusal of an unknown id
+// carries the wrong reason (asserted below). Areas are inserted directly: the edit
+// route is the thing under test, so a defect in `/api/life-areas` must not hide
+// behind it.
+describe("Task update — lifeAreaId is editable and validated (life-areas.prd.md AC-9)", () => {
+  async function insertArea(id: string, name: string): Promise<void> {
+    await createDb(env).insert(lifeAreas).values({ id, name });
+  }
+
+  async function storedTask(id: string) {
+    const [row] = await createDb(env).select().from(tasks).where(eq(tasks.id, id));
+    return row;
+  }
+
+  it("sets the area when the id matches an area", async () => {
+    await insertArea("area-casa", "Casa");
+    const task = await create({ title: "Lavar a louça" });
+    expect(task.lifeAreaId).toBeNull();
+
+    const after = await patchOk(task.id, { lifeAreaId: "area-casa" });
+
+    expect(after.lifeAreaId).toBe("area-casa");
+    expect((await storedTask(task.id))?.lifeAreaId).toBe("area-casa");
+  });
+
+  it("clears the area when the key is sent as null", async () => {
+    await insertArea("area-casa", "Casa");
+    const task = await create({ title: "Lavar a louça", lifeAreaId: "area-casa" });
+    expect(task.lifeAreaId).toBe("area-casa");
+
+    const after = await patchOk(task.id, { lifeAreaId: null });
+
+    expect(after.lifeAreaId).toBeNull();
+    expect((await storedTask(task.id))?.lifeAreaId).toBeNull();
+  });
+
+  it("leaves the area unchanged when the key is omitted", async () => {
+    await insertArea("area-casa", "Casa");
+    const task = await create({ title: "Lavar a louça", lifeAreaId: "area-casa" });
+
+    const after = await patchOk(task.id, { title: "Lavar a louça e o fogão" });
+
+    expect(after.lifeAreaId).toBe("area-casa");
+    expect((await storedTask(task.id))?.lifeAreaId).toBe("area-casa");
+  });
+
+  it.each([
+    ["an id that matches no area", "area-x"],
+    ["an empty id", ""],
+    ["a non-string id", 42],
+  ])("rejects %s with 400 naming lifeAreaId and writes nothing", async (_label, lifeAreaId) => {
+    const task = await create({ title: "Protected" });
+
+    const res = await patch(task.id, { lifeAreaId });
+
+    expect(res.status).toBe(400);
+    const { error } = (await res.json()) as { error: string };
+    expect(error.toLowerCase()).toContain("lifeareaid");
+    // The key is refused because the id is wrong, not because the key is closed.
+    expect(error).not.toMatch(/editable|edit[áa]vel/i);
+    const row = await storedTask(task.id);
+    expect(row?.id).toBe(task.id);
+    expect(row?.status).toBe("open");
+    expect(row?.lifeAreaId).toBeNull();
+    expect(row?.detached).toBe(false);
+  });
+
+  it("keeps the current area, and the rest of the edit, when an unknown id rides along", async () => {
+    await insertArea("area-casa", "Casa");
+    const task = await create({ title: "Original", lifeAreaId: "area-casa" });
+
+    const res = await patch(task.id, { title: "Changed", lifeAreaId: "area-x" });
+
+    expect(res.status).toBe(400);
+    const row = await storedTask(task.id);
+    expect(row?.title).toBe("Original");
+    expect(row?.lifeAreaId).toBe("area-casa");
+  });
+
+  it("assigns nothing when a non-editable key rides along a valid area", async () => {
+    await insertArea("area-casa", "Casa");
+    const task = await create({ title: "Mixed" });
+
+    const res = await patch(task.id, { lifeAreaId: "area-casa", status: "done" });
+
+    expect(res.status).toBe(400);
+    const row = await storedTask(task.id);
+    expect(row?.lifeAreaId).toBeNull();
+    expect(row?.status).toBe("open");
+  });
+
+  it("detaches an occurrence whose area is edited, and leaves the series' own area alone", async () => {
+    await insertArea("area-casa", "Casa");
+    await insertArea("area-trabalho", "Trabalho");
+    const db = createDb(env);
+    await db.insert(recurrenceSeries).values({
+      id: "series-area",
+      kind: "task",
+      freq: "daily",
+      dtstart: "2026-08-03",
+      title: "Drink water",
+      lifeAreaId: "area-casa",
+    });
+    const occurrenceId = crypto.randomUUID();
+    await db.insert(tasks).values({
+      id: occurrenceId,
+      title: "Drink water",
+      seriesId: "series-area",
+      occurrenceDate: "2026-08-03",
+      lifeAreaId: "area-casa",
+    });
+
+    const after = await patchOk(occurrenceId, { lifeAreaId: "area-trabalho" });
+
+    expect(after.lifeAreaId).toBe("area-trabalho");
+    const occurrence = await storedTask(occurrenceId);
+    expect(occurrence?.lifeAreaId).toBe("area-trabalho");
+    expect(occurrence?.detached).toBe(true);
+    expect(occurrence?.seriesId).toBe("series-area");
+    const [series] = await db
+      .select()
+      .from(recurrenceSeries)
+      .where(eq(recurrenceSeries.id, "series-area"));
+    expect(series?.lifeAreaId).toBe("area-casa");
   });
 });

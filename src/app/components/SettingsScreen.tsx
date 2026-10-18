@@ -16,6 +16,7 @@ import { useConnectivity } from "../hooks/useConnectivity";
 import { AdherenceEntryCard } from "./AdherenceEntryCard";
 import { DataExportCard } from "./DataExportCard";
 import { GoogleConnectionCard } from "./GoogleConnectionCard";
+import { LifeAreasEntryCard } from "./LifeAreasEntryCard";
 import { NotificationsEntryCard } from "./NotificationsEntryCard";
 import { Banner } from "./ui/Banner";
 import { Button } from "./ui/Button";
@@ -112,6 +113,7 @@ export function SettingsScreen({
         <DataExportCard onUnauthorized={onUnauthorized} />
         <NotificationsEntryCard onOpenNotifications={() => navigate("notifications")} />
         <AdherenceEntryCard onOpenAdherence={() => navigate("adherence")} />
+        <LifeAreasEntryCard onOpenLifeAreas={() => navigate("life-areas")} />
 
         {/* The build stamp, in the corner of the last card rather than in the
             header: it is reference information the owner looks up when he

@@ -1,0 +1,15 @@
+{
+  "run_id": "16ba17b7-11b7-4a9a-b1c8-5f457d3c7b1d",
+  "reviewed_at": "2026-10-12T05:37:03.928Z",
+  "base_branch": "main",
+  "verdict": "APPROVED",
+  "analyzed_files": 13,
+  "concerns": [],
+  "notes": [
+    {
+      "type": "scan_path",
+      "path": "pathspec"
+    },
+    "ledger loaded: phase-3 manifest (3 additive UPDATE rows, 0 DELETE); phases 1-2 manifests consulted as additional ledgers; 0 removed it/test/describe lines; no skip/only/todo; coverage baseline unavailable"
+  ]
+}

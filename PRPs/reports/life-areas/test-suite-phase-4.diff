@@ -1,0 +1,208 @@
+# TDD initial suite — phase 4
+# Source PRD: PRPs/prds/life-areas.prd.md (Acceptance Criteria)
+# Source plan: C:/repos/assistente-pessoal/.worktrees/life-areas/PRPs/plans/life-areas-phase-4-filter-and-close-out.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-10-12
+# Mode: test-first (docs/context/methodology.md: tdd true, test_frameworks ["vitest"]; plan phase_type feature)
+# Code root: C:/repos/assistente-pessoal/.worktrees/life-areas (branch feature/life-areas)
+# Manifest name: the protocol's default `test-suite.diff` is phase 1's APPROVED manifest, `test-suite-phase-2.diff`
+#   is phase 2's and `test-suite-phase-3.diff` is phase 3's; all three are untouched. This file is the phase-4
+#   sibling, named after the same project convention (test-suite.diff, test-suite-phase-2.diff, ...).
+
+## AC outcomes
+
+The PRD ACs in this phase's row (Implementation Phases row 4) are AC-13, AC-18, AC-21, AC-23, AC-24 and AC-25; the
+plan also carries AC-14's observable half (plan AC-A2). Only AC-13 is test-first-authorable as written ("pure, and
+tested without the DOM"). AC-21 is named "(manual)" by the PRD, but the plan extracts the one decidable part of it —
+an applied narrowing filter is never hidden — into `decideAreaFilterChip` and pins its name, inputs and outputs in
+its Notes "for the test pair" (plan AC-A3): the same split methodology.md records under "Browser-API work: split
+the logic out, then the glue is exempt". AC-18 is a script run, AC-23 and AC-25 are inspections, AC-24 is the
+owner's device. The suite therefore covers AC-13's every clause and AC-21's decidable half; no name was invented.
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-13 | NEW_TEST_REQUIRED (delta) + EXISTING_TEST_UPDATED x4 + EXISTING_TEST_COVERS (the unset-dimension clause) | test/task-filter.test.ts. Appended: describes "toQuery — lifeAreaId (life-areas PRD AC-13)", "activeCount — the area counts once (life-areas PRD AC-13)" and "isChipActive and toggleChip — the area rides along untouched (life-areas PRD AC-13)". Updated in place (see the ledger): the four cases whose exact shape the new required key extends. Clause "EMPTY_FILTER: lifeAreaId is null, toQuery emits nothing, activeCount unchanged" is EXISTING_TEST_COVERS at test/task-filter.test.ts:35 (`toQuery(EMPTY_FILTER)` is `""`), :99 (`activeCount(EMPTY_FILTER)` is 0) and the updated exact-shape case at :237 (`EMPTY_FILTER` has all six dimensions null, `lifeAreaId` included) |
+| AC-14 | EXISTING_TEST_COVERS (pure half); observable half manual | The decision `captureAreaFields` is pinned from phase 3: test/life-area-assign.test.ts:53-94, describe "captureAreaFields — what area a captured Task takes from the area filter (PRD AC-14)" (no filter -> `{}` and no key; `"none"` -> `{ lifeAreaId: null }`; an id -> `{ lifeAreaId: <id> }`; the create body of `marcar consulta` under each). Plan AC-A2's new part — `submitCapture` passing `filter.lifeAreaId` to it — is the one-line seam in TodayScreen.tsx, React glue verified by plan Level 2's grep and Level 4 item 9 |
+| AC-21 | NEW_TEST_REQUIRED (decidable half; the visual remainder is manual, see "Manual and out-of-test clauses") | test/life-area-assign.test.ts, appended describe "decideAreaFilterChip — whether the applied area chip shows and what names it (PRD AC-21)" (plan AC-A3: `absent` / `no-area` / `area` / `unknown`, never absent for an applied filter, argument unchanged) |
+| AC-18 | MANUAL / OUT_OF_TEST | The restore drill is a script run (`scripts/restore-drill.mjs`), plan Task 8 and AC-A6; its record is `PRPs/reports/life-areas/c6-restore-drill.md`. Not a test file |
+| AC-23 | MANUAL / OUT_OF_TEST | Plan Level 1/2 shell checks and `PRPs/reports/life-areas/phase-4/close-out.md` (Task 12, AC-A9). "No test removed, skipped or loosened" is held by this manifest's ledger: four rows that each KEEP every assertion and add one key, a retitle on one, no DELETE |
+| AC-24 | MANUAL / OUT_OF_TEST | Owner-gated device proof, `PRPs/reports/life-areas/device-proof.md` (plan Task 9, AC-A7); `Status: OWED`, nothing observed |
+| AC-25 | MANUAL / OUT_OF_TEST | Documentation inspection (plan Tasks 10-11, AC-A8); literal greps in the plan's VALIDATE, no test file |
+| AC-1..AC-12, AC-17 | OUT_OF_PHASE_SCOPE | (phase 1, complete: route contract, shared helpers, export) |
+| AC-19 | OUT_OF_PHASE_SCOPE | (phase 2, complete: the *Áreas* screen) |
+| AC-15, AC-16, AC-20, AC-22 | OUT_OF_PHASE_SCOPE | (phase 3, complete: row text, occurrence save plan, Task sheet, degraded states) |
+
+### Plan AC -> test cases
+
+- AC-A1 (PRD AC-13, the dimension): test/task-filter.test.ts.
+  - toQuery: an id alone is `?lifeAreaId=<id>`; `"none"` alone is `?lifeAreaId=none`, unchanged; every
+    dimension set is exactly `?status=open&from=2026-08-01&to=2026-08-24&priority=high&q=aluguel&lifeAreaId=none`
+    (the area LAST, every earlier parameter in its old place — the plan's pinned string); and the area is placed
+    after each of the five other dimensions in turn (five rows, so a failure names the neighbour it was put in
+    front of, `q` being the one it must follow most closely).
+  - activeCount: an id is 1; `"none"` is 1; status + priority + a two-ended range + an area is 4 (the range is
+    now 0 to 4); a two-ended range + an area is 2 (a range stays one question); `q` alone is still 0 (guard, GREEN
+    before); `q` + an area is 1 (`q` counts for nothing).
+  - isChipActive / toggleChip: no chip reads as pressed because of an area, for an id and for `"none"` (guard,
+    GREEN before); a chip still reads from its own dimension with an area set beside it (guard); toggling each of
+    the three chips sets its own dimension and leaves the area exactly as it was, and switching a chip off again
+    keeps the area (guards); `"none"` goes through a toggle as the literal `"none"`, never null (guard); and three
+    taps on the row with an area picked compose into `?status=open&to=2026-08-24&priority=high&lifeAreaId=<id>`
+    with `activeCount` 4.
+  - The four existing cases whose exact shape the key extends are in the ledger.
+- AC-A3 (PRD AC-21, the applied chip's decision): test/life-area-assign.test.ts, describe `decideAreaFilterChip`.
+  `(null, null)`, `(null, [])` and `(null, areas)` are `{ kind: "absent" }`; `("none", null)`, `("none", [])` and
+  `("none", areas)` are `{ kind: "no-area" }`; an id the list holds is `{ kind: "area", name }` wherever it sits
+  (`Casa`, `Ética` with its accent, `Trabalho`); an id the list does not hold, an empty list and a `null` list
+  are `{ kind: "unknown" }`; across ids `[a held id, a deleted id, "none"]` x lists `[null, [], areas]` the result
+  is never `absent`; a frozen input array is left as found (an in-place sort would throw).
+- AC-A2 (PRD AC-14, observable half): see the AC-14 row. The pure decision is covered; the wiring is manual.
+- AC-A4, AC-A5 (PRD AC-21, the sheet's group and the applied chip, the foreground-refetch fix): React markup,
+  copy, focus and an effect with an empty dependency array. Manual — see the next section.
+- AC-A6, AC-A7, AC-A8, AC-A9 (PRD AC-18, AC-24, AC-25, AC-23): not test files, see the AC rows above.
+
+### Manual and out-of-test clauses (no test written, on purpose)
+
+Each is markup, layout, a literal of pt-BR copy, glue over a React effect, a script run or an inspection, so it
+follows methodology.md's "UI verification stays manual" line and is recorded by plan Tasks 6-12. The plan exports
+no constant that carries any new pt-BR string (*Área*, the neutral *Área* for an id the list does not hold, and
+*Limpar filtros* are literals in FilterSheet.tsx / FilterChips.tsx / EmptyState.tsx; `NO_AREA_LABEL` already
+exists and is pinned by test/life-areas-view.test.ts from phase 2), so no copy is pinned here.
+
+| Clause | Why no test | Where it is recorded |
+|---|---|---|
+| AC-21: the filter sheet's *Área* group offers *Sem área* and each area, alphabetically, wrapping, absent with no areas or a failed request | Markup and layout in FilterSheet.tsx. The ORDER and the three STATES (`hidden` / `empty` / `choices`) ARE tested by phase 3's `decideAreaGroup` cases; that the group renders only for `choices` is the component's | plan Task 3 VALIDATE greps; ui-checklist items 1, 2, 11, 12 |
+| AC-21: picking one filters *Hoje* at once and raises the header badge | Wiring of `onChange` into `useState<TaskFilter>`. WHAT the request is and HOW MANY dimensions count ARE tested (`toQuery`, `activeCount`) | ui-checklist item 9 (network panel), AC-21 walk |
+| AC-21: it appears as a selected chip; tapping it clears only the area | A toggle in the quick row's group in FilterChips.tsx. WHETHER it shows and what names it IS tested (`decideAreaFilterChip`) | ui-checklist items 3, 5, 6 |
+| AC-21: with *Limpar filtros* | `onChange(EMPTY_FILTER)` is the existing button; that `EMPTY_FILTER` carries the key and clears it IS tested (the exact-shape case) | AC-21 walk |
+| AC-21: killing and reopening the app starts unfiltered | `useState(EMPTY_FILTER)` and the absence of storage in the module, checked by plan Level 2 greps; a cold start is the owner's device | ui-checklist item 11, device-proof.md step 6 |
+| AC-21: the deleted-area case reads *Nenhuma tarefa com esse filtro.* with *Limpar filtros* after the refetch, including the foreground return | The filtered-empty state is driven by `activeCount(filter) > 0` (tested) and the foreground refetch is an effect with an empty dependency array (the defect plan Task 5 fixes with `refreshRef`): glue with no honest test-first path, checked in the Network panel | plan Level 4 item 11; ui-checklist AC-21 walk |
+| AC-14 observable half: a capture inside a filtered view lands in that area | One line in `submitCapture` passing `filter.lifeAreaId` into the already-tested `captureAreaFields` | plan Level 2 grep, Level 4 item 9 |
+| 40-character name overflow at 375 px (the `Chip` exception) | Layout measurement; Vitest runs in workerd with no DOM | plan Task 6, chip-overflow-measurement.md |
+| AC-18 on a real production snapshot | A script run against data that does not exist yet; the synthetic-fixture run is plan Task 8 | c6-restore-drill.md, `REAL SNAPSHOT RUN: OWED` |
+
+## Test files written this session
+
+Created: (none — both changes extend existing files, per the plan's Notes).
+
+Updated:
+- test/task-filter.test.ts
+- test/life-area-assign.test.ts
+
+Not touched: every other file in test/ (a read-only search of test/ and src/ found that test/task-filter.test.ts
+is the ONLY test that imports `task-filter`, builds a literal `TaskFilter` or asserts an exact `EMPTY_FILTER` /
+`toQuery` string; no test imports anything from src/app, so the client's `listTasks` is untested and the plan adds
+no request-shape change; test/life-areas-task-routes.test.ts hand-writes `?lifeAreaId=` first in server URLs, which
+is server-side and order-irrelevant), the three earlier manifests, and every production file.
+
+## Notes for the reviewer
+
+Expected RED reasons before the Implementer. The writer has no run tool; a READ-ONLY run of the two files was
+delegated (it wrote nothing) purely to confirm that no syntax, transform or import error was introduced — the
+authoritative dynamic check remains test-reviewer's R-RED-LEGITIMATE. Counts after revision attempt 2: 74 tests,
+53 passing, 21 failing, no file failing to load. The delegated read-only run observed 75 / 54 / 21 before the
+duplicate guard was dropped (see "Deliberately NOT appended" below); the removed case was GREEN by design, so the
+red count is unchanged.
+
+- test/life-area-assign.test.ts (6 new cases, all RED): `decideAreaFilterChip is not a function` — the named
+  export does not exist yet, which is `undefined` under the Vite SSR transform, so the file still loads and the 26
+  pre-existing cases stay green. No other RED reason is expected until plan Task 2.
+- test/task-filter.test.ts (15 RED, all at the assertion, none a load error), until plan Task 1:
+  - the updated exact-shape case ("EMPTY_FILTER has all six dimensions null"): `lifeAreaId: null` is missing from
+    the received object — the shape genuinely changes;
+  - 8 toQuery cases: the area is not emitted (received `""` or the string without `lifeAreaId=...`);
+  - 5 activeCount cases: the area is not counted (`0` for an id and for `"none"`, `3` for
+    status+priority+range+area, `1` for range+area, `0` for q+area);
+  - the composes-with-the-three-chips case: the query lacks the trailing `lifeAreaId=...`.
+- `tsc -b` over test/ additionally reports the unknown `lifeAreaId` key on `TaskFilter` literals and the unknown
+  export `decideAreaFilterChip` until Tasks 1 and 2, as it did for the earlier phases (by design; vitest does not
+  typecheck).
+
+Cases GREEN before the Implementer, on purpose (6 new + 3 updated + the pre-existing ones). Each pins the property
+the plan names as the defect to prevent, so an over-eager implementation fails it — they are guards, not trivial
+asserts:
+- activeCount "still counts q for nothing on its own": an implementation that "fixes" `q` to count while adding the
+  area fails it.
+- isChipActive "reads no chip as pressed because of an area" and "still reads a chip from its own dimension when
+  an area is set beside it": an implementation that makes a chip's pressed state depend on the area fails them.
+- toggleChip "leaves the area exactly as it was", "keeps the area when a chip is switched off again" and
+  "carries Sem área through a toggle as the literal none, never as null": an implementation that rebuilds the
+  filter key by key (dropping the area), that clears the area on a toggle, or that collapses `"none"` to `null`
+  (the plan's warning about `areaChoiceValue` / `lifeAreaIdFromChoice`, which are right for the Task sheet and
+  wrong for the filter) fails them.
+- The three updated literal cases (the fixed-order query, "is three ... when no area is set", "touches no dimension
+  but its own") stay green at runtime because the added key is `null`; their TS type errors until Task 1 are the
+  by-design `tsc -b` signal.
+
+Assertions that go beyond the literal PRD text, each taken from the plan or from a rule it names, so R-IMPL-LEAK
+can judge them:
+- The area is emitted LAST, after `q` — plan Task 1 and Notes ("the area last, every earlier parameter in its old
+  place"); the exact six-dimension string is the plan's own pinned value. The per-neighbour table is the same rule
+  one pair at a time.
+- A range beside an area counts 2 — AC-13's "counts it as one active filter" composed with the existing "a range
+  is ONE period" rule (test/task-filter.test.ts "counts a date range as ONE period").
+- `"none"` stays `"none"` through a toggle and is emitted as `lifeAreaId=none` — AC-13 and the plan's Task 3
+  ("the chip value IS the filter's own value; no mapping").
+- The three-taps-plus-area composition — plan Notes: "`toggleChip` ... carries the area through untouched" with the
+  existing three-taps case as its model.
+- `decideAreaFilterChip` never returns `absent` for an applied filter, and never mutates its argument — plan
+  AC-A3 ("an applied narrowing filter is never hidden") and Notes ("the `areas` argument is left unchanged").
+
+Names, shapes and values taken from the plan rather than the PRD (PRD AC-13 names behaviour; AC-21 is manual and
+names no function): `decideAreaFilterChip(areaFilter, areas)` exported from src/shared/life-area-assign.ts and its
+four result kinds `absent` / `no-area` / `area` (with `name`) / `unknown`. No pt-BR sentence is pinned; the only
+pt-BR in the new cases is the product term *Sem área* in titles and the test-data area names `Casa`, `Ética`,
+`Trabalho` (the file's existing fixtures).
+
+Deliberately NOT appended, to avoid a second copy of an assertion that already exists (R-DUPLICATE): the plan's
+first two pinned cases, "`EMPTY_FILTER.lifeAreaId` is `null`" and "`toQuery(EMPTY_FILTER)` is `""`". The first is
+carried by the updated exact-shape case at :237 (a missing key fails it), the second by the unchanged case at :35.
+Nor an "unset area beside another dimension emits `?status=open` and no `lifeAreaId` key" case: an earlier draft of
+this suite carried one and test-reviewer's R-DUPLICATE citation dropped it on revision. Once `EMPTY_FILTER` carries
+`lifeAreaId: null`, `toQuery({ ...EMPTY_FILTER, status: "open" })` at :39 is that very input, and the updated literal
+at :44-60 sets `lifeAreaId: null` explicitly beside three other dimensions, so an implementation that emits
+`lifeAreaId=null`, `lifeAreaId=` or `lifeAreaId=undefined` for the unset case (which would narrow every unfiltered
+load to a 400 on the server) already fails :35, :39 and :44-60. The case was new this session, not an existing test,
+so no ledger row is owed for it.
+
+Deliberately NOT pinned, because neither the PRD nor the plan fixes it: `toQuery` with `lifeAreaId: ""` (the plan's
+Task 1 emits the key for any non-null value, and the sheet never produces an empty string; the server already
+answers an empty `lifeAreaId=` with 400, covered by test/life-areas-task-routes.test.ts); percent-encoding of an
+area id (ids are UUIDs and `URLSearchParams` is already pinned for the other dimensions); the neutral *Área* label.
+
+Not encoded as tests, by the PRD's own TDD routing and the methodology's scope: the visual and interaction clauses
+listed above, the sibling-only-imports and storage-free scans (plan Level 2 shell checks), the foreground-refetch
+fix, and every React wiring change (src/app is outside the test project).
+
+## Lifecycle ledger
+
+Every UPDATE or DELETE performed this session, one row each. The first four rows are the legitimate extensions
+the plan's Notes name; each KEEPS every assertion it had, with the same expected values, apart from the one added
+key and the retitle recorded. The last two rows are additive blocks appended beside existing cases.
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| UPDATE | EXISTING_TEST_UPDATED | test/task-filter.test.ts: describe "toQuery" > "carries every set dimension in one query string, in a fixed order" (original lines 44-56, now 44-60) | Driving AC: life-areas PRD AC-13 (plan AC-A1): `TaskFilter` gains a required `lifeAreaId` key, so the literal `const filter: TaskFilter = { ... }` gains `lifeAreaId: null` to remain a whole filter. The expected string `?status=open&from=2026-08-01&to=2026-08-24&priority=high` is unchanged (an unset area emits nothing). Title unchanged; nothing dropped or loosened |
+| UPDATE | EXISTING_TEST_UPDATED | test/task-filter.test.ts: describe "activeCount" > "never exceeds three", retitled "is three for status, priority and a two-ended range together when no area is set" (original lines 112-116, now 116-132) | Driving AC: life-areas PRD AC-13 (plan AC-A1): the inline `activeCount({ ... q: null })` literal gains `lifeAreaId: null`; the old title stops being true because the area is a fourth countable dimension (range 0 to 4), so it is retitled as the plan instructs. The assertion `toBe(3)` for the same five original values is unchanged and still pins that an unset area adds nothing; the new bound of four is pinned by the appended "adds the area to status, priority and a range: four dimensions". Old title -> new title is recorded here so a name-based diff can pair them |
+| UPDATE | EXISTING_TEST_UPDATED | test/task-filter.test.ts: describe "toggleChip" > "touches no dimension but its own" (original lines 160-177, literal at 164-170, now literal at 184-191) | Driving AC: life-areas PRD AC-13 (plan AC-A1): the `const rich: TaskFilter = { ... }` literal gains `lifeAreaId: null`. Both expectations (`{ ...rich, priority: "high" }`, `{ ...rich, status: "open" }`) are unchanged. The SET-area counterpart is appended, not folded in here |
+| UPDATE | EXISTING_TEST_UPDATED | test/task-filter.test.ts: describe "purity" > "EMPTY_FILTER has all five dimensions null", retitled "EMPTY_FILTER has all six dimensions null" (original lines 215-226, now 237-264) | Driving AC: life-areas PRD AC-13 (plan AC-A1): the exact shape of `EMPTY_FILTER` genuinely changes — the same reasoning the case's own comment records for the text-search phase. The `toEqual` keeps every key it named (all asserted `null`) and gains `lifeAreaId: null`, so it is STRICTER, not weaker: it still refuses any further key. Old title -> new title recorded for a name-based diff |
+| UPDATE | EXISTING_TEST_UPDATED | test/task-filter.test.ts (new top-level `const AREA_A` and new describes "toQuery — lifeAreaId (life-areas PRD AC-13)", "activeCount — the area counts once (life-areas PRD AC-13)", "isChipActive and toggleChip — the area rides along untouched (life-areas PRD AC-13)"; additive, appended after the "purity" describe, no import change) | Driving AC: life-areas PRD AC-13 (plan AC-A1): the new dimension's emitted parameter and its position, its count, and its carriage through the chips. Every pre-existing assertion outside the four rows above is preserved verbatim; none edited, dropped or loosened |
+| UPDATE | EXISTING_TEST_UPDATED | test/life-area-assign.test.ts (the import gains `decideAreaFilterChip`; new describe "decideAreaFilterChip — whether the applied area chip shows and what names it (PRD AC-21)", appended after the last describe) | Driving AC: life-areas PRD AC-21 (plan AC-A3): `decideAreaFilterChip` is the pure decision behind the applied chip. Additive; every one of the 26 pre-existing cases (original lines 46-202, now 47-203) is preserved verbatim; none edited, dropped or loosened |
+
+No DELETE (OBSOLETE_TEST_REMOVED or REDUNDANT_TEST_REMOVED) was performed this session.
+
+## Formatting Outcome
+
+Not run by the writer: this agent has no shell tool in this session. Both touched files were hand-formatted to
+.prettierrc (printWidth 100, double quotes, trailing commas "all", 2-space indent, lf). A read-only
+`npx prettier --check test/task-filter.test.ts test/life-area-assign.test.ts` (run by a delegate, writing
+nothing) reported "All matched files use Prettier code style!" for both. Per methodology.md `formatter_cmd`, the
+command layer should still run `npx prettier --write test/task-filter.test.ts test/life-area-assign.test.ts`
+(scoped to those two files, never `.`) before the reviewer.
+
+Command-layer result: formatted — `npx prettier --write` (discovery source: methodology.md `formatter_cmd`), scoped to the two files above, exit 0; Prettier reported both `(unchanged)`.
+
+## Status
+
+*Approved: 2026-10-12*
+*Status: APPROVED*

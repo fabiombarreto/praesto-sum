@@ -13,6 +13,7 @@ import { firstOccurrence, occurrenceReminderInstants } from "../../shared/recurr
 import { createDb } from "../db/client";
 import { recurrenceSeries, reminders, tasks, type Task } from "../db/schema";
 import { toSeriesAdherenceDto, toSeriesDto, toTaskDto } from "../dto";
+import { checkLifeAreaId } from "../life-area-check";
 import { findOpenOccurrenceId, loadClosedRowsBySeries } from "../series-closed-rows";
 
 /**
@@ -146,7 +147,13 @@ seriesRoutes.post("/", async (c) => {
   }
 
   const description = input.description ?? null;
-  const lifeAreaId = input.lifeAreaId ?? null;
+
+  // An id that matches no area is a 400 naming `lifeAreaId` (life-areas AC-10),
+  // refused before anything is written — never the foreign key's 500.
+  const db = createDb(c.env);
+  const area = await checkLifeAreaId(db, input.lifeAreaId);
+  if (!area.ok) return badRequest(c, area.error);
+  const lifeAreaId = area.lifeAreaId;
 
   const seriesId = crypto.randomUUID();
   const occurrenceDate = firstOccurrence({
@@ -165,7 +172,6 @@ seriesRoutes.post("/", async (c) => {
   const taskId = crypto.randomUUID();
   const reminderInstants = occurrenceReminderInstants(occurrenceDate, reminderOffsets, timezone);
 
-  const db = createDb(c.env);
   const [[seriesRow], [taskRow]] = await db.batch([
     db
       .insert(recurrenceSeries)
@@ -363,12 +369,12 @@ seriesRoutes.patch("/:id", async (c) => {
   }
 
   if (Object.hasOwn(body, "lifeAreaId")) {
-    const lifeAreaId = body.lifeAreaId;
-    if (lifeAreaId !== null && typeof lifeAreaId !== "string") {
-      return badRequest(c, "A área da vida deve ser texto ou nula (lifeAreaId)");
-    }
-    seriesPatch.lifeAreaId = lifeAreaId;
-    taskPatch.lifeAreaId = lifeAreaId;
+    // The area must exist (life-areas AC-10). Like every validation here, this
+    // runs before the single `db.update` below, so an unknown id writes nothing.
+    const area = await checkLifeAreaId(db, body.lifeAreaId);
+    if (!area.ok) return badRequest(c, area.error);
+    seriesPatch.lifeAreaId = area.lifeAreaId;
+    taskPatch.lifeAreaId = area.lifeAreaId;
     touchesTemplate = true;
   }
 

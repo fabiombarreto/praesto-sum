@@ -1,0 +1,20 @@
+{
+  "run_id": "c7214817-b4e0-40c2-8a1b-a3bb10892499",
+  "attempt": 1,
+  "tier": "unit",
+  "framework": "vitest",
+  "outcome": "PASSED",
+  "duration_ms": 42774,
+  "counts": {
+    "passed": 1585,
+    "failed": 0,
+    "skipped": 0,
+    "total": 1585
+  },
+  "failures": [],
+  "coverage": null,
+  "artifacts": {
+    "junit_xml": "C:\\repos\\assistente-pessoal\\.worktrees\\life-areas\\PRPs\\reports\\life-areas\\phase-2\\attempts\\test-1\\junit.xml"
+  },
+  "generated_at": "2026-10-12T04:17:38.839Z"
+}

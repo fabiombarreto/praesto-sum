@@ -1,0 +1,17 @@
+{
+  "run_id": "12558650-a464-4f1c-ab39-17fc1014d23e",
+  "reviewed_at": "2026-10-12T18:19:04.290Z",
+  "base_branch": "main",
+  "verdict": "APPROVED",
+  "analyzed_files": 14,
+  "concerns": [],
+  "notes": [
+    {
+      "type": "scan_path",
+      "path": "pathspec"
+    },
+    "ledger loaded: test-suite.diff and test-suite-phase-2/3/4.diff, all APPROVED; UPDATE rows only, zero DELETE rows; the 9 removed test-diff lines are 2 retitles (net removed 0) and widened imports/fixtures, each backed by a ledger row",
+    "phase-3 junit (1693) vs phase-4 junit (1719): 2 retitled cases replaced, 26 purely additive, 89 files in both, 0 skipped; 1693 + 26 = 1719",
+    "coverage baseline unavailable (coverage null in records); attempt 1 ABORT_INFRA produced no record; attempt 2 GREEN"
+  ]
+}
