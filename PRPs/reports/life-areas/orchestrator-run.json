@@ -202,5 +202,8 @@
     "unit_status": "in-progress (AC-18 on a real production snapshot and AC-24 device proof OWED)",
     "end_tree": "18562e22cce116c613b9988d13af1af7290ee62c"
   },
-  "pr_url": "https://github.com/fabiombarreto/praesto-sum/pull/12"
+  "pr_url": "https://github.com/fabiombarreto/praesto-sum/pull/12",
+  "merged_at": "2026-10-18T22:56:06Z",
+  "approve_outcome": "COMPLETE",
+  "docs_outcome": "APPROVED"
 }
