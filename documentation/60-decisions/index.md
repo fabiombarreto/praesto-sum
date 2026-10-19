@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-10-11
+last_updated: 2026-10-19
 review_trigger: "an ADR is created or changes state, or a pending decision is added, reordered or resolved"
 ---
 
@@ -44,3 +44,4 @@ Decision 4 was resolved on 2026-08-04 by [ADR-0007](ADR-0007-google-calendar-bid
 | [ADR-0013](ADR-0013-swap-web-push-for-webcrypto-web-push.md) | Swap `web-push` for `@block65/webcrypto-web-push` — supersedes ADR-0005's naming of `web-push` | accepted | 2026-09-07 |
 | [ADR-0014](ADR-0014-dateless-tasks-can-repeat.md) | A Task without a date can repeat — `dateMode: "none"` | accepted | 2026-10-08 |
 | [ADR-0015](ADR-0015-life-areas-owner-named-single-membership.md) | Life Areas are owner-named, single-membership groupings; deleting one unassigns its items | accepted | 2026-10-11 |
+| [ADR-0016](ADR-0016-event-storage-model-sync-aware.md) | The Event is stored as instants plus a zone, with its content hash on the row and its sync link in a table that outlives it | accepted | 2026-10-19 |

@@ -1,6 +1,6 @@
 ---
 status: draft
-last_updated: 2026-10-12
+last_updated: 2026-10-19
 review_trigger: "a new domain concept appears, an ambiguity is resolved, or the glossary changes"
 ---
 
@@ -51,12 +51,11 @@ Something the owner intends to do; it has no fixed position on the calendar by i
 Something that occupies a specific position in time on the calendar.
 
 - Title
-- Start date/time
-- End date/time (or duration)
-- Location (optional)
-- Life Area it belongs to
-- Linked Tasks (zero or more — N:N, resolved 2026-08-03)
-- **Provenance** ([ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md), first-class from birth): `source` (`local` | `google` — a domain fact, it changes what the UI allows), `all_day` (Google's all-day events have an *exclusive* end date), and an IANA timezone per Event. External linkage (Google ids, etag, content hashes, sync state) lives in a **separate** `event_sync_links` table, never as columns on Event — abandoning the integration must be dropping a table, not altering the core entity
+- Description (optional) and Location (optional)
+- Start date/time and end date/time — a timed Event holds two UTC instants plus its IANA zone; an all-day Event holds local days with an *exclusive* end ([ADR-0016](../60-decisions/ADR-0016-event-storage-model-sync-aware.md), 2026-10-19). The end is mandatory in storage; the owner may leave it empty and the form or the API fills it (start + 1 h, or the next day)
+- Life Area it belongs to — *deferred (2026-10-19): unit 14 ships Events without an area, because unit 13's exit signal can revert Life Areas; adding the column later is a plain `ADD COLUMN`*
+- Linked Tasks (zero or more — N:N, resolved 2026-08-03) — unit 20
+- **Provenance** ([ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md), first-class from birth): `source` (`local` | `google` — a domain fact, it changes what the UI allows), `all_day` (Google's all-day events have an *exclusive* end date), and an IANA timezone per Event. The Event's own **content hash** is a property of its content and lives on the Event row, written by one repository function ([ADR-0016](../60-decisions/ADR-0016-event-storage-model-sync-aware.md), amending the earlier wording that put hashes in the link table). External linkage (Google ids, etag, the sync baseline `synced_content_hash`) lives in a **separate** `event_sync_links` table, never as columns on Event — abandoning the integration must be dropping a table, not altering the core entity. A link whose Event is gone (`event_id` null) is the pending deletion in Google
 - Recurrence via **Recurrence Series** + **Event Exceptions** ([ADR-0006](../60-decisions/ADR-0006-recurrence-model.md)): the recurring Event is one master record; occurrences are expanded virtually over the visible window, never materialized; "only this" edits become exception records
 
 ### Reminder

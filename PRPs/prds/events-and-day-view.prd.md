@@ -1,0 +1,301 @@
+# Events and the Day View
+
+```
+**Decision Gate**
+- Active context: none
+- Activated criteria: before any planning (a PRD that downstream plan, test and implement stages consume); domain rules for events (a new entity, its provenance and its time model), tasks (dated Tasks join the day view) and life-areas (Events deliberately take no area yet); a new table and migration over the owner's real data; a new API surface and a widened Google read route; export and restore (FR-042, chore C6); shared UI (Hoje's Agenda, a new route, a new sheet, search)
+- Decisions found: ADR-0007 (the Event is born sync-aware: provenance, all-day, IANA zone, content hash, a separate `event_sync_links` table; dirty is `content_hash <> synced_content_hash`; limits L1–L3; closed mirror inventory); ADR-0006 (recurrence is unit 17 and expands in local time; `recurrence.ts` is reused unchanged); ADR-0003 (one Worker, D1, export binding, no sync engine); ADR-0009 (visible copy pt-BR, everything else English); ADR-0015 (Events take an area only after unit 13's exit signal is settled); ADR-0013 and the 2026-09-10 claim-before-send entry (the cron is untouched); [2026-08-29] an APPROVED PRD's phase table may only grow with a dated amendment note; domain-model invariants 2, 6, 7 and 8; roadmap notes on units 14, 16 and 17
+- Applicable anti-patterns: Using `updated_at` as the sync dirty flag; Field-level merge of Events; Treating absence in a full re-sync as a deletion; CRDT or custom sync engines (the link table is provider identity, never a change-log or tombstone store); Mirroring Tasks, Reminders or Life Areas to Google; Mirroring Google's own reminders, or third-party attendees; Re-serializing a recurrence rule Praesto cannot express; Hand-duplicated entity types (the Event DTO lives once in `src/shared/api.ts`, mapped in `src/worker/dto.ts`); Glossary synonym drift (Event in code and docs, *Compromisso* only as pt-BR copy); Portuguese in artifacts; Editing accepted ADRs; Weakening tests to force green
+- Applicable architectural rules: one Worker serves everything; types flow `src/worker/db/schema.ts` → `src/worker/dto.ts` → `src/shared/api.ts`; migrations only by drizzle-kit + wrangler and reviewed by hand (`PRAGMA defer_foreign_keys` only for a table rewrite); every `/api/*` route behind the bearer gate; `src/shared/` carries no DOM or Worker globals; `src/shared/recurrence.ts` and `src/shared/adherence.ts` stay unchanged; the export completeness guard fails if a table is in neither list; UI changes run the `ui-ux-guidelines.md` review checklist; roadmap rule 2 and the phase-boundary rule are knowingly excepted, see the Decisions Log
+- Result: PROCEED
+```
+
+## Problem Statement
+
+Praesto holds the owner's Tasks and shows his Google Calendar read-only, but it cannot hold a commitment of its own: anything that happens at a time of day has to be created, edited and checked in Google Calendar, and there is no place in Praesto that shows a given day's commitments next to the Tasks dated that day. The cost of leaving it is that Praesto stays an app for what he must do and never becomes the place where he plans his day, which is the project's Phase 2 goal, and that unit 15 (writing to Google) cannot start: the Event entity does not exist, and retrofitting its sync-readiness later would be a migration over his real commitments.
+
+## Evidence
+
+- `documentation/50-planning/roadmap.md:67` — unit 14's own outcome and exit signal, verbatim: "The day view shows all THREE sources (local Events, dated Tasks, Google Events) through the SAME range function, and the owner created a local commitment without missing any field Google has"; `:80` — "Unit 14 must be born sync-aware … Costs ~1 day now; retrofitting it in unit 15 would be a migration over the owner's real life."
+- `documentation/20-requirements/functional-requirements.md:53-56` — FR-020 to FR-023 (create with title, date and start time; edit any attribute; delete; see a day's Events chronologically), all Must; `:71` FR-040 (search Tasks **and Events**), `:73` FR-042 (export all personal data), traceability `:115` ("extended to Events in unit 14").
+- `documentation/60-decisions/ADR-0007-google-calendar-bidirectional-sync.md:17` — the owner's request: "I want to sync my Google calendar with this application. This application must be able to read, create, edit and delete data in the Google calendar."; its Consequences require the Event to be born sync-aware.
+- `src/worker/db/schema.ts:20-22`, `:239` — `events`, `event_exceptions`, `task_events` and `reminders.event_id` are "deliberately absent"; no `event_sync_links`, no `source`, no content hash exists anywhere in the repository.
+- `src/app/components/TodayScreen.tsx:296-301` — *Hoje* feeds the range function ONE source (Tasks); Google events bypass it through `agendaForToday` and a separate Agenda region (`:920`). No screen has run the function with two real sources — only `test/day-groups.test.ts:73-222` does.
+- `src/shared/agenda.ts:58-65` and `src/worker/routes/google.ts:138` — the Google read route fetches a 7-day window but the screen narrows it to today, so a commitment on any later day is fetched and invisible.
+- `src/shared/ics.ts:90-118` — the `.ics` export holds only dated Tasks as all-day `VEVENT`s, with no time, no zone and no `DTEND`.
+- Unit 16's exit signal (`roadmap.md:69`) says the week screen "calls the SAME range function as unit 14", which today does not exist as a range function: `collectDayItems` (`src/shared/day-groups.ts:119`) groups Tasks by date relative to *today* and takes no `from`/`to`.
+- Assumption — needs validation through the owner's own use: the docs hold no first-person quote about the pain of creating commitments outside Praesto beyond the ADR-0007 request. The exit signal's second clause, "without missing any field Google has", is the validation.
+
+## Proposed Solution
+
+The owner gets a local Event — called *Compromisso* on screen — with a title, a description, a location, an all-day switch, a start, an end and a time zone, created, edited and deleted from a sheet and stored in D1. A new pure function, `itemsInRange(sources, { from, to })`, turns any list of sources — local Events, Google Events and dated Tasks — into items grouped by local day with no branch on how many sources it was given; a new route `/day/AAAA-MM-DD`, opened by tapping the date in *Hoje*'s header, shows the three sources for one day with ‹ › to step, and *Hoje*'s *Agenda* region is fed by the same function so local commitments appear beside Google's. The Event is born sync-aware as ADR-0007 demands and ADR-0016 specifies: timed Events are stored as UTC instants plus an IANA zone, all-day Events as local days with Google's exclusive end, the content hash lives on the row and is written by one repository function, `events.source` says `local` or `google`, and an empty `event_sync_links` table (whose `event_id` survives the Event's deletion as an orphan meaning "delete in Google") is shipped now so unit 15 adds code, not a migration. Export and search grow with it: the dump gains both tables, the `.ics` gains real timed `VEVENT`s, and `GET /api/events?q=` extends FR-040. This route was chosen over enriching only the Agenda (a commitment created for next Tuesday would stay invisible until Tuesday and FR-023's "a given day" would not exist) and over a time-grid calendar (a screen of its own, with no evidence the owner needs it).
+
+## Key Hypothesis
+
+We believe a local Compromisso entity, plus a day view that shows local Events, Google Events and dated Tasks through one range function, will let the owner plan and check his day inside Praesto without opening Google Calendar to create or look up a commitment, for the owner, the single user of Praesto Sum.
+We'll know we're right when, in the week after deploy, he has created at least one real commitment on his phone, sees it on `/day` and in *Hoje*'s Agenda beside his Google commitments and his dated Tasks, and reports no field he missed.
+
+## What We're NOT Building
+
+- **Writing to Google, or storing Google events in D1** — unit 15. `source = 'google'` exists in the schema and in `eventCapabilities`, but unit 14 creates only `local` rows; Google events stay a live read.
+- **Guests, Meet links, colour, busy/free, visibility, attachments** — guests are other people's PII (ADR-0007); the rest are scalars with no use yet. Reopen trigger: the owner reports missing one; each is a plain `ADD COLUMN` and the content hash is versioned.
+- **Reminders on Events** — unit 18; the form has no "warn me" control, and Google's own reminders are never mirrored.
+- **Recurrence and exceptions** — unit 17; no recurrence column exists, and `src/shared/recurrence.ts` stays unchanged.
+- **Task↔Event links** — unit 20.
+- **A Life Area on Events** — unit 13's exit signal can revert Life Areas, so coupling `events` to that table now buys a dependency on something that may be dropped; the column can be added later.
+- **The week view and a time-grid** — unit 16 calls the same range function with a week range; unit 14 ships a list for one day, not hour rows.
+- **Tomorrow's commitments on *Hoje*** — *Hoje* keeps showing today; other days live on `/day`.
+- **Overlap or conflict warnings between commitments, travel time, time-zone auto-detection.**
+- **Editing a Google event inside Praesto** — Google rows stay read-only and open in Google.
+- **Soft delete, archive or undo of a commitment** — the delete is real; the weekly snapshot (FR-043) is the safety net.
+- **Searching Google events** — they are not stored; the search finds local commitments and Tasks.
+- **Searching a commitment's location** — search reuses the shipped helper over title and description.
+- **Changing the shipped Google DTO** — it keeps milliseconds; one adapter normalises it.
+
+## Success Metrics
+
+| Metric | Target | How Measured |
+|--------|--------|--------------|
+| Real commitments the owner created himself | ≥ 1 within the week after deploy, one timed and one all-day | production export (`tables.events`) and the owner's report in the device-proof record |
+| Fields missed | 0 fields named as missing by the owner after creating a real commitment (exit signal, second clause) | the owner's report, recorded verbatim in `PRPs/reports/events-and-day-view/device-proof.md` |
+| Three sources through one function | `itemsInRange` correct and identical in shape with 0, 1, 2 and 3 sources, no source-count branch | automated tests (AC-22) |
+| Content hash correctness | 100% of stored events carry a hash equal to `computeEventContentHash` of their fields after every create and edit | automated tests (AC-4, AC-9, AC-12, AC-16) |
+| Frozen contracts | `GET /api/tasks` and `GET /api/google/events` without the new parameters are unchanged | contract tests (AC-18) |
+| Restore of the new tables | counts and every field identical, `content_hash` and `all_day` included, on a snapshot with a real event | chore C6 drill (AC-21, AC-32) |
+| Cost to unit 15 | 0 changes needed to identity, provenance, hash or link baseline columns | reviewed against ADR-0016 in the phase report (AC-33) |
+| Time wrongly shown | 0 off-by-one days on all-day events and 0 shifted instants across a DST gap or overlap | automated tests (AC-1, AC-2, AC-20) |
+
+## Acceptance Criteria (test scenarios)
+
+- **AC-1 Wall-clock to instant:** Given the zone `America/Sao_Paulo`, when the local day `2026-10-20` and time `09:30` are resolved, then the instant is 12:30 UTC of that day (epoch seconds); given `America/New_York`, `2026-11-01` at `01:30` (an hour that occurs twice) resolves to its first occurrence, 05:30 UTC; given `2026-03-08` at `02:30` (an hour that does not exist) resolves with the offset before the gap, 07:30 UTC; and the inverse split of an ordinary instant returns the same day and time.
+- **AC-2 All-day days:** Given an all-day commitment the owner enters as Monday `2026-10-26` through Tuesday `2026-10-27` inclusive, when it is resolved, then `startDate` is `2026-10-26` and `endDate` is `2026-10-28` (exclusive); a single day `2026-10-20` stores end `2026-10-21`; the display helper returns the inclusive last day; and an all-day span whose end is not after its start is rejected.
+- **AC-3 Defaults and validation:** Given the pure validator, when a timed start has no end, then the end is the start plus 3600 s; an all-day start with no end gets the next day (`2026-10-31` → `2026-11-01`, `2026-12-31` → `2027-01-01`); a blank or whitespace title, a title of 201 characters, an unknown zone (`Mars/Base`), an end before the start, and an all-day end equal to its start each return an error code naming the field, while a 200-character title, `America/Sao_Paulo` and a timed end equal to its start are accepted.
+- **AC-4 Content hash:** Given `computeEventContentHash` over title, description, location, all-day, start, end and zone, when two inputs differ only in `id`, `source` or timestamps, then the hashes are equal; when any one of the seven fields differs, the hashes differ; `""` and `null` description hash equal; surrounding whitespace in title, description or location does not change the hash; key order of the input does not matter; and a fixed documented input yields a fixed 64-character digest pinned in the test so a change of canonicalization is a visible, versioned event.
+- **AC-5 Capabilities by source:** Given `eventCapabilities`, when called with `local`, then the event is editable and deletable and does not open in Google; when called with `google`, then it is neither editable nor deletable and opens in Google; the function is an exhaustive switch over `EventSource`, so adding a value stops compiling.
+- **AC-6 The schema refuses bad rows itself:** Given the migrated test database, when rows are inserted directly (bypassing every route), then a blank title, a `source` of `outlook`, an all-day row with `start_at` set, a timed row with dates set, an all-day row whose `end_date` is not after `start_date`, a timed row whose `end_at` is before `start_at`, and a null `timezone`, `content_hash` or `all_day` are each rejected by SQL, while a valid timed row and a valid all-day row are accepted.
+- **AC-7 The link table outlives the event:** Given event E and a link row for E under calendar `c1` and external id `x1`, when a second link with the same (`c1`, `x1`) or a second link for E is inserted, then each is rejected; when E is deleted, then the link remains with `event_id` null and no other row changes; two orphan links with different external ids coexist; and a freshly migrated database holds zero rows in `event_sync_links`.
+- **AC-8 The migration is additive:** Given `migrations/` on the unit's branch, when the Node-side inspection test reads it, then exactly one new file `0007_*.sql` exists, it holds only `CREATE TABLE` and `CREATE INDEX` statements for `events` and `event_sync_links` — no `ALTER`, `DROP`, `PRAGMA` or `__new_` rebuild — and migrations `0000` to `0006` are byte-identical to `main`.
+- **AC-9 Create:** Given no events, when `POST /api/events` carries `{ "title": "  Dentista ", "startAt": <2026-10-20T12:30Z>, "endAt": <2026-10-20T13:30Z>, "location": "Clínica Sorriso" }`, then 201 with an `event` whose `title` is `Dentista`, `allDay` false, `timezone` `America/Sao_Paulo`, `source` `local`, `startDate`, `endDate` and `description` null, a UUID `id`, epoch-second `createdAt` and `updatedAt`, and a `contentHash` equal to `computeEventContentHash` of the stored fields; `{ "title": "Feriado", "allDay": true, "startDate": "2026-10-26" }` is 201 with `endDate` `2026-10-27` and `startAt` null; `startAt` alone yields `endAt` one hour later.
+- **AC-10 Create validation:** Given each of a missing or blank title, an over-long title, `allDay: true` with `startAt`, `allDay: false` without `startAt`, `endAt` before `startAt`, `startDate` `2026-02-30`, an unknown `timezone`, a `source` or `contentHash` key, and a body that is not a JSON object, when `POST /api/events` is called, then 400 with an `error` naming the field and no row is written.
+- **AC-11 Range read:** Given a timed event 2026-10-20 09:30–10:30, an all-day event covering 2026-10-26 and 2026-10-27, a timed event 2026-10-20 23:00 to 2026-10-21 01:00, a zero-duration event at 2026-10-21 08:00 and one on 2026-11-30 (all `America/Sao_Paulo`), when `GET /api/events?from=2026-10-20&to=2026-10-21` is called, then it returns the first, third and fourth, all-day first and then by start and id; `from=2026-10-27&to=2026-10-27` returns the all-day one; a missing `to`, `to` before `from`, a non-date, or a span over 62 days is 400 naming the parameter; and a request with neither a range nor `q` is 400 — the API never lists without a bound.
+- **AC-12 Edit:** Given a timed event, when `PATCH /api/events/:id` carries `{ "title": "Dentista (retorno)" }`, then 200, the title changed, `updatedAt` moved and `contentHash` differs; a PATCH carrying the stored values leaves the hash equal; `{ "allDay": true, "startDate": "2026-10-20" }` converts it (`startAt` and `endAt` null, `endDate` `2026-10-21`); an `endAt` before the start is 400 and the row is unchanged; `id`, `source`, `contentHash`, `createdAt` or a typo is 400; an unknown id is 404.
+- **AC-13 Delete:** Given an event, when `DELETE /api/events/:id` is called, then 204 and the row is gone; an unknown id is 404; and a link row pointing at it, inserted directly, survives with `event_id` null.
+- **AC-14 Source guard:** Given a row inserted directly with `source = 'google'`, when `PATCH` or `DELETE /api/events/:id` targets it, then 409 naming `source` and the row is unchanged; and no `POST` can create a `google` row.
+- **AC-15 Bearer gate:** Given no `Authorization` header or a wrong token, when any `/api/events` route is called, then 401 and nothing is read or written.
+- **AC-16 One writer, hash always right:** Given a create followed by three edits, when the row is read after each, then its `content_hash` equals the recomputed hash every time; every `/api/events` call leaves the count of `event_sync_links` unchanged; and inspection of `src/worker/routes/` shows no route computes the hash or imports the link table — only the repository function writes events.
+- **AC-17 Search:** Given events titled `Consulta dentista` and `Reunião` and one whose description reads `levar exames da consulta`, when `GET /api/events?q=consulta` is called, then two events come back; `q=CONSULTA dentista` returns one (every word must match); `q=reuniao` matches `Reunião`; a one-character `q` is 400 exactly as on `GET /api/tasks`; `q` composes with `from` and `to`; and without a range the match spans all dates, most recent start first, at most 100.
+- **AC-18 Google window and frozen contracts:** Given the shipped routes, when `GET /api/google/events` is called with no parameters, then it answers the same 7-day window as today; with `from` and `to` it answers exactly that window; a span over 31 days or `to` before `from` is 400; and `GET /api/tasks` without new parameters is byte-identical, with `test/task-list-contract.test.ts` and the Google route tests unmodified.
+- **AC-19 Export dump:** Given one event and no links, when `GET /api/export` is called, then `tables.events` holds the event field for field including `contentHash` and `allDay`, `tables.event_sync_links` is an empty array, `formatVersion` is still 1, and the completeness guard passes with both tables listed — the guard test and its expected lists are updated, never loosened.
+- **AC-20 Export `.ics`:** Given a timed event 2026-10-20 09:30–10:30 `America/Sao_Paulo` and an all-day event 2026-10-26 to 2026-10-28 (exclusive), when `GET /api/export.ics` is called, then the timed one is a `VEVENT` with `DTSTART:20261020T123000Z`, `DTEND:20261020T133000Z`, a UTC `DTSTAMP`, `UID` `<id>@praesto.local`, an escaped `SUMMARY` and, when present, `DESCRIPTION` and `LOCATION`; the all-day one has `DTSTART;VALUE=DATE:20261026` and `DTEND;VALUE=DATE:20261028`; neither carries the "originally a to-do" comment; lines are CRLF and folded at 75 octets; and the dated Tasks still produce exactly the `VEVENT`s they produce today.
+- **AC-21 Restore drill on a fixture:** Given a snapshot taken from a local worker holding one timed and one all-day event created through the real routes, when `scripts/restore-drill.mjs` rebuilds it, then the row counts match, every field of every row is identical — `content_hash` and the 0/1 `all_day` included — and the exit code is 0; the result is recorded under `PRPs/reports/events-and-day-view/`.
+- **AC-22 One range function, three sources:** Given `itemsInRange` and the range 2026-10-20 to 2026-10-22, when it is called with no sources, with a local-events source only, with a Google source only, and with local Events, Google Events and open dated Tasks together, then each call returns one entry per day of the range, a multi-day all-day event appears on every day it covers, a timed event crossing midnight on both days, within a day all-day items come first, then timed items by start, then dated Tasks as day-level items (a Task's day is `deadline` or else `scheduledDate`), and items outside the range are absent; splitting one source's items across two sources returns the same result as passing them together; the function reads no clock; the task bucketing `collectDayItems` is byte-identical for Task-only input with its existing tests unmodified; and a non-Task item can never land in `overdue`, `done` or `missed`.
+- **AC-23 *Agenda* on *Hoje* (manual):** Given one local commitment and one Google event today, when *Hoje* loads, then *Agenda · 2* counts both, collapsed it names the next one, expanded it lists all-day first and then by time, the local row is solid, has no checkbox and opens its sheet on tap, and the Google row keeps its dashed read-only look and opens in Google; given no local commitments, a Google-only day looks exactly as it does today; given Google down, the explicit unit-4 notice shows and local commitments still list.
+- **AC-24 The day route (manual):** Given `/day/2026-10-20`, when it opens, then the header shows that date, *‹* and *›* step one day and Android back returns through the visited days, an all-day strip comes first, timed commitments follow chronologically with start and end, open Tasks dated that day come last as rows without a time that open the Task on tap, the three sources are visibly distinct (local solid, Google dashed and read-only, Task unchanged from *Hoje*), a day with nothing reads *Nada neste dia.*, and a *Hoje* control returns to today when another date is shown.
+- **AC-25 Future days and degraded Google (manual):** Given a commitment created for next Tuesday, when the owner opens `/day` for that Tuesday, then it is listed and it is absent from *Hoje*'s Agenda today; given Google fails or answers partially for a date, then `/day` shows the unit-4 explicit notice, still lists local commitments and Tasks, and never reads as a free day.
+- **AC-26 Route mapping:** Given `routeFromPath` and `pathOf`, when `/day/2026-10-20` is mapped, then the route is `day/2026-10-20` and `pathOf` returns the same path; `/day/2026-02-30`, `/day/abc` and `/day` map to `today`; and every existing route maps exactly as before, with the existing route tests unmodified.
+- **AC-27 Draft and patch builders:** Given an event and the pure builders, when a draft is built from it, then its date and time parts are the wall-clock parts in the event's own zone; the create input carries instants resolved by the shared helper with an empty end already filled; the patch contains only changed fields and is empty when nothing changed; toggling all-day carries the target shape's fields; an end before the start yields the error code the sheet shows; and the sheet state keeps one draft per event for the session as the Task sheet does.
+- **AC-28 The Compromisso sheet (manual):** Given `/day` or *Hoje*, when the owner taps *Novo compromisso* on `/day`, then a sheet opens prefilled with that date (and a start of 09:00, or the next full hour when the date is today) showing in order *Título*, *Dia inteiro*, *Início* and *Fim* (date and time), *Fuso horário* (a native select, `America/Sao_Paulo` first), *Local*, *Descrição*, *Cancelar* and *Salvar*; leaving the end empty shows the resolved end; all-day hides the times; an end before the start shows an inline reason; tapping a local commitment opens the same sheet filled, with *Excluir* behind an irreversible confirmation that repeats the verb; Esc and the back gesture close it, and a closed sheet keeps its unsaved draft in memory.
+- **AC-29 Search (manual):** Given the search route and at least one matching commitment, when the owner types two words, then a *Compromissos* group lists matching local commitments with date and time, a local row opens the sheet, and no Google event ever appears; with no match the group is absent.
+- **AC-30 Offline, errors and targets (manual):** Given the device is offline or a write fails, when the owner uses the sheet, then writes are disabled offline with the unit-1 hint, a failed save keeps the sheet open with an inline persistent reason, no toast replaces it, every control is at least 48 px, the copy is pt-BR, and the UI/UX review checklist ✔/✘ for each screen touched is recorded in the phase report.
+- **AC-31 Device proof:** Given the unit deployed to production, when the owner, on his phone, creates a real timed commitment and an all-day one, edits one and deletes a test one, then opens *Hoje* and `/day`, the commitments appear beside his Google commitments and his dated Tasks, and the owner states whether he missed any field Google has; the observation is recorded in `PRPs/reports/events-and-day-view/device-proof.md`.
+- **AC-32 Restore drill on a real snapshot:** Given a production snapshot holding at least one real event, when the drill rebuilds it, then counts match and every field of every row is identical, `events` and `event_sync_links` included; and the same drill ran on the latest real snapshot before migration `0007` was applied remotely; both results are recorded under `PRPs/reports/events-and-day-view/`.
+- **AC-33 Invariants:** Given the unit's complete diff against `main`, when it is inspected and `npm run check` and `npm test` are run, then `src/shared/recurrence.ts` and `src/shared/adherence.ts` are byte-identical to `main`, the only new migration is the single drizzle-kit-generated `0007`, `scripts/check-mirror-inventory.mjs` passes, no test was removed, skipped or loosened, both commands pass, and unit 15's needs are met without a column change: identity (`calendar_id`, `external_event_id`), provenance (`source`), the content hash and the sync baseline all exist.
+- **AC-34 Documentation synced:** Given the unit's phases complete, when `documentation/` and `docs/` are inspected, then the glossary names *Compromisso* as the pt-BR copy of Event; `domain-model.md` and `docs/domain/areas/events.md` agree with ADR-0016; `ui-layout-standard.md` §2.4 and the new day route carry a dated amendment, including that the *Com hora* chip stays withdrawn because Tasks have no time of day; `docs/api-reference.md` documents `/api/events` and the `from`/`to` window of the Google route; `architecture-overview.md` and `docs/context/architecture.md` describe the new tables and modules; FR-020 to FR-023, FR-040 and FR-042 traceability is current; and the roadmap row records `shipped` or `dropped` with the date and the reason.
+
+## Open Questions
+
+- [ ] **Open Tasks only on `/day`.** Closed Tasks stay *Hoje*'s business (*Concluídas*, *Não concluídas*). Confirm on a past day that not seeing what he completed there does not bother him; the alternative is listing closed Tasks muted.
+- [ ] **A commitment crossing midnight appears on both days.** Confirm after the first real one.
+- [ ] **The length constants** (title 200, description 5000, location 200) are arbitrary — Tasks have no limits and Google documents none. Strike or change them after use; each is one constant.
+- [ ] **A native select of every IANA zone** may be long on Android. The plan measures it on the device; a short list with the owner's zone first and a search is the fallback.
+- [ ] **Default start of a new commitment** (09:00, or the next full hour today) is a guess; revisit after a week.
+- [ ] **How Google treats a wall-clock time inside a DST gap** is undocumented; unit 14 follows RFC 5545 and unit 15 must measure Google against it.
+- [ ] **Whether the date in *Hoje*'s header is discoverable enough** as the door to `/day`; the device proof asks. A second door would be a decision, not a default.
+- [ ] **Which extra scalars the owner will miss** (busy/free, visibility, colour, a video link) — only his use answers it; each is an `ADD COLUMN` plus a hash version.
+- [ ] **Chore C6** runs on the latest real snapshot before `0007` is applied to production, as the roadmap lists unit 14 as a trigger; the dev-environment "Remote migration over existing data" steps apply even though this migration only creates tables.
+
+---
+
+## Users & Context
+
+**Primary User**
+- **Who:** the owner — the single user of Praesto Sum, on an Android phone and a Windows PC, whose commitments today live in Google Calendar.
+- **Current behavior:** he opens Google Calendar to create or edit a commitment and Praesto to see his Tasks; Praesto shows today's Google events read-only.
+- **Trigger:** a commitment comes up — an appointment, a call, a day off — and he wants it in the same place as the Tasks around it.
+- **Success state:** the commitment is created in Praesto in a few taps, shows on the right day beside his Google commitments and his dated Tasks, and nothing he is used to entering in Google is missing from the form.
+
+**Job to Be Done**
+When a commitment comes up, I want to record it and see my day — commitments and Tasks together — in the app I already open every morning, so I can plan around it without switching tools.
+
+**Non-Users**
+Anyone else (single-user system, ADR-0003) — there are no guests, invitations or shared calendars; and the capture flow, which stays Task-only and zero-friction.
+
+---
+
+## Solution Detail
+
+### Core Capabilities (MoSCoW)
+
+| Priority | Capability | Rationale |
+|----------|------------|-----------|
+| Must | Pure core: time resolution, validation, `computeEventContentHash`, `eventCapabilities` | Born sync-aware (ADR-0007) and testable without a database |
+| Must | Migration `0007`: `events` and `event_sync_links` with CHECKs and unique indexes | The entity and the unit-15 hooks, additive over real data |
+| Must | `/api/events` create, read by range, edit, delete behind the bearer gate | FR-020 to FR-022 |
+| Must | `itemsInRange` over local Events, Google Events and dated Tasks | The exit signal and unit 16's contract |
+| Must | The `/day/AAAA-MM-DD` route with ‹ › | FR-023 and the only way to see a future day |
+| Must | Local commitments in *Hoje*'s Agenda | The morning screen must show them |
+| Must | The Compromisso sheet: create, edit, delete | The owner-facing half of FR-020 to FR-022 |
+| Must | Export: both tables in the dump, timed `VEVENT`s in the `.ics`, completeness guard | FR-042 and ADR-0003's binding safeguard |
+| Should | `GET /api/events?q=` and a *Compromissos* group in search | FR-040 extended to Events |
+| Should | `from`/`to` on the Google read route | `/day` must show Google for any date |
+| Should | Restore drill on a fixture and on a real snapshot | The export is only proven by a restore (chore C6) |
+| Won't | Guests, Meet, colour, busy/free, visibility, attachments, Google reminders | See What We're NOT Building |
+| Won't | Writing to Google, recurrence, reminders, Task links, Life Area, week view, time-grid | Units 15, 17, 18, 20, 13 and 16 |
+
+### MVP Scope
+
+Phases 1–5 below: the pure core and the additive migration, the API with export and search, the range function with the Agenda and the day route, the sheet and search results, and the close-out with the device proof.
+
+### User Flow
+
+The owner opens `/day` from *Hoje*'s header date and taps *Novo compromisso* → fills *Título*, leaves *Dia inteiro* off, sets *Início* and *Fim* and optionally *Local* and *Descrição* → *Salvar* → the commitment sits in the day's list in time order, beside his Google commitments and the Tasks dated that day → next morning *Hoje*'s *Agenda · 3* shows it with the others → he taps it to move it an hour, or *Excluir* after a confirmation.
+
+---
+
+## Technical Approach
+
+**Feasibility:** MEDIUM — the pieces repeat shipped patterns (a Drizzle table with CHECKs, a hand-validated Hono route, a pure shared module, a `Sheet`), but together they add a new entity, a migration over real data, a pure function that replaces an ad hoc Agenda path, a new route and a time model whose edge cases (all-day exclusive end, DST) are easy to get silently wrong.
+
+### TDD routing
+
+Current value of `tdd` in `docs/context/methodology.md`: **true**. Test-first ordering — the test pair (test-writer/test-reviewer) produces the initial test suite from the Acceptance Criteria above, before the Implementer runs. AC-23, AC-24, AC-25, AC-28, AC-29 and AC-30 are the manual/UI half and produce no test file, per the methodology's "UI stays manually verified" line; their decidable logic (AC-22, AC-26, AC-27) is extracted into `src/shared` and tested first. AC-8 is an inspection test in the Node-side `docs` project; AC-21 and AC-32 are script runs; AC-31 is an observation and AC-34 an inspection of the documentation; none of those is a Vitest-in-workerd file.
+
+### Architecture Notes
+
+- **Schema (Drizzle, `src/worker/db/schema.ts`):** `events` — `id` text PK; `title` text NOT NULL with a non-blank CHECK; `description`, `location` nullable text; `all_day` boolean NOT NULL; `start_at`, `end_at` nullable epoch-second timestamps; `start_date`, `end_date` nullable `YYYY-MM-DD` text; `timezone` text NOT NULL; `source` text enum `local | google` NOT NULL default `local` with a named CHECK; `content_hash` text NOT NULL; `created_at`, `updated_at` as every table. One named shape CHECK makes the timed and all-day shapes mutually exclusive and enforces `end_at >= start_at` and `end_date > start_date`. Indexes on `start_at` and `start_date` serve the range read. `event_sync_links` — `id` text PK; `event_id` nullable, unique, FK to `events.id` `ON DELETE SET NULL`; `calendar_id`, `external_event_id` NOT NULL with a unique index on the pair; `etag`, `synced_content_hash`, `synced_at` nullable. Enums are duplicated as TypeScript union plus SQL CHECK, the project pattern.
+- **Time model (ADR-0016):** timed = two UTC instants plus the zone; all-day = local days with an exclusive end. The wire carries instants in seconds and the zone; the client resolves wall-clock parts through the shared helper and the server validates consistency. `localPartsToInstant` (`src/shared/dates.ts:187`) is the starting point; the plan verifies it against the RFC 5545 gap and overlap rule of AC-1 and, if it differs, adds a new function in `src/shared/events.ts` rather than altering an export that Reminders already use.
+- **Pure core in `src/shared/events.ts` and `src/shared/event-hash.ts`:** limits, `validateEventInput`, `resolveEventTimes`, `displayEndDay`, the defaults, `eventCapabilities` (an exhaustive switch over `EventSource`) and the async `computeEventContentHash` (SHA-256 through Web Crypto, a fixed field order, trimmed, `""` ≡ `null`, a `v1` prefix). No DOM, no Worker imports; imported by the route and the screens so the two cannot drift. `src/shared/recurrence.ts` and `adherence.ts` are not touched.
+- **Repository:** one function in `src/worker/` (the plan names it) is the only writer of `events`; it computes the hash and sets `updated_at`. Routes call it; no route computes a hash or imports `event_sync_links`.
+- **Wire:** `EventDto`, `CreateEventInput`, `UpdateEventInput` and `EDITABLE_EVENT_FIELDS` in `src/shared/api.ts`, mapped once in `src/worker/dto.ts`. `EventDto` carries seconds and `contentHash`; the shipped `CalendarEventDto` (`src/shared/api.ts:214`, milliseconds) is untouched, and one adapter in `src/shared` normalises both into the day items.
+- **Routes:** `src/worker/routes/events.ts`, mounted behind `requireToken` beside the other routers (`src/worker/index.ts:29-38`), with hand validation, a `readJson` guard, a PATCH allowlist and `{ error }` bodies as `life-areas.ts`. `GET` requires a bounded range or `q`. Search reuses `buildSearchClauses` (`src/shared/search.ts:163`) unchanged over `events.title` and `events.description`.
+- **Google route:** `src/worker/routes/google.ts` accepts optional `from` and `to` (a span of at most 31 days) and keeps the 7-day default; `eventWindow` already builds a window from a start day and a length.
+- **Range function:** `src/shared/day-range.ts` exports `itemsInRange(sources, { from, to })`. `src/shared/day-item.ts` gains a `local` variant of `DayItem` (and `DaySource`); `bucketOf` in `src/shared/day-groups.ts` becomes an exhaustive switch so an event can never fall into `done` silently — today it is an if-ladder (`:57-64`). `collectDayItems` keeps its signature and behaviour for Tasks. `agendaForToday` becomes a thin caller of `itemsInRange` for today's range, with the Google-only rendering unchanged.
+- **Export:** `events` and `event_sync_links` are added to `EXPORTED_TABLE_NAMES` (`src/worker/db/export-manifest.ts:15-21`), with a mapper in `dto.ts`, the envelope in `src/shared/export.ts` and the route in `src/worker/routes/export.ts`; `formatVersion` stays 1 because the change only adds keys. `buildTasksIcs` (`src/shared/ics.ts:90`) gains an events input, with timed `VEVENT`s in UTC and all-day ones with `VALUE=DATE` and an exclusive `DTEND`. `test/isolation.ts`'s reset helper wipes both new tables, children first.
+- **Restore:** `scripts/restore-drill.mjs` reads rows back by `WHERE id = ?` (`:118`), which is why both tables have an `id` column; it inserts tables in snapshot order, so `events` precedes `event_sync_links`. `src/shared/restore-values.ts` already maps booleans to 0/1.
+- **UI:** `AppRoute` gains `day/${string}` ↔ `/day/AAAA-MM-DD` (`src/shared/app-route.ts:25-33`) and a `DayScreen`; `TodayScreen`'s header date becomes a control to `/day`; a local-event row sits beside `EventRow` in the Agenda; a `CompromissoSheet` reuses `Sheet`, `Button`, `Chip`/`ChipGroup` and `ConfirmView` with a pure draft and patch module following `task-edit.ts`; the search route gains a *Compromissos* group; client wrappers go in `src/app/api.ts`. The cron (`scheduled()`) enumerates no tables and is untouched.
+- **Migration:** generated by drizzle-kit as `0007`, read end to end before applying; it only creates tables, so no `PRAGMA` is needed. Before the remote apply, chore C6 runs on the latest real snapshot and the four steps of `dev-environment.md` "Remote migration over existing data" are followed. The release is `v0.14.0`, MINOR for a delivery unit, with the Cloudflare version id recorded in the Delivery history.
+- **UI/UX checklist (mandatory):** every change under `src/app/` runs `documentation/40-engineering/ui-ux-guidelines.md`'s review checklist; the ✔/✘ result is recorded in each phase report, including 48 px targets, the 375 px layout, safe areas and keyboard overlap for the sheet's date and time inputs on Android.
+
+### Technical Risks
+
+| Risk | Likelihood | Mitigation |
+|------|------------|------------|
+| A time lands an hour off across a DST gap or overlap, or an all-day event lands a day off | M | One pure helper, the RFC 5545 rule, tests on a zone with DST (AC-1), exclusive-end tests at every boundary (AC-2, AC-20); `America/Sao_Paulo` has had no DST since 2019 so the owner's own data would not reveal a bug |
+| Seconds and milliseconds mix, because the Google DTO uses milliseconds | M | Separate DTOs, one tested adapter, the new DTO documented in seconds (ADR-0016) |
+| The content-hash canonicalization drifts silently | M | A pinned golden digest and a `v1` prefix (AC-4); a field added later bumps the version |
+| Widening the range function regresses the shipped Google Agenda | M | Google-only days must look identical (AC-23); `collectDayItems` and its tests unchanged (AC-22); `agendaForToday` stays a thin caller |
+| A non-Task item is silently bucketed as `done` | M | `bucketOf` becomes an exhaustive switch (AC-22) |
+| The migration touches real data | L | CREATE-only, inspected by a test (AC-8); chore C6 before the remote apply and again on a real snapshot (AC-32); the dev-environment runbook |
+| The link table's columns are wrong for unit 15 | L | Only identity and baseline are fixed; the table is empty, so altering it later costs nothing (ADR-0016) |
+| The estimate outgrows the ceiling | M | Five phases, API-first; if the PRP plans push the unit past ~10 days, split into `events-and-day-view-a` and `-b` under roadmap rule 7 |
+| Three units `in-progress` at once overload the 1 h/day budget | L | Units 12 and 13 wait only on the owner's device proof and a week of use; no code is pending on either |
+| Date and time inputs misbehave on Android | M | Native inputs, measured at 375 px on the device; the draft survives a closed sheet |
+
+---
+
+## Implementation Phases
+
+| # | Phase | Description | Status | Repo | Parallel | Depends | PRP Plan |
+|---|-------|-------------|--------|------|----------|---------|----------|
+| 1 | Pure core and migration | `src/shared/events.ts`, `event-hash.ts`, `eventCapabilities`; the `events` and `event_sync_links` schema, CHECKs and unique indexes; migration `0007`; the test reset helper; the inspection test (AC-1..AC-8) | pending | - | - | - | - |
+| 2 | Events API, export and search | the single repository function, `/api/events`, DTOs and types, `from`/`to` on the Google route, search, dump and completeness guard, `.ics`, restore drill on a fixture, `docs/api-reference.md` (AC-9..AC-21) | pending | - | - | 1 | - |
+| 3 | The range function and the day | `itemsInRange`, the `local` day item and the exhaustive bucket switch, the `day` route, `DayScreen`, local commitments in *Hoje*'s Agenda, the header date entry, degraded states, layout-standard amendment (AC-22..AC-26) | pending | - | - | 2 | - |
+| 4 | The Compromisso sheet and search results | draft and patch builders, `CompromissoSheet` create, edit and delete, *Novo compromisso* on `/day`, the *Compromissos* group in search, offline and error states (AC-27..AC-30) | pending | - | - | 3 | - |
+| 5 | Close-out | UI/UX checklist, docs sync, release `v0.14.0`, chore C6 before the remote migration and on a real snapshot, device proof (AC-31..AC-34) | pending | - | - | 4 | - |
+
+### Phase Details
+
+**Phase 1: Pure core and migration**
+- **Goal:** the Event exists as validated, hashable data in a schema that already carries what unit 15 needs.
+- **Scope:** the pure modules and their types; the Drizzle tables, CHECKs and indexes; the generated, hand-reviewed `0007`; the reset helper; the Node-side migration inspection.
+- **Success signal:** AC-1..AC-8 green; every existing suite still green with the new migration applied.
+
+**Phase 2: Events API, export and search**
+- **Goal:** the owner's commitments can be created, read, changed, deleted, searched and taken away.
+- **Scope:** the repository function and routes; the wire types and mapper; the Google window parameters; the export manifest, envelope, dump route and `.ics`; the fixture restore drill; the contract documentation.
+- **Success signal:** AC-9..AC-21 green; `GET /api/tasks` and the default Google window unchanged.
+
+**Phase 3: The range function and the day**
+- **Goal:** one function feeds the day from three sources, and the owner can open any date.
+- **Scope:** `itemsInRange` and the day-item variant; the route and screen; the Agenda fed by the same function; the degraded Google states; the amendment to the layout standard for the new route.
+- **Success signal:** AC-22 and AC-26 green; AC-23, AC-24 and AC-25 recorded; the checklist ✔/✘ filed.
+
+**Phase 4: The Compromisso sheet and search results**
+- **Goal:** the owner can create, change and delete a commitment on his phone and find it by words.
+- **Scope:** the pure draft and patch module; the sheet and its wiring from `/day`, *Hoje* and search; the offline and failure states; the checklist for the sheet.
+- **Success signal:** AC-27 green; AC-28, AC-29 and AC-30 recorded.
+
+**Phase 5: Close-out**
+- **Goal:** the unit is deployed safely and observed working.
+- **Scope:** chore C6 before and after the remote migration; the release and its record; the documentation sync; the device proof and the owner's statement about missing fields.
+- **Success signal:** AC-33 green; AC-31, AC-32 and AC-34 recorded.
+
+---
+
+## Decisions Log
+
+| Decision | Choice | Alternatives | Rationale |
+|----------|--------|--------------|-----------|
+| D-A — Roadmap rule 2 and the phase boundary | Unit 14 opens while units 12 `repeated-miss-nudge` and 13 `life-areas` are still `in-progress` (both wait only on the owner's device proof or a week of use), and while the project's Phase 1 has not closed — two recorded exceptions in Delivery history and in the phases note | Wait for 12 and 13 to ship; wait for Phase 1's exit criterion | The owner asked to start unit 14 and confirmed both exceptions in the authoring round of 2026-10-19; units 9, 10, 11 and 13 opened the same way over their predecessors, and unit 4 was the inverse phase exception. No code is pending on 12 or 13, so the work is not on two fronts |
+| D-B — Vocabulary | The owner-facing word is *Compromisso* ("Novo compromisso"); the region stays *Agenda*; "Event" in code, API and docs | *Evento* | The roadmap and the owner say "commitments"; *evento* reads as a party. The glossary records the pt-BR copy, as *Sem área* was recorded (ADR-0009) |
+| D-C — Fields | Title (required), description, location, all-day, start, end, zone; no guests, reminders, recurrence, Task links, colour, busy/free, visibility, Meet or attachments | Add busy/free and visibility now | Guests are PII (ADR-0007); reminders, recurrence and links belong to units 18, 17 and 20; the rest are scalars to add on evidence. "Without missing any field Google has" is read as the fields the owner uses day to day. Confirmed by the owner 2026-10-19 |
+| D-D — Life Area | Events take no area in this unit | A nullable `life_area_id` now | Unit 13's exit signal can revert Life Areas; a later `ADD COLUMN` is cheap. ADR-0015 already names "Events taking an area" as a reopen trigger |
+| D-E — Time storage | Timed = UTC instants (epoch seconds) plus a never-null IANA zone; all-day = local days with Google's exclusive end shown inclusive; end mandatory in storage and filled (start + 1 h, or the next day) by the form and, for any other caller, by the API through the same shared helper | Wall-clock plus zone; an inclusive stored end; an optional stored end | An instant is unambiguous and puts DST in one helper; an inclusive end is an off-by-one at every boundary with Google and `.ics`; FR-020's optional end holds for the owner (ADR-0016) |
+| D-F — Wire | Instants in seconds and the zone; the client resolves wall-clock through the shared helper; the server validates; the Google DTO (milliseconds) is untouched with one adapter | Wall-clock on the wire; milliseconds | One unit in the codebase; the shipped contract is frozen |
+| D-G — Content hash | `computeEventContentHash` is pure and async (Web Crypto), over seven fields in a fixed order with a `v1` prefix, stored in `events.content_hash` by one repository function; the baseline lives in the link table | Hash only in the link table; no hash until unit 15 | With the link table empty, a hash only there forces unit 15 to backfill every commitment — the retrofit ADR-0007 exists to avoid. Amends the domain-model wording (ADR-0016) |
+| D-H — Link table | `event_sync_links` ships empty and unused: nullable unique `event_id` with `ON DELETE SET NULL`, a unique (`calendar_id`, `external_event_id`), `etag`, `synced_content_hash`, `synced_at`; no API route writes it; it is dumped in the export | `CASCADE`; a tombstone table; excluding it from the export | An orphan link is the pending deletion in Google as derived state (L2, L3); a cascade would lose it; the dump keeps a restore from orphaning links once unit 15 fills the table |
+| D-I — Provenance | `events.source` is `local` or `google`, with a CHECK; unit 14 creates only `local`; `eventCapabilities(source)` is pure; the API refuses to edit or delete a `google` row | A `source` only when unit 15 arrives | "A domain fact that changes what the UI allows" (ADR-0007); the column is free now and expensive later |
+| D-J — The range function and the day route | `itemsInRange(sources, { from, to })` is the one pure function; the new `/day/AAAA-MM-DD` route and *Hoje*'s Agenda call it; dated Tasks are open Tasks, day-level rows after the events; unit 16 reuses it with a week range | Only enrich the Agenda; a time-grid | Without a route a future commitment is invisible and FR-023's "a given day" does not exist; unit 16's exit signal names the same function; a grid has no evidence of need |
+| D-K — *Hoje* | The Agenda includes local commitments and still shows only today; the Google-only look is unchanged; the header date opens `/day` | Show tomorrow on *Hoje*; a second door to `/day` | *Hoje* is the measured, shipped anatomy; other days belong to the day route |
+| D-L — Create and edit | A `CompromissoSheet` in the Task sheet's pattern, opened by *Novo compromisso* on `/day` and by tapping a local row; the capture deck stays Task-only; the delete is real and asks once | Time-quick-capture in the deck; a soft delete | The deck is zero-friction capture of Tasks (vision principle 5); a commitment needs a date and a time; the weekly snapshot is the safety net |
+| D-M — Search | `GET /api/events?q=` reuses `buildSearchClauses` over title and description; a *Compromissos* group in the search route; Google events are not searched | Search location too; extend the helper | The shipped helper stays unchanged; Google events are not stored |
+| D-N — Export | Both tables in the dump, `formatVersion` stays 1, timed `VEVENT`s in UTC with `Z`, all-day with `VALUE=DATE` and an exclusive `DTEND`, `UID` `<id>@praesto.local`, no to-do comment on events | `TZID` with `VTIMEZONE`; excluding the link table | UTC needs no `VTIMEZONE` and is correct for every reader; the change only adds keys; the file stays an export, not a sync |
+| D-O — Google window | `GET /api/google/events` accepts optional `from` and `to` (at most 31 days) and keeps its 7-day default | A second route for the day | `/day` must show Google for any date; the default response is unchanged and tested |
+| D-P — DST | Wall-clock in a DST gap resolves with the offset before the gap, an overlap to its first occurrence (RFC 5545), tested on a zone with DST | Reject a time in a gap | The RFC gives the project a rule; rejecting would make an ordinary form refuse input |
+| D-Q — *Com hora* chip | Stays withdrawn: Tasks have no time of day and commitments live in the Agenda | Return it as a filter | The layout standard said it returns "only when Event ships"; a Task filter on a field Tasks lack would still name a filter the domain cannot express |
+| D-R — Restore and migration | `0007` is CREATE-only; chore C6 runs on the latest real snapshot before the remote apply and on a real snapshot with an event after deploy; the fixture drill runs in phase 2 | Skip C6 because nothing is rewritten | The roadmap lists unit 14 as a trigger; the drill is what proves the new tables restore |
+| D-S — Phases and estimate | Five phases, API-first and test-first (ADR-0008); the roadmap estimate moves from 7 to 9 days; a plan that pushes past ~10 days splits the unit (rule 7) | Four phases; keep 7 | Each phase leaves something observable: data, an API, a day, a sheet, a deployed unit; 7 was a floor made before the day route and search were counted |
+| D-T — ADR | ADR-0016 records D-E to D-L, written with the owner's approval of these choices; the domain-model Event section and `docs/domain/areas/events.md` were amended in the same session; glossary, layout standard and the other docs follow in phase 5 | Write the ADR in phase 1 | The choices are non-obvious and owner-validated now; the remaining amendments describe behaviour that exists only after the phases |
+| D-U — Draft carryover | None — all answers were gathered in the authoring round of 2026-10-19, in which the owner approved every proposed answer ("pode seguir") | - | Recorded for traceability |
+
+## Research Summary
+
+**Market Context**
+
+Evidence is thin where noted; gaps are listed rather than filled.
+
+- Google Calendar API `events` resource: writable scalars include `summary`, `description`, `location`, `colorId`, `status`, `visibility`, `transparency` (busy/free) and `sequence`; `start`/`end` hold `date` (all-day) or `dateTime` with an optional IANA `timeZone`, and `end` is "(exclusive)"; the id a client supplies must use base32hex characters, 5–1024 long — https://developers.google.com/workspace/calendar/api/v3/reference/events
+- Sub-objects that imply large scope — `attendees`, `conferenceData`, `recurrence`, `attachments`, `extendedProperties` and `reminders` — have no cheap scalar form, which is the basis of D-C — same reference page.
+- All-day events use `date`, timed ones `dateTime`, and both ends must be of the same kind; `timeZone` "has no significance for all-day events" — https://developers.google.com/workspace/calendar/api/concepts/events-calendars
+- Incremental sync, `syncToken`, `410 GONE` and deleted entries are what unit 15 uses — https://developers.google.com/workspace/calendar/api/guides/sync; `If-Match` with the etag answers `412` on a lost update — https://developers.google.com/workspace/calendar/api/guides/version-resources
+- RFC 5545: a local time in a DST gap uses the offset before the gap and an overlap refers to the first occurrence (section 3.3.5); `UID` is the persistent identifier, `DTSTAMP` must be UTC, `DTEND` may be `VALUE=DATE` — https://www.rfc-editor.org/rfc/rfc5545.html
+- RFC 8785 (JSON Canonicalization Scheme) defines deterministic bytes for hashing (sorted keys, no whitespace); it is informational and does not cover null versus empty string — https://www.rfc-editor.org/rfc/rfc8785.html
+- Prior art for hash-based two-way sync stores the hash at the last sync as a baseline, because without it a difference cannot say which side changed; a small-project source, read from a search excerpt only — https://git.bros.ninja/mike/gravity/src/branch/develop/docs/adr/adr-002-three-way-content-hash-sync-algorithm.md
+- **Gaps:** no authoritative source on null versus empty-string handling or field-order canonicalization for per-record hashes (D-G is judgment); none on how Google resolves a wall-clock time inside a DST gap (D-P follows the RFC and is an Open Question); none on what `events.insert` or `import` do when an `iCalUID` already exists; the Google pages were read through a summarizer, so enum values should be checked against the live reference when unit 15 starts.
+
+**Technical Context**
+
+- Range function today: `src/shared/day-groups.ts:57-64` (`bucketOf`, an if-ladder), `:119` (`collectDayItems`, no `from`/`to`); `src/shared/day-item.ts:31` (`DaySource = "task" | "google"`) and its `assertNeverDaySource`; `src/shared/agenda.ts:58-65`; `src/app/components/TodayScreen.tsx:296-301` (one source fed), `:920-970` (Agenda region, `EventRow`, Google-down notice); tests `test/day-groups.test.ts:73-222`, `test/day-item.test.ts:144-152`, `test/day-item-event.test.ts`.
+- Google read: `src/worker/google/client.ts` (`listEvents`, `singleEvents=true`, no pagination), `src/worker/routes/google.ts:137-138` (`WINDOW_DAYS = 7`), `:263-289`; `src/shared/google-events.ts:59-86` (the mapper, which drops description, attendees, reminders and recurrence) and `:119` (`eventWindow`); `src/shared/api.ts:195-227` (`EventMoment` in milliseconds, `CalendarEventDto`); `scripts/check-mirror-inventory.mjs` (the tripwire).
+- Time helpers: `src/shared/dates.ts:22` (`PRAESTO_TIMEZONE`), `:147` (`instantToLocalParts`), `:187-211` (`localPartsToInstant`, two-pass DST refinement, epoch seconds); `src/shared/recurrence.ts` (frozen for unit 17).
+- Schema and migrations: `src/worker/db/schema.ts:20-22`, `:155-232` (enum + CHECK convention, unique indexes), `:239`, `:426-445` (inferred types); migrations `0000`–`0006`, `0005` as the example of a hand-rewritten `PRAGMA defer_foreign_keys=ON` recreate; `documentation/40-engineering/dev-environment.md:176-196`.
+- Routes and tests: `src/worker/routes/life-areas.ts` (the newest pattern: `readJson`, allowlist, `{ error }`), `src/worker/routes/tasks.ts:64-114` (pre-DB query validation), `src/worker/dto.ts:73-81`, `src/worker/index.ts:26-38`, `test/life-areas-export.test.ts:21-48` (the workerd harness), `test/isolation.ts:39` (the reset helper that must learn the new tables).
+- Export: `src/worker/db/export-manifest.ts:15-57`, `test/export-completeness.test.ts:44-122`, `src/shared/export.ts:17-70` (`formatVersion` as the literal `1`), `src/worker/routes/export.ts:32-55`, `src/shared/ics.ts:24-118`, `src/worker/routes/export-ics.ts:19-34`, `scripts/restore-drill.mjs:49-129`, `src/shared/restore-values.ts`.
+- Client: `src/shared/app-route.ts:25-78`, `src/app/App.tsx:82-128`, `src/app/api.ts:85-148`, `src/app/components/TaskSheet.tsx`, `src/shared/task-edit.ts`, `src/shared/task-sheet.ts`, `src/app/components/SearchScreen.tsx`, `src/shared/search.ts:56-180`.
+- Docs: `documentation/40-engineering/ui-layout-standard.md:29` (the *Com hora* note) and `:31` (the Agenda stack); `documentation/30-architecture/domain-model.md` (the Event section, amended 2026-10-19); `docs/domain/areas/events.md`; `docs/api-reference.md`.
+
+---
+
+*Generated: 2026-10-19*
+*Approved: 2026-10-19*
+*Status: APPROVED*
