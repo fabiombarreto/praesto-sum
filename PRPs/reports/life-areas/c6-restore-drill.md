@@ -63,25 +63,64 @@ series that carries an area, and for the `0006` series columns, field for field.
 - `reminders` and `google_calendar_selections` were empty in this snapshot, so the drill says
   `restore path NOT exercised` for both, as it should.
 
-## REAL SNAPSHOT RUN: OWED
+## Real snapshot run #1 — the 2026-10-11 snapshot (before unit 13 was deployed): PASS, `life_areas` NOT exercised
 
-PRD AC-18 reads: "a production snapshot holding at least one `life_areas` row and one assigned
-Task". **That is NOT met.** This record claims the drill ran on a synthetic fixture and nothing
-more; AC-18 stays open until the run below is recorded here.
+Run on 2026-10-18 on the latest snapshot the weekly job had written, `~/praesto-snapshots/praesto-2026-10-11.json`
+(13,505 bytes, SHA-256 `40d64002809d0bdd848ad851ce122c69f42d305937a7d1692331c585a32079c4`, `formatVersion` 1).
+It is the owner's real data, kept off the repository; this record carries counts only. The snapshot
+already carries `nudgeMuted`, `nudgedAt` and `lifeAreaId`, so production was on `v0.12.0` (migration `0006`) when
+it was taken.
 
-The owner's procedure, once unit 13 is deployed:
+| Table | Snapshot | Restored | Fields |
+|---|---|---|---|
+| life_areas | 0 | 0 | no rows — restore path NOT exercised |
+| recurrence_series | 4 | 4 | every field identical |
+| tasks | 29 | 29 | every field identical |
+| reminders | 8 | 8 | every field identical |
+| google_calendar_selections | 0 | 0 | no rows — restore path NOT exercised |
 
-1. In production, create at least one area and assign at least one Task to it.
-2. Take the next Sunday snapshot, or pull one by hand with `node scripts/pull-export-snapshot.mjs`
-   (it is read-only against production and writes `~/praesto-snapshots/praesto-<date>.json`).
-3. From the repository root, run
-   `node scripts/restore-drill.mjs ~/praesto-snapshots/praesto-<date>.json`.
-4. Append a `## Re-run` section to this file with the table above filled from that snapshot and
-   its `*Status:*` line.
+The schema was built from all seven `migrations/*.sql` and the drill exited 0 (`restore-drill: PASS`).
 
-That same snapshot also closes the "chore C6 after unit 12's migration `0006`" item the PRD lists
-as open: this synthetic run rebuilt the schema with `0006`, but only a real snapshot says anything
-about real rows under it.
+**What this settles:** chore C6 after migration `0006`, on real rows — the item unit 12's release record
+left open. **What it does not settle:** PRD AC-18. That snapshot predates the unit-13 deploy and holds no
+`life_areas` row, so the one thing AC-18 is about, areas and their assignments round-tripping, was not
+exercised on real data.
 
-*Status: SYNTHETIC FIXTURE PASS (2026-10-12) — life_areas exercised on rows produced through the real
-routes; the real production snapshot run is OWED and AC-18 is not claimed*
+## REAL SNAPSHOT RUN FOR AC-18: OWED — prepared 2026-10-18, blocked on the data
+
+PRD AC-18 reads: "a production snapshot holding at least one `life_areas` row and one assigned Task".
+**That is NOT met.** This record claims the drill ran on a synthetic fixture and on a real snapshot that
+holds no area, and nothing more.
+
+**State of the preparation (2026-10-18, evening):**
+
+- The pull script, the drill script and the owner's token file (`~/.praesto/export-token.txt`, read only by
+  the script, never by an agent) are in place, and the drill ran clean on a real snapshot (above).
+- **Production holds no Life Area right now.** Read-only counts through `wrangler d1 execute --remote`:
+  `life_areas` 0, Tasks with an area 0, series with an area 0. Pulling a snapshot today would repeat run #1
+  and still not meet AC-18. The run is ready; the data is what is missing — the owner keeps at least one
+  area, with at least one Task assigned to it, in production (which is also what the unit's exit signal
+  asks of him).
+
+**When production holds an area and an assigned Task, in this order:**
+
+1. Confirm it, counts only, read-only:
+   `npx wrangler d1 execute praesto-db --remote --command "SELECT count(*) AS areas FROM life_areas"` and
+   `npx wrangler d1 execute praesto-db --remote --command "SELECT count(*) AS assigned FROM tasks WHERE life_area_id IS NOT NULL"`
+   — both at least 1.
+2. Pull a fresh snapshot: `node scripts/pull-export-snapshot.mjs` (read-only against production; it
+   writes `~/praesto-snapshots/praesto-<today>.json`). **Trap:** the script never overwrites a file from
+   the same day. If the weekly job already wrote today's file *before* the area existed, the pull prints
+   `already exists, skipping` and the old file is what you would drill. Move that file aside, or set
+   `PRAESTO_SNAPSHOT_DIR` to an empty scratch directory for this pull.
+3. From the repository root: `node scripts/restore-drill.mjs <path to that snapshot>`.
+4. It meets AC-18 only if the output says `PASS`, `life_areas` shows at least 1 row and
+   `every field identical`, and `tasks` shows every field identical. A `NOT exercised` line for
+   `life_areas` means the run does not count.
+5. Append a `## Re-run` section here with the table above filled from the counts, the snapshot's size
+   and SHA-256, and a `*Status:*` line. **Record counts and the hash, never area names, Task titles or
+   any row content** — the snapshot is personal data and stays off the repository.
+
+*Status: SYNTHETIC FIXTURE PASS (2026-10-12) and REAL SNAPSHOT PASS without areas (2026-10-11 snapshot, run on
+2026-10-18) — C6 after `0006` is settled on real rows; the run that meets PRD AC-18 is OWED until production holds
+an area with an assigned Task, and AC-18 is not claimed*
