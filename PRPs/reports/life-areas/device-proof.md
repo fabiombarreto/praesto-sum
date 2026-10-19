@@ -1,6 +1,6 @@
 # Device proof — AC-24 (life-areas, phase 4)
 
-Status: OBSERVED (AC-24, the owner's report of 2026-10-18); AC-18 still OWED
+Status: OBSERVED (AC-24, the owner's report of 2026-10-18); AC-18 MET (real snapshot, 2026-10-18)
 
 This is the owner's proof, on his phone, against production. Unit 13 was deployed on 2026-10-18 as
 `v0.13.0` and the owner reported the same day that his phone test went all OK (see Observation).
@@ -71,5 +71,6 @@ here and none is inferred.
 
 What this settles: PRD AC-24's observation (create an area, assign an existing Task, filter *Hoje*).
 What it does not settle: step 7's week of use (at least three assigned items on at least three
-days), step 8 (the restore drill on a real production snapshot, PRD AC-18) and step 9 (flipping the
-unit on his decision), nor the decisions listed above.
+days) and step 9 (flipping the unit on his decision), nor the decisions listed above. Step 8, the
+restore drill on a real production snapshot (PRD AC-18), was run the same evening and passed: see the
+Re-run in `PRPs/reports/life-areas/c6-restore-drill.md`.

@@ -8,7 +8,7 @@ Generated 2026-10-13 by `/relay-qa-report` in PRD mode, from `PRPs/prds/life-are
 - **Grounding.** There is no feature-level `PRPs/reports/life-areas/record.json`. The latest attempt record is `PRPs/reports/life-areas/phase-4/attempts/test-2/record.json`: run `12558650-a464-4f1c-ab39-17fc1014d23e`, tier `unit`, framework `vitest`, **1719 passed / 0 failed / 0 skipped / 89 files**, `failures: []`. An empty `failures[]` names no test, so the automated-coverage column comes from searching the test files; each cited `describe` was read in place, not guessed.
 - There is no browser tier in this project (rejected, see `CLAUDE.md`), so every screen behaviour is `manual`; where the decision was extracted into a pure function, that function's test is cited as the automated half.
 - `Manual status` is `pending` for every entry: this is a first generation and **no human has run any manual step**. The live browser pass (`phase-4/live-browser-pass.md`) was a Chromium pane emulating 375 and 1280 px against a local worker with synthetic rows; it is evidence, not a manual pass by the owner, and nothing was seen on his phone.
-- **Manual statuses marked on the owner's word, 2026-10-18.** He ran the manual tests on the local Docker dev server and on his phone against production `v0.13.0` and reported all of them OK; on that report AC-19 to AC-22, AC-24 and G-1 to G-5 are `passed`. No agent observed those runs and no per-case detail was given. Left `pending` on purpose: AC-1 to AC-17 and AC-23 (their evidence is the test suite and the inspection record), AC-18 (the restore drill on a real production snapshot is still OWED), AC-25 (the roadmap clause waits for the exit signal) and G-6 (pre-existing, not this unit's).
+- **Manual statuses marked on the owner's word, 2026-10-18.** He ran the manual tests on the local Docker dev server and on his phone against production `v0.13.0` and reported all of them OK; on that report AC-19 to AC-22, AC-24 and G-1 to G-5 are `passed`; AC-18 is `passed` on the evidence of the real-snapshot restore drill of the same evening. No agent observed those runs and no per-case detail was given. Left `pending` on purpose: AC-1 to AC-17 and AC-23 (their evidence is the test suite and the inspection record), AC-25 (the roadmap clause waits for the exit signal) and G-6 (pre-existing, not this unit's).
 - Cases `G-1` to `G-6` are not PRD ACs: they are behaviours the phases found, fixed or left open, so a tester does not have to read the close-out to know about them.
 
 ## Summary table
@@ -32,7 +32,7 @@ Generated 2026-10-13 by `/relay-qa-report` in PRD mode, from `PRPs/prds/life-are
 | AC-15 | Area name on the row | Medium | automated | `test/format.test.ts` | `pending` |
 | AC-16 | Occurrence save plan | High | automated | `test/series-edit.test.ts` | `pending` |
 | AC-17 | Export carries the area | Critical | automated | `test/life-areas-export.test.ts` | `pending` |
-| AC-18 | Restore drill on a production snapshot | Critical | manual | — (script run) | `pending` |
+| AC-18 | Restore drill on a production snapshot | Critical | manual | — (script run) | `passed` |
 | AC-19 | The *Áreas* screen | High | manual | `test/life-areas-list.test.ts` (pure half) | `passed` |
 | AC-20 | The Task sheet *Área* group | High | manual | `test/life-area-assign.test.ts` (pure half) | `passed` |
 | AC-21 | The filter sheet *Área* group | High | manual | `test/life-area-assign.test.ts` (pure half) | `passed` |
@@ -273,12 +273,12 @@ Generated 2026-10-13 by `/relay-qa-report` in PRD mode, from `PRPs/prds/life-are
 - **Required state:** a **production** snapshot holding at least one `life_areas` row and one assigned Task
 - **Coverage:** manual
 - **Automated test path:** — (the drill is a script, `scripts/restore-drill.mjs`; `test/restore-values.test.ts` covers only the value helpers and does not mention `life_areas`)
-- **Manual status:** `pending`
+- **Manual status:** `passed`
 - **Manual step-by-step:**
   1. Pull a real snapshot with `scripts/pull-export-snapshot.mjs` (needs the production credential; owner-only).
   2. Run `scripts/restore-drill.mjs` against it; expect `restore-drill: PASS`, equal row counts and every field of every row identical, `life_areas` included.
   3. Record the result under `PRPs/reports/life-areas/`.
-- **Status today:** the drill passed on a **synthetic** fixture only (`PRPs/reports/life-areas/c6-restore-drill.md`, `c6-drill-output.txt`). The AC as worded is **not met**.
+- **Status today:** MET on 2026-10-18. The drill passed on the real production snapshot `praesto-2026-10-18.json` (1 area, 44 Tasks, every field identical, exit 0); the record is the Re-run in `PRPs/reports/life-areas/c6-restore-drill.md`.
 
 ---
 

@@ -86,11 +86,11 @@ left open. **What it does not settle:** PRD AC-18. That snapshot predates the un
 `life_areas` row, so the one thing AC-18 is about, areas and their assignments round-tripping, was not
 exercised on real data.
 
-## REAL SNAPSHOT RUN FOR AC-18: OWED — prepared 2026-10-18, blocked on the data
+## REAL SNAPSHOT RUN FOR AC-18: DONE 2026-10-18 (see Re-run) — the preparation notes follow
 
 PRD AC-18 reads: "a production snapshot holding at least one `life_areas` row and one assigned Task".
-**That is NOT met.** This record claims the drill ran on a synthetic fixture and on a real snapshot that
-holds no area, and nothing more.
+**That was NOT met until the run recorded under Re-run below** (2026-10-18, evening). Until then this record
+claimed the drill ran on a synthetic fixture and on a real snapshot that held no area, and nothing more.
 
 **State of the preparation (2026-10-18, evening):**
 
@@ -121,6 +121,38 @@ holds no area, and nothing more.
    and SHA-256, and a `*Status:*` line. **Record counts and the hash, never area names, Task titles or
    any row content** — the snapshot is personal data and stays off the repository.
 
-*Status: SYNTHETIC FIXTURE PASS (2026-10-12) and REAL SNAPSHOT PASS without areas (2026-10-11 snapshot, run on
-2026-10-18) — C6 after `0006` is settled on real rows; the run that meets PRD AC-18 is OWED until production holds
-an area with an assigned Task, and AC-18 is not claimed*
+## Re-run — the real snapshot of 2026-10-18 (unit 13 deployed): PASS — PRD AC-18 met
+
+The owner created an area and assigned a Task to it in production (`v0.13.0`). Read-only counts through
+`wrangler d1 execute --remote` immediately before the pull: `life_areas` 1, Tasks with an area 1, series with
+an area 0. The snapshot was then pulled with the weekly job's own script, `node scripts/pull-export-snapshot.mjs`
+(no file existed for that day, so the same-day rule did not apply), and the drill was run on it from the
+repository root.
+
+**Snapshot (the owner's real data, kept off the repository, counts and hash only):**
+`~/praesto-snapshots/praesto-2026-10-18.json`, 18,454 bytes, SHA-256
+`5ee6d3a6bb7e3348813c2a8ddd74f948cbbb0e61e5f77bdac8f5a67e35755ab6`, `formatVersion` 1.
+
+| Table | Snapshot | Restored | Fields |
+|---|---|---|---|
+| life_areas | 1 | 1 | every field identical |
+| recurrence_series | 4 | 4 | every field identical |
+| tasks | 44 | 44 | every field identical (one carries a `lifeAreaId`) |
+| reminders | 8 | 8 | every field identical |
+| google_calendar_selections | 0 | 0 | no rows — restore path NOT exercised |
+| google_connections, push_subscriptions, oauth_states, cron_runs, push_dispatch_attempts | 0 | 0 | the excluded tables: present in the schema, no row restored |
+
+The schema was built from all seven `migrations/*.sql` (`applied 7 migrations`) and the drill exited 0
+(`restore-drill: PASS`).
+
+**What this proves.** The one real `life_areas` row (id, name, `description`, `createdAt`, `updatedAt`) and the
+one real Task carrying a `lifeAreaId` rebuild into an empty schema field for field, alongside every real
+series, Task and reminder the owner has: PRD AC-18 as worded ("a production snapshot holding at least one
+`life_areas` row and one assigned Task") is met.
+
+**What it does not prove.** No series carries an area in production yet, so the series-to-area assignment was
+exercised only on the synthetic fixture; nothing about D1 over the network (the rebuild is local SQLite, as the
+drill's own header says); nothing about deleting an area on real data.
+
+*Status: SYNTHETIC FIXTURE PASS (2026-10-12), REAL SNAPSHOT PASS without areas (2026-10-11 snapshot) and REAL
+SNAPSHOT PASS with one area and one assigned Task (2026-10-18) — PRD AC-18 is met*
