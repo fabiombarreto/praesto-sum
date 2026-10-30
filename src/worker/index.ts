@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { requireToken } from "./auth";
 import { runCronHeartbeat } from "./cron";
+import { eventRoutes } from "./routes/events";
 import { exportRoutes } from "./routes/export";
 import { icsRoutes } from "./routes/export-ics";
 import { googleRoutes } from "./routes/google";
@@ -30,6 +31,7 @@ app.route("/api/tasks", taskRoutes);
 app.route("/api/reminders", reminderRoutes);
 app.route("/api/series", seriesRoutes);
 app.route("/api/life-areas", lifeAreaRoutes);
+app.route("/api/events", eventRoutes);
 app.route("/api/google", googleRoutes);
 app.route("/api/export", exportRoutes);
 app.route("/api/export.ics", icsRoutes);

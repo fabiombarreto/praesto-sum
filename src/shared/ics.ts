@@ -1,4 +1,4 @@
-import type { TaskDto } from "./api";
+import type { EventDto, TaskDto } from "./api";
 
 /**
  * Pure, DB-free `.ics` serializer (data-export PRD AC-7/AC-8, phase 2 "The
@@ -9,7 +9,12 @@ import type { TaskDto } from "./api";
  * Emits all-day `VEVENT`s, never `VTODO`: Google Calendar and Outlook
  * silently ignore `VTODO` on import, and the owner lives in Google Calendar
  * (PRD Decisions Log, 2026-09-03). The loss is deliberate and recorded in
- * the file itself via a `COMMENT` property on every event.
+ * the file itself via a `COMMENT` property on every Task event.
+ *
+ * Since unit 14 (events-and-day-view PRD AC-20) it also emits the owner's own
+ * Events as `VEVENT`s — they ARE calendar events, so they carry no such comment:
+ * a timed Event as UTC date-times (no `TZID`, so no `VTIMEZONE` is needed) and
+ * an all-day Event as `VALUE=DATE` days with the stored EXCLUSIVE end.
  */
 
 const PRODID = "-//Praesto Sum//Data Export//EN";
@@ -79,15 +84,61 @@ function foldContentLine(line: string): string {
 }
 
 /**
- * Assembles the `.ics` document from the given instant and the already
- * DTO-mapped Tasks. Filters to Tasks whose `deadline ?? scheduledDate` is
- * non-null — the exact expression `dayItemFromTask` (`src/shared/day-item.ts`)
- * already uses to decide day-bucket membership, not reimplemented here as a
- * separate comparison. Each surviving Task becomes one all-day `VEVENT` with
- * a `UID` stable across re-exports (`<task.id>@praesto.local`), since
- * `task.id` is already a globally-unique `crypto.randomUUID()` value.
+ * The `VEVENT` content lines of one Event, or none for a row that does not have the
+ * fields its kind needs (the schema's CHECK makes that unreachable, but the DTO type
+ * cannot say so). A zero-duration timed Event has no `DTEND`: RFC 5545 needs `DTEND`
+ * to be LATER than `DTSTART`, and a date-time start with no end is zero-duration.
+ * `DESCRIPTION` and `LOCATION` are written only when present, escaped like `SUMMARY`.
  */
-export function buildTasksIcs(now: Date, tasks: TaskDto[]): string {
+function eventLines(event: EventDto, dtstamp: string): string[] {
+  const times: string[] = [];
+  if (event.allDay) {
+    if (event.startDate === null || event.endDate === null) return [];
+    times.push(
+      `DTSTART;VALUE=DATE:${event.startDate.replace(/-/g, "")}`,
+      `DTEND;VALUE=DATE:${event.endDate.replace(/-/g, "")}`,
+    );
+  } else {
+    if (event.startAt === null) return [];
+    times.push(`DTSTART:${formatDtstamp(new Date(event.startAt * 1000))}`);
+    if (event.endAt !== null && event.endAt !== event.startAt) {
+      times.push(`DTEND:${formatDtstamp(new Date(event.endAt * 1000))}`);
+    }
+  }
+
+  const lines = [
+    "BEGIN:VEVENT",
+    `UID:${event.id}@praesto.local`,
+    `DTSTAMP:${dtstamp}`,
+    ...times,
+    `SUMMARY:${escapeIcsText(event.title)}`,
+  ];
+  if (event.description !== null) lines.push(`DESCRIPTION:${escapeIcsText(event.description)}`);
+  if (event.location !== null) lines.push(`LOCATION:${escapeIcsText(event.location)}`);
+  lines.push("END:VEVENT");
+  return lines;
+}
+
+/**
+ * Assembles the `.ics` document from the given instant, the already
+ * DTO-mapped Tasks and, optionally, the already DTO-mapped Events. Filters to
+ * Tasks whose `deadline ?? scheduledDate` is non-null — the exact expression
+ * `dayItemFromTask` (`src/shared/day-item.ts`) already uses to decide
+ * day-bucket membership, not reimplemented here as a separate comparison. Each
+ * surviving Task becomes one all-day `VEVENT` with a `UID` stable across
+ * re-exports (`<task.id>@praesto.local`), since `task.id` is already a
+ * globally-unique `crypto.randomUUID()` value.
+ *
+ * The Task `VEVENT`s come first, exactly as they were before Events existed, so the
+ * Task-only output is a byte-identical prefix; the Event `VEVENT`s follow in the order
+ * given, each with the same kind of stable `UID` (`<event.id>@praesto.local`). The name
+ * stays `buildTasksIcs` and `events` defaults to none, so every earlier call is unchanged.
+ */
+export function buildTasksIcs(
+  now: Date,
+  tasks: TaskDto[],
+  events: readonly EventDto[] = [],
+): string {
   const dtstamp = formatDtstamp(now);
 
   const lines: string[] = [
@@ -111,6 +162,8 @@ export function buildTasksIcs(now: Date, tasks: TaskDto[]): string {
       "END:VEVENT",
     );
   }
+
+  for (const event of events) lines.push(...eventLines(event, dtstamp));
 
   lines.push("END:VCALENDAR");
 

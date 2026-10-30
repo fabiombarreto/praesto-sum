@@ -1,0 +1,168 @@
+{
+  "outcome": "FAILED_ORCHESTRATOR_TIME_BUDGET_EXCEEDED",
+  "phases_completed": [
+    1,
+    2,
+    3
+  ],
+  "elapsed_note": "orchestrator started ~2026-10-19T15:34:00Z; max_orchestrator_minutes=240; the budget is checked at the start of each phase (Phase A.2): phase 3 started inside it and ran past it, phase 4 was not started",
+  "partial_state_note": "Source PRD Implementation Phases table: rows 1, 2 and 3 are complete; rows 4 and 5 are pending (row 4 depends on 3, row 5 on 4). Everything is UNCOMMITTED in the worktree .worktrees/events-and-day-view on branch feature/events-and-day-view (relay never commits before Pillar 3); the PRD, plans (PRPs/plans/completed/), reports (PRPs/reports/events-and-day-view/) and docs edits all live in that worktree, not on main.",
+  "manual_recovery": "re-invoke /relay-execute PRPs/prds/events-and-day-view.prd.md FROM INSIDE the worktree (cwd = C:/repos/assistente-pessoal/.worktrees/events-and-day-view): it picks up at row 4 (phase 4, the Compromisso sheet and search results). Running it from the main checkout would restart from phase 1.",
+  "orchestrator_run_log": [
+    {
+      "phase": 1,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/completed/events-and-day-view-phase-1-pure-core-and-migration.plan.md",
+      "plan_review_attempts": 1
+    },
+    {
+      "phase": 1,
+      "stage": "worktree",
+      "outcome": "CREATED",
+      "repo": null,
+      "worktree_path": ".worktrees/events-and-day-view/",
+      "worktree_attempted": true,
+      "worktree_succeeded": true,
+      "fallback_reason": null,
+      "note": "created by hand from HEAD before the plan stage; see worktree_note"
+    },
+    {
+      "phase": 1,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "suite_path": "PRPs/reports/events-and-day-view/test-suite.diff",
+      "tdd_review_attempts": 1
+    },
+    {
+      "phase": 1,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 1,
+      "docs_sync_outcome": "APPROVED"
+    },
+    {
+      "phase": 1,
+      "stage": "test",
+      "outcome": "GREEN"
+    },
+    {
+      "phase": 1,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 1,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/events-and-day-view-phase-1-pure-core-and-migration.plan.md",
+      "timestamp": "2026-10-19T16:50:22Z"
+    },
+    {
+      "phase": 2,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/completed/events-and-day-view-phase-2-events-api-export-and-search.plan.md",
+      "plan_review_attempts": 1
+    },
+    {
+      "phase": 2,
+      "stage": "worktree",
+      "outcome": "reused",
+      "worktree_attempted": true,
+      "worktree_succeeded": true
+    },
+    {
+      "phase": 2,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "suite_path": "PRPs/reports/events-and-day-view/test-suite-phase-2.diff",
+      "tdd_review_attempts": 1
+    },
+    {
+      "phase": 2,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 2,
+      "note": "attempt 1 CHANGES_REQUESTED on 3 R-COH comment/type rows; attempt 2 APPROVED",
+      "docs_sync_outcome": "APPROVED"
+    },
+    {
+      "phase": 2,
+      "stage": "test",
+      "outcome": "GREEN"
+    },
+    {
+      "phase": 2,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 2,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/events-and-day-view-phase-2-events-api-export-and-search.plan.md",
+      "timestamp": "2026-10-19T18:55:47Z"
+    },
+    {
+      "phase": 3,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/completed/events-and-day-view-phase-3-the-range-function-and-the-day.plan.md",
+      "plan_review_attempts": 1
+    },
+    {
+      "phase": 3,
+      "stage": "worktree",
+      "outcome": "reused",
+      "worktree_attempted": true,
+      "worktree_succeeded": true
+    },
+    {
+      "phase": 3,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "suite_path": "PRPs/reports/events-and-day-view/test-suite-phase-3.diff",
+      "tdd_review_attempts": 1
+    },
+    {
+      "phase": 3,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 2,
+      "note": "attempt 1 CHANGES_REQUESTED on 2 low-severity R-COH rows (comment accuracy; documented additive wideTime); attempt 2 comment/doc-only correction APPROVED",
+      "docs_sync_outcome": "APPROVED"
+    },
+    {
+      "phase": 3,
+      "stage": "test",
+      "outcome": "GREEN"
+    },
+    {
+      "phase": 3,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 3,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/events-and-day-view-phase-3-the-range-function-and-the-day.plan.md",
+      "timestamp": "2026-10-19T21:22:50Z",
+      "owed": "live browser pass for AC-23/24/25 and checklist items 2,5,11,12 (orchestrator duty per plan); device proof owed to the owner in phase 5"
+    },
+    {
+      "phase": 3,
+      "stage": "live_pass",
+      "outcome": "DONE_BY_ORCHESTRATOR",
+      "record": "PRPs/reports/events-and-day-view/phase-3/live-browser-pass.md",
+      "note": "AC-23/24/25 observed in the Browser pane at 375 and 1280 px against a throwaway-token dev server and synthetic fixtures; unobserved clauses (offline, failed Task write, Task completion from /day, focus ring, Esc during inline edit, month-boundary step, the Hoje narrow-column wrap of 'ate HH:mm', the merge-base side-by-side) and the device-only clauses stay owed to the owner's device in phase 5"
+    },
+    {
+      "phase": 4,
+      "stage": "time_budget_check",
+      "outcome": "HALT:FAILED_ORCHESTRATOR_TIME_BUDGET_EXCEEDED",
+      "checked_at": "2026-10-19T21:31:26Z"
+    }
+  ],
+  "worktree_attempted": true,
+  "worktree_succeeded": true,
+  "fallback_reason": null
+}

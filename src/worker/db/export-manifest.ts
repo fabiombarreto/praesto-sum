@@ -11,13 +11,20 @@
  * inspectable by anyone auditing what leaves the Worker in an export.
  */
 
-/** The five data-bearing tables, dumped in full, every row. */
+/**
+ * The seven data-bearing tables, dumped in full, every row. `events` and
+ * `event_sync_links` were classified here in unit 14 (events-and-day-view) phase
+ * 1 so the schema-enumerating completeness guard stays green; the dump route, the
+ * envelope and the `.ics` emit them since phase 2.
+ */
 export const EXPORTED_TABLE_NAMES: readonly string[] = [
   "life_areas",
   "recurrence_series",
   "tasks",
   "reminders",
   "google_calendar_selections",
+  "events",
+  "event_sync_links",
 ] as const;
 
 /**

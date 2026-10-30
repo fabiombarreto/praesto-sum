@@ -15,8 +15,11 @@
  * exactly that line through.
  *
  * The rule is positional, not textual:
- *   1. These fields may be READ in exactly one file — the mapper.
- *   2. Inside it, the only permitted read is the presence test behind
+ *   1. These fields may be READ in exactly one file — the mapper. The only
+ *      exemptions are the two Praesto-own `reminders` lines listed in
+ *      `OWN_REMINDERS` below, each pinned to a file and to the whole trimmed
+ *      line; `attendees` and `recurrence` get none.
+ *   2. Inside the mapper, the only permitted read is the presence test behind
  *      `hasGuests`. Anything that binds, spreads or returns the value fails.
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -27,6 +30,21 @@ const MAPPER = "src/shared/google-events.ts";
 /** The one sanctioned shape: a presence test, never a binding. */
 const PRESENCE_TEST =
   /Array\.isArray\(\s*\w+\.attendees\s*\)|\w+\.attendees\?\?\.length|\w+\.attendees\)\s*&&/;
+/**
+ * Praesto's OWN Reminder entity (unit 7), not Google's `reminders` field. These two
+ * lines read `{ reminders: ReminderDto[] }` (the `/api/reminders` response) and name
+ * the `reminders` key of the export envelope; `CalendarEventDto` has no such field,
+ * so neither can be Google data. Each exemption is pinned to a FILE and to the WHOLE
+ * trimmed, comment-stripped line, so any other `.reminders` read in those two files,
+ * and the very same line in any other file, still fails. `attendees` and `recurrence`
+ * have no exemption of any kind. This script predates unit 7 and was wired into
+ * nothing, so it was never run against Praesto's own entity; the decision is recorded
+ * in `PRPs/reports/events-and-day-view/phase-5/invariants.md`.
+ */
+const OWN_REMINDERS = [
+  { file: "src/app/api.ts", line: "return body.reminders;" },
+  { file: "src/shared/export.ts", line: "reminders: tables.reminders," },
+];
 
 function walk(dir) {
   return readdirSync(dir).flatMap((name) => {
@@ -55,6 +73,7 @@ for (const file of walk("src")) {
       const code = line.replace(/(^|[^:])\/\/.*$/, "$1").replace(/\/\*.*?\*\//g, "");
       if (!FORBIDDEN.test(code)) return;
       if (rel.endsWith(MAPPER) && PRESENCE_TEST.test(code)) return;
+      if (OWN_REMINDERS.some((own) => rel === own.file && code.trim() === own.line)) return;
       violations.push(`${rel}:${i + 1}: ${line.trim()}`);
     });
 }

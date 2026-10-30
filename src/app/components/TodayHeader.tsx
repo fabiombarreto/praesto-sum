@@ -4,7 +4,8 @@
 // up to three icon buttons §2.1 allows on the right. Its accessible name
 // states the active filter count in words, and the numeric badge beside it
 // is real text, never a bare dot (guidelines §4.4), so the filtered state
-// is never carried by colour alone.
+// is never carried by colour alone. Since unit 14 phase 3 the date beside the
+// title is a button that opens the day view (`/day/AAAA-MM-DD`).
 
 import { Search, Settings, SlidersHorizontal } from "lucide-react";
 import { formatHeaderDate, formatRemaining } from "../../shared/format";
@@ -17,6 +18,7 @@ export function TodayHeader({
   onOpenFilters,
   onOpenSearch,
   onOpenSettings,
+  onOpenDay,
 }: {
   now: Date;
   remaining: number;
@@ -24,6 +26,8 @@ export function TodayHeader({
   onOpenFilters: () => void;
   onOpenSearch: () => void;
   onOpenSettings: () => void;
+  /** Opens `/day/<today>`: the header date is the door to the day view. */
+  onOpenDay: () => void;
 }) {
   const { figure, label } = formatRemaining(remaining);
   // Singular at one, plural above it — the same agreement `formatRemaining`
@@ -37,9 +41,21 @@ export function TodayHeader({
   return (
     <header className="flex items-end gap-3 px-4 pt-6 pb-2">
       <h1 className="m-0 font-text text-t4 font-bold text-ink">Hoje</h1>
-      <span className="pb-0.5 font-data text-t1 font-medium text-muted tabular-nums">
+      {/* The door to `/day` (unit 14 phase 3). It keeps the date's text, mono
+          face and baseline: the 48 px hit area grows UPWARD only (`min-h-12`
+          with `items-end` and the same `pb-0.5` the plain span had) and takes no
+          horizontal padding, so the header's other items keep their footprint
+          and the 12 px gap to the title stays. The underline is the cue that it
+          is a control, without a new element or width. The visible date stays
+          inside the accessible name (WCAG 2.5.3). */}
+      <button
+        type="button"
+        onClick={onOpenDay}
+        className="inline-flex min-h-12 items-end bg-transparent pb-0.5 font-data text-t1 font-medium text-muted tabular-nums underline underline-offset-4"
+      >
         {formatHeaderDate(now)}
-      </span>
+        <span className="sr-only"> — abrir o dia</span>
+      </button>
       <span className="ml-auto flex items-baseline gap-1 pb-0.5">
         {figure !== null && (
           <span className="font-display text-t4 font-extrabold text-accent tabular-nums">

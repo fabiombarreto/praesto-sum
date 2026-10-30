@@ -36,7 +36,7 @@
 import { env } from "cloudflare:workers";
 import { it as baseIt } from "vitest";
 import { createDb } from "../src/worker/db/client";
-import { recurrenceSeries, tasks } from "../src/worker/db/schema";
+import { eventSyncLinks, events, recurrenceSeries, tasks } from "../src/worker/db/schema";
 
 /**
  * Test bodies that have started and not yet settled — including bodies Vitest
@@ -147,6 +147,8 @@ async function settleRunningBodies(): Promise<void> {
 export async function resetTaskTables(): Promise<void> {
   await settleRunningBodies();
   const db = createDb(env);
+  await db.delete(eventSyncLinks);
+  await db.delete(events);
   await db.delete(tasks);
   await db.delete(recurrenceSeries);
 }

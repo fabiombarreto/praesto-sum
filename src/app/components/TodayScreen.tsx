@@ -11,7 +11,6 @@ import type { ReactNode } from "react";
 import type { AdherenceResponse, ReminderDto, TaskDto } from "../../shared/api";
 import { canWrite } from "../../shared/connectivity";
 import { instantToLocalParts, PRAESTO_TIMEZONE, todayIn } from "../../shared/dates";
-import { googleFailureMessage } from "../../shared/google-failure-copy";
 import { captureAreaFields, lifeAreaNameOf } from "../../shared/life-area-assign";
 import { classifyRequestFailure } from "../../shared/request-failure";
 import {
@@ -35,9 +34,10 @@ import {
   type QuickChip,
   type TaskFilter,
 } from "../../shared/task-filter";
-import type { CalendarEventDto } from "../../shared/api";
+import type { CalendarEventDto, EventDto } from "../../shared/api";
 import { collectDayItems } from "../../shared/day-groups";
 import { assertNeverDaySource, dayItemFromTask, type DayItem } from "../../shared/day-item";
+import { formatDayItemTime } from "../../shared/day-view";
 import { currentDraft, INITIAL_TASK_SHEET_STATE, reduceTaskSheet } from "../../shared/task-sheet";
 import {
   ApiError,
@@ -47,6 +47,7 @@ import {
   createTask,
   deleteReminder,
   deleteTask,
+  listEvents,
   listReminders,
   listTasks,
   reopenTask,
@@ -55,10 +56,12 @@ import {
   updateTask,
 } from "../api";
 import { useConnectivity } from "../hooks/useConnectivity";
+import { useEventSheet } from "../hooks/useEventSheet";
 import { useLifeAreas } from "../hooks/useLifeAreas";
 import { useSeriesSheet } from "../hooks/useSeriesSheet";
 import { dismissToast, showToast, useToast } from "../toast-store";
 import { CaptureDeck } from "./CaptureDeck";
+import { CompromissoSheet } from "./CompromissoSheet";
 import { EmptyState } from "./EmptyState";
 import { FilterChips } from "./FilterChips";
 import { FilterSheet } from "./FilterSheet";
@@ -69,10 +72,16 @@ import { TaskRow } from "./TaskRow";
 import { TaskSheet } from "./TaskSheet";
 import { TodayHeader } from "./TodayHeader";
 import { CalendarX } from "lucide-react";
-import { agendaForToday } from "../../shared/agenda";
+import {
+  AGENDA_EMPTY,
+  agendaItemsForToday,
+  decideAgendaNotice,
+  type AgendaState,
+} from "../../shared/agenda";
 import { fetchAdherence, fetchGoogleEvents } from "../api";
 import { decideAdherenceLine } from "../../shared/adherence-line";
 import { EventRow } from "./EventRow";
+import { LocalEventRow } from "./LocalEventRow";
 import { Banner } from "./ui/Banner";
 import { Button } from "./ui/Button";
 import { Skeleton } from "./ui/Skeleton";
@@ -108,38 +117,21 @@ function writeCollapsed(key: string, value: boolean): void {
 }
 
 /**
- * What the agenda region knows about itself.
- *
- * Four states, and they must never render the same pixels. `TaskGroup` returns
- * `null` at zero rows, so a failed fetch would otherwise be indistinguishable
- * from a genuinely free day — which is the one outcome the unit's success
- * metric sets to zero.
+ * The agenda's own name — the one string only *Hoje* says that is not decided by
+ * a function. The empty line, the partial line and the three Google failure
+ * strings are all picked in `src/shared/agenda.ts` (`decideAgendaNotice`), where
+ * a test pins the wording and one edit reaches both *Hoje* and the day screen.
+ * The `AgendaState` they select on lives there too.
  */
-type AgendaState =
-  | { kind: "loading" }
-  | { kind: "ready" }
-  /** Some calendars answered, at least one did not. A short day, not a free one. */
-  | { kind: "partial"; failed: number }
-  /** Nothing arrived. `reason` separates "connect" from "reconnect" from "try later". */
-  | { kind: "failed"; reason: string | null };
+const AGENDA = { name: "Agenda" } as const;
 
 /**
- * The agenda's own copy — the strings only *Hoje* says. Every one is an owner
- * approval (2026-08-28), not an invention.
- *
- * The three failure strings are NOT here: the settings screen says them too,
- * so both the words and the reason that selects them live in
- * `src/shared/google-failure-copy.ts`, where one edit reaches both surfaces
- * and a test can reach the mapping (AC-A7).
+ * What the local-commitments request knows about itself, beside the Google
+ * state above it. A failed request must never render as a free day, so it has
+ * its own `failed` member carrying the message to show.
  */
-const AGENDA = {
-  name: "Agenda",
-  empty: "Nada na agenda hoje.",
-  partial: (n: number) =>
-    n === 1
-      ? "Um calendário não respondeu — a agenda pode estar incompleta."
-      : `${n} calendários não responderam — a agenda pode estar incompleta.`,
-} as const;
+type LocalEventsState =
+  { kind: "loading" } | { kind: "ready" } | { kind: "failed"; message: string };
 
 export function TodayScreen({
   onUnauthorized,
@@ -149,6 +141,7 @@ export function TodayScreen({
   onOpenSettings,
   onOpenAdherence,
   onOpenLifeAreas,
+  onOpenDay,
 }: {
   onUnauthorized: () => void;
   initialShare: ShareTarget | null;
@@ -166,6 +159,8 @@ export function TodayScreen({
   onOpenAdherence: () => void;
   /** Threaded from `App.tsx` (life-areas phase 3); opens `/settings/life-areas` from the Task sheet's zero-areas button. */
   onOpenLifeAreas: () => void;
+  /** Threaded from `App.tsx` (events-and-day-view phase 3) so the header date opens `/day/<today>`. */
+  onOpenDay: () => void;
 }) {
   const [tasks, setTasks] = useState<TaskDto[] | null>(null);
   // The adherence record lives in its OWN atom, never folded into `tasks`,
@@ -181,6 +176,16 @@ export function TodayScreen({
   // `busy` gate must never be held by a Google request.
   const [events, setEvents] = useState<CalendarEventDto[] | null>(null);
   const [eventsState, setEventsState] = useState<AgendaState>({ kind: "loading" });
+  // The owner's own commitments (*Compromissos*) are a THIRD atom pair beside the
+  // Google ones, folded into none of `tasks`, `loadError`, `busy` or `events`, for
+  // the same reasons: a failed commitments request must not blank the Task list
+  // and must not stop the owner writing Tasks.
+  const [localEvents, setLocalEvents] = useState<EventDto[] | null>(null);
+  const [localEventsState, setLocalEventsState] = useState<LocalEventsState>({ kind: "loading" });
+  // The newest commitments request: only it may write, so a slow older response
+  // (a foreground or reconnect refetch still in flight) can never repaint a
+  // commitment a write has just deleted.
+  const latestLocalEventsRequest = useRef(0);
   const [captureError, setCaptureError] = useState<string | null>(null);
   const [title, setTitle] = useState(initialShare?.title ?? "");
   const [busy, setBusy] = useState(false);
@@ -287,12 +292,16 @@ export function TodayScreen({
     onOnline: () => {
       void refresh();
       void refreshEvents();
+      void refreshLocalEvents();
       // A first load that failed offline recovers on reconnect.
       void refreshLifeAreas();
     },
   });
   const toast = useToast();
   const writable = canWrite(connectivity);
+  // The Compromisso sheet (phase 4 of unit 14): opened by tapping a local row of the
+  // Agenda; every accepted write refetches today's commitments.
+  const eventSheet = useEventSheet({ onUnauthorized, writable, onChanged: refreshLocalEvents });
   // ONE source today, a list of sources by construction: unit 4 phase 3 adds
   // the Google stream here and nothing below this line has to change.
   const groups = collectDayItems(
@@ -347,6 +356,41 @@ export function TodayScreen({
       }
       setEvents(null);
       setEventsState({ kind: "failed", reason: cause instanceof ApiError ? cause.reason : null });
+    }
+  }
+
+  /**
+   * Fetches today's local commitments — `refreshEvents`' sibling, with its own
+   * atom. Like it, it deliberately does NOT call `report(...)`: the commitments
+   * request failing must not disable capture and completion app-wide, and its
+   * success must not clear an offline banner that `/api/tasks` still earns.
+   *
+   * The day is computed HERE and not taken from the render's `today`: the
+   * `visibilitychange` handler is registered once, and the app can stay open
+   * across midnight, so a closed-over `today` would keep asking for yesterday.
+   *
+   * Only the newest request may write (`refreshAdherence`'s guard): every write of
+   * the Compromisso sheet is followed by a refetch while the foreground and
+   * reconnect refetches can still be in flight, and an older response must never
+   * repaint a deleted commitment.
+   */
+  async function refreshLocalEvents(): Promise<void> {
+    const day = todayIn(new Date());
+    const mine = ++latestLocalEventsRequest.current;
+    try {
+      const list = await listEvents({ from: day, to: day });
+      if (mine !== latestLocalEventsRequest.current) return;
+      setLocalEvents(list);
+      setLocalEventsState({ kind: "ready" });
+    } catch (cause) {
+      if (mine !== latestLocalEventsRequest.current) return;
+      // A 401 is the app's token — route it like any other.
+      if (cause instanceof ApiError && cause.status === 401) {
+        onUnauthorized();
+        return;
+      }
+      setLocalEvents(null);
+      setLocalEventsState({ kind: "failed", message: classifyRequestFailure(cause).message });
     }
   }
 
@@ -785,6 +829,7 @@ export function TodayScreen({
     // agenda — refetching Google on a chip tap would spend a request to
     // produce the identical list.
     void refreshEvents();
+    void refreshLocalEvents();
     void refreshReminders();
     void refreshAdherence();
   }, []);
@@ -806,6 +851,7 @@ export function TodayScreen({
       // owner did, so coming back to the app is exactly when it is worth
       // re-reading (guidelines §12.4 — there is no manual refresh gesture).
       void refreshEvents();
+      void refreshLocalEvents();
       void refreshReminders();
       void refreshAdherence();
     }
@@ -824,9 +870,13 @@ export function TodayScreen({
     function handleKeyDown(event: KeyboardEvent): void {
       if (event.key !== "/") return;
       const active = document.activeElement;
+      // A focused <select> (the Compromisso sheet's *Fuso horário*) types to jump to an
+      // option, so a `/` there must not open the search and unmount the screen that
+      // owns the sheet's state.
       const isTextField =
         active instanceof HTMLInputElement ||
         active instanceof HTMLTextAreaElement ||
+        active instanceof HTMLSelectElement ||
         (active instanceof HTMLElement && active.isContentEditable);
       if (isTextField) return;
       // Stop the keystroke here, or it continues into the search field this
@@ -871,10 +921,11 @@ export function TodayScreen({
    * The `<ul>` shared by every group — five callers, one shape. Since unit 4
    * phase 1 it takes day items rather than Tasks and dispatches on their
    * `source`; the `task` branch is byte-for-byte what the screen rendered
-   * before, and the `google` branch is unreachable here because this screen
-   * feeds `collectDayItems` a single Task source. It exists so that adding a
-   * source — unit 14's local Events next — is a compile error at `default`
-   * until this switch handles it.
+   * before, and the `google` and `local` branches are unreachable here because
+   * this screen feeds `collectDayItems` a single Task source (commitments reach
+   * the Agenda through `agendaItemsForToday`, rendered in its own region below).
+   * It exists so that adding a source is a compile error at `default` until
+   * this switch handles it.
    */
   function renderDayItems(rows: DayItem[]): ReactNode {
     return (
@@ -900,14 +951,15 @@ export function TodayScreen({
               );
             }
             case "google":
-              // Unreachable: the agenda renders Google events in its own group
+            case "local":
+              // Unreachable: the agenda renders commitments in its own group
               // (see `agenda` below), and this screen feeds `collectDayItems` a
               // single Task source. Loud rather than a blank row if that ever
               // changes. NOT `assertNeverDaySource` — `item` is narrowed to the
-              // google variant here, not `never`, and the cast that used to
-              // bridge that gap silenced the compiler in this branch. The
-              // exhaustiveness guarantee lives in `default`, where the narrowing
-              // is genuinely `never`.
+              // google or local variant here, not `never`, and the cast that
+              // used to bridge that gap silenced the compiler in this branch.
+              // The exhaustiveness guarantee lives in `default`, where the
+              // narrowing is genuinely `never`.
               throw new Error(`Unhandled day item source: ${item.source}`);
             default:
               return assertNeverDaySource(item);
@@ -917,7 +969,9 @@ export function TodayScreen({
     );
   }
 
-  const agenda = events === null ? [] : agendaForToday(events, today);
+  // The same range function as the day screen, over a one-day range: the owner's
+  // commitments and Google's, counted together.
+  const agenda = agendaItemsForToday(localEvents ?? [], events ?? [], today);
 
   /**
    * The agenda region: the group when there is something to show, and an
@@ -929,22 +983,21 @@ export function TodayScreen({
    * occurrences. It is also not a toast: `src/shared/toast.ts` auto-dismisses
    * an actionless toast after 4 s, and guidelines §10 (2.2.1) forbids putting
    * a time limit on a state the owner has to read.
+   *
+   * `decideAgendaNotice` picks the line. A commitments request that has not
+   * answered successfully keeps `othersReady` false, so the empty text is never
+   * shown over it; its failure is an additional line of its own.
    */
-  const agendaNotice = ((): string | null => {
-    switch (eventsState.kind) {
-      case "loading":
-        return null;
-      case "partial":
-        return AGENDA.partial(eventsState.failed);
-      case "failed":
-        return googleFailureMessage(eventsState.reason);
-      case "ready":
-        return agenda.length === 0 ? AGENDA.empty : null;
-    }
-  })();
+  const agendaNotice = decideAgendaNotice({
+    google: eventsState,
+    othersReady: localEventsState.kind === "ready",
+    rowCount: agenda.length,
+    emptyText: AGENDA_EMPTY,
+  });
+  const localFailure = localEventsState.kind === "failed" ? localEventsState.message : null;
 
   const agendaRegion =
-    agenda.length === 0 && agendaNotice === null ? null : (
+    agenda.length === 0 && agendaNotice === null && localFailure === null ? null : (
       <section aria-label={AGENDA.name}>
         {agenda.length > 0 && (
           <TaskGroup
@@ -954,16 +1007,43 @@ export function TodayScreen({
             onToggle={toggleAgendaCollapsed}
           >
             <ul className="m-0 flex list-none flex-col gap-2 p-0">
-              {agenda.map((event) => (
+              {agenda.map((item) => {
                 // Prefixed: ids are unique per SOURCE, not across sources.
-                <EventRow key={`google-${event.id}`} event={event} />
-              ))}
+                switch (item.source) {
+                  case "google":
+                    return (
+                      <EventRow
+                        key={`google-${item.id}`}
+                        event={item.payload}
+                        timeLabel={formatDayItemTime(item, today, "start")}
+                      />
+                    );
+                  case "local":
+                    return (
+                      <LocalEventRow
+                        key={`local-${item.id}`}
+                        event={item.event}
+                        timeLabel={formatDayItemTime(item, today, "start")}
+                        onOpen={() => eventSheet.openEvent(item.event)}
+                      />
+                    );
+                  default:
+                    // A future source stops compiling here instead of rendering
+                    // a blank row.
+                    return assertNeverDaySource(item);
+                }
+              })}
             </ul>
           </TaskGroup>
         )}
         {agendaNotice !== null && (
           <p role="status" className="mt-2 font-text text-t1 text-muted">
             {agendaNotice}
+          </p>
+        )}
+        {localFailure !== null && (
+          <p role="status" className="mt-2 font-text text-t1 text-muted">
+            {localFailure}
           </p>
         )}
       </section>
@@ -991,6 +1071,7 @@ export function TodayScreen({
         onOpenFilters={() => setFiltersOpen(true)}
         onOpenSearch={onOpenSearch}
         onOpenSettings={onOpenSettings}
+        onOpenDay={onOpenDay}
       />
 
       {/* One slot, two conditions, with a stated precedence: being offline
@@ -1279,6 +1360,13 @@ export function TodayScreen({
         onDeleteRequest={requestDeleteReminderSheet}
         onDeleteCancel={cancelDeleteReminderSheet}
         onDeleteConfirm={confirmDeleteReminderSheet}
+      />
+
+      {/* Never stack sheets (layout standard §3): the Compromisso sheet and the
+          Task sheet can never both be open — same gating as the two above. */}
+      <CompromissoSheet
+        {...eventSheet.sheetProps}
+        open={eventSheet.sheetProps.open && sheet.taskId === null}
       />
     </div>
   );

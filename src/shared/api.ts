@@ -248,6 +248,133 @@ export interface GoogleCalendarDto {
   selected: boolean;
 }
 
+/**
+ * An Event (*Compromisso*), as `/api/events` and the FR-042 export see it (unit 14,
+ * ADR-0016). Mirrors `EventRow` in `src/worker/db/schema.ts` field for field.
+ *
+ * Instants are epoch SECONDS, like every other DTO here — the Google DTO above
+ * (`CalendarEventDto`, milliseconds) is a separate type and is not touched. A timed
+ * Event carries `startAt`/`endAt` and `null` days; an all-day Event carries
+ * `startDate`/`endDate` — local days with an EXCLUSIVE end, as Google stores them —
+ * and `null` instants. `timezone` is never null.
+ */
+export interface EventDto {
+  id: string;
+  title: string;
+  description: string | null;
+  location: string | null;
+  allDay: boolean;
+  /** Epoch seconds; `null` for an all-day Event. */
+  startAt: number | null;
+  /** Epoch seconds; `null` for an all-day Event. */
+  endAt: number | null;
+  /** Local day the all-day Event starts ON; `null` for a timed Event. */
+  startDate: string | null;
+  /** Local day the all-day Event ends BEFORE (exclusive); `null` for a timed Event. */
+  endDate: string | null;
+  /** IANA zone the Event was authored in. */
+  timezone: string;
+  source: "local" | "google";
+  /** `computeEventContentHash` of the authored fields; written only by the repository. */
+  contentHash: string;
+  /** Epoch seconds. */
+  createdAt: number;
+  /** Epoch seconds. */
+  updatedAt: number;
+}
+
+/**
+ * A provider link of an Event, as the export sees it (ADR-0016). `eventId` is `null`
+ * for an orphan: the link outlived its deleted Event. Export only — it travels in the
+ * `GET /api/export` dump, and no `/api/events` route returns it or writes it.
+ */
+export interface EventSyncLinkDto {
+  id: string;
+  eventId: string | null;
+  calendarId: string;
+  externalEventId: string;
+  etag: string | null;
+  syncedContentHash: string | null;
+  /** Epoch seconds, or `null` when never synced. */
+  syncedAt: number | null;
+}
+
+/**
+ * `POST /api/events` body. The title is trimmed server-side; a missing end is filled
+ * (start + 1 h, or the next day) by the shared validator, and a missing `timezone`
+ * becomes `America/Sao_Paulo`. A timed Event carries `startAt`/`endAt`, an all-day
+ * Event (`allDay: true`) carries `startDate`/`endDate`; the other kind's keys are refused.
+ */
+export interface CreateEventInput {
+  title: string;
+  description?: string | null;
+  location?: string | null;
+  allDay?: boolean;
+  startAt?: number | null;
+  endAt?: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  timezone?: string | null;
+}
+
+/**
+ * Partial update of an existing Event. Declared separately from `CreateEventInput`
+ * for the reason `UpdateTaskInput` is: an ABSENT key leaves the field exactly as it
+ * was, while an explicit `null` clears it (or lets the shared validator fill its
+ * default, for an end). TypeScript cannot express that difference, so the route
+ * enforces it with `Object.hasOwn` on the raw body; this type describes the contract.
+ *
+ * `title`, `allDay` and `timezone` have no `| null`: an Event must always carry a title,
+ * a kind and a zone, so the route answers 400 to an explicit `null` for any of them.
+ * Only `description`, `location`, `startAt`, `endAt`, `startDate` and `endDate` accept
+ * `null` (whether the merged Event is then valid is the shared validator's call).
+ */
+export interface UpdateEventInput {
+  title?: string;
+  description?: string | null;
+  location?: string | null;
+  allDay?: boolean;
+  startAt?: number | null;
+  endAt?: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  timezone?: string;
+}
+
+/**
+ * The closed set of body keys BOTH `POST` and `PATCH /api/events` accept. Anything
+ * else — the server-owned fields (`id`, `source`, `contentHash`, `createdAt`,
+ * `updatedAt`) or a typo — is rejected with 400 rather than silently ignored, which
+ * is what keeps a caller from choosing a `source` or forging a hash.
+ */
+export const EDITABLE_EVENT_FIELDS: readonly string[] = [
+  "title",
+  "description",
+  "location",
+  "allDay",
+  "startAt",
+  "endAt",
+  "startDate",
+  "endDate",
+  "timezone",
+];
+
+/** `GET /api/events` body. */
+export interface EventsResponse {
+  events: EventDto[];
+}
+
+/** `POST /api/events` and `PATCH /api/events/:id` body. */
+export interface EventResponse {
+  event: EventDto;
+}
+
+/**
+ * The hard ceiling on how many Events a `q`-only search (no `from`/`to`) returns,
+ * most recent start first. A search with a range is bounded by the range itself.
+ */
+export const MAX_EVENT_SEARCH_RESULTS = 100;
+
 export interface CreateTaskInput {
   title: string;
   description?: string | null;

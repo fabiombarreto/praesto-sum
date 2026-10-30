@@ -48,6 +48,9 @@ import {
   taskRouteOf,
   type AppRoute,
 } from "../src/shared/app-route";
+// events-and-day-view phase 3 (AC-26, additive): the day-route helpers, imported apart so the
+// original import block above stays byte-for-byte as it was.
+import { dayFromRoute, dayRouteOf } from "../src/shared/app-route";
 
 describe("routeFromPath", () => {
   it("maps the root path to today", () => {
@@ -370,5 +373,152 @@ describe("routeFromPath and pathOf agree — the life-areas route round-trips to
   it("round-trips the path /settings/life-areas", () => {
     const p = "/settings/life-areas";
     expect(pathOf(routeFromPath(p))).toBe(p);
+  });
+});
+
+// --- UPDATE (events-and-day-view phase 3, the day route) -------------------
+// PRPs/prds/events-and-day-view.prd.md AC-26 Route mapping (via plan AC-A4): the day screen is
+// reachable at `/day/AAAA-MM-DD` as a real history entry, the date living in the path so a
+// reload, a bookmark and Android back all land on the same day. Source plan:
+// PRPs/plans/events-and-day-view-phase-3-the-range-function-and-the-day.plan.md (Task 5 —
+// src/shared/app-route.ts: widen `AppRoute` with a `day/${string}` member; add `dayRouteOf` and
+// `dayFromRoute`; map `/day/<date>` both ways, the date validated with `isValidLocalDay`, after
+// the Task match and before the flat literals). The arrows, the *Hoje* control and the screen
+// itself are React glue verified in the phase's UI checklist, never here.
+//
+// Every assertion above is untouched; these are ADDITIVE. "Every existing route maps exactly as
+// before" (the second half of AC-26) is held by the unmodified cases above, not repeated here;
+// what follows adds only the lookalikes the new route could capture by mistake.
+//
+// RED until Task 5 lands: `dayRouteOf` and `dayFromRoute` do not exist, `AppRoute` has no
+// `day/${string}` member, and `routeFromPath`/`pathOf` do not know the path. The negative cases
+// (an impossible date, a bare `/day`, a lookalike path all map to `today`) pass today because
+// `today` is the fallback; they are kept as the guards that stop the new route capturing too much
+// once it exists, and the positive cases beside them are what is RED.
+
+describe("routeFromPath — the day route (PRD AC-26 via plan AC-A4)", () => {
+  it("maps /day/2026-10-20 to the day route", () => {
+    expect(routeFromPath("/day/2026-10-20")).toBe("day/2026-10-20");
+    expect(routeFromPath("/day/2026-10-20")).toBe(dayRouteOf("2026-10-20"));
+  });
+
+  it("accepts a trailing slash, as every route does", () => {
+    expect(routeFromPath("/day/2026-10-20/")).toBe("day/2026-10-20");
+  });
+
+  it("maps the first day of a year, the last day of a year and a leap day", () => {
+    expect(routeFromPath("/day/2026-01-01")).toBe("day/2026-01-01");
+    expect(routeFromPath("/day/2026-12-31")).toBe("day/2026-12-31");
+    expect(routeFromPath("/day/2028-02-29")).toBe("day/2028-02-29");
+  });
+
+  it("maps /day/2026-02-30, which is not a real day, to today", () => {
+    expect(routeFromPath("/day/2026-02-30")).toBe("today");
+  });
+
+  it("maps /day/abc to today", () => {
+    expect(routeFromPath("/day/abc")).toBe("today");
+  });
+
+  it("maps the bare /day path, with or without a slash, to today", () => {
+    expect(routeFromPath("/day")).toBe("today");
+    expect(routeFromPath("/day/")).toBe("today");
+  });
+
+  it("maps every impossible or malformed date to today, never throwing", () => {
+    const refused = [
+      "/day/2026-13-01", // no thirteenth month
+      "/day/2026-00-10", // no month zero
+      "/day/2026-10-00", // no day zero
+      "/day/2026-10-32", // no thirty-second day
+      "/day/2026-04-31", // April has thirty days
+      "/day/2027-02-29", // 2027 is not a leap year
+      "/day/2026-1-20", // not zero-padded
+      "/day/20261020", // no separators
+      "/day/2026-10-20x", // trailing junk
+      "/day/x2026-10-20", // leading junk
+    ];
+
+    for (const path of refused) {
+      expect(() => routeFromPath(path), path).not.toThrow();
+      expect(routeFromPath(path), path).toBe("today");
+    }
+  });
+
+  it("resolves a day path with a further segment to today — there is exactly one segment", () => {
+    expect(routeFromPath("/day/2026-10-20/extra")).toBe("today");
+    expect(routeFromPath("/day/2026-10-20/2026-10-21")).toBe("today");
+  });
+
+  it("does not capture lookalike paths", () => {
+    expect(routeFromPath("/days/2026-10-20")).toBe("today");
+    expect(routeFromPath("/settings/day/2026-10-20")).toBe("today");
+    expect(routeFromPath("/search/2026-10-20")).toBe("today");
+  });
+
+  it("still reads /tasks/<a date-shaped id> as a Task route — the day route does not claim it", () => {
+    expect(routeFromPath("/tasks/2026-10-20")).toBe(taskRouteOf("2026-10-20"));
+  });
+});
+
+describe("pathOf — the day route (PRD AC-26 via plan AC-A4)", () => {
+  it("maps a day route back to /day/<date>", () => {
+    expect(pathOf(dayRouteOf("2026-10-20"))).toBe("/day/2026-10-20");
+    expect(pathOf("day/2026-10-20")).toBe("/day/2026-10-20");
+  });
+});
+
+describe("routeFromPath and pathOf agree — the day route round-trips (AC-26's own headline contract)", () => {
+  it("round-trips /day/2026-10-20: pathOf(routeFromPath(p)) === p", () => {
+    const p = "/day/2026-10-20";
+    expect(pathOf(routeFromPath(p))).toBe(p);
+  });
+
+  it("round-trips a day AppRoute value itself, not just its path", () => {
+    const route: AppRoute = dayRouteOf("2026-10-20");
+    expect(routeFromPath(pathOf(route))).toBe(route);
+  });
+
+  it("round-trips the edges of the calendar", () => {
+    for (const p of ["/day/2026-01-01", "/day/2026-12-31", "/day/2028-02-29"]) {
+      expect(pathOf(routeFromPath(p)), p).toBe(p);
+    }
+  });
+
+  it("drops the trailing slash on the way back", () => {
+    expect(pathOf(routeFromPath("/day/2026-10-20/"))).toBe("/day/2026-10-20");
+  });
+});
+
+describe("dayRouteOf / dayFromRoute", () => {
+  it("dayRouteOf builds a day/<date> route from a day", () => {
+    expect(dayRouteOf("2026-10-20")).toBe("day/2026-10-20");
+  });
+
+  it("dayFromRoute recovers the day from a day route", () => {
+    expect(dayFromRoute(dayRouteOf("2026-10-20"))).toBe("2026-10-20");
+    expect(dayFromRoute(routeFromPath("/day/2028-02-29"))).toBe("2028-02-29");
+  });
+
+  it("dayFromRoute returns null for a day route whose date is not a real day", () => {
+    expect(dayFromRoute("day/2026-02-30")).toBeNull();
+    expect(dayFromRoute("day/abc")).toBeNull();
+    expect(dayFromRoute("day/")).toBeNull();
+  });
+
+  it("dayFromRoute returns null for every non-day route", () => {
+    expect(dayFromRoute("today")).toBeNull();
+    expect(dayFromRoute("settings")).toBeNull();
+    expect(dayFromRoute("notifications")).toBeNull();
+    expect(dayFromRoute("notifications-diagnostics")).toBeNull();
+    expect(dayFromRoute("adherence")).toBeNull();
+    expect(dayFromRoute("life-areas")).toBeNull();
+    expect(dayFromRoute("search")).toBeNull();
+    expect(dayFromRoute(taskRouteOf("abc-123"))).toBeNull();
+    expect(dayFromRoute(taskRouteOf("2026-10-20"))).toBeNull();
+  });
+
+  it("taskIdFromRoute returns null for a day route — it is not a Task route", () => {
+    expect(taskIdFromRoute(dayRouteOf("2026-10-20"))).toBeNull();
   });
 });

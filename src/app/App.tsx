@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { taskIdFromRoute } from "../shared/app-route";
+import { dayFromRoute, dayRouteOf, taskIdFromRoute } from "../shared/app-route";
+import { todayIn } from "../shared/dates";
 import type { ShareTarget } from "../shared/share-target";
 import { readToken } from "./api";
 import { AdherenceScreen } from "./components/AdherenceScreen";
+import { DayScreen } from "./components/DayScreen";
 import { LifeAreasScreen } from "./components/LifeAreasScreen";
 import { NotificationsDiagnosticsScreen } from "./components/NotificationsDiagnosticsScreen";
 import { NotificationsScreen } from "./components/NotificationsScreen";
@@ -100,6 +102,14 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
   if (route === "life-areas") {
     return <LifeAreasScreen onUnauthorized={onUnauthorized} back={back} />;
   }
+  // No `key`: stepping from one date to the next keeps ONE mounted screen, whose
+  // load effect is keyed on `day` and drops the previous date's late responses.
+  const routeDay = dayFromRoute(route);
+  if (routeDay !== null) {
+    return (
+      <DayScreen day={routeDay} onUnauthorized={onUnauthorized} back={back} navigate={navigate} />
+    );
+  }
   if (route === "search") {
     return (
       <SearchScreen
@@ -124,6 +134,7 @@ export function App({ initialShare }: { initialShare: ShareTarget | null }) {
       onOpenSettings={() => navigate("settings")}
       onOpenAdherence={() => navigate("adherence")}
       onOpenLifeAreas={() => navigate("life-areas")}
+      onOpenDay={() => navigate(dayRouteOf(todayIn(new Date())))}
     />
   );
 }

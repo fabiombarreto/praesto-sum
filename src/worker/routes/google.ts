@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
+import { GOOGLE_RANGE_MAX_DAYS, validateDayRange } from "../../shared/event-range";
 import { eventWindow, toCalendarEventDto } from "../../shared/google-events";
 import { buildConsentUrl, GOOGLE_READONLY_SCOPES } from "../../shared/google-oauth";
 import { PRAESTO_TIMEZONE, todayIn } from "../../shared/dates";
@@ -11,6 +12,7 @@ import {
   oauthStates,
 } from "../db/schema";
 import { toGoogleConnectionDto } from "../dto";
+import { dayRangeProblemMessage } from "../event-messages";
 import { listCalendars, listEvents, refreshAccessToken, revokeToken } from "../google/client";
 
 /**
@@ -259,12 +261,33 @@ googleRoutes.put("/calendars", async (c) => {
   return c.json({ calendarIds: ids });
 });
 
-/** FR-027 — the day's real commitments, mapped and narrowed. */
+/**
+ * FR-027 — the day's real commitments, mapped and narrowed.
+ *
+ * With no parameters the window is today through `WINDOW_DAYS` days later, exactly as
+ * it always was. `from` and `to` (both or neither, inclusive local days, at most
+ * `GOOGLE_RANGE_MAX_DAYS`) ask for exactly that window instead. They are validated
+ * BEFORE the token is resolved, so a bad window is a 400 that needs no Google
+ * connection and never costs a token refresh.
+ */
 googleRoutes.get("/events", async (c) => {
+  const from = c.req.query("from");
+  const to = c.req.query("to");
+
+  let window: ReturnType<typeof eventWindow>;
+  if (from === undefined && to === undefined) {
+    window = eventWindow(todayIn(new Date(), PRAESTO_TIMEZONE), WINDOW_DAYS);
+  } else {
+    const range = validateDayRange(from, to, GOOGLE_RANGE_MAX_DAYS);
+    if (!range.ok) return c.json({ error: dayRangeProblemMessage(range.error) }, 400);
+    // `eventWindow(start, n)` ends at the start of the day `n + 1` after `start`, and
+    // `range.days` counts both ends, so `days - 1` makes it exactly `from` through `to`.
+    window = eventWindow(range.from, range.days - 1);
+  }
+
   const token = await accessTokenFor(c);
   if (!token.ok) return c.json({ error: "unavailable", reason: token.reason }, token.status);
 
-  const window = eventWindow(todayIn(new Date(), PRAESTO_TIMEZONE), WINDOW_DAYS);
   const calendarIds = await selectedCalendarIds(c.env);
 
   const events = [];

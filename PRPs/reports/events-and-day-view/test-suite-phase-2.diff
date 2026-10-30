@@ -1,0 +1,151 @@
+# TDD initial suite — phase 2
+# Source PRD: PRPs/prds/events-and-day-view.prd.md (Acceptance Criteria)
+# Source plan: C:/repos/assistente-pessoal/.worktrees/events-and-day-view/PRPs/plans/events-and-day-view-phase-2-events-api-export-and-search.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-10-19
+# Mode: test-first (docs/context/methodology.md: tdd: true, test_frameworks: ["vitest"]; plan phase_type feature)
+# Code root: C:/repos/assistente-pessoal/.worktrees/events-and-day-view (branch feature/events-and-day-view)
+# Phase-1 manifest PRPs/reports/events-and-day-view/test-suite.diff (APPROVED) is unchanged; this file is the
+#   phase-2 sibling, named per the unit-13 precedent test-suite-phase-<N>.diff.
+
+## AC outcomes
+
+Plan AC-A1..AC-A15 map onto PRD AC-9..AC-21 (AC-A1..AC-A13), AC-33 in part (AC-A14) and AC-34 in part
+(AC-A15, the docs/api-reference.md clause). Every PRD AC is listed so none is silently unaddressed.
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-1..AC-8 | OUT_OF_PHASE_SCOPE | (phase 1, complete: the pure core, the schema and migration 0007; see test-suite.diff) |
+| AC-9 | NEW_TEST_REQUIRED | test/event-routes-create.test.ts (describes "a timed Event", "an all-day Event"); the POST-then-GET round trip is in test/event-routes-list.test.ts |
+| AC-10 | NEW_TEST_REQUIRED | test/event-routes-create.test.ts (describes "a body the API refuses", "a body that is not a JSON object") |
+| AC-11 | NEW_TEST_REQUIRED | test/event-routes-list.test.ts (the PRD fixture, midnight crossing, timed and all-day edges, order, the 400s) and test/event-range.test.ts (the pure module the route uses: span, errors, half-open instants) |
+| AC-12 | NEW_TEST_REQUIRED | test/event-routes-edit.test.ts |
+| AC-13 | NEW_TEST_REQUIRED | test/event-routes-delete.test.ts (describes "a local Event", "a sync link pointing at it survives, orphaned") |
+| AC-14 | NEW_TEST_REQUIRED | test/event-routes-delete.test.ts (describe "PATCH and DELETE on a google-source Event answer 409 naming source"); the last clause (no POST creates a google row) is in test/event-routes-create.test.ts (describe "no request can create a google Event") |
+| AC-15 | NEW_TEST_REQUIRED | test/event-routes-auth.test.ts |
+| AC-16 | NEW_TEST_REQUIRED | behaviour half: test/event-hash-integrity.test.ts; source-inspection half: test/event-api-inspection.test.ts (Node-side, `docs` vitest project, registered in vitest.config.ts) |
+| AC-17 | NEW_TEST_REQUIRED | test/event-routes-search.test.ts |
+| AC-18 | NEW_TEST_REQUIRED (the new from/to behaviour) + EXISTING_TEST_COVERS (the frozen contracts) | new: test/google-events-window.test.ts and the window validation in test/event-range.test.ts. Frozen, left UNMODIFIED as the plan and the orchestrator require: `GET /api/tasks` unchanged is test/task-list-contract.test.ts:1 (and test/task-list-search.test.ts, test/task-list-filters.test.ts); the shipped Google route behaviour is test/google-calendar-routes.test.ts:347 (describe "GET /api/google/events (AC-6)"), test/google-routes.test.ts, test/google-events.test.ts. Plan Level 2 proves them byte-identical to the fork point with `git diff --exit-code` |
+| AC-19 | NEW_TEST_REQUIRED + EXISTING_TEST_UPDATED | new: test/event-export.test.ts (field-for-field dump, empty link table, ordering, formatVersion). Updated, never loosened: test/export-envelope.test.ts, test/export.test.ts (see ledger). The completeness guard half was already updated in phase 1 (test/export-completeness.test.ts, ledger of test-suite.diff) and is not touched again |
+| AC-20 | NEW_TEST_REQUIRED (additive describes in the two existing `.ics` files) | test/export-ics.test.ts (pure serializer: timed UTC, all-day DATE with exclusive end, escaping, folding, zero-duration, Tasks unchanged) and test/export-ics-route.test.ts (stored Events reach the file). Existing Task cases byte-identical |
+| AC-21 | NO TEST FILE FOR THE RUN ITSELF (command-layer script run, plan Task 16 / Level 3) + NEW_TEST_REQUIRED for the part a Vitest file can observe | The drill is `node scripts/restore-drill.mjs` on a snapshot pulled from a local `vite dev` worker; it cannot run inside workerd or the docs project and its record is the files plan Task 16 creates under PRPs/reports/events-and-day-view/. What IS encoded: test/event-export.test.ts describe "the dump has the shape the restore drill rebuilds from" - the dumped keys are exactly the columns of `events` and of `event_sync_links` under the drill's own camelCase-to-snake_case step, `allDay` is a JSON boolean (the drill binds it to 0/1), and `events` precedes `event_sync_links` (the drill inserts in key order and a link references its Event) |
+| AC-22 | OUT_OF_PHASE_SCOPE | (deferred to phase 3) |
+| AC-23 | OUT_OF_PHASE_SCOPE | (deferred to phase 3; manual) |
+| AC-24 | OUT_OF_PHASE_SCOPE | (deferred to phase 3; manual) |
+| AC-25 | OUT_OF_PHASE_SCOPE | (deferred to phase 3; manual) |
+| AC-26 | OUT_OF_PHASE_SCOPE | (deferred to phase 3) |
+| AC-27 | OUT_OF_PHASE_SCOPE | (deferred to phase 4) |
+| AC-28 | OUT_OF_PHASE_SCOPE | (deferred to phase 4; manual) |
+| AC-29 | OUT_OF_PHASE_SCOPE | (deferred to phase 4; manual) |
+| AC-30 | OUT_OF_PHASE_SCOPE | (deferred to phase 4; manual) |
+| AC-31 | OUT_OF_PHASE_SCOPE | (deferred to phase 5; device observation) |
+| AC-32 | OUT_OF_PHASE_SCOPE | (deferred to phase 5; script run on a real snapshot) |
+| AC-33 | EXISTING_TEST_COVERS (the encodable clause) | the "only new migration is the single 0007" clause is test/event-migration-additive.test.ts:141 (exactly one `0007_*.sql`) plus its frozen digests of 0000-0006, from phase 1 and permanent. The rest of this phase's slice (plan AC-A14: `dates.ts`, `recurrence.ts`, `adherence.ts` byte-identical to `main`; no test removed, skipped or loosened; `check-mirror-inventory.mjs` gains no third violation) is a property of the unit's diff against `main`, proven by the plan's own `git diff --exit-code` gates (Task 17, Level 2) and by `post-green-reviewer`, not encoded as a permanent test - for the reason phase 1 recorded (those files are "unchanged for this unit", not frozen forever; unit 17 reuses `recurrence.ts`). The "no test removed or loosened" clause is held by this manifest's ledger: five UPDATE rows, every one additive, zero DELETE |
+| AC-34 | NEW_TEST_REQUIRED (the docs/api-reference.md clause only) | test/event-api-inspection.test.ts describe "AC-34 (the docs/api-reference.md part)": an Implemented-table row for each of `POST /api/events`, `GET /api/events?from=..&to=..`, `PATCH /api/events/:id`, `DELETE /api/events/:id`, the search parameter `q=` on the list row, a 409 on an Events row (the source guard) and the `from=..&to=..` window on `GET /api/google/events`. The remaining AC-34 clauses (glossary, domain model, layout standard, architecture docs, FR traceability, roadmap row) are phase 5 documentation inspection |
+
+### Plan AC -> test cases
+
+- AC-A1 (PRD AC-9): test/event-routes-create.test.ts - the AC-9 payload answers 201 with the exact DTO (golden `contentHash`, see Notes), epoch-second stamps, one stored row equal to the answer with a hash that matches its own fields; a start-only Event gets an end one hour later; a zero-duration Event is accepted; a named IANA zone is kept and hashed; description and location are trimmed and empty text becomes null; distinct ids; the all-day payload gets `endDate` the next day and null instants; an explicit exclusive end is kept.
+- AC-A2 (PRD AC-10): test/event-routes-create.test.ts - 20 refused bodies (missing, null, blank, 201-character and non-string title; over-long description and location; all-day with `startAt`; not all-day without `startAt`; `endAt` before `startAt`; `2026-02-30`; all-day end not after start; unknown zone; `source` naming google and local; `contentHash`; client-chosen `id`; `createdAt`; text `allDay`; text `startAt`), each 400 naming its field key and writing nothing; six non-object bodies (array, string, number, null, malformed JSON, empty) each 400 and nothing written; a 200-character title accepted.
+- AC-A3 (PRD AC-11): test/event-routes-list.test.ts and test/event-range.test.ts - see the AC table.
+- AC-A4 (PRD AC-12): test/event-routes-edit.test.ts - title edit (200, `updatedAt` moved from a 2020 seed, hash changed and equal to the recomputation, `createdAt` untouched); a PATCH carrying the stored values keeps the hash; null clears, absent keeps; both-ends move; zone change; timed-to-all-day and all-day-to-timed conversion; 15 refused bodies leaving the row identical; empty body; non-object bodies; a refused key never applies the valid keys beside it; unknown id 404 with a positive control.
+- AC-A5 (PRD AC-13): test/event-routes-delete.test.ts - 204 and gone; only the named Event; 404 on repeat and on unknown; a directly inserted link survives with `event_id` null and every other column unchanged, other links untouched, link count unchanged.
+- AC-A6 (PRD AC-14): test/event-routes-delete.test.ts, test/event-routes-create.test.ts - PATCH and DELETE on a directly inserted `google` row answer 409 naming `source` and leave the row (and its link) identical; a local row is a positive control; no POST ever stores `google`.
+- AC-A7 (PRD AC-15): test/event-routes-auth.test.ts - for POST, GET by range, GET by search, PATCH and DELETE: no header and a wrong token answer 401, leak no title, change no row and no link; each case ends with a positive control (the same request with the token earns 201/200/200/200/204); a bare token without the Bearer scheme is 401.
+- AC-A8 (PRD AC-16): test/event-hash-integrity.test.ts and test/event-api-inspection.test.ts - see the AC table.
+- AC-A9 (PRD AC-17): test/event-routes-search.test.ts - the PRD fixture (`consulta` -> two, newest first; `CONSULTA dentista` -> one; `reuniao`/`REUNIÃO` -> Reunião; description-only hit; any word order); one-character, padded one-character, empty, whitespace-only and 101-character `q` are 400 naming `q`, a 100-character and a two-character `q` are accepted; composition with `from`/`to` (set comparison); no range spans 2024 to 2027, newest first, an all-day Event sorts by its start day, and 101 matches return the 100 most recent.
+- AC-A10 (PRD AC-18): test/google-events-window.test.ts and test/event-range.test.ts - see the AC table.
+- AC-A11 (PRD AC-19): test/event-export.test.ts, test/export-envelope.test.ts, test/export.test.ts - see the AC table and ledger.
+- AC-A12 (PRD AC-20): test/export-ics.test.ts and test/export-ics-route.test.ts - see the AC table.
+- AC-A13 (PRD AC-21): see the AC table (script run at the command layer; the dump-shape precondition is in test/event-export.test.ts).
+- AC-A14 (PRD AC-33, this phase's part): see the AC table.
+- AC-A15 (PRD AC-34, api-reference part): see the AC table.
+
+## Test files written this session
+
+New (all under `test/`):
+
+- test/event-range.test.ts - AC-11/AC-18 range half (worker project; imports `../src/shared/event-range`)
+- test/event-routes-create.test.ts - AC-9, AC-10, and the last clause of AC-14 (worker project)
+- test/event-routes-list.test.ts - AC-11 (worker project)
+- test/event-routes-search.test.ts - AC-17 (worker project)
+- test/event-routes-edit.test.ts - AC-12 (worker project)
+- test/event-routes-delete.test.ts - AC-13, AC-14 (worker project)
+- test/event-routes-auth.test.ts - AC-15 (worker project)
+- test/event-hash-integrity.test.ts - AC-16 behaviour half (worker project)
+- test/event-api-inspection.test.ts - AC-16 inspection half and AC-34 api-reference clause (`docs` project, plain Node)
+- test/google-events-window.test.ts - AC-18 new from/to behaviour (worker project; a NEW file, as the orchestrator and plan require)
+- test/event-export.test.ts - AC-19 field for field, and the dump-shape precondition of AC-21 (worker project)
+
+New support module (not a test file, never collected by vitest):
+
+- test/event-fixtures.ts - how to call the Worker with the bearer token, how to seed an Event or a sync link straight into D1 (`seedTimed`, `seedAllDay`, `seedLink`), how to read the database back, and the TEST-SIDE oracles for the wire shape and the content hash (`expectedDto`, `expectedLinkDto`, `recomputedHash`). It imports nothing the Implementer writes: only the phase-1 shared core, the Drizzle schema and the phase-1 hash function with its own golden digests. Same standing as test/isolation.ts.
+
+Updated (existing tests, see ledger):
+
+- test/export-envelope.test.ts - AC-19: `emptyTables()` and two tests extended, one describe added
+- test/export.test.ts - AC-19: header comment, the AC-2 test extended
+- test/life-areas-export.test.ts - comment only (a stale "five tables")
+
+Updated (additive: new describes appended, no existing case touched; see the note under the ledger):
+
+- test/export-ics.test.ts - AC-20 Event cases
+- test/export-ics-route.test.ts - AC-20 stored-Event cases
+
+Updated (test infrastructure, not a test case):
+
+- vitest.config.ts - registers `test/event-api-inspection.test.ts` in the `docs` project's `include` and in the `worker` project's `exclude` (the pair-owned registration the plan's Notes assign to the test pair, exactly as phase 1 did for `event-migration-additive`); the comment lines were extended to say what the new file reads. No other line of the config changed.
+
+## Expected RED reasons (test-first)
+
+| Suite | Why it is RED before the Implementer | Anything else red? |
+|---|---|---|
+| event-range | `src/shared/event-range.ts` does not exist: the import cannot be resolved (file-level load failure) | no |
+| event-routes-create, -list, -search, -edit, -delete, -auth, event-hash-integrity | nothing is mounted at `/api/events`, so every request answers 404 where a 200/201/204/400/409 is expected. The refusal cases name their expected status, so a 404 cannot satisfy them. Where a case would otherwise pass on a 404 (the 401 gate, "nothing was written", "the link survives") it carries either a status assertion or a positive control | no |
+| event-api-inspection (docs project) | the repository and the events router do not exist (the guard and "the repository computes the hash" cases), and `docs/api-reference.md` has no Events rows (7 cases). The two "finds no route/no stray writer" cases PASS today and are meaningful only beside the RED guard, as the file's header says | the 16 detector self-checks pass by design |
+| google-events-window | the shipped route ignores `from` and `to`: the window assertions fail and the 400 cases get a 200, and a refused window still reaches Google | the default-window cases pass today by design (see below) |
+| event-export | `tables.events` and `tables.event_sync_links` are absent from the dump | the `formatVersion` case passes today by design |
+| export-envelope | `ExportTables` and the envelope have no `events`/`event_sync_links`; the sorted key list is five names where seven are expected | the five original AC-5 cases pass |
+| export (AC-2 test) | `tables.events` is absent | the other four cases pass |
+| export-ics, export-ics-route | `buildTasksIcs` ignores its third argument and the route passes none, so no Event VEVENT exists | every shipped Task case passes |
+
+Cases that PASS today on purpose (guards, not missing-implementation cases): the shipped Task `.ics` cases and the existing export, envelope, auth and life-areas-export cases; in test/google-events-window.test.ts the three default-window cases (the frozen "same 7-day window" half of AC-18, derived independently of the code as today plus eight local days at UTC-3), the case that a `from`/`to` request keeps the same three response keys and event mapping, and the not-connected 409 for a good window; in test/export-ics.test.ts "keeps every Task VEVENT exactly as the Task-only file writes it" and "writes the same file whether the Events are an empty list or left out"; in test/event-export.test.ts "keeps formatVersion at 1". A delegated pre-flight (below) counted 31 passing tests across the touched files and 210 failing, and classified every failure as a clean "not implemented yet" assertion or the missing-module load error.
+
+## Lifecycle ledger
+
+Every UPDATE or DELETE performed this session, one row each. When
+the session was create-only (no UPDATE/DELETE), the table's sole
+row is the default `(none — no update/delete this session)` row
+below instead of any operation rows.
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| UPDATE | EXISTING_TEST_UPDATED | test/export-envelope.test.ts:emptyTables (the shared fixture helper all cases in the file build on) | Driving AC: AC-19 (events-and-day-view PRD; plan AC-A11, Task 11). `ExportTables` gains two REQUIRED properties, `events` and `eventLinks`, so a caller that omits them stops compiling; the helper must return them or every case in the file would fail to type-check. The edit only ADDS two empty arrays, typed `EventDto[]` and `EventSyncLinkDto[]`; the five original keys are untouched |
+| UPDATE | EXISTING_TEST_UPDATED | test/export-envelope.test.ts:"carries a key for each of the seven data-bearing tables, populated with the given rows" (renamed from "...five data-bearing tables...") | Driving AC: AC-19. The envelope now carries seven tables. The sorted-equality form is unchanged and the expected list EXTENDS from five names to seven (`event_sync_links` and `events` added); the `life_areas` pass-through assertion is byte-identical. Nothing dropped, weakened or made conditional |
+| UPDATE | EXISTING_TEST_UPDATED | test/export-envelope.test.ts:"keeps the tables that were given empty actually empty — never fabricates rows" | Driving AC: AC-19. Two assertions ADDED (`events` and `event_sync_links` stay `[]` when given empty); the four original assertions are byte-identical |
+| UPDATE | EXISTING_TEST_UPDATED | test/export.test.ts:"contains a key for each of the seven tables, each carrying the seeded row (no link row is seeded)" (renamed from "...five tables...") | Driving AC: AC-19 (plan Notes: "extend the seed with an Event and assert `tables.events` ... and `tables.event_sync_links` empty"). The seed gains one `events` row and two assertions are ADDED (`tables.events` holds it, `tables.event_sync_links` equals `[]`); the five original `some(...)` assertions are byte-identical. The header comment's "five-table" became "seven-table" and gained a pointer to test/event-export.test.ts, where the field-for-field shape is pinned |
+| UPDATE | EXISTING_TEST_UPDATED | test/life-areas-export.test.ts: file header comment only (no test function changed) | Plan Notes name this stale comment explicitly. "five tables" became "seven tables, five when this file was written", and the `test/export.test.ts:64-97` line reference, which the edits above shift, became a line-free reference. No code, no assertion and no test name in the file changed; its `formatVersion` case still asserts 1 |
+
+Additive edits to existing test files (new describes appended; NOT lifecycle operations because no existing test function is changed, listed so the reviewer can diff them): test/export-ics.test.ts gains the `EventDto` type import, the `makeEvent`/`makeAllDayEvent` builders, a `NOW` constant and three describes ("a timed Event becomes a UTC VEVENT", "an all-day Event becomes a date-only VEVENT", "Tasks and Events together; the dated Tasks are unchanged"), and its header comment gained one PRD line. test/export-ics-route.test.ts gains a fixtures import, a `veventOf` helper and one describe ("stored Events reach the file"). In both files every shipped Task case is byte-identical.
+
+DELETE rows: none. No test was removed, skipped or loosened.
+
+## Notes for the reviewer
+
+- **Clarifications from the orchestrator, and where each is honoured.** (1) "Naming the field" is asserted as the error STRING containing the field key as a whole word (`names()` in test/event-fixtures.ts), never as a parenthesised suffix, and the non-object-body case asserts only a 400 and a non-empty string error; the one place a parenthesised suffix is plan-fixed (`(q)` in Task 7) is still matched by the same word-boundary check, so no wording is pinned. (2) The one-character `q` is tested for EVENTS only (400 naming `q`); nothing new is asserted about `GET /api/tasks`. (3) "Span" is the inclusive day count: 62 accepted and 63 refused for events, 31 accepted and 32 refused for the Google window. (4) The Google `from`/`to` tests are in a NEW file; test/task-list-contract.test.ts and the three shipped Google suites are untouched. (5) The export envelope/dump tests, the `.ics` tests and the stale comment are updated with ledger entries, never loosened. (6) Every route suite uses `isolatedIt as it` with `beforeEach(resetTaskTables, DRAIN_BUDGET_MS)`; no `resetEventTables` workaround. (7) No digest or golden value had to be computed this session: the one golden used is the phase-1 digest `c25b398c...6e79` (test/event-hash.test.ts), which is the digest of exactly the AC-9 payload (title `Dentista`, no description, location `Clínica Sorriso`, startAt 1792499400, endAt 1792503000, `America/Sao_Paulo`); its `startAt`/`endAt` literals are the same numbers. (8) vitest.config.ts was edited only to register the Node-side file in both projects.
+- **What is pinned beyond the PRD's literal text, each justified by the plan** (so the reviewer can overrule any of them): the half-open edge cases of the range read (Task 7: an Event ending exactly at the range start is outside, a zero-duration Event at the start is inside and at the end is outside, a wrapping Event is inside, an all-day exclusive end never leaks), the range being read in the owner's zone whatever zone an Event was authored in (Task 7/15), the order tie-breaks (all-day first, then start, then id), POST's closed key set for `id` and `createdAt` (Task 6; AC-10 itself names only `source` and `contentHash`), the empty-body PATCH being 400 (Task 8), `title: null` on PATCH being 400 (Task 8), PATCH toggling both ways with only the target shape's fields (Task 8), a zero-duration Event omitting `DTEND` in the `.ics` (Task 13, RFC 5545), a refused Google window making no outbound call and being a 400 even with no connection (Task 10, deliberate), the `q`-only search cap and newest-first order (AC-17 text), and the docs rows' shape (Task 15). Deliberately NOT pinned: error wording, the order of search results when a range is present, a lone `from` or `to` together with `q`, a PATCH `{allDay: true}` with no `startDate`, and moving only `startAt` past the stored end.
+- **Anti-vacuity.** The 401-gate suite is built around the fact that the gate answers 401 for any `/api/*` path, mounted or not; every case ends with a positive control. Unknown-id 404 cases carry a positive control. A delegated pre-flight found two cases that passed today only because they asserted no status (the google link case in test/event-routes-delete.test.ts and the "valid keys beside a refused one" case in test/event-routes-edit.test.ts); both now assert their 409 and 400 and were fixed before this manifest was finalised.
+- **Honest limits of the inspection test.** It is a tripwire on literal tokens (a renamed import or wrapper evades it), the same limit test/source-invariants.test.ts documents. Its two detectors are exercised against planted violations and legitimate lookalikes inside the file (16 cases), and the regex patterns avoid word-boundary escapes on purpose. It deliberately does not forbid a future writer of `event_sync_links` (unit 15 will create one) nor pin "repository only" forever beyond the ADR-0016 rule it encodes.
+- **Pre-flight, and what was NOT run by this agent.** This agent has no shell and ran nothing. A read-only delegated sub-agent with a shell ran `prettier --check`, `eslint`, `tsc -b` and one vitest pass over the touched files without editing anything; its report (not authoritative, `test-reviewer`'s dynamic RED check is) found: no authoring error; every failure a clean "not implemented" assertion or the missing-module error; `tsc -b` errors only for the not-yet-existing exports (`EventDto`, `EventSyncLinkDto`, `EventResponse`, `event-range`, the widened `ExportTables`, the third `buildTasksIcs` argument), so real type mismatches involving those names are masked until `src/shared/api.ts` exports them and `tsc -b` must be re-run after the Implementer; fixture seeding through Drizzle, the 101-row chunked bulk insert and `PRAGMA table_info(...)` through `env.DB` all work against the migrated test D1; and the plan's own two greps over `src/` are empty today.
+- **Formatting.** The new files were written to the project's Prettier settings by hand and were not run through `prettier --write` by this agent. The pre-flight's `--check` reported layout-only differences in 6 files (test/event-fixtures.ts, test/event-routes-create.test.ts, test/event-routes-delete.test.ts, test/event-export.test.ts, test/export-ics.test.ts, test/export-ics-route.test.ts) and no syntax error in any file. The `/relay-write-test` prevention step (`formatter_cmd` in methodology.md) runs `npx prettier --write` over the touched files; `npm run check` is the gate.
+- **A derived doc this agent must not edit.** `docs/context/testing.md` lists the `docs` project's files in its "Detected test suites" row. It now also holds `test/event-api-inspection.test.ts` (AC-16 inspection half, AC-34 api-reference clause). That row is a non-test file; updating it is the docs updater's / Implementer's job and is recorded here so it is not forgotten.
+- **Fixture hygiene.** Events are seeded with `created_at`/`updated_at` in 2020, so "updatedAt moved" is visible despite the column's one-second precision (the plan's Risks row), and seeded hashes are the TRUE hash of the seeded fields, so "a PATCH carrying the stored values leaves the hash equal" is a real comparison. The bulk-insert case chunks 5 rows per statement because D1 refuses more than 100 bound parameters.
+
+## Formatting Outcome
+
+formatted — command `npx prettier --write` (source: methodology.md formatter_cmd), scoped to the 18 touched files (11 new test files + the `test/event-fixtures.ts` support module, 5 updated test files and `vitest.config.ts`). Prettier rewrote 6 of them (`test/event-routes-create.test.ts`, `test/event-routes-delete.test.ts`, `test/event-export.test.ts`, `test/event-fixtures.ts`, `test/export-ics.test.ts`, `test/export-ics-route.test.ts` — layout only); the other 12 were already conformant. `prettier --check` on the set is clean afterwards.
+
+## Status
+
+*Approved: 2026-10-19*
+*Status: APPROVED*

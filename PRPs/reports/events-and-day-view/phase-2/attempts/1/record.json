@@ -1,0 +1,8 @@
+{
+  "attempt": 1,
+  "verdict": "IMPLEMENTATION_COMPLETE",
+  "validation": { "level_1": "PASS", "level_2": "PASS", "level_3": "PASS" },
+  "base_commit": "6b8c7b3a6af0f5bee4f08677bc31a02a2615f1fd",
+  "base_commit_kind": "tree object written by `git add -A && git write-tree` after the phase-2 APPROVED suite",
+  "files_changed_source": "see diff.patch"
+}

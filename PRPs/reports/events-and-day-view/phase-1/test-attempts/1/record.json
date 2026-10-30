@@ -1,0 +1,65 @@
+{
+  "run_id": "728043b7-965f-477e-8617-140edeea6cb0",
+  "attempt": 1,
+  "tier": "unit",
+  "framework": "vitest",
+  "outcome": "PASSED",
+  "duration_ms": 47187,
+  "counts": {
+    "passed": 1915,
+    "failed": 0,
+    "skipped": 0,
+    "total": 1915
+  },
+  "failures": [],
+  "coverage": null,
+  "artifacts": {
+    "junit_xml": "C:\\repos\\assistente-pessoal\\.worktrees\\events-and-day-view\\PRPs\\reports\\events-and-day-view\\attempts\\1\\junit.xml"
+  },
+  "generated_at": "2026-10-19T16:47:15.265Z",
+  "feature": "events-and-day-view",
+  "degraded": false,
+  "command": "CI=1 NO_COLOR=1 npm test -- --reporter=default --reporter=junit --outputFile.junit=PRPs/reports/events-and-day-view/attempts/1/junit.xml",
+  "projects": {
+    "worker": "vitest-pool-workers (workerd)",
+    "docs": "plain Node"
+  },
+  "test_files": {
+    "passed": 97,
+    "failed": 0,
+    "total": 97
+  },
+  "wall_clock_ms": {
+    "test_run": 66662,
+    "check_gate": 10992
+  },
+  "companion_gate": {
+    "command": "npm run check",
+    "steps": [
+      "wrangler types --check",
+      "tsc -b",
+      "eslint .",
+      "prettier --check ."
+    ],
+    "exit_code": 0,
+    "result": "PASSED",
+    "elapsed_ms": 10992
+  },
+  "redaction": {
+    "count": 0,
+    "categories": {
+      "env_names": 0,
+      "url_values": 0,
+      "regex_matches": 0
+    },
+    "values_registered": 6,
+    "note": "Layer 1 + Layer 2 (PRPs/redaction-extensions.txt has no entries) applied to stdout.log; .dev.vars values for wildcard-matching names (API_BEARER_TOKEN, VAPID_PRIVATE_KEY, VAPID_PUBLIC_KEY, GOOGLE_CLIENT_SECRET) registered in the table in addition to process env; junit.xml re-scanned, unchanged"
+  },
+  "notes": [
+    "Exit code 127 / no-summary infra flake did NOT occur: npm test exited 0 with a full vitest summary on the recorded run.",
+    "A first launch of this attempt produced no test output because the runner-side redaction filter (scratchpad script) failed to parse; it was fixed and the attempt re-run. No suite result was taken from that launch.",
+    "Vitest summary: Test Files 97 passed (97), Tests 1915 passed (1915), Duration 63.53s.",
+    "Companion gate npm run check: exit 0 (types up to date, tsc -b clean, eslint clean, prettier clean).",
+    "No failures to classify (B3 not exercised). No test or production file was modified by the runner."
+  ]
+}

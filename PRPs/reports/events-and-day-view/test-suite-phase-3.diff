@@ -1,0 +1,130 @@
+# TDD initial suite — phase 3
+# Source PRD: PRPs/prds/events-and-day-view.prd.md (Acceptance Criteria)
+# Source plan: C:/repos/assistente-pessoal/.worktrees/events-and-day-view/PRPs/plans/events-and-day-view-phase-3-the-range-function-and-the-day.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-10-19
+# Mode: test-first (docs/context/methodology.md: tdd: true, test_frameworks: ["vitest"]; plan phase_type feature)
+# Code root: C:/repos/assistente-pessoal/.worktrees/events-and-day-view (branch feature/events-and-day-view)
+# Phase-1 manifest PRPs/reports/events-and-day-view/test-suite.diff and phase-2 manifest
+#   PRPs/reports/events-and-day-view/test-suite-phase-2.diff (both APPROVED) are unchanged; this file is the
+#   phase-3 sibling, named per the same test-suite-phase-<N>.diff precedent.
+
+## AC outcomes
+
+Plan AC-A1..AC-A11 map onto PRD AC-22 (AC-A1, AC-A2, AC-A3), AC-26 (AC-A4), AC-24/AC-25 pure slices (AC-A5),
+AC-23/AC-24/AC-25 manual (AC-A6, AC-A7, AC-A8), AC-30 in part (AC-A9), AC-34 in part (AC-A10) and AC-33 in part
+(AC-A11). Every PRD AC is listed so none is silently unaddressed.
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-1..AC-21 | OUT_OF_PHASE_SCOPE | (phases 1 and 2, complete: see test-suite.diff and test-suite-phase-2.diff) |
+| AC-22 | NEW_TEST_REQUIRED + EXISTING_TEST_COVERS (one clause) | New: test/day-range.test.ts (`itemsInRange` and `dayItemPlacement`: 0/1/2/3 sources, no source-count or source-id branch, order-preserving splits, spans, midnight crossing, ordering, Tasks as day-level items, outside-range absence, inverted range, no clock), test/day-item-local.test.ts (`dayItemFromLocalEvent`), test/day-groups-local.test.ts (a non-Task item can never land in `overdue`, `done` or `missed`; exhaustive switch), and the Agenda slice in test/agenda-items.test.ts (`agendaItemsForToday`). Covered by existing tests, left UNMODIFIED: "`collectDayItems` is byte-identical for Task-only input with its existing tests unmodified" is test/day-groups.test.ts:73 (zero sources), :95 (one source), :165 (two sources), :213 (no source-count branch), :246 (done/missed split), :359 (purity); test/day-item.test.ts:58 and :144 (`dayItemFromTask`, `assertNeverDaySource`); test/day-item-event.test.ts:45 and :68 (`dayItemFromEvent`); test/task-groups.test.ts:1 (whole file, the Task grouping characterisation). The plan's Level 2 and Level 3 re-run them and diff them against `4231ee8` |
+| AC-23 | MANUAL (no vitest file for the screen) + NEW_TEST_REQUIRED for the decidable slice | Slice: test/agenda-items.test.ts (one local plus one Google row make two; all-day first then by start, local before Google on a tie; only today's rows; the notice rule, `decideAgendaNotice`, byte-for-byte the shipped Google-only strings; the explicit unit-4 notice with local rows still listing is the "partial or failed Google whatever the row count" cases). Manual part (solid versus dashed rows, no checkbox, inert local row, collapsed header, Google-only day unchanged): plan AC-A6, verified by plan Task 13 (`PRPs/reports/events-and-day-view/phase-3/live-pass-protocol.md`, section AC-23, run in the browser pane) and Task 14 (`ui-checklist.md`, section AC-23 walk). Per docs/context/methodology.md "UI stays manually verified" |
+| AC-24 | MANUAL + NEW_TEST_REQUIRED for the decidable slice | Slice: test/day-view.test.ts (heading, neighbouring days, *Hoje* control, time labels, section split, `DAY_VIEW_EMPTY`, request paths), test/day-range.test.ts (what a day holds: all-day first, timed by start with start and end, Tasks last, multi-day and midnight-crossing items), test/app-route.test.ts additive cases (the route the arrows step through). Manual part (stepping with real history entries, Android back, the three sources visibly distinct, the sheet opening a Task on tap): plan AC-A7, plan Task 13 section AC-24 and Task 14 section AC-24 walk |
+| AC-25 | MANUAL + NEW_TEST_REQUIRED for the decidable slice | Slice: test/day-range.test.ts describe "a future day" (a commitment for next Tuesday is listed on that Tuesday and absent from today's range), test/agenda-items.test.ts (absent from today's Agenda; `decideAgendaNotice` never returns the empty text while Google failed, partial or another source unanswered), test/day-view.test.ts (`eventsRangePath`, `googleEventsPath` request shapes). Manual part (forced Google and local failures on a rendered `/day`, never reading as free): plan AC-A8, plan Task 13 section AC-25 and Task 14 section AC-25 walk |
+| AC-26 | NEW_TEST_REQUIRED (additive) + EXISTING_TEST_COVERS (one clause) | New: additive describes appended to test/app-route.test.ts (see Lifecycle ledger). Existing, UNMODIFIED: "every existing route maps exactly as before" is test/app-route.test.ts as it stood at `4231ee8`, original lines 52-374 (now shifted +3 by the one added import line); the Level 3 gate proves no original line was removed or changed |
+| AC-27 | OUT_OF_PHASE_SCOPE | (deferred to phase 4) |
+| AC-28 | OUT_OF_PHASE_SCOPE | (deferred to phase 4; manual) |
+| AC-29 | OUT_OF_PHASE_SCOPE | (deferred to phase 4; manual) |
+| AC-30 | OUT_OF_PHASE_SCOPE for the sheet; the changed-screens checklist of this phase is MANUAL | The phase-3 checklist record is plan AC-A9 / Task 14 (`PRPs/reports/events-and-day-view/phase-3/ui-checklist.md`), a report artifact checked by that task's own scripted VALIDATE, not a Vitest file. Offline and failed-save states are phase 4 |
+| AC-31 | OUT_OF_PHASE_SCOPE | (deferred to phase 5; device observation) |
+| AC-32 | OUT_OF_PHASE_SCOPE | (deferred to phase 5; script run on a real snapshot) |
+| AC-33 | NOT ENCODED (property of the diff) for this phase's slice | Plan AC-A11: `dates.ts`, `recurrence.ts`, `adherence.ts` byte-identical to `4231ee8`; no existing test removed, skipped or loosened; no phase-4 identifier under `src/app`; `npm run check`, `npm test`, `npm run build` pass. Proven by the plan's own Level 3 `git diff` gates and by `post-green-reviewer`, not encoded as a permanent test, for the reason phases 1 and 2 recorded (those files are "unchanged for this unit", not frozen forever; unit 17 reuses `recurrence.ts`). The "no test removed or loosened" clause is held by this manifest's ledger: one additive UPDATE row, zero DELETE |
+| AC-34 | NOT ENCODED (documentation inspection) for this phase's slice | Plan AC-A10: the dated layout-standard amendment for the route, the header date button and the Agenda stack. The plan checks it with the scripted VALIDATE of Task 12 (a `node -e` over `documentation/40-engineering/ui-layout-standard.md`), and its file list fixes no vitest file for it. The remaining AC-34 clauses are phase 5 |
+
+### Plan AC -> test cases
+
+- AC-A1 (PRD AC-22): test/day-range.test.ts - one entry per day (empty, ascending, month/year/leap boundaries, one-day range, inverted range); zero, one, two, three and five sources, and the same items split in order across one, two, three, six and empty-interleaved sources giving a deeply equal answer, source ids irrelevant; local and Google all-day spans (exclusive end, clipping, equal or inverted end read as one day); timed spans (midnight crossing, ending exactly at 00:00 stays, one second later spills, one second before stays, zero duration, backwards end, three-day span, overnight continuation, ends exactly at the range start, starts exactly after the range, 22:00 local, 00:30 UTC, Google mismatched or reversed end); ordering (all-day, then timed by start, then Tasks; ties in arrival order not id order, across sources too; continuation by real start; multi-day all-day ahead of timed); Tasks (deadline else scheduledDate, closed and undated absent, outside absent); outside-the-range absence; the next-Tuesday slice; the very input objects returned, no mutation (frozen inputs), determinism, no clock (a `Date` guard that throws on `Date.now()` and `new Date()`, with a self-check that proves the guard blocks); `dayItemPlacement` (seconds versus milliseconds placed identically, exact shape, last day by last instant, exclusive end to inclusive last day, Task and null cases).
+- AC-A2 (PRD AC-22): test/day-item-local.test.ts (`dayItemFromLocalEvent`: source, id, whole DTO carried by identity with the closed key set, never closed, all-day `startDate` verbatim and not zone-converted, timed owner-zone day from seconds incl. 22:00, 21:30, midnight and a New York authored Event, `null` for a DTO missing its start) and test/day-groups-local.test.ts (a sweep of source x closed x due day proving no non-Task item reaches `overdue`/`done`/`missed`; where such an item does land, plan D3-8; Tasks keep their rules beside events; an unknown source throws). The "existing suites pass unmodified" clause is the EXISTING_TEST_COVERS row above.
+- AC-A3 (PRD AC-22, AC-23): test/agenda-items.test.ts - `agendaItemsForToday` (both sources, order, identity of the carried DTOs, only today, overnight and multi-day continuation, purity, no clock), `agendaForToday` as a thin caller (same objects, equals the Google rows of the combined function, multi-day event on later days), the copy (`AGENDA_EMPTY`, `agendaPartialMessage`), and `decideAgendaNotice` (loading, partial, failed, ready; rows 0/1/4; `othersReady` true/false; the empty text returned in exactly one of 24 combinations; the Google-only strings byte for byte). `test/agenda.test.ts` passes unmodified (EXISTING_TEST_COVERS).
+- AC-A4 (PRD AC-26): test/app-route.test.ts, additive describes (`/day/2026-10-20` both ways and round-trip, trailing slash, calendar edges, ten impossible or malformed dates, extra segment, lookalike paths, a date-shaped Task id still a Task route, `dayRouteOf`, `dayFromRoute`, `taskIdFromRoute` of a day route).
+- AC-A5 (PRD AC-24, AC-25): test/day-view.test.ts (see AC-24 above).
+- AC-A6, AC-A7, AC-A8 (PRD AC-23, AC-24, AC-25): MANUAL; no vitest file; decidable halves are AC-A1..AC-A5.
+- AC-A9, AC-A10, AC-A11 (PRD AC-30, AC-34, AC-33 in part): not Vitest cases, see the AC table.
+
+## Test files written this session
+
+New (all under `test/`, all in the `worker` Vitest project, plain Vitest `it`; none touches D1, so no `isolatedIt` or `resetTaskTables`):
+
+- test/day-range.test.ts - AC-22 range function (imports `../src/shared/day-range`, `day-item`, `day-groups`)
+- test/day-item-local.test.ts - AC-22 projection (imports `../src/shared/day-item`)
+- test/day-groups-local.test.ts - AC-22 bucketing clause (imports `../src/shared/day-groups`, `day-item`)
+- test/agenda-items.test.ts - AC-22/AC-23/AC-25 Agenda slice (imports `../src/shared/agenda`, `google-failure-copy`)
+- test/day-view.test.ts - AC-24/AC-25 slice (imports `../src/shared/day-view`, `day-range`, `day-item`, `format`)
+
+New support module (not a test file, never collected by vitest; same standing as test/isolation.ts and test/event-fixtures.ts):
+
+- test/day-fixtures.ts - builders for the three DTOs (`localTimed`, `localAllDay`, `googleTimed`, `googleAllDay`, `task`), `spSeconds`/`spMillis` (a São Paulo wall-clock moment as epoch seconds or milliseconds; the zone has been a fixed -03:00 since 2019), `idsOf`, and `withoutClock` (a `Date` guard). It imports only TYPES from the wire contract, nothing this phase's Implementer writes.
+
+Modified (existing test file, ADDITIVE only; see the Lifecycle ledger):
+
+- test/app-route.test.ts - one added import line (with a two-line comment) after the original import block, and the day-route describes appended at the end of the file.
+
+Not modified: vitest.config.ts (no Node-side test was added), docs/context/testing.md, any existing test other than test/app-route.test.ts. In particular test/day-groups.test.ts, test/day-item.test.ts, test/day-item-event.test.ts, test/agenda.test.ts, test/task-groups.test.ts and test/format.test.ts are byte-identical to `4231ee8`.
+
+Case counts (new): day-range 76, day-item-local 16, day-groups-local 41, agenda-items 33, day-view 39, app-route +20 = 225 new cases.
+
+## Expected RED reasons (test-first)
+
+Numbers are from a delegated pre-flight (below), run against the tree as it stands, before any production code.
+
+| Suite | Why it is RED before the Implementer | Anything else red? |
+|---|---|---|
+| day-range | `src/shared/day-range.ts` does not exist: file-level load failure (`Cannot find module '../src/shared/day-range'`), 76 cases not run | no |
+| day-view | `src/shared/day-range.ts` (first reported) and `src/shared/day-view.ts` do not exist and `ALL_DAY_LABEL` is not exported: file-level load failure, 39 cases not run | no |
+| day-item-local | `dayItemFromLocalEvent` is not exported: 16 of 16 fail with "is not a function" | no |
+| agenda-items | `agendaItemsForToday`, `decideAgendaNotice`, `agendaPartialMessage`, `AGENDA_EMPTY` are not exported (31 cases "not a function" / `undefined`), and `agendaForToday` still drops a multi-day all-day event on its later days (1 behavioural failure): 32 of 33 fail | 1 passes today on purpose: "returns the very Google event objects it was given" (the shipped function already returns the same objects; it guards the rewrite against copying) |
+| day-groups-local | today's `bucketOf` is source-blind, so a past-dated non-Task item is filed `overdue` and a closed one `done`: 26 of 41 fail (16 of the 24 PRD sweep cases, the two "does not file ... as overdue/done" cases, the 4 D3-8 cases that move, 2 "Tasks keep their rules", 2 exhaustive-switch cases that expect a throw) | 15 pass today: they use real input through a real `collectDayItems` and agree with today's ladder (an open item dated today, in the future or undated); they stand as regression guards for the new `case "local"`/`case "google"` branch, not as RED proof |
+| app-route | `dayRouteOf` and `dayFromRoute` do not exist, `AppRoute` has no `day/${string}` member and the mapping is absent: 13 of the 20 new cases fail | the 49 ORIGINAL cases all pass; 7 of the new cases pass today because `today` is the fallback (impossible date, `/day/abc`, bare `/day`, extra segment, malformed dates, lookalike paths, a date-shaped Task id): negative guards that bite once the route exists |
+
+`tsc -b` reports, on the touched files, only errors that name a module or export that does not exist yet (15 of them), plus two follow-on errors (an implicit `any` on a callback typed from the missing `agendaItemsForToday`, and `pathOf("day/2026-10-20")` before `AppRoute` has its new member). No authoring error. Call sites that import missing symbols are typed `any` until the Implementer lands, so `tsc -b` must be re-run after it.
+
+## What is pinned beyond the PRD's literal text
+
+Each of these is fixed by the plan (the decision id is given) and tested as the plan states it; the reviewer may overrule any of them.
+
+- Exact names and signatures of `itemsInRange`, `dayItemPlacement` (and its `allDay` / `timed` / `task` placement shape), `DayRange`, `DayRangeEntry`, `dayItemFromLocalEvent`, `LocalDayItem`, `agendaItemsForToday`, `decideAgendaNotice` (input `{ google, othersReady, rowCount, emptyText }`), `agendaPartialMessage`, `AGENDA_EMPTY`, `dayRouteOf`, `dayFromRoute`, the `day-view` exports (Tasks 1-6), and `ALL_DAY_LABEL` exported from `format.ts`.
+- D3-1 days are the owner's days (a New York-authored Event is placed and shown on São Paulo time; an all-day date is verbatim).
+- D3-3 spans: an all-day Event covers its start through the day before its exclusive end; a timed one through the day of its last instant (`end - 1`); an end that is not after the start covers the start's day (local and Google alike; a Google timed event with a mismatched end is read as ending at its start and never throws). Google rows now also appear on their later days in the Agenda, a deliberate change from the shipped start-day-only rule.
+- D3-4 order: all-day, timed by start, Tasks; ties in arrival order (test/agenda.test.ts:150-159 pins it for the shipped Agenda); a continuation sorts by its real start. Split-invariance is claimed ONLY for order-preserving (contiguous) splits; an interleaved split is deliberately not tested.
+- D3-8 bucketing of non-Task items: no day -> `undated`, after today -> `upcoming`, otherwise `today` (so a past-dated Event lands in `today`, the plan's accepted cost). The PRD clause (never `overdue`/`done`/`missed`) and this placement are kept in separate describes.
+- D3-10 copy: the continuation label `até HH:mm` (flagged in the plan for the owner), `HH:mm–HH:mm` with U+2013 and no spaces, an end at midnight reading `00:00`, `Nada neste dia.`, the heading `terça-feira, 20 de outubro` (year added only when it differs from today's), the literal paths `/api/events?from=..&to=..` and `/api/google/events[?from=..&to=..]`.
+- Deliberately NOT pinned (the plan is silent): the `endMs` of a reversed or mismatched-end timed item; the label on a middle day of a timed item spanning three or more days; `agendaPartialMessage(0)`; `pathOf` of a day route holding an invalid date; the order of `splitDayItems`' keys; error wording.
+
+## Lifecycle ledger
+
+Every UPDATE or DELETE performed this session, one row each. When
+the session was create-only (no UPDATE/DELETE), the table's sole
+row is the default `(none — no update/delete this session)` row
+below instead of any operation rows.
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| UPDATE | EXISTING_TEST_UPDATED (additive only: nothing existing is changed or removed) | test/app-route.test.ts: one added `import { dayFromRoute, dayRouteOf } from "../src/shared/app-route";` line plus a two-line comment after the original import block, and new describes appended at the end of the file ("routeFromPath — the day route", "pathOf — the day route", "routeFromPath and pathOf agree — the day route round-trips", "dayRouteOf / dayFromRoute") | Driving AC: AC-26 (events-and-day-view PRD; plan AC-A4, Task 5). The plan names this file for additive cases. The new route's helpers are imported in a SECOND import statement so the original import block stays byte-for-byte as it was (the plan's Level 3 fails on any removed or changed line). `git diff --unified=0 4231ee8` of the file shows two hunks, `@@ -50,0 +51,3 @@` and `@@ -374,0 +378,144 @@` (the second hunk later grew by three comment-only lines), and no `-` line; `--numstat` was 147 insertions, 0 deletions before that comment edit. All 49 original cases still pass. Nothing dropped, weakened or made conditional |
+
+DELETE rows: none. No test was removed, skipped or loosened.
+
+## Notes for the reviewer
+
+- **Clarifications from the orchestrator, and where each is honoured.** (1) Plan file names are used exactly (`day-range`, `day-item-local`, `day-groups-local`, `agenda-items`, `day-view`, additive cases in `app-route`); the seven frozen suites are untouched and the ledger records the one edit. (2) Names and signatures are the plan's; where the plan goes beyond the PRD (D3-1..D3-10) it is tested as the plan states and listed above. (3) AC-22: 0, 1, 2, 3 (and 5) sources, no branch on source count or id, multi-day all-day on every covered day, midnight crossing on both days, all-day then timed by start then Tasks, outside absent, no clock, and non-Task items never in `overdue`/`done`/`missed` (swept over source x closed x due day). (4) AC-26: `/day/2026-10-20` round-trips; `/day/2026-02-30`, `/day/abc`, bare `/day` map to `today`; existing routes unchanged by the unmodified originals. (5) Machine notes: this agent has no shell; two read-only-by-contract delegated sub-agents with a shell did the pre-flight (below); `test/isolation.ts` was not needed because no case touches D1. (6) No component test was written; decision logic is tested through the pure modules only; the manual ACs are recorded as manual with the plan's Tasks 13 and 14.
+- **Pre-flight, and what was NOT run by this agent.** This agent ran nothing. Helper 1 (shell) ran `prettier --check/--write` (scoped to the seven touched paths), `eslint` (clean), `tsc -b` (only expected missing-symbol errors, see above), a scratch Vitest file in the workerd pool (since deleted) that confirmed the Intl facts the suite pins are identical in workerd and Node (`terça-feira, 20 de outubro`, `quarta-feira, 31 de dezembro de 2025`, `sexta-feira, 1 de janeiro de 2027`, `quinta-feira, 1 de janeiro`, `segunda-feira, 5 de outubro`, `quarta-feira, 30 de setembro de 2026`, midnight `00:00`) and that the `Date` guard works inside workerd with `Intl`, `todayIn` and `formatEventTime`, then ran the six suites (RED classification above, no authoring error). Its authoritative counterpart is `test-reviewer`'s own dynamic RED check.
+- **Positive-path validation against a throwaway reference.** Because day-range and day-view cannot load, their 115 cases had never executed. Helper 2 wrote a REFERENCE implementation literally from the plan's Tasks 1-6 inside a scratch copy of `src/shared` under `test/zz-ref/` (the real `src/` was never touched; the scratch tree is deleted and `git diff --name-only -- src` is empty) and ran byte-identical copies of the six new files, the app-route file and the six frozen suites against it: 435 of 435 passed, `tsc` clean on the copies. So no expected value is wrong against the plan's text, every signature the tests use fits the plan's contract, and the six frozen suites stay green against a plan-faithful implementation (the plan's `bucketOf`, `agendaForToday` and `ALL_DAY_LABEL` text is behaviour-preserving). This validates the tests against one reading of the plan; it is not an Implementer's work product and is not kept.
+- **Mutation sanity check.** On the same scratch reference, each of these deliberate defects turned at least one test red: ties sorted by id (m1), all-day exclusive end read as inclusive (m2, local and Google separately), a timed end at 00:00 spilling onto the next day (m3, local and Google separately), `startAt` read as milliseconds (m4, projection and placement separately), `decideAgendaNotice` ignoring `othersReady` (m5), a closed non-Task item filed under `done` (m6, local and Google separately); and 18 more (past-dated non-Task item as `overdue`, a closed Task placed, `>=` on Google equal dates, Tasks before timed, hyphen for the en dash, *Hoje* control always shown, year always or never in the heading, continuation label showing the start, swapped `eventsRangePath` ends, skipped date validation in `routeFromPath` and `dayFromRoute`, a partial or failed notice hidden when rows exist, `loading` treated as `ready`, a local item marked closed, cloned items, a copied `event`, a clock read, unplaceable items kept by `splitDayItems`, the continuation label only in range mode, swapped sources in the Agenda). Not caught, and not claimed by the plan: the four items under "Deliberately NOT pinned" above.
+- **Reading choices the plan leaves open, made by the reference and not pinned by any test** (so a different Implementer choice will not turn the suite red): `endMs` equals `startMs` for a degenerate timed item; `até HH:mm` applies whenever the item began on an earlier day; `formatDayItemTime` of an item with no placement returns an empty string; `pathOf` of a day route emits `/day/<whatever>` without validating.
+- **Anti-vacuity.** The `Date` guard has its own self-check case (the guard really throws on `Date.now()` and a bare `new Date()` and lets `new Date(<value>)` and `Date.UTC` through, and the real clock is back afterwards), so the "reads no clock" cases cannot pass for want of a working guard. The "empty text in exactly one situation" case enumerates 24 combinations. Cases that pass today are listed above with the reason, and none is vacuous: each uses real input and would catch a wrong implementation of the new branch.
+- **Honest limits.** The suite pins the `Intl` output of the runtime (ICU 78 / CLDR 48 in workerd, matching Node 24): a future ICU that spells `terça-feira` or a month differently would move the heading cases, exactly as the shipped `formatDayShort` cases would. The fixtures assume `America/Sao_Paulo` is a fixed -03:00 for the October 2026 dates used, which is true (no DST since 2019), so these tests could not reveal a DST gap bug; the zone arithmetic under DST is phase 1's `test/event-wall-clock.test.ts`.
+- **A derived doc this agent must not edit.** None: no new Vitest project or non-test file list changed, so `docs/context/testing.md` needs no row for this phase.
+- **Test-file wording.** Two header claims were corrected after the pre-flight to say which cases pass today on purpose (test/agenda-items.test.ts, test/app-route.test.ts); both are comment-only.
+
+## Formatting Outcome
+
+formatted - command `npx prettier --write` (source: methodology.md formatter_cmd), scoped to the 7 touched files (5 new test files, the `test/day-fixtures.ts` support module, and the additive edit of `test/app-route.test.ts`; never `.`). Prettier rewrote 4 of them (`test/day-range.test.ts`, `test/day-groups-local.test.ts`, `test/agenda-items.test.ts`, `test/day-view.test.ts` - line wrapping and one import collapsed; the delegated diff against the pre-write copies showed no token change); the other 3 were already conformant. `prettier --check` on the set was clean afterwards, and `eslint` on the set was clean. Two comment-only edits followed (see the last note above); Prettier does not reflow comments, and `npm run check` remains the gate.
+
+## Formatting Outcome
+
+formatted — command `npx prettier --write` (source: methodology.md formatter_cmd), scoped to the 7 touched files (5 new test files, the `test/day-fixtures.ts` support module and the additively updated `test/app-route.test.ts`). All 7 were already conformant (no file rewritten); `prettier --check` on the set is clean.
+
+## Status
+
+*Approved: 2026-10-19*
+*Status: APPROVED*

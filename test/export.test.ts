@@ -8,12 +8,16 @@
 // completeness guard) lives in test/export-completeness.test.ts and AC-5's
 // pure-builder half lives in test/export-envelope.test.ts — this file covers
 // only what requires the real Worker, the auth gate, and a real D1 database:
-// the route wiring itself, the five-table dump, and the credential-leak guard.
+// the route wiring itself, the seven-table dump, and the credential-leak guard.
+// (Seven since unit 14 events-and-day-view phase 2, AC-19: `events` and
+// `event_sync_links` joined the dump. Their field-for-field shape is pinned in
+// test/event-export.test.ts; this file only proves each table has a key.)
 
 import { env, exports } from "cloudflare:workers";
 import { beforeEach, describe, expect } from "vitest";
 import { createDb } from "../src/worker/db/client";
 import {
+  events,
   googleCalendarSelections,
   googleConnections,
   lifeAreas,
@@ -62,7 +66,7 @@ describe("GET /api/export — AC-1 authenticated by construction", () => {
 });
 
 describe("GET /api/export — AC-2 every data-bearing table is present", () => {
-  it("contains a key for each of the five tables, each carrying the seeded row", async () => {
+  it("contains a key for each of the seven tables, each carrying the seeded row (no link row is seeded)", async () => {
     const db = createDb(env);
     await db.insert(lifeAreas).values({ id: "la-1", name: "Saude" });
     await db.insert(recurrenceSeries).values({
@@ -79,6 +83,15 @@ describe("GET /api/export — AC-2 every data-bearing table is present", () => {
       .insert(reminders)
       .values({ id: reminderId, taskId, fireAt: new Date("2026-09-09T12:00:00Z") });
     await db.insert(googleCalendarSelections).values({ calendarId: "primary" });
+    await db.insert(events).values({
+      id: "event-1",
+      title: "Dentista",
+      allDay: false,
+      startAt: new Date("2026-10-20T12:30:00Z"),
+      endAt: new Date("2026-10-20T13:30:00Z"),
+      timezone: "America/Sao_Paulo",
+      contentHash: "seed-hash",
+    });
 
     const res = await exports.default.fetch(EXPORT, auth());
     expect(res.status).toBe(200);
@@ -93,6 +106,8 @@ describe("GET /api/export — AC-2 every data-bearing table is present", () => {
     expect(
       body.tables.google_calendar_selections?.some((row) => row.calendarId === "primary"),
     ).toBe(true);
+    expect(body.tables.events?.some((row) => row.id === "event-1")).toBe(true);
+    expect(body.tables.event_sync_links).toEqual([]);
   });
 });
 

@@ -18,6 +18,14 @@
 // phase-3 plan's `## Notes` and wired only if the owner's device check finds
 // the Android back gesture does not close this dialog.
 //
+// A `close` event is NOT always the news it looks like: `dialog.close()` raises
+// it as a later task, so after a quick reopen it can arrive while the dialog is
+// open again, and mirroring it would close the sheet that had just been
+// reopened (unit 14 phase-4 finding F2, seen in the browser pane with stack
+// traces). `shouldMirrorDialogClose` (src/shared/dialog-events.ts, tested)
+// decides which events are reported: every `cancel`, and a `close` only
+// while the dialog is closed.
+//
 // `lightDismiss` (phase 3, today-view-and-filters): opt-in, defaults to
 // `false`. Layout standard §3 allows light dismiss (`closedby="any"`) on the
 // filter sheet ONLY, and forbids it on an editor with unsaved changes — so
@@ -30,6 +38,7 @@
 import { X } from "lucide-react";
 import { useEffect, useId, useRef } from "react";
 import type { ReactNode } from "react";
+import { shouldMirrorDialogClose } from "../../../shared/dialog-events";
 import { Button } from "./Button";
 
 export function Sheet({
@@ -80,13 +89,18 @@ export function Sheet({
     // closes the dialog either way; this only reports the request. A
     // `cancel`-then-`close` pair for the same gesture is harmless noise:
     // `reduceTaskSheet`'s `close` event is idempotent (AC-A8), so a
-    // duplicate `onOpenChange(false)` never double-acts.
-    const handleClose = () => onOpenChangeRef.current(false);
+    // duplicate `onOpenChange(false)` never double-acts. A STALE `close` (the
+    // dialog is open again) is not noise: it is dropped, see the header.
+    const mirror = (type: "close" | "cancel") => () => {
+      if (shouldMirrorDialogClose(type, dialog.open)) onOpenChangeRef.current(false);
+    };
+    const handleClose = mirror("close");
+    const handleCancel = mirror("cancel");
     dialog.addEventListener("close", handleClose);
-    dialog.addEventListener("cancel", handleClose);
+    dialog.addEventListener("cancel", handleCancel);
     return () => {
       dialog.removeEventListener("close", handleClose);
-      dialog.removeEventListener("cancel", handleClose);
+      dialog.removeEventListener("cancel", handleCancel);
     };
   }, []);
 

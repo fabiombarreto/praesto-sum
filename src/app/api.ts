@@ -1,10 +1,14 @@
 import type {
   AdherenceResponse,
+  CreateEventInput,
   CreateLifeAreaInput,
   CreateReminderInput,
   CreateSeriesInput,
   CreateTaskInput,
   DiagnosticsDto,
+  EventDto,
+  EventResponse,
+  EventsResponse,
   GoogleCalendarDto,
   GoogleConnectionDto,
   GoogleEventsDto,
@@ -15,12 +19,16 @@ import type {
   SeriesDto,
   SubscribePushInput,
   TaskDto,
+  UpdateEventInput,
   UpdateLifeAreaInput,
   UpdateReminderInput,
   UpdateSeriesInput,
   UpdateTaskInput,
 } from "../shared/api";
 import { exportFilename } from "../shared/content-disposition";
+import type { DayRange } from "../shared/day-range";
+import { eventsRangePath, googleEventsPath } from "../shared/day-view";
+import { eventsSearchPath } from "../shared/event-view";
 import { EMPTY_FILTER, toQuery, type TaskFilter } from "../shared/task-filter";
 import { createTokenStore } from "../shared/token-store";
 import { durableTokenStorage, legacyTokenStorage } from "./token-storage";
@@ -274,17 +282,71 @@ export async function updateSeries(id: string, input: UpdateSeriesInput): Promis
 }
 
 /**
- * FR-027 — the owner's Google commitments for the API's window.
+ * FR-027 — the owner's Google commitments.
  *
- * Returns the whole window; narrowing it to today is the screen's job
- * (`agendaForToday`), because the window is also what unit 16's week view will
- * consume and the API should not have two shapes.
+ * With no argument it returns the API's whole default window, and narrowing it
+ * to today is the screen's job (`agendaForToday`), because that window is also
+ * what unit 16's week view will consume and the API should not have two shapes.
+ * With a `range` it asks the API for exactly those days (the optional `from` /
+ * `to` window of unit 14 phase 2), which is what the day screen needs for a
+ * date outside the default window. `googleEventsPath` pins both request shapes.
  *
  * Failures arrive as `ApiError` carrying `reason`, which is what lets the
  * screen distinguish "not connected" from "reconnect" from "try later".
  */
-export async function fetchGoogleEvents(): Promise<GoogleEventsDto> {
-  return request<GoogleEventsDto>("/api/google/events");
+export async function fetchGoogleEvents(range?: DayRange): Promise<GoogleEventsDto> {
+  return request<GoogleEventsDto>(googleEventsPath(range));
+}
+
+/**
+ * The owner's own commitments (*Compromissos*) for a range of local days
+ * (`GET /api/events?from&to`, at most 62 days). A one-liner over `request<T>()`
+ * like its siblings: no local types, no error re-mapping — a failure arrives as
+ * `ApiError`. A `signal` is passed through only when defined, as `listTasks`
+ * does, because `exactOptionalPropertyTypes` forbids handing `undefined` on.
+ */
+export async function listEvents(range: DayRange, signal?: AbortSignal): Promise<EventDto[]> {
+  const body = await request<EventsResponse>(
+    eventsRangePath(range),
+    signal === undefined ? undefined : { signal },
+  );
+  return body.events;
+}
+
+/**
+ * The four wrappers the Compromisso sheet and the search call through (unit 14
+ * phase 4) — thin wrappers over `request<T>()` like the life-area wrappers above: no
+ * local types, no error re-mapping (a failure arrives as `ApiError` carrying
+ * `status`; a 204 answers `undefined`). `searchEvents` asks the stored commitments
+ * for `q` (`GET /api/events?q=`, at least two characters — `shouldSearch` is the
+ * caller's floor); `eventsSearchPath` pins its URL.
+ */
+export async function createEvent(input: CreateEventInput): Promise<EventDto> {
+  const body = await request<EventResponse>("/api/events", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return body.event;
+}
+
+export async function updateEvent(id: string, input: UpdateEventInput): Promise<EventDto> {
+  const body = await request<EventResponse>(`/api/events/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+  return body.event;
+}
+
+export async function deleteEvent(id: string): Promise<void> {
+  await request<void>(`/api/events/${id}`, { method: "DELETE" });
+}
+
+export async function searchEvents(q: string, signal?: AbortSignal): Promise<EventDto[]> {
+  const body = await request<EventsResponse>(
+    eventsSearchPath(q),
+    signal === undefined ? undefined : { signal },
+  );
+  return body.events;
 }
 
 /**

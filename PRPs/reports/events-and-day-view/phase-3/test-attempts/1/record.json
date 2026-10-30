@@ -1,0 +1,68 @@
+{
+  "run_id": "e92b15ed-24a9-488d-846c-6b010321f96d",
+  "attempt": 1,
+  "tier": "unit",
+  "framework": "vitest",
+  "outcome": "PASSED",
+  "duration_ms": 60857,
+  "counts": {
+    "passed": 2413,
+    "failed": 0,
+    "skipped": 0,
+    "total": 2413
+  },
+  "failures": [],
+  "coverage": null,
+  "artifacts": {
+    "junit_xml": "C:\\repos\\assistente-pessoal\\.worktrees\\events-and-day-view\\PRPs\\reports\\events-and-day-view\\attempts\\1\\junit.xml"
+  },
+  "generated_at": "2026-10-19T21:19:24.601Z",
+  "vitest_projects": [
+    "worker",
+    "docs"
+  ],
+  "test_files": {
+    "total": 113,
+    "passed": 113,
+    "failed": 0
+  },
+  "wall_clock_ms": {
+    "test_suite": 78491,
+    "npm_run_check": 10873
+  },
+  "companion_gate": {
+    "command": "npm run check",
+    "exit_code": 0,
+    "steps": "wrangler types --check, tsc -b, eslint ., prettier --check . (all clean)",
+    "note": "Types at worker-configuration.d.ts are up to date; All matched files use Prettier code style."
+  },
+  "notes": {
+    "test_command": "CI=1 NO_COLOR=1 npx vitest run --reporter=default --reporter=junit --outputFile.junit=PRPs/reports/events-and-day-view/attempts/1/junit.xml",
+    "exit_127_flake": "not observed; the first and only run exited 0 with a full vitest summary, no re-run needed",
+    "vitest_summary": "Test Files 113 passed (113); Tests 2413 passed (2413); Duration 74.73s",
+    "build": {
+      "command": "npm run build",
+      "exit_code": 0,
+      "first_load_sizes": {
+        "dist/client/index.html": "3.96 kB (gzip 1.46 kB)",
+        "dist/client/assets/index-CRoK0eJM.css": "26.87 kB (gzip 6.36 kB)",
+        "dist/client/assets/index-B2zR9fFp.js": "390.99 kB (gzip 117.72 kB)",
+        "dist/client/assets/workbox-window.prod.es5-Bd17z0YL.js": "5.65 kB (gzip 2.20 kB)",
+        "dist/client/sw.mjs": "18.05 kB (gzip 6.08 kB)",
+        "dist/praesto/index.js (worker)": "412.44 kB (gzip 107.03 kB)"
+      },
+      "pwa_precache": "25 entries (506.54 KiB)",
+      "token_absence_gate": "check-dev-token-absent PASS (17 text files scanned under dist/)",
+      "warnings": "vite-plugin-pwa: inlineDynamicImports option is deprecated, use codeSplitting: false (non-blocking, pre-existing tooling warning)",
+      "not_part_of_verdict": true
+    },
+    "redaction": {
+      "env_names": 0,
+      "url_values": 0,
+      "regex_matches": 0,
+      "extensions_file_entries": 0
+    },
+    "degraded": false
+  },
+  "degraded": false
+}

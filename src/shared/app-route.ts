@@ -13,7 +13,8 @@
  * An unrecognised path resolves to `today` rather than throwing:
  * `not_found_handling: "single-page-application"` (`wrangler.jsonc`) serves
  * this SPA's shell for every unmatched path, so an unknown path is a real,
- * reachable input here, never an error case.
+ * reachable input here, never an error case. The same holds for a `/day/<date>`
+ * whose date is not a real calendar day: it falls through to `today`.
  *
  * **The path stays English** (`/settings`, not `/configuracoes`). ADR-0009's
  * pt-BR carve-out names "the string values the owner reads on screen
@@ -21,6 +22,8 @@
  * not URLs — so ADR-0001 governs, and the existing dev-only `/design` route
  * (`src/app/main.tsx`) is the in-repo precedent.
  */
+
+import { isValidLocalDay } from "./events";
 
 export type AppRoute =
   | "today"
@@ -30,7 +33,8 @@ export type AppRoute =
   | "adherence"
   | "life-areas"
   | "search"
-  | `task/${string}`;
+  | `task/${string}`
+  | `day/${string}`;
 
 /** Strips at most one trailing slash; the root path `/` itself is untouched. */
 function withoutTrailingSlash(pathname: string): string {
@@ -48,7 +52,23 @@ export function taskIdFromRoute(route: AppRoute): string | null {
   return route.slice("task/".length);
 }
 
+/** Builds the day route for a local day, `YYYY-MM-DD` (unit 14 `events-and-day-view`). */
+export function dayRouteOf(day: string): AppRoute {
+  return `day/${day}`;
+}
+
+/**
+ * Recovers the day from a day route, or `null` for every other route and for a
+ * day route whose date is not a real calendar day.
+ */
+export function dayFromRoute(route: AppRoute): string | null {
+  if (!route.startsWith("day/")) return null;
+  const day = route.slice("day/".length);
+  return isValidLocalDay(day) ? day : null;
+}
+
 const TASK_PATH_PATTERN = /^\/tasks\/([^/]+)$/;
+const DAY_PATH_PATTERN = /^\/day\/(\d{4}-\d{2}-\d{2})$/;
 
 export function routeFromPath(pathname: string): AppRoute {
   const path = withoutTrailingSlash(pathname);
@@ -56,6 +76,11 @@ export function routeFromPath(pathname: string): AppRoute {
   if (taskMatch !== null) {
     const taskId = taskMatch[1];
     if (taskId !== undefined && taskId !== "") return taskRouteOf(taskId);
+  }
+  const dayMatch = DAY_PATH_PATTERN.exec(path);
+  if (dayMatch !== null) {
+    const day = dayMatch[1];
+    if (day !== undefined && isValidLocalDay(day)) return dayRouteOf(day);
   }
   if (path === "/settings/notifications/diagnostics") return "notifications-diagnostics";
   if (path === "/settings/notifications") return "notifications";
@@ -68,6 +93,8 @@ export function routeFromPath(pathname: string): AppRoute {
 
 export function pathOf(route: AppRoute): string {
   if (route.startsWith("task/")) return `/tasks/${taskIdFromRoute(route)}`;
+  const day = dayFromRoute(route);
+  if (day !== null) return `/day/${day}`;
   if (route === "notifications-diagnostics") return "/settings/notifications/diagnostics";
   if (route === "notifications") return "/settings/notifications";
   if (route === "adherence") return "/settings/adherence";

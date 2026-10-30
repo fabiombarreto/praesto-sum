@@ -17,8 +17,9 @@ import { check, index, integer, sqliteTable, text, uniqueIndex } from "drizzle-o
  * - `text(..., { enum })` is TypeScript-only; every domain enum is additionally
  *   enforced with a CHECK constraint so the database rejects bad rows too.
  *
- * Phase 2 (Calendar) will add: events, event_exceptions, task_events (N:N) and
- * the reminders.event_id column. They are deliberately absent here.
+ * `events` and `event_sync_links` arrived with unit 14 (ADR-0016). Still absent,
+ * deliberately, until their own phases and units: event_exceptions, task_events
+ * (N:N) and the reminders.event_id column.
  */
 
 /** The one and only connection row's id. One owner, one connection (see `googleConnections`). */
@@ -422,6 +423,98 @@ export const pushDispatchAttempts = sqliteTable(
   (t) => [check("push_dispatch_attempts_singleton", sql`${t.id} = 'default'`)],
 );
 
+/**
+ * Event — a commitment at a time (glossary), unit 14 `events-and-day-view`,
+ * ADR-0016. Born sync-aware (ADR-0007): provenance, an all-day flag, an IANA zone
+ * and the content hash all live on the row, so unit 15 needs no migration over
+ * the owner's real commitments.
+ *
+ * Two shapes, made mutually exclusive by `events_shape_chk`: a TIMED Event stores
+ * two UTC instants (`start_at`, `end_at`, epoch seconds, the end never before the
+ * start) and no days; an ALL-DAY Event stores two LOCAL days (`start_date`,
+ * `end_date`, `YYYY-MM-DD`) with an EXCLUSIVE end, like Google, and no instants.
+ * `all_day`, `timezone` and `content_hash` have no SQL default on purpose: a row
+ * that omits them is refused, not filled. `content_hash` is written by one
+ * repository function (phase 2); `updated_at` is never the sync dirty flag.
+ */
+export const events = sqliteTable(
+  "events",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    description: text("description"),
+    location: text("location"),
+    allDay: integer("all_day", { mode: "boolean" }).notNull(),
+    startAt: integer("start_at", { mode: "timestamp" }),
+    endAt: integer("end_at", { mode: "timestamp" }),
+    /** Local calendar day the all-day Event starts ON. */
+    startDate: text("start_date"),
+    /** Local calendar day the all-day Event ends BEFORE: exclusive, as Google stores it. */
+    endDate: text("end_date"),
+    /** IANA zone the Event was authored in. Never null. */
+    timezone: text("timezone").notNull(),
+    /** Unit 14 creates only 'local'; 'google' rows arrive with unit 15. */
+    source: text("source", { enum: ["local", "google"] })
+      .notNull()
+      .default("local"),
+    /** `computeEventContentHash` of the authored fields (`src/shared/event-hash.ts`). */
+    contentHash: text("content_hash").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`)
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    index("events_start_at_idx").on(t.startAt),
+    index("events_start_date_idx").on(t.startDate),
+    // Plain trim() strips only spaces, so a tab-only or newline-only title would pass it.
+    check("events_title_not_empty", sql`length(trim(${t.title}, char(32, 9, 10, 13))) > 0`),
+    check("events_source_chk", sql`${t.source} in ('local','google')`),
+    // Timed XOR all-day, each with the fields it needs and none of the other's. Every
+    // `and` chain holds a term that is never NULL, so the CHECK cannot pass on a NULL.
+    check(
+      "events_shape_chk",
+      sql`(${t.allDay} = 1 and ${t.startAt} is null and ${t.endAt} is null
+         and ${t.startDate} is not null and ${t.endDate} is not null and ${t.endDate} > ${t.startDate})
+       or (${t.allDay} = 0 and ${t.startDate} is null and ${t.endDate} is null
+         and ${t.startAt} is not null and ${t.endAt} is not null and ${t.endAt} >= ${t.startAt})`,
+    ),
+  ],
+);
+
+/**
+ * The provider identity and sync baseline of an Event in Google (ADR-0016
+ * decision 3). Empty until unit 15; unit 14 has no route that writes it.
+ *
+ * `event_id` is nullable with ON DELETE SET NULL: deleting a linked Event leaves
+ * its link behind with a null `event_id`, and that orphan IS the pending deletion
+ * in Google (derived state; never a change-log or tombstone table). The unique
+ * index on `event_id` allows many orphans because SQLite treats NULLs as distinct.
+ */
+export const eventSyncLinks = sqliteTable(
+  "event_sync_links",
+  {
+    id: text("id").primaryKey(),
+    eventId: text("event_id").references(() => events.id, {
+      onUpdate: "cascade",
+      onDelete: "set null",
+    }),
+    calendarId: text("calendar_id").notNull(),
+    externalEventId: text("external_event_id").notNull(),
+    etag: text("etag"),
+    /** The `content_hash` last synced to Google; dirty is `content_hash <> synced_content_hash`. */
+    syncedContentHash: text("synced_content_hash"),
+    syncedAt: integer("synced_at", { mode: "timestamp" }),
+  },
+  (t) => [
+    uniqueIndex("event_sync_links_event_id_unq").on(t.eventId),
+    uniqueIndex("event_sync_links_external_unq").on(t.calendarId, t.externalEventId),
+  ],
+);
+
 // Types flow OUT of the schema — never hand-duplicated (docs/anti-patterns.md).
 export type LifeArea = typeof lifeAreas.$inferSelect;
 export type NewLifeArea = typeof lifeAreas.$inferInsert;
@@ -443,3 +536,8 @@ export type CronRun = typeof cronRuns.$inferSelect;
 export type NewCronRun = typeof cronRuns.$inferInsert;
 export type PushDispatchAttempt = typeof pushDispatchAttempts.$inferSelect;
 export type NewPushDispatchAttempt = typeof pushDispatchAttempts.$inferInsert;
+// `Event` is not used as a type name here: it would shadow the DOM global.
+export type EventRow = typeof events.$inferSelect;
+export type NewEventRow = typeof events.$inferInsert;
+export type EventSyncLink = typeof eventSyncLinks.$inferSelect;
+export type NewEventSyncLink = typeof eventSyncLinks.$inferInsert;

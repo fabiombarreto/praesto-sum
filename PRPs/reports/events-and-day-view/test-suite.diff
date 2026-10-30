@@ -1,0 +1,112 @@
+# TDD initial suite — phase 1
+# Source PRD: PRPs/prds/events-and-day-view.prd.md (Acceptance Criteria)
+# Source plan: C:/repos/assistente-pessoal/.worktrees/events-and-day-view/PRPs/plans/events-and-day-view-phase-1-pure-core-and-migration.plan.md
+# Aggregate verdict: SUITE_DRAFT_WRITTEN
+# Generated: 2026-10-19
+# Mode: test-first (docs/context/methodology.md: tdd: true, test_frameworks: ["vitest"])
+
+## AC outcomes
+
+Plan AC-A1..AC-A10 map onto PRD AC-1..AC-8 (AC-A1..AC-A8), AC-33 in part (AC-A9) and
+AC-19 in part (AC-A10). Every PRD AC is listed so none is silently unaddressed.
+
+| AC | Outcome | Path / mapping |
+|---|---|---|
+| AC-1 | NEW_TEST_REQUIRED | test/event-wall-clock.test.ts |
+| AC-2 | NEW_TEST_REQUIRED | test/event-all-day.test.ts (day arithmetic, exclusive end, stored-span rule via `resolveEventTimes`); the validator half is also exercised in test/event-validation.test.ts |
+| AC-3 | NEW_TEST_REQUIRED | test/event-validation.test.ts |
+| AC-4 | NEW_TEST_REQUIRED | test/event-hash.test.ts |
+| AC-5 | NEW_TEST_REQUIRED | test/event-capabilities.test.ts (runtime half plus `expectTypeOf` pins checked by `tsc -b`; see Notes) |
+| AC-6 | NEW_TEST_REQUIRED | test/event-schema.test.ts (describes "AC-6 — ...") |
+| AC-7 | NEW_TEST_REQUIRED | test/event-schema.test.ts (describe "AC-7 — the link table outlives the event") and test/event-sync-links-fresh.test.ts (the "freshly migrated database holds zero rows" clause) |
+| AC-8 | NEW_TEST_REQUIRED | test/event-migration-additive.test.ts (Node-side, `docs` vitest project; registered in vitest.config.ts) |
+| AC-9 | OUT_OF_PHASE_SCOPE | (deferred to phase 2) |
+| AC-10 | OUT_OF_PHASE_SCOPE | (deferred to phase 2) |
+| AC-11 | OUT_OF_PHASE_SCOPE | (deferred to phase 2) |
+| AC-12 | OUT_OF_PHASE_SCOPE | (deferred to phase 2) |
+| AC-13 | OUT_OF_PHASE_SCOPE | (deferred to phase 2) |
+| AC-14 | OUT_OF_PHASE_SCOPE | (deferred to phase 2) |
+| AC-15 | OUT_OF_PHASE_SCOPE | (deferred to phase 2) |
+| AC-16 | OUT_OF_PHASE_SCOPE | (deferred to phase 2) |
+| AC-17 | OUT_OF_PHASE_SCOPE | (deferred to phase 2) |
+| AC-18 | OUT_OF_PHASE_SCOPE | (deferred to phase 2) |
+| AC-19 | EXISTING_TEST_UPDATED (classification half only) | test/export-completeness.test.ts "exports exactly the seven data-bearing table names, no more and no less" — see Lifecycle ledger. The dump half (`tables.events`, `tables.event_sync_links`, `formatVersion` 1) is deferred to phase 2 |
+| AC-20 | OUT_OF_PHASE_SCOPE | (deferred to phase 2) |
+| AC-21 | OUT_OF_PHASE_SCOPE | (deferred to phase 2; a script run, not a Vitest file) |
+| AC-22 | OUT_OF_PHASE_SCOPE | (deferred to phase 3) |
+| AC-23 | OUT_OF_PHASE_SCOPE | (deferred to phase 3; manual) |
+| AC-24 | OUT_OF_PHASE_SCOPE | (deferred to phase 3; manual) |
+| AC-25 | OUT_OF_PHASE_SCOPE | (deferred to phase 3; manual) |
+| AC-26 | OUT_OF_PHASE_SCOPE | (deferred to phase 3) |
+| AC-27 | OUT_OF_PHASE_SCOPE | (deferred to phase 4) |
+| AC-28 | OUT_OF_PHASE_SCOPE | (deferred to phase 4; manual) |
+| AC-29 | OUT_OF_PHASE_SCOPE | (deferred to phase 4; manual) |
+| AC-30 | OUT_OF_PHASE_SCOPE | (deferred to phase 4; manual) |
+| AC-31 | OUT_OF_PHASE_SCOPE | (deferred to phase 5; device observation) |
+| AC-32 | OUT_OF_PHASE_SCOPE | (deferred to phase 5; script run) |
+| AC-33 | NEW_TEST_REQUIRED (the encodable part only) | test/event-migration-additive.test.ts covers: 0007 recorded in the drizzle journal after the seven applied tags, its snapshot present, and SHA-256 pins of migrations 0000-0006 and their snapshots. The rest of AC-33 for this phase (`recurrence.ts`, `adherence.ts`, `dates.ts` byte-identical to `main`; "no test removed, skipped or loosened"; "only one new migration") is a property of the unit's diff against `main`, proven by the plan's own `git diff --exit-code` gates (Task 7, Task 10, Level 2, Level 3) and by `post-green-reviewer`, not encoded as a permanent test — see Notes. The remaining AC-33 clauses are phase 5 |
+| AC-34 | OUT_OF_PHASE_SCOPE | (deferred to phase 5; documentation inspection) |
+
+## Test files written this session
+
+New (all under `test/`):
+
+- test/event-wall-clock.test.ts — AC-1 (worker project; imports `../src/shared/events`, `../src/shared/dates`)
+- test/event-all-day.test.ts — AC-2 (worker project; imports `../src/shared/events`)
+- test/event-validation.test.ts — AC-3 and the validator half of AC-2 (worker project; imports `../src/shared/events`, `../src/shared/dates`)
+- test/event-hash.test.ts — AC-4 (worker project; imports `../src/shared/event-hash`)
+- test/event-capabilities.test.ts — AC-5 (worker project; imports `../src/shared/events`)
+- test/event-schema.test.ts — AC-6 and AC-7 (worker project; raw SQL through `env.DB`)
+- test/event-sync-links-fresh.test.ts — AC-7 last clause (worker project; no cleanup, writes nothing)
+- test/event-migration-additive.test.ts — AC-8 and the encodable part of AC-33 (`docs` project, plain Node)
+
+Updated (test infrastructure, not a test case):
+
+- vitest.config.ts — registers `test/event-migration-additive.test.ts` in the `docs` project's `include` and in the `worker` project's `exclude` (the pair-owned registration the plan's Notes assign to the test pair; comment lines updated to match). No other line of the config changed.
+
+Updated (existing test, see ledger):
+
+- test/export-completeness.test.ts — the literal expected list of exported table names grew from five names to seven.
+
+## Expected RED reasons (test-first)
+
+| Suite | Why it is RED before the Implementer | Anything else red? |
+|---|---|---|
+| event-wall-clock, event-all-day, event-validation, event-capabilities | `src/shared/events.ts` does not exist: the import cannot be resolved (file-level load failure). The plan fixes every imported name | The "shipped localPartsToInstant is left as it was" cases are part of the same file and fail with it at load; once `events.ts` exists they pass against the unmodified `dates.ts` |
+| event-hash | `src/shared/event-hash.ts` does not exist: the import cannot be resolved | no |
+| event-schema | migration 0007 does not exist, so `events` and `event_sync_links` do not exist: the `beforeEach` clean-up and every statement fail with `no such table`. No refusal assertion can pass by accident because each asserts the kind of SQLite refusal (`CHECK` / `NOT NULL` / `UNIQUE constraint failed`) | no |
+| event-sync-links-fresh | `no such table: event_sync_links` | no |
+| event-migration-additive | the three 0007 groups are RED: there is no `migrations/0007_*.sql`. The 14 "frozen" digest cases are GREEN today by design: they describe a state that already holds (applied migrations are immutable) and guard against an edit of an applied migration; they are not a missing-implementation case | the 14 frozen cases pass now |
+| export-completeness | "exports exactly the seven data-bearing table names" is RED: `EXPORTED_TABLE_NAMES` still lists five. The other cases in the file stay green until the Implementer adds the schema tables, at which point "accounts for every real schema table" would go red until Task 8 classifies them | the rest of the file is green today |
+
+## Lifecycle ledger
+
+Every UPDATE or DELETE performed this session, one row each. When
+the session was create-only (no UPDATE/DELETE), the table's sole
+row is the default `(none — no update/delete this session)` row
+below instead of any operation rows.
+
+| Op | Classification | Test (file:function) | Justification |
+|----|-----------------|-----------------------|----------------|
+| UPDATE | EXISTING_TEST_UPDATED | test/export-completeness.test.ts:"exports exactly the seven data-bearing table names, no more and no less" (renamed from "...five data-bearing table names...") | Driving AC: AC-19 (events-and-day-view PRD, classification half; plan AC-A10, Task 8). The unit adds the `events` and `event_sync_links` tables, both owner data FR-042 must carry, so the manifest's expected list grows. The edit only EXTENDS the literal list: the five original names are asserted exactly as before, `event_sync_links` and `events` are added, the sorted-equality form is unchanged, a comment records why, and a traceability header line for AC-19 was added to the file. No assertion was dropped, weakened or made conditional; the guard's logic (`findUnaccountedTables`, `findUnreasonedExclusions`), its other six cases (including the exact five-name `EXCLUDED_TABLES` assertion, which also proves the two new tables are not parked in `EXCLUDED_TABLES`) are byte-identical |
+
+## Notes for the reviewer
+
+- **Where the golden digests and migration pins came from.** This agent has no shell. The two golden SHA-256 digests in test/event-hash.test.ts and the fourteen migration/snapshot digests in test/event-migration-additive.test.ts were produced by a read-only delegated sub-agent, not computed by hand: the golden digests with Node's `crypto.createHash("sha256")` over the plan's exact canonical bytes (`"v1\n" + JSON.stringify([...])`, timed case 85 UTF-8 bytes — matching the byte count derived by hand independently — and an all-day case of 71 bytes), without reading any production code; the migration digests from `git show main:<path>` and confirmed equal to the worktree files, with zero carriage-return bytes in every blob. None of this was executed by the test-writer itself, and no test in this suite was run. `test-reviewer`'s dynamic RED check is the first execution; if a pinned digest is wrong it will show up there as a failure that is not a missing-module failure.
+- **Clean-up for the new tables, independent of the Implementer's `test/isolation.ts` change (plan Task 9).** test/event-schema.test.ts registers `beforeEach(resetEventTables, DRAIN_BUDGET_MS)` where `resetEventTables` first calls the existing `resetTaskTables()` (which drains every abandoned test body BEFORE wiping, the barrier docs/context/testing.md forbids hand-rolling) and then deletes `event_sync_links` then `events` through `env.DB`. Tests use `isolatedIt as it`, so their bodies are registered with the barrier. After Task 9 lands the two extra deletes are redundant and harmless. test/event-sync-links-fresh.test.ts deliberately has NO clean-up: per-file storage isolation plus `apply-migrations.ts` mean its first read sees exactly what the migration left, and any clean-up would make the "zero rows" assertion vacuous.
+- **Why AC-6 and AC-7 use raw SQL, not Drizzle.** The PRD says "inserted directly, bypassing every route" and "rejected by SQL". `text(..., { enum })` is TypeScript-only, so a Drizzle insert could not even express `source = 'outlook'`. Raw SQL also keeps the suite from importing schema exports that do not exist yet, so the RED reason is "no such table", not a TypeScript error in the test. Each refused row is a known-good row (`TIMED` or `ALL_DAY`, inserted successfully by the "accepts" cases) with exactly one thing broken, so a refusal is attributable.
+- **Plan-fixed names only.** The suite imports exactly the names the plan's Tasks 1-5 fix: `EVENT_TITLE_MAX`, `EVENT_DESCRIPTION_MAX`, `EVENT_LOCATION_MAX`, `EVENT_DEFAULT_DURATION_SECONDS`, `EVENT_DEFAULT_TIMEZONE`, `EVENT_SOURCES`, `EventSource`, `eventCapabilities`, `assertNeverEventSource`, `wallClockToInstant`, `instantToWallClock`, `isValidLocalDay`, `shiftLocalDay`, `displayEndDay`, `allDaySpanFromInclusive`, `isValidTimeZone`, `resolveEventTimes`, `validateEventInput`, `EventInput`, `ResolvedEvent` from `src/shared/events`; `computeEventContentHash` and `EventHashInput` from `src/shared/event-hash`. Table and column names in the SQL are the snake_case names Task 6 and the PRD Architecture Notes fix (`all_day`, `start_at`, `end_at`, `start_date`, `end_date`, `timezone`, `source`, `content_hash`, `event_id`, `calendar_id`, `external_event_id`, `etag`, `synced_content_hash`, `synced_at`). No constraint, index or function name that the PRD/plan do not fix is asserted. The `description`/`location` length boundaries are driven from the exported constants rather than literals, because the PRD's Open Questions call those numbers arbitrary; only the PRD-named numbers (title 200/201, default duration 3600) are pinned as literals.
+- **AC-5 has a compile-time half that no runtime test can observe.** "Adding a value stops compiling" is covered from the test side by `expectTypeOf<EventSource>().toEqualTypeOf<"local" | "google">()` and `expectTypeOf(eventCapabilities).parameter(0).toEqualTypeOf<EventSource>()`, which `tsc -b` (`npm run check`) enforces — widening the union breaks this file's type check — plus the runtime fact that a source outside the union throws instead of returning `undefined`. The production-side `never` assertion in the switch default is the Implementer's own compile-time guarantee (plan Task 1, mirrored from `assertNeverDaySource`).
+- **AC-33's frozen source files are deliberately not pinned by digest.** `src/shared/dates.ts`, `recurrence.ts` and `adherence.ts` are "unchanged for this unit", not frozen forever (unit 17 reuses `recurrence.ts`; later units may legitimately edit `dates.ts`), so a permanent digest test would break them for no reason. The plan proves the fact with `git diff --exit-code` against the fork point (Task 2, Task 10, Level 2). The one permanent behavioural guard added is in test/event-wall-clock.test.ts: the shipped `localPartsToInstant` still answers an ordinary time and still gives its own (different) gap answer, which is what Reminders depend on. For the same reason test/event-migration-additive.test.ts asserts exactly one `0007_*.sql` but not the absence of a `0008`.
+- **Beyond-the-PRD-text cases, each justified by the plan.** (1) `resolveEventTimes` / `validateEventInput` error codes `required`, `not_allowed`, `invalid_date` and the fixed first-failure order are fixed by plan Task 4 and underlie phase 2's AC-10; (2) the shape-completeness refusals in AC-6 (timed row missing `start_at`/`end_at`, all-day row missing a date, `all_day` outside 0/1) follow from the `events_shape_chk` the plan specifies and close the "CHECK passes on NULL" hole the plan's Risks name; (3) tab/newline-only titles are refused by SQL because plan Task 6 specifies `trim(title, char(32, 9, 10, 13))` so the database agrees with the JavaScript validator's `trim()`; (4) the same external id under a different calendar is accepted, because the unique index is on the PAIR (plan Task 6, PRD D-H); (5) Southern-Hemisphere DST vectors (Australia/Sydney) and the times just inside/outside the New York gap and overlap in AC-1.
+- **Foreign-key enforcement in the test D1.** The `ON DELETE SET NULL` assertions in AC-7 assume D1 enforces foreign keys (it does by default). If the link row keeps pointing at a deleted event when this runs, that is a finding about the test database (the plan's Risks table says to raise it), not a reason to loosen the test.
+- **Formatting.** The new files were written to the project's Prettier settings by hand and were not run through `npx prettier --write` (no shell). The `/relay-write-test` prevention step (`formatter_cmd` in methodology.md) runs it over the touched files; `npm run check` is the gate.
+
+## Formatting Outcome
+
+formatted — command `npx prettier --write` (source: methodology.md formatter_cmd), scoped to the 10 touched files (the 8 new test files, the updated `test/export-completeness.test.ts` and `vitest.config.ts`). Prettier rewrote 2 of them (`test/event-validation.test.ts`, `test/event-schema.test.ts`); the other 8 were already conformant.
+
+## Status
+
+*Approved: 2026-10-19*
+*Status: APPROVED*

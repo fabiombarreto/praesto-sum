@@ -1,6 +1,6 @@
 ---
 status: draft
-last_updated: 2026-09-17
+last_updated: 2026-10-21
 review_trigger: "a pending technical decision is resolved (new ADR accepted), or stack/component/data/integration changes"
 ---
 
@@ -75,9 +75,14 @@ The container above stayed one box while its inside grew a shape worth naming, b
 every later unit plugs into it:
 
 - **One screen plus sheets** ([layout standard §1](../40-engineering/ui-layout-standard.md)):
-  `App.tsx` is only the token-gate switch; `TodayScreen` is a `100dvh` grid (header / banner /
-  list / toast / deck) and the detail is a native `<dialog>` sheet over it. There is no router
-  and no second page — unit 3's groups and filters land inside this anatomy, not beside it.
+  `TodayScreen` is a `100dvh` grid (header / banner / list / toast / deck) and the detail is a
+  native `<dialog>` sheet over it. No router library is used: `src/shared/app-route.ts` maps
+  the path to a closed `AppRoute` union (`src/app/hooks/useRoute.ts` is the `history` glue) and
+  `App.tsx` is the token-gate switch that then switches on the route. Besides *Hoje* there are
+  the settings routes, search, the Task deep link and, since unit 14 (2026-10-19), the day route
+  `/day/AAAA-MM-DD` — a route with real history entries rather than a destination of equal
+  weight, so the single-screen model stands. Unit 3's groups and filters landed inside this
+  anatomy, not beside it.
 - **Two component tiers:** `src/app/components/ui/` for the primitives owned in the shadcn style
   over Base UI ([ADR-0011](../60-decisions/ADR-0011-ui-library-shadcn-style-base-ui-tailwind.md)),
   `src/app/components/` for the screens. Styling reads `src/app/tokens.css` and nothing else
@@ -85,8 +90,8 @@ every later unit plugs into it:
 - **Decidable logic sits in `src/shared/`, not in components** — the wire contract, the edit diff
   (`buildTaskPatch`), the Portuguese failure messages, the date phrases, the connectivity state
   machine, the toast rules and the sheet's draft state. That module set is the reason a UI this
-  size carries 313 tests without a browser tier: the components are glue, and the glue is
-  verified by hand ([testing strategy](../40-engineering/testing-strategy.md)).
+  size is covered by a large pure-function suite without a browser tier: the components are
+  glue, and the glue is verified by hand ([testing strategy](../40-engineering/testing-strategy.md)).
 - **The build identifies itself** (2026-09-16): `vite.config.ts` injects `__APP_VERSION__` — the
   build date plus the short commit, with a `dev` marker appended under `vite dev` — through the
   same `define` mechanism `__DEV_API_TOKEN__` already used, and the settings screen shows it in
@@ -95,10 +100,13 @@ every later unit plugs into it:
   defeats the line's own purpose. `git` may be out of reach (a tarball checkout, or the dev
   container, whose bind mount does not carry the worktree's real `.git`); the date alone still
   identifies the build, and a build never fails over a label.
-  `package.json` carries no `version` field on purpose: a number bumped by hand answers "is this
-  the build I just deployed?" with a stale yes, while the commit cannot be wrong. The formatting
-  of the three cases (a real stamp, a development build, a stamp `git` could not resolve) is
-  decidable and therefore lives in `src/shared/app-version.ts`, not in the component.
+  Since the release scheme of 2026-09-16 `package.json` does carry a `version`, made true by a
+  git tag that `npm run deploy` insists on (`documentation/40-engineering/dev-environment.md`,
+  "Cutting a release"); the stamp stays because it is the build's own identity — a number bumped
+  by hand can answer "is this the build I just deployed?" with a stale yes, while the commit
+  cannot be wrong. The formatting of the three cases (a real stamp, a development build, a stamp
+  `git` could not resolve) is decidable and therefore lives in `src/shared/app-version.ts`, not
+  in the component.
 - **State is local and explicit.** No store library: `useState`/`useReducer` in the screen, one
   module-level `useSyncExternalStore` source for toasts so `main.tsx` can raise the
   service-worker update prompt without owning React state. Reads refetch on `visibilitychange`
@@ -132,6 +140,35 @@ The full contract — the ordering key, the filter vocabulary unit 3 implemented
 on 2026-08-23, and the paging revisit trigger — is recorded in
 [`docs/api-reference.md`](../../docs/api-reference.md), which is the document
 the PWA and every later unit code against.
+
+### Events: two tables and one range function (2026-10-19 to 2026-10-21, unit 14)
+
+Unit 14 `events-and-day-view` added the first Phase 2 entity under
+[ADR-0016](../60-decisions/ADR-0016-event-storage-model-sync-aware.md), by one additive,
+CREATE-only migration (`0007`) — no existing table is rewritten.
+
+- **`events`:** a timed Event stores two UTC instants (epoch seconds) and a never-null IANA
+  zone; an all-day Event stores local days with an *exclusive* end, as Google does. `source`
+  (`local` | `google`) is a domain fact, and the Event's `content_hash` lives on the row,
+  computed by `computeEventContentHash` and written only by `src/worker/event-repository.ts`,
+  the one writer of the table.
+- **`event_sync_links`:** the Google linkage (`calendar_id`, `external_event_id`, `etag`,
+  `synced_content_hash`, `synced_at`) in a separate table, so abandoning the integration is
+  dropping a table, not altering the entity. Its `event_id` is nullable with `ON DELETE SET
+  NULL`: a link whose Event is gone is the pending deletion in Google. It is empty until
+  unit 15 writes to Google, and the dirty test is `content_hash <> synced_content_hash`,
+  never `updated_at`. Both tables are in the FR-042 dump and the `.ics`.
+- **One range function:** `itemsInRange(sources, { from, to })` in `src/shared/day-range.ts`
+  is pure and takes a list of sources — the owner's Events, Google's events and dated Tasks —
+  returning one entry per local day in the owner's zone. *Hoje*'s Agenda calls it for one day
+  and the day route `/day/AAAA-MM-DD` calls it for the date shown; the day needs no endpoint
+  of its own, it composes `GET /api/events?from&to`, `GET /api/google/events?from&to` and
+  `GET /api/tasks`.
+- **Writes stay server-first:** the Compromisso sheet creates, changes and deletes through
+  `/api/events`, nothing is optimistic and nothing is queued offline (ADR-0003).
+- **The mirror inventory stays closed:** `scripts/check-mirror-inventory.mjs` keeps Google's
+  attendees, reminders and recurrence out of Praesto, and since 2026-10-21
+  `test/mirror-inventory.test.ts` runs it on every `npm test`.
 
 ## External integrations
 
@@ -216,3 +253,4 @@ the PWA and every later unit code against.
 | Implementation stack (PWA framework, D1 layer, tooling) | [ADR-0005](../60-decisions/ADR-0005-implementation-stack-react-vite-hono-drizzle.md) — React 19 SPA + Vite + Hono + Drizzle ORM |
 | Recurrence model | [ADR-0006](../60-decisions/ADR-0006-recurrence-model.md) — shared rule; Tasks materialize the current occurrence with `missed` recording, Events expand virtually |
 | External calendar posture | [ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md) — bidirectional Google Calendar sync for Events only, closed mirror inventory |
+| Event storage model | [ADR-0016](../60-decisions/ADR-0016-event-storage-model-sync-aware.md) — instants plus an IANA zone, the content hash on the Event row, Google linkage in a separate `event_sync_links` table |
