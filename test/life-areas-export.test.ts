@@ -5,8 +5,9 @@
 // `POST /api/series` make assigned areas exist, and the unchanged FR-042 export
 // already dumps `life_areas` and the `lifeAreaId` columns).
 //
-// What test/export.test.ts:64-97 (data-export AC-2) already covers: every one of
-// the five tables is present and carries a seeded row. What it cannot see, and
+// What test/export.test.ts (data-export AC-2) already covers: every one of
+// the seven tables is present and carries a seeded row (five when this file was
+// written; unit 14 events-and-day-view added `events` and `event_sync_links`). What it cannot see, and
 // what this file adds: it seeds NO assigned item and asserts only that one row id
 // is present, never that a row is dumped field for field or that a Task and a
 // series carry the area's id. The completeness guard

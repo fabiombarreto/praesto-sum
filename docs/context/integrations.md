@@ -12,7 +12,7 @@
 
 - **Purpose:** deliver Reminder notifications to the installed PWA (FR-041).
 - **Auth:** VAPID key pair — public key embedded in the client subscription flow, **private key stored as a Worker secret** (`.dev.vars` locally, `wrangler secret` in production). Never committed.
-- **Library:** `web-push` under `nodejs_compat` (Cloudflare's documented path); `@pushforge/builder` is the edge-native fallback (ADR-0005).
+- **Library:** `@block65/webcrypto-web-push@2.0.0` (Web Crypto + native `fetch`), which replaced `web-push` after it hung inside workerd (ADR-0013, superseding the naming of ADR-0005).
 - **Gotcha:** push failure is silent — a dedicated VAPID integration test is mandatory (ADR-0005).
 
 ## API auth (own surface)
@@ -23,7 +23,7 @@
 ## Google Calendar (bidirectional, Events only)
 
 - **Purpose:** mirror the owner's commitments both ways (FR-027..FR-030), decided by `documentation/60-decisions/ADR-0007-google-calendar-bidirectional-sync.md`.
-- **Status (2026-08-11, chore C11):** decided **and access proven** — but **no integration code exists yet**; unit 4 `google-calendar-read` writes it. The OAuth app `praesto-sum` is published *In production* / *External* with both sensitive Calendar scopes registered and **no verification submission**, and a working refresh token is stored as the Worker secret `GOOGLE_REFRESH_TOKEN`. Chore **C12** (on or after 2026-08-19) is what confirms that token survives past day 7.
+- **Status (2026-08-11, chore C11):** decided **and access proven**; the **read shipped** in unit 4 `google-calendar-read` and the write is unit 15. The OAuth app `praesto-sum` is published *In production* / *External* with both sensitive Calendar scopes registered and **no verification submission**, and a working refresh token is stored as the Worker secret `GOOGLE_REFRESH_TOKEN`. Chore **C12** (on or after 2026-08-19) is what confirms that token survives past day 7.
 - **Auth:** OAuth 2.0 user consent; the long-lived **refresh token is a Worker secret** (`GOOGLE_REFRESH_TOKEN`), never committed. The OAuth app must be in *published* status — in "Testing" the refresh token expires every 7 days. C11 measured that publishing a **sensitive** scope needs no verification submission: Google's "Verification required" dialog is a warning whose only action is *Continue*, and a `workers.dev` redirect URI was accepted with no authorized or verified domain.
 - **Scope:** `calendar.events.readonly` for the read phase, upgraded to `calendar.events` at an explicit re-consent for write. **Never `calendar`** (it can delete whole calendars). ⚠ C11 measured that `calendarList.list` answers **403 insufficient authentication scopes** under `calendar.events.readonly`, so FR-027 ("he chooses which calendars are included") is **not** served by the read-phase scope as written: unit 4's PRD must choose between adding `calendar.calendarlist.readonly` (sensitive, not restricted — it does not change the verification category above) and a narrower unit 4 that reads `primary` only. Full finding in `documentation/30-architecture/architecture-overview.md#external-integrations`.
 - **Transport:** polling on the existing `*/5` cron — **not** `events.watch` webhooks, which would need a public unauthenticated route (breaching ADR-0003 safeguard 4) and are not reliable enough to replace polling anyway.

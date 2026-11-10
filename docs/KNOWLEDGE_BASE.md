@@ -12,7 +12,7 @@ Tier 2 index: one entry per doc, 1-2 lines each. Details live in the target file
 
 **Decision Gate** — mandatory gate before planning, coding or reviewing; consultation sources and evidence block format. → docs/decision-gate.md
 
-**Decisions** — relay-facing index of the settled decisions (ADR-0001..0012 + MVP freeze; includes the identity ADR-0010, the UI library ADR-0011 and the optional Docker dev runtime ADR-0012); never re-evaluate. → docs/decisions.md
+**Decisions** — relay-facing index of the settled decisions (ADR-0001..0016 + MVP freeze; includes the identity ADR-0010, the UI library ADR-0011, the optional Docker dev runtime ADR-0012 and the Event storage model ADR-0016); never re-evaluate. → docs/decisions.md
 
 **Anti-patterns** — forbidden by decision: offline queues, live-DB sync, SSR/meta-frameworks, version ranges, synonym drift, test-weakening. → docs/anti-patterns.md
 
@@ -22,7 +22,7 @@ Tier 2 index: one entry per doc, 1-2 lines each. Details live in the target file
 
 **Conventions** — English everywhere, canonical names, casing, TS strict, exact pins, git conventions. → docs/context/conventions.md
 
-**Integrations** — Cloudflare platform, Web Push (VAPID as secrets), API bearer token; Google Calendar decided (ADR-0007: bidirectional, Events only) and access **proven** by chore C11 on 2026-08-11 — a real refresh token is already a Worker secret — but **no integration code exists yet**; unit 4 `google-calendar-read` writes it. → docs/context/integrations.md
+**Integrations** — Cloudflare platform, Web Push (VAPID as secrets), API bearer token; Google Calendar decided (ADR-0007: bidirectional, Events only) and access **proven** by chore C11 on 2026-08-11 — a real refresh token is already a Worker secret — and the **read shipped** in unit 4 `google-calendar-read`; the write is unit 15. → docs/context/integrations.md
 
 **Constraints** — CON-001..006, QA-001..004 scenarios, platform limits, offline is read-only. → docs/context/constraints.md
 
@@ -32,7 +32,7 @@ Tier 2 index: one entry per doc, 1-2 lines each. Details live in the target file
 
 **Visual identity (authoritative doc)** — ADR-0010 "Arcade": warm brown-black ladder, amber accent (+ hot orange for live/overdue), tactile depth with press physics, radius 18/14/pill, Inter + Unbounded, 4 px grid; voice & tone + approved microcopy table; machine truth in `src/app/tokens.css` (applied in A5). → documentation/10-product/visual-identity.md
 
-**UI layout standard (authoritative doc)** — single screen + sheets (no bottom bar until three equal destinations exist), Today anatomy (header with remaining count, chip row, agenda stack, Atrasadas > Hoje > Próximas > Sem data, 64 px rows, capture deck), native `<dialog>` sheets with back-to-close, `interactive-widget=resizes-content`, desktop as one centred 640 px column with the sheet as a centred dialog from 640 px (the 840 px list-detail was rejected 2026-09-30), per-unit plug-in table. → documentation/40-engineering/ui-layout-standard.md
+**UI layout standard (authoritative doc)** — single screen + sheets (no bottom bar until three equal destinations exist), Today anatomy (header with remaining count, chip row, agenda stack, Atrasadas > Hoje > Próximas > Sem data, 64 px rows, capture deck), native `<dialog>` sheets with back-to-close, `interactive-widget=resizes-content`, desktop as one centred 640 px column with the sheet as a centred dialog from 640 px (the 840 px list-detail was rejected 2026-09-30), the Day route `/day/AAAA-MM-DD` (§2 item 11) and the Compromisso sheet (§3), per-unit plug-in table. → documentation/40-engineering/ui-layout-standard.md
 
 **Testing guardrail** — binding contract: keep suites green on EVERY change; fallback warning protocol; one detected tier (Vitest + `@cloudflare/vitest-pool-workers`, `npm test`), no browser/e2e tier yet. → docs/context/testing.md
 
@@ -56,7 +56,7 @@ Tier 2 index: one entry per doc, 1-2 lines each. Details live in the target file
 
 **Development** — setup, day-to-day commands (planned, validate at scaffold), **versioning and releases** (`version` in `package.json` + a `v<version>` git tag, scheme `0.MINOR.PATCH`, the `check-version-tag` deploy guard, and the version line on the settings screen — added 2026-09-16), the optional Docker dev container (ADR-0012: `npm run docker:up`/`down`/`status`; `npm run dev` on the host is unchanged and still the default), the feature loop. → docs/development.md
 
-**API reference** — planned `/api/*` surface; fill with the real contract as routes land. → docs/api-reference.md
+**API reference** — the implemented `/api/*` contract (the `## Implemented` table) plus the surface not built yet, by unit. → docs/api-reference.md
 
 **Troubleshooting** — workerd on Windows, silent push, stale service worker, migration drift. → docs/troubleshooting.md
 

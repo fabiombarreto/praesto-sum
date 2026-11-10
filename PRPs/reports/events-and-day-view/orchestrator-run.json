@@ -1,0 +1,291 @@
+{
+  "feature": "events-and-day-view",
+  "prd_path": "PRPs/prds/events-and-day-view.prd.md",
+  "started_at": "2026-10-19T15:34:00Z",
+  "ended_at": "2026-10-21T22:50:30Z",
+  "max_plan_review_retries": 2,
+  "max_tdd_review_retries": 2,
+  "max_orchestrator_minutes": 240,
+  "phases": [
+    {
+      "phase": 1,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/completed/events-and-day-view-phase-1-pure-core-and-migration.plan.md",
+      "plan_review_attempts": 1
+    },
+    {
+      "phase": 1,
+      "stage": "worktree",
+      "outcome": "CREATED",
+      "repo": null,
+      "worktree_path": ".worktrees/events-and-day-view/",
+      "worktree_attempted": true,
+      "worktree_succeeded": true,
+      "fallback_reason": null,
+      "note": "created by hand from HEAD before the plan stage; see worktree_note"
+    },
+    {
+      "phase": 1,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "suite_path": "PRPs/reports/events-and-day-view/test-suite.diff",
+      "tdd_review_attempts": 1
+    },
+    {
+      "phase": 1,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 1,
+      "docs_sync_outcome": "APPROVED"
+    },
+    {
+      "phase": 1,
+      "stage": "test",
+      "outcome": "GREEN"
+    },
+    {
+      "phase": 1,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 1,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/events-and-day-view-phase-1-pure-core-and-migration.plan.md",
+      "timestamp": "2026-10-19T16:50:22Z"
+    },
+    {
+      "phase": 2,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/completed/events-and-day-view-phase-2-events-api-export-and-search.plan.md",
+      "plan_review_attempts": 1
+    },
+    {
+      "phase": 2,
+      "stage": "worktree",
+      "outcome": "reused",
+      "worktree_attempted": true,
+      "worktree_succeeded": true
+    },
+    {
+      "phase": 2,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "suite_path": "PRPs/reports/events-and-day-view/test-suite-phase-2.diff",
+      "tdd_review_attempts": 1
+    },
+    {
+      "phase": 2,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 2,
+      "note": "attempt 1 CHANGES_REQUESTED on 3 R-COH comment/type rows; attempt 2 APPROVED",
+      "docs_sync_outcome": "APPROVED"
+    },
+    {
+      "phase": 2,
+      "stage": "test",
+      "outcome": "GREEN"
+    },
+    {
+      "phase": 2,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 2,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/events-and-day-view-phase-2-events-api-export-and-search.plan.md",
+      "timestamp": "2026-10-19T18:55:47Z"
+    },
+    {
+      "phase": 3,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/completed/events-and-day-view-phase-3-the-range-function-and-the-day.plan.md",
+      "plan_review_attempts": 1
+    },
+    {
+      "phase": 3,
+      "stage": "worktree",
+      "outcome": "reused",
+      "worktree_attempted": true,
+      "worktree_succeeded": true
+    },
+    {
+      "phase": 3,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "suite_path": "PRPs/reports/events-and-day-view/test-suite-phase-3.diff",
+      "tdd_review_attempts": 1
+    },
+    {
+      "phase": 3,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 2,
+      "note": "attempt 1 CHANGES_REQUESTED on 2 low-severity R-COH rows (comment accuracy; documented additive wideTime); attempt 2 comment/doc-only correction APPROVED",
+      "docs_sync_outcome": "APPROVED"
+    },
+    {
+      "phase": 3,
+      "stage": "test",
+      "outcome": "GREEN"
+    },
+    {
+      "phase": 3,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 3,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/events-and-day-view-phase-3-the-range-function-and-the-day.plan.md",
+      "timestamp": "2026-10-19T21:22:50Z",
+      "owed": "live browser pass for AC-23/24/25 and checklist items 2,5,11,12 (orchestrator duty per plan); device proof owed to the owner in phase 5"
+    },
+    {
+      "phase": 3,
+      "stage": "live_pass",
+      "outcome": "DONE_BY_ORCHESTRATOR",
+      "record": "PRPs/reports/events-and-day-view/phase-3/live-browser-pass.md",
+      "note": "AC-23/24/25 observed in the Browser pane at 375 and 1280 px against a throwaway-token dev server and synthetic fixtures; unobserved clauses (offline, failed Task write, Task completion from /day, focus ring, Esc during inline edit, month-boundary step, the Hoje narrow-column wrap of 'ate HH:mm', the merge-base side-by-side) and the device-only clauses stay owed to the owner's device in phase 5"
+    },
+    {
+      "phase": 4,
+      "stage": "time_budget_check",
+      "outcome": "HALT:FAILED_ORCHESTRATOR_TIME_BUDGET_EXCEEDED",
+      "checked_at": "2026-10-19T21:31:26Z"
+    },
+    {
+      "stage": "session",
+      "outcome": "RESUMED",
+      "session": 2,
+      "at": "2026-10-21T15:06:23Z",
+      "note": "re-invoked from inside the worktree after FAILED_ORCHESTRATOR_TIME_BUDGET_EXCEEDED; session-1 halt archived at phase-3/orchestrator-halt-session-1.json; deadline = 2026-10-21T15:06:23Z + 240 min"
+    },
+    {
+      "phase": 4,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/completed/events-and-day-view-phase-4-the-compromisso-sheet-and-search-results.plan.md",
+      "plan_review_attempts": 1
+    },
+    {
+      "phase": 4,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "suite_path": "PRPs/reports/events-and-day-view/test-suite-phase-4.diff",
+      "tdd_review_attempts": 2,
+      "note": "attempt 1 CHANGES_REQUESTED on R-DUPLICATE only (six duplicate cases in test/event-edit.test.ts); attempt 2 APPROVED with 342 cases (220 + 66 + 56), dynamic RED legitimate, 32 of 32 mutants killed"
+    },
+    {
+      "phase": 4,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 3,
+      "note": "attempt 1 CHANGES_REQUESTED on 3 R-COH comment/document rows; attempt 2 on 2 new R-COH comment rows; attempt 3 comment-only (two named rows plus one proofreading sweep of 17 over-claiming comments) APPROVED. DEVIATION: the implement loop's 45-minute wall clock (started 17:03:58Z, deadline 17:48:58Z) was already past when attempt 3 was dispatched at ~17:57Z, because the two review passes (hybrid /code-review included) took ~16 minutes each; attempt 3 was the last allowed by max_implement_retries=3 and only edited comments, so the loop was continued instead of halting; the hybrid pass was skipped on attempt 3 (SKIPPED_INSUFFICIENT_BUDGET), degraded on attempt 1 (the orchestrator's live pass wrote files during it) and ran clean on attempt 2",
+      "docs_sync_outcome": "APPROVED",
+      "implement_deadline_ts": "2026-10-21T17:48:58Z"
+    },
+    {
+      "phase": 4,
+      "stage": "test",
+      "outcome": "GREEN",
+      "tests": "116 files / 2755 tests"
+    },
+    {
+      "phase": 4,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 4,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/events-and-day-view-phase-4-the-compromisso-sheet-and-search-results.plan.md",
+      "timestamp": "2026-10-21T18:30:17Z"
+    },
+    {
+      "phase": 4,
+      "stage": "live_pass",
+      "outcome": "DONE_BY_ORCHESTRATOR",
+      "record": "PRPs/reports/events-and-day-view/phase-4/live-browser-pass.md",
+      "note": "AC-28/29/30 observed in the Browser pane at 375 and 1280 px against a throwaway-token dev server and synthetic fixtures (two screenshots); findings F1 (all-day to timed toggle saves a zero-length commitment, plan-decided), F2 (a re-tap within ~0.4 s of closing was swallowed once, not investigated), F3 (no success toast by D4-6); the pane's own Offline toggle, the focus ring, Task-row opening from search results, and the device-only clauses stay owed to the owner's device in phase 5"
+    },
+    {
+      "phase": 5,
+      "stage": "time_budget_check",
+      "outcome": "PROCEED",
+      "checked_at": "2026-10-21T18:31:40.544Z",
+      "deadline_ts": "2026-10-21T19:06:23Z",
+      "note": "phase 5 starts ~35 minutes before the 240-minute session deadline; the check is made at phase start (Phase A.2) and phase 4 was complete at 18:30:17Z"
+    },
+    {
+      "phase": 5,
+      "stage": "plan",
+      "outcome": "APPROVED",
+      "plan_path": "PRPs/plans/completed/events-and-day-view-phase-5-close-out.plan.md",
+      "plan_review_attempts": 1,
+      "note": "Part A (built by the pipeline: AC-33 invariants incl. the mirror-inventory script fix, AC-34 documentation sync, unit UI/UX roll-up, owner hand-off records) is separated from Part B (owner-only: commit/PR, merge, release v0.14.0, remote 0007, C6 on real snapshots, device proof; PRD AC-31/32 stay [OWNER-ONLY, MANUAL] and are NOT met by this phase)"
+    },
+    {
+      "phase": 5,
+      "stage": "tdd",
+      "outcome": "APPROVED",
+      "suite_path": "PRPs/reports/events-and-day-view/test-suite-phase-5.diff",
+      "tdd_review_attempts": 1,
+      "note": "two Node-side docs-project suites (test/mirror-inventory.test.ts 42 cases, test/close-out-docs.test.ts 81 cases), RED legitimate (80 failed + 43 passed, all AssertionErrors), registered in vitest.config.ts"
+    },
+    {
+      "phase": 5,
+      "stage": "implement",
+      "outcome": "APPROVED",
+      "attempts": 2,
+      "note": "attempt 1 CHANGES_REQUESTED on 6 additive R-COH rows (three confirmed: script header comment, docs/domain/areas/events.md line 5, an out-of-plan edit of docs/context/integrations.md line 15; three found not to be defects of the diff); attempt 2 fixed the three confirmed and was APPROVED. DEVIATION: the implement loop's 45-minute wall clock (started 20:21:28Z, deadline 21:06:28Z) was past when attempt 2 was dispatched and reviewed because the session idled for the owner between the attempt-1 implementer (~20:40Z) and its review (22:08Z); the hybrid /code-review pass was skipped (SKIPPED_INSUFFICIENT_BUDGET) on both phase-5 reviews",
+      "docs_sync_outcome": "APPROVED",
+      "implement_deadline_ts": "2026-10-21T21:06:28Z"
+    },
+    {
+      "phase": 5,
+      "stage": "test",
+      "outcome": "GREEN",
+      "tests": "118 files / 2878 tests"
+    },
+    {
+      "phase": 5,
+      "stage": "test_review",
+      "outcome": "APPROVED"
+    },
+    {
+      "phase": 5,
+      "status": "complete",
+      "plan_path": "PRPs/plans/completed/events-and-day-view-phase-5-close-out.plan.md",
+      "timestamp": "2026-10-21T22:50:09Z",
+      "owed": "everything owner-only: commit and PR (/relay:relay-commit then /relay:relay-pr), merge, C6 on the latest real snapshot, remote migration 0007, release v0.14.0 and deploy, the real-snapshot restore drill (PRD AC-32), the device proof (PRD AC-31, PRPs/reports/events-and-day-view/device-proof.md is Status: OWED), the phase-3/4/5 device-only clauses and the owner's decisions on the open findings and new strings; unit 14 stays in-progress in the roadmap until then"
+    }
+  ],
+  "outcome": "ALL_PHASES_COMPLETE",
+  "phases_completed": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "worktree_attempted": true,
+  "worktree_succeeded": true,
+  "fallback_reason": null,
+  "worktree_note": "worktree created by hand BEFORE the plan stage (git worktree add .worktrees/events-and-day-view -b feature/events-and-day-view HEAD) because origin/main is one commit behind local main (the approved PRD commit 4231ee8 is unpushed) and relay-worktree's origin/main-first chain would have cut it without the PRD; same move as unit 13. Step B.0 (settings.json propagation) was applied before the test stage. Bootstrap ran via scripts/worktree-bootstrap.sh (exit 0).",
+  "phase_diff_bases": {
+    "1": "b24b04ed3e676444a31a964e8cdaad030cbf9485",
+    "2": "61d6e411cca8fb3329eefdc4ad528598afd092d4",
+    "3": "2f764165b038f7a2e5fa2f2807ed2f0e850464c9",
+    "4": "48310a2a31dd98f96265812b4a10316b26d090e6",
+    "5": "1cc3993c84f0c89aff084812b8822f9f85d2868f"
+  },
+  "lane_durations_ms": {},
+  "total_duration_ms": null,
+  "session_2_started_at": "2026-10-21T15:06:23Z"
+}

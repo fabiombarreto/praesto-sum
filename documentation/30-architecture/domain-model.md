@@ -1,6 +1,6 @@
 ---
 status: draft
-last_updated: 2026-10-12
+last_updated: 2026-10-21
 review_trigger: "a new domain concept appears, an ambiguity is resolved, or the glossary changes"
 ---
 
@@ -18,7 +18,6 @@ The canonical entity names — **Task**, **Event**, **Reminder**, **Life Area** 
 ```mermaid
 erDiagram
     LIFE_AREA ||--o{ TASK : contains
-    LIFE_AREA ||--o{ EVENT : contains
     TASK }o--o{ EVENT : "linked to"
     REMINDER }o--o| TASK : "points to"
     REMINDER }o--o| EVENT : "points to"
@@ -48,15 +47,14 @@ Something the owner intends to do; it has no fixed position on the calendar by i
 
 ### Event
 
-Something that occupies a specific position in time on the calendar.
+Something that occupies a specific position in time on the calendar. On screen the owner reads *Compromisso* (the pt-BR copy of ADR-0009); code, API and documents keep Event.
 
 - Title
-- Start date/time
-- End date/time (or duration)
-- Location (optional)
-- Life Area it belongs to
-- Linked Tasks (zero or more — N:N, resolved 2026-08-03)
-- **Provenance** ([ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md), first-class from birth): `source` (`local` | `google` — a domain fact, it changes what the UI allows), `all_day` (Google's all-day events have an *exclusive* end date), and an IANA timezone per Event. External linkage (Google ids, etag, content hashes, sync state) lives in a **separate** `event_sync_links` table, never as columns on Event — abandoning the integration must be dropping a table, not altering the core entity
+- Description (optional) and Location (optional)
+- Start date/time and end date/time — a timed Event holds two UTC instants plus its IANA zone; an all-day Event holds local days with an *exclusive* end ([ADR-0016](../60-decisions/ADR-0016-event-storage-model-sync-aware.md), 2026-10-19). The end is mandatory in storage; the owner may leave it empty and the form or the API fills it (start + 1 h, or the next day)
+- Life Area it belongs to — *deferred (2026-10-19): unit 14 ships Events without an area, because unit 13's exit signal can revert Life Areas; adding the column later is a plain `ADD COLUMN`*
+- Linked Tasks (zero or more — N:N, resolved 2026-08-03) — unit 20
+- **Provenance** ([ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md), first-class from birth): `source` (`local` | `google` — a domain fact, it changes what the UI allows), `all_day` (Google's all-day events have an *exclusive* end date), and an IANA timezone per Event. The Event's own **content hash** is a property of its content and lives on the Event row, written by one repository function ([ADR-0016](../60-decisions/ADR-0016-event-storage-model-sync-aware.md), amending the earlier wording that put hashes in the link table). External linkage (Google ids, etag, the sync baseline `synced_content_hash`) lives in a **separate** `event_sync_links` table, never as columns on Event — abandoning the integration must be dropping a table, not altering the core entity. A link whose Event is gone (`event_id` null) is the pending deletion in Google
 - Recurrence via **Recurrence Series** + **Event Exceptions** ([ADR-0006](../60-decisions/ADR-0006-recurrence-model.md)): the recurring Event is one master record; occurrences are expanded virtually over the visible window, never materialized; "only this" edits become exception records
 
 ### Reminder
@@ -81,7 +79,7 @@ An "only this" deviation of a recurring Event: the original occurrence start plu
 
 ### Life Area
 
-A named grouping the owner creates (for example *Casa*, *Saúde*) that Tasks and Recurrence Series — and, once Events ship, Events — may belong to, at most one each and optionally none. Calendar and Tasks are product capabilities, not Life Area records. *(Proposed 2026-10-12, awaiting the owner's confirmation — life-areas PRD Open Question 1. The wording this replaces: "A named domain of the owner's personal life that groups Tasks and Events.")*
+A named grouping the owner creates (for example *Casa*, *Saúde*) that Tasks and Recurrence Series may belong to, at most one each and optionally none (Events take no Life Area yet — deferred 2026-10-19, ADR-0015). Calendar and Tasks are product capabilities, not Life Area records. *(Proposed 2026-10-12, awaiting the owner's confirmation — life-areas PRD Open Question 1. The wording this replaces: "A named domain of the owner's personal life that groups Tasks and Events.")*
 
 - Name
 - Description (optional)
@@ -94,12 +92,12 @@ A named grouping the owner creates (for example *Casa*, *Saúde*) that Tasks and
 
 1. A Reminder never points to both a Task and an Event at once; it points to one of them or to nothing (standalone) — resolved 2026-08-03.
 2. A Task with a deadline or a scheduled date DOES appear on the calendar views alongside Events, visually distinct (day-level item, no time slot) — resolved 2026-08-03.
-3. A Task or Event MAY exist without a Life Area; area-less items surface in an implicit "Unsorted" grouping in the UI — no default area is stored — resolved 2026-08-03. That grouping is shown as *Sem área*, the pt-BR copy (ADR-0009); it is a filter value and a count row, never a stored area or a grouping axis ([ADR-0015](../60-decisions/ADR-0015-life-areas-owner-named-single-membership.md)). *(The *Sem área* sentence: proposed 2026-10-12, awaiting the owner's confirmation — life-areas PRD Open Question 1.)*
+3. A Task or Event MAY exist without a Life Area (an Event takes none yet — deferred 2026-10-19, ADR-0015); area-less items surface in an implicit "Unsorted" grouping in the UI — no default area is stored — resolved 2026-08-03. That grouping is shown as *Sem área*, the pt-BR copy (ADR-0009); it is a filter value and a count row, never a stored area or a grouping axis ([ADR-0015](../60-decisions/ADR-0015-life-areas-owner-named-single-membership.md)). *(The *Sem área* sentence: proposed 2026-10-12, awaiting the owner's confirmation — life-areas PRD Open Question 1.)*
 4. Tasks and Events are always distinct and never convert into one another; they relate through an N:N link — resolved 2026-08-03.
 5. At most ONE open occurrence exists per active Recurrence Series; an occurrence superseded without completion becomes `missed` (terminal), and every skipped cycle leaves a permanent record — resolved 2026-08-03 ([ADR-0006](../60-decisions/ADR-0006-recurrence-model.md)).
 6. An external Event is identified by the pair (external calendar id, external event id) and never by title or time — resolved 2026-08-04 ([ADR-0007](../60-decisions/ADR-0007-google-calendar-bidirectional-sync.md)).
 7. Absence from a full re-sync is NEVER a deletion. Only an explicit cancellation from the provider deletes; a full re-sync is an upsert with zero deletions — the difference between a stale token and an erased agenda.
-8. Praesto-only attributes of an Event (its Life Area, its links to Tasks) are never overwritten by a remote change, because they do not exist on the remote side.
+8. Praesto-only attributes of an Event (its Life Area, once Events take one — deferred 2026-10-19, ADR-0015 — and its links to Tasks) are never overwritten by a remote change, because they do not exist on the remote side.
 
 ## Expected evolution
 

@@ -1,0 +1,48 @@
+{
+  "run_id": "d85b1a7b-7145-4d5a-aa18-c92406834668",
+  "attempt": 1,
+  "tier": "unit",
+  "framework": "vitest",
+  "outcome": "PASSED",
+  "duration_ms": 101233,
+  "counts": {
+    "passed": 2188,
+    "failed": 0,
+    "skipped": 0,
+    "total": 2188
+  },
+  "failures": [],
+  "coverage": null,
+  "artifacts": {
+    "junit_xml": "C:\\repos\\assistente-pessoal\\.worktrees\\events-and-day-view\\PRPs\\reports\\events-and-day-view\\attempts\\1\\junit.xml"
+  },
+  "generated_at": "2026-10-19T18:52:38.496Z",
+  "wall_clock_ms": 145248,
+  "invocation": "CI=1 NO_COLOR=1 npx vitest run --reporter=default --reporter=junit --outputFile.junit=PRPs/reports/events-and-day-view/attempts/1/junit.xml (projects: worker, docs)",
+  "vitest_exit_code": 0,
+  "exit_127_retry_needed": false,
+  "test_files": {
+    "passed": 108,
+    "failed": 0,
+    "total": 108
+  },
+  "companion_gate": {
+    "command": "npm run check",
+    "exit_code": 0,
+    "result": "PASS",
+    "steps": [
+      "wrangler types --check: up to date",
+      "tsc -b: clean",
+      "eslint .: clean",
+      "prettier --check .: clean"
+    ]
+  },
+  "redaction": {
+    "env_names": 0,
+    "url_values": 0,
+    "regex_matches": 0,
+    "table_size": 2,
+    "layer2_entries": 0
+  },
+  "notes": "Attempt 1 ran clean on the first invocation (no exit 127). 108 test files / 2188 tests passed, 0 failed, 0 skipped; matches the implementer and code-reviewer counts. No failures to classify."
+}

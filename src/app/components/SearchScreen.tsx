@@ -5,14 +5,29 @@
 // back()) and reuses `TodayScreen`'s exact grouping (`collectDayItems`),
 // row-rendering (`renderDayItems`) and `TaskSheet` wiring verbatim, so a
 // search result looks and behaves exactly like the same Task on *Hoje*.
+//
+// Since unit 14 `events-and-day-view` phase 4 it also finds the owner's own
+// commitments (PRD AC-29): a *Compromissos* group, fed by its own request
+// (`GET /api/events?q=`) and its own atoms, so the two searches never fold into
+// one another. `decideSearchBody` (`src/shared/event-view.ts`) is the only place
+// that decides when the screen may say that nothing was found — never while the
+// commitments request is unanswered or failed. A local row opens the shared
+// Compromisso sheet (`useEventSheet`); Google events are not searched (the route
+// reads stored Events, and unit 14 stores only local ones).
 
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useReducer, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import type { ReminderDto, TaskDto } from "../../shared/api";
+import type { EventDto, ReminderDto, TaskDto } from "../../shared/api";
+import { canWrite } from "../../shared/connectivity";
 import { PRAESTO_TIMEZONE, todayIn } from "../../shared/dates";
 import { collectDayItems } from "../../shared/day-groups";
 import { assertNeverDaySource, dayItemFromTask, type DayItem } from "../../shared/day-item";
+import {
+  decideSearchBody,
+  EVENT_SEARCH_GROUP,
+  formatEventSearchWhen,
+} from "../../shared/event-view";
 import { lifeAreaNameOf } from "../../shared/life-area-assign";
 import { classifyRequestFailure } from "../../shared/request-failure";
 import {
@@ -41,13 +56,17 @@ import {
   listReminders,
   listTasks,
   reopenTask,
+  searchEvents,
   updateReminder,
   updateSeries,
   updateTask,
 } from "../api";
 import { useConnectivity } from "../hooks/useConnectivity";
+import { useEventSheet } from "../hooks/useEventSheet";
 import { useLifeAreas } from "../hooks/useLifeAreas";
 import { useSeriesSheet } from "../hooks/useSeriesSheet";
+import { CompromissoSheet } from "./CompromissoSheet";
+import { LocalEventRow } from "./LocalEventRow";
 import { TaskGroup } from "./TaskGroup";
 import { TaskRow } from "./TaskRow";
 import { TaskSheet } from "./TaskSheet";
@@ -76,6 +95,11 @@ export function SearchScreen({
   const [missedCollapsed, setMissedCollapsed] = useState(true);
   const [results, setResults] = useState<TaskDto[] | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
+  // The commitments search has its OWN atoms, beside the Task ones: a failed
+  // commitments request must never turn a Task result into an error, and an
+  // unanswered or failed one must never read as "nothing found" (`decideSearchBody`).
+  const [eventResults, setEventResults] = useState<EventDto[] | null>(null);
+  const [eventsError, setEventsError] = useState<string | null>(null);
   const [reminders, setReminders] = useState<ReminderDto[] | null>(null);
   const [sheet, dispatchSheet] = useReducer(reduceTaskSheet, INITIAL_TASK_SHEET_STATE);
   const [sheetError, setSheetError] = useState<string | null>(null);
@@ -99,6 +123,13 @@ export function SearchScreen({
   // group, exactly as there. Search has no area control of its own (PRD D-P) and a
   // failed request is plain absence.
   const { lifeAreas } = useLifeAreas(onUnauthorized);
+  // The Compromisso sheet, shared with *Hoje* and the day screen; an accepted write
+  // re-runs the commitments search so the group shows the change.
+  const eventSheet = useEventSheet({
+    onUnauthorized,
+    writable: canWrite(connectivity),
+    onChanged: rerunEventSearch,
+  });
 
   /** A 401 routes to the token gate; otherwise returns the failure's message. */
   function handleFailure(cause: unknown): string | null {
@@ -129,6 +160,36 @@ export function SearchScreen({
     return search(debounced, new AbortController().signal);
   }
 
+  /** `search`'s sibling for the commitments: `GET /api/events?q=` with its own atoms. */
+  async function searchCommitments(q: string, signal: AbortSignal): Promise<void> {
+    try {
+      const next = await searchEvents(q, signal);
+      setEventResults(next);
+      setEventsError(null);
+    } catch (cause) {
+      // An aborted request is a superseded one, not a real failure.
+      if (signal.aborted) return;
+      const message = handleFailure(cause);
+      if (message !== null) {
+        // Stale rows of an older query must not sit beside the failure line.
+        setEventResults(null);
+        setEventsError(message);
+      }
+    }
+  }
+
+  /** Re-issues the current debounced commitments search — the Compromisso sheet's `onChanged`. */
+  function rerunEventSearch(): Promise<void> {
+    if (!shouldSearch(debounced)) return Promise.resolve();
+    return searchCommitments(debounced, new AbortController().signal);
+  }
+
+  /** *Tentar de novo*: both searches again, each on its own so one failing never cancels the other. */
+  function rerunBoth(): void {
+    void rerunSearch();
+    void rerunEventSearch();
+  }
+
   async function refreshReminders(): Promise<void> {
     try {
       setReminders(await listReminders());
@@ -156,10 +217,14 @@ export function SearchScreen({
     if (!shouldSearch(debounced)) {
       setResults(null);
       setSearchError(null);
+      setEventResults(null);
+      setEventsError(null);
       return;
     }
     const controller = new AbortController();
+    // Two independent requests, each in its own `void` call, one signal for both.
     void search(debounced, controller.signal);
+    void searchCommitments(debounced, controller.signal);
     return () => controller.abort();
   }, [debounced]);
 
@@ -184,12 +249,12 @@ export function SearchScreen({
     // underneath.
     function handleKeyDown(event: KeyboardEvent): void {
       if (event.key !== "Escape") return;
-      if (sheet.taskId !== null) return;
+      if (sheet.taskId !== null || eventSheet.isOpen) return;
       back();
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [back, sheet.taskId]);
+  }, [back, sheet.taskId, eventSheet.isOpen]);
 
   async function runSheet(action: () => Promise<unknown>): Promise<void> {
     setBusy(true);
@@ -371,8 +436,11 @@ export function SearchScreen({
               );
             }
             case "google":
+            case "local":
               // Unreachable: this screen feeds `collectDayItems` a single Task
-              // source, exactly like `TodayScreen`.
+              // source, exactly like `TodayScreen`. The commitments are their own
+              // *Compromissos* group below, rendered from their own request and
+              // never routed through the Task groups.
               throw new Error(`Unhandled day item source: ${item.source}`);
             default:
               return assertNeverDaySource(item);
@@ -381,6 +449,18 @@ export function SearchScreen({
       </ul>
     );
   }
+
+  const events = eventResults ?? [];
+  const body = decideSearchBody({
+    online: connectivity === "online",
+    queryReady: shouldSearch(debounced),
+    tasksAnswered: results !== null,
+    tasksFailed: searchError !== null,
+    taskCount: (results ?? []).length,
+    eventsAnswered: eventResults !== null,
+    eventsFailed: eventsError !== null,
+    eventCount: events.length,
+  });
 
   return (
     <div
@@ -419,24 +499,28 @@ export function SearchScreen({
             state (so the same list reappears the instant the network
             returns, with no extra fetch), but a list fetched before the
             drop is never rendered here as current. The header above (back
-            button, field) stays visible and usable regardless. */}
-        {connectivity !== "online" ? null : !shouldSearch(debounced) ? (
+            button, field) stays visible and usable regardless.
+
+            Which body shows is decided by `decideSearchBody`, the one place
+            that knows when "nothing found" may be said: only once the Tasks AND
+            the commitments have both answered and both are empty. */}
+        {body === "offline" ? null : body === "hint" ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-8 text-center">
             <p className="m-0 font-text text-t2 text-muted">
               Digite pelo menos {SEARCH_MIN_QUERY_LENGTH} letras para buscar.
             </p>
           </div>
-        ) : results === null && searchError === null ? (
+        ) : body === "loading" ? (
           <Skeleton />
-        ) : searchError !== null ? (
+        ) : body === "task-error" ? (
           <>
             <p role="alert" className="font-text text-t2 text-overdue">
               {searchError}
             </p>
             {/* prettier-ignore */}
-            <Button variant="secondary" onClick={() => void rerunSearch()}>Tentar de novo</Button>
+            <Button variant="secondary" onClick={rerunBoth}>Tentar de novo</Button>
           </>
-        ) : (results ?? []).length === 0 ? (
+        ) : body === "empty" ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-8 text-center">
             <p className="m-0 font-display text-t4 font-extrabold text-ink">
               Nenhuma tarefa encontrada para “{debounced}”.
@@ -444,6 +528,23 @@ export function SearchScreen({
           </div>
         ) : (
           <>
+            {/* First in the DOM, as the Agenda precedes the Tasks on *Hoje*; absent
+                (`TaskGroup` renders nothing at zero) when no commitment matches.
+                Google events do not appear: the route returns stored Events only, and
+                unit 14 stores only local ones. */}
+            <TaskGroup name={EVENT_SEARCH_GROUP} count={events.length}>
+              <ul className="m-0 flex list-none flex-col gap-2 p-0">
+                {events.map((event) => (
+                  <LocalEventRow
+                    key={`event-${event.id}`}
+                    event={event}
+                    timeLabel={formatEventSearchWhen(event)}
+                    wideTime
+                    onOpen={() => eventSheet.openEvent(event)}
+                  />
+                ))}
+              </ul>
+            </TaskGroup>
             <TaskGroup name="Atrasadas" count={groups.overdue.length}>
               {renderDayItems(groups.overdue)}
             </TaskGroup>
@@ -467,6 +568,18 @@ export function SearchScreen({
             >
               {renderDayItems(groups.missed)}
             </TaskGroup>
+            {/* When the results show, a failed commitments search says so, with a
+                retry that reruns both searches: it is never read as "no
+                commitments". */}
+            {eventsError !== null && (
+              <>
+                <p role="alert" className="font-text text-t2 text-overdue">
+                  {eventsError}
+                </p>
+                {/* prettier-ignore */}
+                <Button variant="secondary" onClick={rerunBoth}>Tentar de novo</Button>
+              </>
+            )}
           </>
         )}
       </main>
@@ -549,6 +662,8 @@ export function SearchScreen({
         lifeAreas={lifeAreas}
         onOpenLifeAreas={onOpenLifeAreas}
       />
+
+      <CompromissoSheet {...eventSheet.sheetProps} />
     </div>
   );
 }

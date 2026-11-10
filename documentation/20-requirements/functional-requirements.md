@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-10-12
+last_updated: 2026-10-21
 review_trigger: "the owner validates the seeded requirements or confirms the MVP scope, or a scope change / accepted backlog idea touches any FR"
 ---
 
@@ -109,15 +109,15 @@ Every accepted requirement now has a phase and a delivery unit. The unit column 
 | FR-001, FR-045 | Phase 1 | 1 `install-and-quick-capture` |
 | FR-002, FR-003, FR-004, FR-005, FR-006 | Phase 1 | 2 `task-detail-and-dates` |
 | FR-007 | Phase 1 | 3 `today-view-and-filters` |
-| FR-042, FR-043 | Phase 1 | 5 `data-export` (+ chore C5 for the automated pull) |
+| FR-042, FR-043 | Phase 1 | 5 `data-export` (+ chore C5 for the automated pull); extended to Events in 14 `events-and-day-view` (the dump and the `.ics`) |
 | FR-041 | Phase 1 | 6 `push-channel-proven`, 7 `reminders` |
 | FR-044, FR-025 (Task side) | Phase 1 | 7 `reminders` |
-| FR-040 | Phase 1 | 8 `text-search` (extended to Events in unit 14) |
+| FR-040 | Phase 1 | 8 `text-search` (extended to Events in 14 `events-and-day-view`: `GET /api/events?q=` and the *Compromissos* group) |
 | FR-009 | Phase 1 | 9 `recurring-tasks`, 10 `missed-sweep` |
 | FR-011 | Phase 1 | 10 `missed-sweep` (data), 11 `adherence-mirror` (surface) |
 | FR-012 | Phase 1 | 12 `repeated-miss-nudge` |
 | FR-008 | Phase 1 | 13 `life-areas` |
-| FR-020 … FR-023 | Phase 2 | 14 `events-and-day-view` |
+| FR-020 … FR-023 | Phase 2 | 14 `events-and-day-view` (`in-progress`: code complete on the unit's branch 2026-10-21, device proof owed) |
 | FR-024 | Phase 2 | 16 `week-view` |
 | FR-026 | Phase 2 | 17 `recurring-events` |
 | FR-025 (Event side) | Phase 2 | 18 `event-reminders` |

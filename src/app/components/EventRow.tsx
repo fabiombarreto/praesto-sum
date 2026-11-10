@@ -31,14 +31,57 @@ const ROW_CLASSNAME =
   // list, where the mismatch reads as misalignment rather than as a distinction.
   "flex min-h-16 items-center gap-3 rounded-card border border-dashed border-line-strong px-3 py-2";
 
-export function EventRow({ event }: { event: CalendarEventDto }) {
-  const time = formatEventTime(event.start);
+/**
+ * The leading time column of layout standard §2.4, shared with `LocalEventRow`
+ * so the two row kinds cannot drift apart.
+ *
+ * Fixed width and tabular so the times line up down the column, which is the
+ * whole reason §2.4 asks for a leading column rather than inline. The default is
+ * the 56 px column of unit 4, byte for byte. The day screen's `HH:mm–HH:mm`
+ * (11 characters, about 79 px at 12 px mono) does not fit in it and would break
+ * at the dash, so `wide` raises the column to 80 px, never lets the label wrap,
+ * and still grows if a wider fallback monospace face asks for it.
+ *
+ * PLAN DEVIATION (reviewed, additive): plan Task 8 describes only an optional
+ * `timeLabel` and the fixed `w-14` column. `wide`, the `wideTime` props below
+ * and the `min-w-20` class go beyond that text on purpose, because the plan
+ * reviewer's advisory R-COH-OTHER-INTERNAL-CONTRADICTION (the second one, at plan
+ * line 475) asked for the column to widen for range labels. The default markup
+ * is unchanged: with `wide` false this returns the unit-4 class string exactly,
+ * so *Hoje*'s Google-only Agenda renders as it did before. Recorded in
+ * `PRPs/reports/events-and-day-view/phase-3/ui-checklist.md`, "Plan deviations".
+ */
+export function timeColumnClassName(wide: boolean): string {
+  return wide
+    ? "min-w-20 flex-none whitespace-nowrap font-data text-t1 text-muted tabular-nums"
+    : "w-14 flex-none font-data text-t1 text-muted tabular-nums";
+}
+
+export function EventRow({
+  event,
+  timeLabel,
+  wideTime = false,
+}: {
+  event: CalendarEventDto;
+  /**
+   * What the time column reads. Absent means today's text exactly
+   * (`formatEventTime(event.start)`); the day screen and *Hoje*'s Agenda pass
+   * the label `formatDayItemTime` chose for the day being shown.
+   */
+  timeLabel?: string;
+  /**
+   * The wider column for a `HH:mm–HH:mm` label (the day screen). Absent means the
+   * unit-4 column and today's markup exactly. A reviewed addition beyond plan
+   * Task 8's text, driven by plan-review advisory R-COH-OTHER-INTERNAL-CONTRADICTION
+   * #2; see `timeColumnClassName`.
+   */
+  wideTime?: boolean;
+}) {
+  const time = timeLabel ?? formatEventTime(event.start);
 
   const content = (
     <>
-      {/* Fixed width and tabular so the times line up down the column, which is
-          the whole reason §2.4 asks for a leading column rather than inline. */}
-      <span className="w-14 flex-none font-data text-t1 text-muted tabular-nums">{time}</span>
+      <span className={timeColumnClassName(wideTime)}>{time}</span>
       <Calendar className="size-4 flex-none text-faint" aria-hidden="true" />
       <span
         className={cn(

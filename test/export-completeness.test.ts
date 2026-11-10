@@ -1,4 +1,6 @@
 // PRPs/prds/data-export.prd.md AC-4 the-completeness-guard-cannot-be-silently-disarmed
+// PRPs/prds/events-and-day-view.prd.md AC-19 Export dump (classification half: both new
+// tables are listed, the guard's expected list grew from five names to seven, never loosened)
 //
 // This is the exit-signal test the whole unit is shaped around
 // (data-export.prd.md Success Metrics: "Schema tables covered by the
@@ -89,9 +91,16 @@ describe("AC-4 — the completeness guard cannot be silently disarmed", () => {
     expect(findUnreasonedExclusions(fixtureExclusions)).toEqual(["silently_disarmed"]);
   });
 
-  it("exports exactly the five data-bearing table names, no more and no less", () => {
+  it("exports exactly the seven data-bearing table names, no more and no less", () => {
+    // `events` and `event_sync_links` joined the original five in unit 14
+    // events-and-day-view, phase 1 (events-and-day-view.prd.md AC-19, the
+    // classification half): both are owner data that FR-042 must carry — the
+    // link table is dumped so a restore cannot orphan the links (ADR-0016).
+    // The list only GREW; the five original names are asserted exactly as before.
     expect([...EXPORTED_TABLE_NAMES].sort()).toEqual(
       [
+        "event_sync_links",
+        "events",
         "google_calendar_selections",
         "life_areas",
         "recurrence_series",

@@ -48,7 +48,7 @@ import { PRAESTO_TIMEZONE, todayIn } from "./dates";
  * preamble says is "never a licence to improvise around it". Proposed rather
  * than decided, and named here so it is one edit to change.
  */
-const ALL_DAY_LABEL = "dia todo";
+export const ALL_DAY_LABEL = "dia todo";
 
 /** `day` (`YYYY-MM-DD`) as a `Date` at UTC noon — never local time. */
 function toUtcNoon(day: string): Date {

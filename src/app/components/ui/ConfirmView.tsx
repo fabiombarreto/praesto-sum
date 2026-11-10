@@ -6,6 +6,11 @@
 // neutral `secondary`, never `text-overdue` or `bg-live`). The strings are
 // passed in by the screen that owns the flow (pt-BR literals live there,
 // guidelines §12.3) — this component carries no copy of its own.
+//
+// `confirmDisabled` (unit 14 phase 4) disables ONLY the destructive button, so a
+// confirmation reached while online stays cancellable after the connection drops:
+// the Compromisso sheet passes `!writable`, and *Cancelar* must still work offline.
+// Absent, it is `false` and every other caller renders exactly as before.
 
 import { Trash2 } from "lucide-react";
 import { useEffect, useRef } from "react";
@@ -17,6 +22,7 @@ export function ConfirmView({
   cancelLabel,
   confirmLabel,
   busy,
+  confirmDisabled = false,
   error,
   onCancel,
   onConfirm,
@@ -26,6 +32,8 @@ export function ConfirmView({
   cancelLabel: string;
   confirmLabel: string;
   busy: boolean;
+  /** Disables the destructive button only (not *Cancelar*), e.g. while offline. */
+  confirmDisabled?: boolean;
   error: string | null;
   onCancel: () => void;
   onConfirm: () => void;
@@ -62,7 +70,7 @@ export function ConfirmView({
           variant="secondary"
           className="flex-1"
           onClick={onConfirm}
-          disabled={busy}
+          disabled={busy || confirmDisabled}
         >
           <Trash2 className="size-5" aria-hidden="true" />
           {confirmLabel}

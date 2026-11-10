@@ -1,0 +1,321 @@
+
+> praesto@0.13.0 test
+> vitest run --reporter=default --reporter=junit --outputFile.junit=PRPs/reports/events-and-day-view/attempts/1/junit.xml
+
+
+ RUN  v4.1.10 C:/repos/assistente-pessoal/.worktrees/events-and-day-view
+
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |docs| test/push-send-library-verdict.test.ts (8 tests) 9ms
+ ✓ |docs| test/event-migration-additive.test.ts (21 tests) 25ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |docs| test/source-invariants.test.ts (3 tests) 9ms
+ ✓ |docs| test/event-api-inspection.test.ts (27 tests) 18ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |docs| test/docs-consistency.test.ts (70 tests) 50ms
+Using secrets defined in .dev.vars
+ ✓ |docs| test/close-out-docs.test.ts (81 tests) 79ms
+Using secrets defined in .dev.vars
+ ✓ |docs| test/mirror-inventory.test.ts (42 tests) 3535ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/event-export.test.ts (11 tests) 435ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-events-window.test.ts (27 tests) 1114ms
+     ✓ rejects a bad window with 400 even when Google is not connected, not with 409  329ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/event-routes-create.test.ts (40 tests) 1205ms
+     ✓ rejects JSON null with 400 and writes nothing  326ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/repeated-miss-nudge-cron.test.ts (22 tests) 1477ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/series.test.ts (30 tests) 2064ms
+     ✓ PATCH template edit propagates to the open occurrence, leaves a closed row untouched, and rejects a rule field naming it  347ms
+     ✓ PATCH status 'ended' ends the series while the open occurrence stays open  555ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-list-search.test.ts (22 tests) 2166ms
+     ✓ never returns a Task that matches every other filter but not `q`  428ms
+     ✓ behaves exactly as today when no `q` key is present at all  550ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/event-routes-list.test.ts (43 tests) 2775ms
+     ✓ 'a one-day Event is inside its own day'  331ms
+     ✓ rejects a to before the from with 400 naming the parameter  510ms
+     ✓ lists an all-day Event created through POST on every day it covers and not on the next  615ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-list-filters.test.ts (20 tests) 3605ms
+     ✓ returns only the low-priority Tasks  387ms
+     ✓ applies status, priority and a date bound in the same request  636ms
+     ✓ takes the first N of the ORDERED FILTERED set, not of an arbitrary one  811ms
+     ✓ still rejects an invalid limit when filters are present  816ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/tasks.test.ts (24 tests) 3662ms
+     ✓ deleting an already-closed series row is a plain delete with no successor spawn  396ms
+     ✓ refuses with 409 pt-BR and changes nothing when the successor has been detached  640ms
+     ✓ refuses with 409 and changes nothing when the successor already had a reminder sent  975ms
+     ✓ a one-off Task's reopen response carries only task (delta over test/tasks.test.ts:58-76)  353ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/life-areas-routes.test.ts (46 tests) 4467ms
+     ✓ still lets the owner rename an area while he holds twelve  322ms
+     ✓ answers 204 and removes the area  553ms
+     ✓ carries openTaskCount, taskCount and seriesCount on each area  546ms
+     ✓ answers 401 for 'GET /api/life-areas' without a token or with a wrong one, and touches nothing  373ms
+     ✓ answers 401 for 'POST /api/life-areas' without a token or with a wrong one, and touches nothing  347ms
+     ✓ answers validation, conflict and not-found errors in Portuguese  593ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-update.test.ts (51 tests) 5593ms
+     ✓ clears the deadline when a scheduled date is set  342ms
+     ✓ leaves a one-off Task undetached  548ms
+     ✓ rejects completedAt with 400 and writes nothing  530ms
+     ✓ rejects occurrenceDate with 400 and writes nothing  363ms
+     ✓ rejects an unknown key with 400 and writes nothing  329ms
+     ✓ moves a relative Reminder's fireAt with the deadline, leaving an absolute-linked Reminder on the same Task unchanged  608ms
+     ✓ keeps sentAt set and does not recompute fireAt for an already-sent, relative Reminder when its Task's deadline is edited  348ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/adherence-endpoint.test.ts (16 tests) 521ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-subscribe-route.test.ts (5 tests) 156ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-calendar-routes.test.ts (25 tests) 1011ms
+     ✓ points the owner at disconnect, which is what he actually means  301ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/missed-sweep-cron.test.ts (13 tests) 1080ms
+Using secrets defined in .dev.vars
+stderr | test/oauth-callback.test.ts > a valid callback stores the credential exactly once (AC-3) > stores no credential when Google rejects the exchange
+[oauth-callback] token exchange failed: http_400
+
+ ✓ |worker| test/oauth-callback.test.ts (12 tests) 993ms
+     ✓ marks the nonce consumed  391ms
+     ✓ never echoes the refresh token back in the response body  301ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-list-contract.test.ts (22 tests) 2332ms
+     ✓ keeps the ordering under the status filter  348ms
+     ✓ rejects zero with 400 rather than clamping it  386ms
+     ✓ rejects an empty value with 400 rather than clamping it  303ms
+     ✓ still lists an occurrence the owner has corrected  376ms
+ ✓ |worker| test/life-areas-task-routes.test.ts (24 tests) 2191ms
+     ✓ returns only the area's Tasks, of every status, in urgency order  325ms
+     ✓ narrows an area by a date range  367ms
+     ✓ counts an unset priority as normal inside the area-less Tasks too  312ms
+     ✓ keeps the envelope and every Task's field set exactly as documented  330ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/event-routes-search.test.ts (21 tests) 2062ms
+     ✓ rejects an empty query with 400 naming q  358ms
+     ✓ returns every match inside a wider range  341ms
+     ✓ returns at most 100 matches, keeping the 100 most recent  401ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/nudge-state.test.ts (22 tests) 2720ms
+     ✓ persists true on that series only, returns it, and leaves the other series, the occurrence and every Reminder untouched  379ms
+     ✓ keeps the existing rejection naming an unknown extra key, and does not apply nudgeMuted  385ms
+     ✓ sets nudged_at to null in the same operation that marks the occurrence done and spawns the successor  329ms
+     ✓ leaves nudged_at null when completing a series that was never nudged  366ms
+     ✓ does not touch the owner's mute when it clears the marker  455ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/event-routes-edit.test.ts (34 tests) 3247ms
+     ✓ keeps the content hash when nothing authored changes  310ms
+     ✓ rejects a text allDay with 400 naming the field  326ms
+     ✓ rejects an updatedAt key with 400 naming the field  332ms
+     ✓ rejects malformed JSON as the body with 400 and changes nothing  386ms
+     ✓ answers 404 and creates nothing, while the same body succeeds on a known id  660ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/life-areas-series.test.ts (13 tests) 1212ms
+     ✓ stamps the series and its first occurrence with the area  319ms
+     ✓ gives the successor spawned on completion the same area  319ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/event-schema.test.ts (39 tests) 658ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/diagnostics-route.test.ts (5 tests) 148ms
+ ✓ |worker| test/event-sheet.test.ts (66 tests) 594ms
+     ✓ keeps its invariants over a long deterministic sequence of events  518ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/cron-sweep.test.ts (9 tests) 515ms
+ ✓ |worker| test/event-edit.test.ts (220 tests) 500ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-priority.test.ts (15 tests) 1048ms
+     ✓ stores an explicit null priority as not set  346ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/event-routes-delete.test.ts (9 tests) 1551ms
+     ✓ leaves the link in place with event_id null and every other column unchanged  343ms
+     ✓ still lets the same requests through for a local Event (positive control)  787ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-routes.test.ts (15 tests) 1993ms
+     ✓ sends the stored token to Google's revoke endpoint  350ms
+     ✓ deletes locally and reports success when revoke answers non-2xx  762ms
+     ✓ reports the connection's status without its credential  363ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/reminders.test.ts (7 tests) 2526ms
+     ✓ rejects a body with no taskId and an absent, empty, or whitespace-only label with 400 and a pt-BR message  452ms
+     ✓ rejects a taskId that does not exist with 400 or 404, a pt-BR message, and writes no row  782ms
+     ✓ deletes a Task's Reminders when the Task itself is deleted (the existing onDelete: cascade)  444ms
+     ✓ returns 401 for POST with no token, and writes no row  583ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/event-hash-integrity.test.ts (5 tests) 2823ms
+     ✓ holds after a create and after each of three edits, and each edit changes it  1226ms
+     ✓ holds when an edit clears a field, and when it only restates what is stored  664ms
+     ✓ leaves both links as they were across a create, reads, three edits and a delete  793ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/life-areas-export.test.ts (3 tests) 349ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/health.test.ts (3 tests) 65ms
+Using secrets defined in .dev.vars
+uncaught exception; source = Uncaught (in promise); stack = Error: internal error; reference = gjo8d2gunck0q1pddrcp6j7i
+ ✓ |worker| test/push-send-spike-route.test.ts (2 tests) 97ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/oauth-callback-redirect.test.ts (2 tests) 67ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-test-route.test.ts (6 tests) 278ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/event-routes-auth.test.ts (6 tests) 434ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/export.test.ts (5 tests) 315ms
+ ✓ |worker| test/cron-reminder-route.test.ts (2 tests) 127ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/export-ics-route.test.ts (6 tests) 231ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/search-sql-agreement.test.ts (54 tests) 247ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/day-range.test.ts (76 tests) 67ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/cron-heartbeat.test.ts (4 tests) 58ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/event-validation.test.ts (50 tests) 29ms
+uncaught exception; source = Uncaught (in promise); stack = Error: internal error; reference = l8m9gigsajeuskl4n0uk2i0c
+Using secrets defined in .dev.vars
+uncaught exception; source = Uncaught (in promise); stack = Error: internal error; reference = 0plgdci6ot93hu4fpfoee3c8
+ ✓ |worker| test/agenda-items.test.ts (33 tests) 45ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-send-adapter.test.ts (2 tests) 46ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/event-wall-clock.test.ts (19 tests) 36ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/series-edit.test.ts (94 tests) 39ms
+ ✓ |worker| test/export-ics.test.ts (22 tests) 28ms
+ ✓ |worker| test/format.test.ts (79 tests) 32ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/day-view.test.ts (39 tests) 37ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/event-view.test.ts (56 tests) 54ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/agenda.test.ts (16 tests) 29ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/dates.test.ts (17 tests) 26ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/event-range.test.ts (29 tests) 38ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-events.test.ts (23 tests) 23ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/recurrence.test.ts (17 tests) 31ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/app-route.test.ts (69 tests) 23ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/adherence.test.ts (26 tests) 13ms
+ ✓ |worker| test/missed-sweep.test.ts (18 tests) 30ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-sheet.test.ts (33 tests) 17ms
+ ✓ |worker| test/reminder-edit.test.ts (16 tests) 28ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/day-groups-local.test.ts (41 tests) 23ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/nudge.test.ts (37 tests) 25ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/diagnostics-copy.test.ts (15 tests) 17ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/day-groups.test.ts (24 tests) 15ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-key-encode.test.ts (10 tests) 22ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/day-item-local.test.ts (16 tests) 19ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-filter.test.ts (42 tests) 14ms
+Using secrets defined in .dev.vars
+console warning; message = Called .text() on an HTTP body which does not appear to be text. The body's Content-Type is "application/x-www-form-urlencoded". The result will probably be corrupted. Consider checking the Content-Type header before interpreting entities as text.
+ ✓ |worker| test/google-calendar-client.test.ts (21 tests) 20ms
+ ✓ |worker| test/event-hash.test.ts (21 tests) 17ms
+ ✓ |worker| test/task-groups.test.ts (20 tests) 18ms
+ ✓ |worker| test/life-areas-list.test.ts (48 tests) 18ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/day-item-event.test.ts (8 tests) 20ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/life-area-assign.test.ts (32 tests) 13ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/task-edit.test.ts (38 tests) 19ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/notifications-settings.test.ts (22 tests) 11ms
+ ✓ |worker| test/push-payload.test.ts (11 tests) 10ms
+ ✓ |worker| test/life-areas.test.ts (17 tests) 10ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/token-store.test.ts (21 tests) 18ms
+ ✓ |worker| test/adherence-line.test.ts (23 tests) 11ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/event-all-day.test.ts (37 tests) 18ms
+ ✓ |worker| test/adherence-view.test.ts (22 tests) 12ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/content-disposition.test.ts (27 tests) 13ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/toast.test.ts (22 tests) 14ms
+Using secrets defined in .dev.vars
+console warning; message = Called .text() on an HTTP body which does not appear to be text. The body's Content-Type is "application/x-www-form-urlencoded". The result will probably be corrupted. Consider checking the Content-Type header before interpreting entities as text.
+ ✓ |worker| test/google-client.test.ts (11 tests) 12ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-oauth.test.ts (16 tests) 11ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/export-completeness.test.ts (7 tests) 9ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/day-item.test.ts (14 tests) 11ms
+ ✓ |worker| test/notifications-load.test.ts (5 tests) 11ms
+ ✓ |worker| test/life-areas-view.test.ts (33 tests) 18ms
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-payload-parse.test.ts (18 tests) 11ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/search.test.ts (18 tests) 17ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/request-failure.test.ts (13 tests) 11ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/export-envelope.test.ts (9 tests) 13ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/connectivity.test.ts (19 tests) 10ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/nudge-copy.test.ts (19 tests) 10ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/google-settings.test.ts (12 tests) 10ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/push-outcome.test.ts (12 tests) 8ms
+Using secrets defined in .dev.vars
+ ✓ |worker| test/event-capabilities.test.ts (7 tests) 8ms
+ ✓ |worker| test/nudge-switch.test.ts (11 tests) 9ms
+ ✓ |worker| test/app-version.test.ts (8 tests) 7ms
+ ✓ |worker| test/event-sync-links-fresh.test.ts (1 test) 9ms
+ ✓ |worker| test/notification-permission.test.ts (5 tests) 6ms
+ ✓ |worker| test/google-failure-copy.test.ts (14 tests) 9ms
+ ✓ |worker| test/cron-freshness.test.ts (8 tests) 7ms
+ ✓ |worker| test/snapshot-outcome.test.ts (13 tests) 10ms
+ ✓ |worker| test/restore-values.test.ts (7 tests) 7ms
+ ✓ |worker| test/share-target.test.ts (8 tests) 5ms
+ ✓ |worker| test/isolation.test.ts (3 tests) 3ms
+
+ Test Files  118 passed (118)
+      Tests  2878 passed (2878)
+   Start at  19:46:24
+   Duration  74.04s (transform 22.56s, setup 322.04s, import 25.42s, tests 65.73s, environment 20ms)
+
+JUNIT report written to C:/repos/assistente-pessoal/.worktrees/events-and-day-view/PRPs/reports/events-and-day-view/attempts/1/junit.xml

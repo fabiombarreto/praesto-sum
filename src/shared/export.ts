@@ -1,4 +1,6 @@
 import type {
+  EventDto,
+  EventSyncLinkDto,
   GoogleCalendarSelectionDto,
   LifeAreaDto,
   ReminderDto,
@@ -13,13 +15,19 @@ import { PRAESTO_TIMEZONE } from "./dates";
  * generation instant is a parameter, never `Date.now()`.
  */
 
-/** The five data-bearing tables, already mapped through `dto.ts`. */
+/**
+ * The seven data-bearing tables, already mapped through `dto.ts`. `events` and
+ * `eventLinks` (the `event_sync_links` table) are required, so a caller that forgets
+ * them stops compiling.
+ */
 export interface ExportTables {
   lifeAreas: LifeAreaDto[];
   recurrenceSeries: RecurrenceSeriesDto[];
   tasks: TaskDto[];
   reminders: ReminderDto[];
   googleCalendarSelections: GoogleCalendarSelectionDto[];
+  events: EventDto[];
+  eventLinks: EventSyncLinkDto[];
 }
 
 export interface ExcludedTableEntry {
@@ -41,12 +49,19 @@ export interface ExportEnvelope {
     tasks: TaskDto[];
     reminders: ReminderDto[];
     google_calendar_selections: GoogleCalendarSelectionDto[];
+    events: EventDto[];
+    event_sync_links: EventSyncLinkDto[];
   };
 }
 
 /**
  * Assembles the export envelope from the given instant, the already-mapped
- * DTO arrays for the five dumped tables, and the reasoned exclusion list.
+ * DTO arrays for the seven dumped tables, and the reasoned exclusion list.
+ *
+ * `formatVersion` stays 1: unit 14 only ADDED the `events` and `event_sync_links`
+ * keys, which no reader of the earlier shape trips on. They come last, `events`
+ * before `event_sync_links`, because `scripts/restore-drill.mjs` inserts tables in
+ * key order and a link references its Event.
  *
  * `now` is a parameter, not read from the clock, matching every other
  * `src/shared/` module (`dates.ts`, `day-item.ts`, `agenda.ts`).
@@ -67,6 +82,8 @@ export function buildExportEnvelope(
       tasks: tables.tasks,
       reminders: tables.reminders,
       google_calendar_selections: tables.googleCalendarSelections,
+      events: tables.events,
+      event_sync_links: tables.eventLinks,
     },
   };
 }

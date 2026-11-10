@@ -72,6 +72,10 @@ export default defineConfig(async () => {
               "test/docs-consistency.test.ts",
               "test/source-invariants.test.ts",
               "test/push-send-library-verdict.test.ts",
+              "test/event-migration-additive.test.ts",
+              "test/event-api-inspection.test.ts",
+              "test/mirror-inventory.test.ts",
+              "test/close-out-docs.test.ts",
             ],
             // Coverage note: @vitest/coverage-v8 does NOT work inside workerd
             // (node:inspector is unavailable). Only @vitest/coverage-istanbul works,
@@ -82,15 +86,29 @@ export default defineConfig(async () => {
           test: {
             name: "docs",
             environment: "node",
-            // Both suites here read files off disk to assert something about
+            // Every suite here reads files off disk to assert something about
             // the repository itself, which workerd cannot do (no node:fs).
             // `source-invariants` covers PRD AC-13's universal negative —
             // "no Calendar mutation exists ANYWHERE" — which no per-call
-            // assertion can reach.
+            // assertion can reach. `event-migration-additive` (unit 14
+            // events-and-day-view, AC-8) reads migrations/ to prove 0007 is
+            // CREATE-only and 0000-0006 are untouched. `event-api-inspection`
+            // (phase 2, AC-16 and the api-reference part of AC-34) reads src/ to
+            // prove only the repository writes `events` and no route touches the
+            // hash or the link table, and reads docs/api-reference.md.
+            // `mirror-inventory` (phase 5, AC-33) spawns scripts/check-mirror-inventory.mjs
+            // against planted trees and the real repository, so `npm test` runs the
+            // ADR-0007 tripwire on every run. `close-out-docs` (phase 5, AC-34 and the
+            // owner hand-off records) reads documentation/, docs/, CLAUDE.md and
+            // PRPs/reports/ to pin the facts the close-out documents must state.
             include: [
               "test/docs-consistency.test.ts",
               "test/source-invariants.test.ts",
               "test/push-send-library-verdict.test.ts",
+              "test/event-migration-additive.test.ts",
+              "test/event-api-inspection.test.ts",
+              "test/mirror-inventory.test.ts",
+              "test/close-out-docs.test.ts",
             ],
           },
         },

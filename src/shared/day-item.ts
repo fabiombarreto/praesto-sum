@@ -14,21 +14,26 @@
  *     deadline is closed, never overdue;
  *   - `dueDate` is `deadline ?? scheduledDate` (at most one is ever set).
  *
+ * Unit 14 `events-and-day-view` (phase 3) adds the third source, the local Event
+ * (`LocalDayItem`), by exactly that route: one more variant and one more
+ * projection, with the partition and the range function unchanged in shape.
+ *
  * Like `task-groups.ts`, `format.ts` and `dates.ts`, this module compiles into
  * BOTH the browser and the Worker projects, so it stays environment-agnostic:
  * no DOM globals, no runtime dependencies, and no reads of the clock. It never
  * receives `today` at all — comparing against a day is the partition's job.
  */
 
-import type { CalendarEventDto, TaskDto } from "./api";
+import type { CalendarEventDto, EventDto, TaskDto } from "./api";
 import { PRAESTO_TIMEZONE, todayIn } from "./dates";
 
 /**
  * Where a day item came from. Adding a member here is deliberately expensive:
  * every `switch` over it that lacks the new case stops compiling, which is the
- * point — unit 14's local Events must not be able to arrive silently.
+ * point — a new source must not be able to arrive silently. Unit 14's `local`
+ * Events arrived exactly that way.
  */
-export type DaySource = "task" | "google";
+export type DaySource = "task" | "google" | "local";
 
 /** The fields the partition reads. Every variant carries exactly these three. */
 interface DayItemBase {
@@ -60,7 +65,23 @@ export interface ExternalDayItem extends DayItemBase {
   payload: CalendarEventDto;
 }
 
-export type DayItem = TaskDayItem | ExternalDayItem;
+/**
+ * A local Event (*Compromisso*), projected. The whole `EventDto` rides along as
+ * `event` rather than being copied field by field, so there is never a second
+ * truth about the same Event. Its instants are epoch SECONDS, where the Google
+ * payload's are milliseconds, and two functions read them, each doing only what
+ * it says: `dayItemFromLocalEvent` scales the start to milliseconds for its own
+ * `dueDate` (the start day, which the partition reads), and `dayItemPlacement`
+ * in `day-range.ts` is the single place that turns an item into the range
+ * function's comparable milliseconds and covered days. The two agree on the
+ * start's day because they apply the same owner-zone rule to the same instant.
+ */
+export interface LocalDayItem extends DayItemBase {
+  source: "local";
+  event: EventDto;
+}
+
+export type DayItem = TaskDayItem | ExternalDayItem | LocalDayItem;
 
 /**
  * Projects a Task into the shape the partition reads, deriving every field
@@ -115,5 +136,37 @@ export function dayItemFromEvent(event: CalendarEventDto): ExternalDayItem {
     dueDate,
     closed: false,
     payload: event,
+  };
+}
+
+/**
+ * Projects a local Event into the shape the partition reads — the same two
+ * rules as `dayItemFromEvent`, for the same reasons:
+ *
+ *  - `closed` is always `false`: an Event occurs or is cancelled, never "done".
+ *  - `dueDate` is the Event's day in the OWNER's zone. An all-day Event's
+ *    `startDate` is used verbatim (it carries no zone, and a conversion is how
+ *    such an Event lands a day off). A timed Event's `startAt` is epoch
+ *    SECONDS, so it is scaled to milliseconds before the zone conversion; the
+ *    Event's own `timezone` never moves it to another day (plan decision D3-1).
+ *
+ * `null` only when the DTO lacks the start its kind needs. The schema CHECK
+ * makes that unreachable from the database; the type allows it, and an
+ * invented day would be worse than none.
+ */
+export function dayItemFromLocalEvent(event: EventDto): LocalDayItem {
+  let dueDate: string | null = null;
+  if (event.allDay) {
+    dueDate = event.startDate;
+  } else if (event.startAt !== null) {
+    dueDate = todayIn(new Date(event.startAt * 1000), PRAESTO_TIMEZONE);
+  }
+
+  return {
+    source: "local",
+    id: event.id,
+    dueDate,
+    closed: false,
+    event,
   };
 }

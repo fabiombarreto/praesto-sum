@@ -1,0 +1,17 @@
+{
+  "attempt": 1,
+  "verdict": "IMPLEMENTATION_COMPLETE",
+  "files_changed": [
+    "src/shared/events.ts",
+    "src/shared/event-hash.ts",
+    "src/worker/db/schema.ts",
+    "migrations/0007_brown_mac_gargan.sql",
+    "migrations/meta/0007_snapshot.json",
+    "migrations/meta/_journal.json",
+    "src/worker/db/export-manifest.ts",
+    "test/isolation.ts"
+  ],
+  "validation": { "level_1": "PASS", "level_2": "PASS", "level_3": "PASS" },
+  "base_commit": "a798502ba205390617eeb14749f07c4844adea0f",
+  "base_commit_kind": "tree object written by `git add -A && git write-tree` after the APPROVED test suite"
+}

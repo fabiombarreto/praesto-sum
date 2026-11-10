@@ -1,0 +1,8 @@
+{
+  "formatter_cmd": "npx prettier --write",
+  "discovery_source": "methodology.md formatter_cmd",
+  "files_scoped": "every file matching the R-X test-glob pathspec (git ls-files --cached --others --exclude-standard), 122 files",
+  "outcome": "formatted",
+  "exit_code_or_null": 0,
+  "note": "no file changed (prettier reported every file unchanged). base_commit for phase 4 is the tree object written by `git add -A && git write-tree` AFTER the phase-4 APPROVED suite, so the implementer's diff excludes the suite (R-X)."
+}

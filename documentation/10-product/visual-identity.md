@@ -1,6 +1,6 @@
 ---
 status: active
-last_updated: 2026-10-02
+last_updated: 2026-10-27
 review_trigger: "a step of UI/UX-plan activity A2 lands, an identity element (mark, tokens, voice) changes, or decision 5 is accepted"
 ---
 
@@ -103,6 +103,22 @@ Microcopy table (UI values in pt-BR — ADR-0009; the keys stay English in code)
 | List load error | the approved request-error sentence · *Tentar de novo* |
 | Request errors (tested) | `Sem conexão com o servidor. Nada se perdeu — tente de novo quando a conexão voltar.` · `O servidor recusou a operação (código N). Tente de novo.` |
 | Detail sheet | labels *Título · Descrição · Data · Dia · Prioridade* · chips *Sem data · Concluir até · Fazer em* (*Sem data* withdrawn while a repetition is chosen, 2026-09-30) and *Alta · Normal · Baixa* (no chip selected = no priority) · *Cancelar* / *Salvar* / *Excluir* · close button *Fechar* |
+| Day route — previous day (accessible name) | *Dia anterior* — approved by the owner 2026-10-21 (unit 14 PRD D-V) |
+| Day route — next day (accessible name) | *Próximo dia* — approved by the owner 2026-10-21 |
+| Day route — stepper group (accessible name) | *Navegar entre dias* — approved by the owner 2026-10-21 |
+| Header date as a button (screen-reader suffix) | the date text followed by ` — abrir o dia` — approved by the owner 2026-10-21 |
+| Day route — range label of a timed item | `HH:mm–HH:mm` (en dash, no spaces), for example `09:30–10:30` — approved by the owner 2026-10-21 |
+| Day route — continuation label | `até HH:mm` on the day an overnight item runs into, for example `até 01:00` — approved by the owner 2026-10-21 |
+| Day route — all-day section (accessible name) | **Dia inteiro** — approved by the owner 2026-10-21 |
+| Day route — timed commitments section (accessible name) | **Compromissos** — approved by the owner 2026-10-21 |
+| Day route — open Tasks section (accessible name) | **Tarefas** — approved by the owner 2026-10-21 |
+| Compromisso — new-commitment button and sheet title | **Novo compromisso** — approved by the owner 2026-10-27 (unit 14 PRD D-W) |
+| Compromisso sheet — labels | *Título · Dia inteiro · Início · Fim · Dia · Hora · Fuso horário · Local · Descrição* · buttons *Cancelar · Salvar · Excluir* · close *Fechar* — approved by the owner 2026-10-27 (*Hora* is new; *Dia* is the Task sheet's) |
+| Compromisso sheet — resolved end (status line) | `Termina em dd/MM/aaaa às HH:mm.` for a timed commitment, `Termina em dd/MM/aaaa.` for an all-day one — approved by the owner 2026-10-27 |
+| Compromisso sheet — reasons under the fields | *Informe o título.* · `Use no máximo N caracteres.` · *Informe o dia de início.* · *Informe a hora de início.* · *O fim não pode ser antes do início.* — approved by the owner 2026-10-27 |
+| Compromisso sheet — delete confirmation | title **Excluir este compromisso?** with the line *Não dá para desfazer.* and the buttons *Cancelar* / *Excluir* — approved by the owner 2026-10-27 |
+| Compromisso sheet — deleted elsewhere | *Este compromisso não existe mais. A lista foi atualizada.* — approved by the owner 2026-10-27 |
+| Search — *Compromissos* row label | `dd/MM/aaaa · HH:mm` for a timed commitment, `dd/MM/aaaa · dia todo` for an all-day one (group name *Compromissos*, above) — approved by the owner 2026-10-27 |
 | `<title>` | *Hoje · Praesto Sum* · *Praesto Sum* |
 | Manifest | `name` *Praesto Sum* · `short_name` *Praesto* · shortcut *Nova tarefa* — *Abrir o Praesto com o campo de captura vazio* |
 
@@ -116,6 +132,7 @@ TBD — after A5 ships: a week of cold opens on the phone against the three É w
 
 | Date | What changed |
 |---|---|
+| 2026-10-27 | **unit 14 `events-and-day-view` phase 4: the Compromisso sheet's strings approved by the owner and added to the table above** (PRD Decisions Log D-W) — *Novo compromisso*, the sheet's labels incl. the new *Hora*, the resolved-end lines, the five reasons, the delete confirmation, the deleted-elsewhere sentence and the search row label. The search field's own *tarefas* copy is NOT changed (a recorded attention point in the roadmap Backlog) |
 | 2026-09-30 | **recurring-tasks follow-up (v0.9.3):** the detail sheet's date input gains the visible label *Dia*, and the end-condition inputs show *Repetir até* and *Número de repetições* as visible labels (previously `aria-label` only). *Sem data* is no longer offered while a repetition is chosen |
 | 2026-08-24 | **today-view-and-filters Phase 3 (Task 2): the quick-filter chip, filter-icon and filter-sheet strings added ahead of the code that renders them** (`PRPs/plans/today-view-and-filters-phase-3-quick-filters-and-the-filter-sheet.plan.md`) — chip row *Abertas · Para hoje · Alta prioridade · Filtros…*, the filter icon's accessible name (plain and with an active count), and the filter sheet's title, labels, chip vocabulary and *Limpar filtros* action |
 | 2026-08-23 | **today-view-and-filters Phase 2 (Task 2): the four group-header names added ahead of the code that uses them** (`PRPs/plans/today-view-and-filters-phase-2-grouping-and-the-grouped-list.plan.md`) — *Atrasadas*, *Hoje*, *Próximas* and *Sem data*, the group headers layout standard §2.5 specifies, each rendered with its count by the new `TaskGroup` component |

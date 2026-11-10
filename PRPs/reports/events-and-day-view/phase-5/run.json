@@ -1,0 +1,22 @@
+{
+  "run_id": "b12304c8-9288-47b6-bc6e-e1bba691fed6",
+  "feature": "events-and-day-view",
+  "started_at": "2026-10-21T22:45:51.922Z",
+  "ended_at": "2026-10-21T22:48:30.888Z",
+  "elapsed_ms": 158966,
+  "max_test_retries": 3,
+  "max_test_minutes": 30,
+  "attempts": [
+    {
+      "n": 1,
+      "verdict": "GREEN",
+      "record": "attempts/1/record.json"
+    }
+  ],
+  "outcome": "GREEN",
+  "phase": 5,
+  "time_breakdown": {
+    "attempt_1_suite_ms": 76819
+  },
+  "tdd_mode": true
+}

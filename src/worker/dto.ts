@@ -1,5 +1,7 @@
 import type {
   CronRunDto,
+  EventDto,
+  EventSyncLinkDto,
   GoogleCalendarSelectionDto,
   GoogleConnectionDto,
   LifeAreaDto,
@@ -14,6 +16,8 @@ import type {
 import type { SeriesAdherence } from "../shared/adherence";
 import type {
   CronRun,
+  EventRow,
+  EventSyncLink,
   GoogleCalendarSelection,
   GoogleConnection,
   LifeArea,
@@ -209,6 +213,47 @@ export function toGoogleCalendarSelectionDto(
   return {
     calendarId: row.calendarId,
     selectedAt: toEpochSeconds(row.selectedAt) ?? 0,
+  };
+}
+
+/**
+ * Maps an Event row to the wire (ADR-0016, events-and-day-view PRD AC-9, AC-19).
+ * Written field by field, like `toLifeAreaDto`, so schema drift breaks the build.
+ * The two instants of a timed Event, and `createdAt`/`updatedAt`, become epoch
+ * SECONDS; an all-day row's instants are `null` and its days travel verbatim.
+ */
+export function toEventDto(row: EventRow): EventDto {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    location: row.location,
+    allDay: row.allDay,
+    startAt: toEpochSeconds(row.startAt),
+    endAt: toEpochSeconds(row.endAt),
+    startDate: row.startDate,
+    endDate: row.endDate,
+    timezone: row.timezone,
+    source: row.source,
+    contentHash: row.contentHash,
+    createdAt: toEpochSeconds(row.createdAt) ?? 0,
+    updatedAt: toEpochSeconds(row.updatedAt) ?? 0,
+  };
+}
+
+/**
+ * Maps an Event sync link row for the FR-042 export (ADR-0016). `eventId` is `null`
+ * for an orphan, a link whose Event was deleted. Only the export reads it.
+ */
+export function toEventSyncLinkDto(row: EventSyncLink): EventSyncLinkDto {
+  return {
+    id: row.id,
+    eventId: row.eventId,
+    calendarId: row.calendarId,
+    externalEventId: row.externalEventId,
+    etag: row.etag,
+    syncedContentHash: row.syncedContentHash,
+    syncedAt: toEpochSeconds(row.syncedAt),
   };
 }
 

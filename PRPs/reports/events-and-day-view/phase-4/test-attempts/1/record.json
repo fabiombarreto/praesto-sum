@@ -1,0 +1,20 @@
+{
+  "run_id": "20c5e570-34bc-4055-bee0-4d0762d20ef4",
+  "attempt": 1,
+  "tier": "unit",
+  "framework": "vitest",
+  "outcome": "PASSED",
+  "duration_ms": 67376,
+  "counts": {
+    "passed": 2755,
+    "failed": 0,
+    "skipped": 0,
+    "total": 2755
+  },
+  "failures": [],
+  "coverage": null,
+  "artifacts": {
+    "junit_xml": "C:\\repos\\assistente-pessoal\\.worktrees\\events-and-day-view\\PRPs\\reports\\events-and-day-view\\attempts\\1\\junit.xml"
+  },
+  "generated_at": "2026-10-21T18:28:48.273Z"
+}

@@ -21,7 +21,7 @@
  * no clock. `today` is always an argument.
  */
 
-import type { DayItem } from "./day-item";
+import { assertNeverDaySource, type DayItem } from "./day-item";
 
 /**
  * The six buckets. Keys are English; the pt-BR group names live in `TaskGroup`.
@@ -46,21 +46,38 @@ export interface DayItemSource {
 type BucketKey = keyof DayItemGroups;
 
 /**
- * Which bucket an item belongs to. `closed` is read first, mirroring the rule
- * `groupTasks` has encoded since unit 3; a closed item then goes to `missed`
- * when it is a Task whose status is `missed` and to `done` otherwise (an
- * external calendar item is never closed, so it reaches neither). The date
- * ladder for open items compares
- * `YYYY-MM-DD` strings, which are zero-padded, so lexicographic order is
- * chronological order.
+ * Which bucket an item belongs to, decided by an exhaustive switch over the
+ * item's source so that a new source stops compiling here until it is decided.
+ *
+ * **A Task** keeps the ladder `groupTasks` has encoded since unit 3. `closed`
+ * is read first; a closed Task goes to `missed` when its status is `missed` and
+ * to `done` otherwise. The date ladder for open Tasks compares `YYYY-MM-DD`
+ * strings, which are zero-padded, so lexicographic order is chronological
+ * order.
+ *
+ * **An Event (Google or local)** shares one rule that never reads `closed` and
+ * never yields `overdue`, `done` or `missed`: an Event has no completion state
+ * and is not late, it simply occurred. No screen feeds `collectDayItems` an
+ * Event — they reach the screens through `itemsInRange` — so this branch exists
+ * to keep the function total and its failure mild; a past-dated Event landing
+ * in `today` is the accepted cost.
  */
 function bucketOf(item: DayItem, today: string): BucketKey {
-  if (item.closed)
-    return item.source === "task" && item.task.status === "missed" ? "missed" : "done";
-  if (item.dueDate === null) return "undated";
-  if (item.dueDate < today) return "overdue";
-  if (item.dueDate === today) return "today";
-  return "upcoming";
+  switch (item.source) {
+    case "task":
+      if (item.closed) return item.task.status === "missed" ? "missed" : "done";
+      if (item.dueDate === null) return "undated";
+      if (item.dueDate < today) return "overdue";
+      if (item.dueDate === today) return "today";
+      return "upcoming";
+    case "google":
+    case "local":
+      if (item.dueDate === null) return "undated";
+      if (item.dueDate > today) return "upcoming";
+      return "today";
+    default:
+      return assertNeverDaySource(item);
+  }
 }
 
 /**
