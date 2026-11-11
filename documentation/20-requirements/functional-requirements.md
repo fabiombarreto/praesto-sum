@@ -117,7 +117,7 @@ Every accepted requirement now has a phase and a delivery unit. The unit column 
 | FR-011 | Phase 1 | 10 `missed-sweep` (data), 11 `adherence-mirror` (surface) |
 | FR-012 | Phase 1 | 12 `repeated-miss-nudge` |
 | FR-008 | Phase 1 | 13 `life-areas` |
-| FR-020 … FR-023 | Phase 2 | 14 `events-and-day-view` (`in-progress`: code complete on the unit's branch 2026-10-21, device proof owed) |
+| FR-020 … FR-023 | Phase 2 | 14 `events-and-day-view` (`in-progress`: merged to `main` 2026-11-10 (PR #13), not yet deployed, device proof owed) |
 | FR-024 | Phase 2 | 16 `week-view` |
 | FR-026 | Phase 2 | 17 `recurring-events` |
 | FR-025 (Event side) | Phase 2 | 18 `event-reminders` |

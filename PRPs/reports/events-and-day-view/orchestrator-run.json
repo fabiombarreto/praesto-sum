@@ -287,5 +287,8 @@
   },
   "lane_durations_ms": {},
   "total_duration_ms": null,
-  "session_2_started_at": "2026-10-21T15:06:23Z"
+  "session_2_started_at": "2026-10-21T15:06:23Z",
+  "merged_at": "2026-11-10T13:07:25Z",
+  "approve_outcome": "COMPLETE",
+  "docs_outcome": "APPROVED"
 }

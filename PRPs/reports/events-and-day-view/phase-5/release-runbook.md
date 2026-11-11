@@ -5,6 +5,9 @@ owner's.** The relay pipeline never commits, pushes, opens a pull request, merge
 or reads a production token, so none of it has been done and nothing here is recorded as done. This file is a hand-off, not a
 log: the owner's results go into the records named in each step.
 
+**Status, 2026-11-11 (added after the text above was written):** Steps 1 and 2 are done — the owner merged PR #13 on
+2026-11-10 (merge commit `2b693b9`, `main` is at or past it). Steps 3 to 9 are still open, and nothing has been deployed.
+
 **Why the order is what it is.** Migration `0007` is additive and CREATE-only (`events`, `event_sync_links` and their
 indexes — no table is rewritten), so it ships BEFORE the code that uses it: the running `v0.13.0` app never sees a schema it
 does not know, the new code never runs against a schema that lacks its tables, and the old code can still be rolled back.
