@@ -573,15 +573,15 @@ describe("AC-34 — the architecture documents, the API reference and the derive
 
 // --- the owner hand-off records -----------------------------------------------------------------------
 
-describe("AC-31 — the device-proof record is a template that claims nothing", () => {
-  const OBSERVATION =
-    "Empty until the owner records it. Nothing has been observed and nothing is claimed.";
-
-  it("hand-off: device proof — line 3 is exactly Status: OWED and no other status line exists", () => {
+// Updated 2026-11-11 at the owner's word, not loosened: the record began as a template that claimed nothing
+// (`Status: OWED`, an empty observation); after testing on his phone he said "Funcionou tudo" and it was
+// recorded as given, no further. It must still claim no more than he said.
+describe("AC-31 — the device-proof record holds the owner's observation and claims no more than he said", () => {
+  it("hand-off: device proof — line 3 is exactly Status: OBSERVED and no other status line exists", () => {
     const lines = mustRead(DEVICE_PROOF).split("\n");
 
-    expect(lines[2]).toBe("Status: OWED");
-    expect(lines.filter((line) => line.startsWith("Status:"))).toEqual(["Status: OWED"]);
+    expect(lines[2]).toBe("Status: OBSERVED");
+    expect(lines.filter((line) => line.startsWith("Status:"))).toEqual(["Status: OBSERVED"]);
   });
 
   it("hand-off: device proof — the three sections exist, in order", () => {
@@ -597,13 +597,20 @@ describe("AC-31 — the device-proof record is a template that claims nothing", 
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
   });
 
-  it("hand-off: device proof — the observation section holds only the empty-observation sentence", () => {
+  it("hand-off: device proof — the observation quotes the owner, names what is still open and claims nothing beyond it", () => {
     const observation = section(mustRead(DEVICE_PROOF), /^## Observation \(owner\)\s*$/m)
       .split("\n")
       .slice(1)
       .join("\n");
 
-    expect(observation.trim()).toBe(OBSERVATION);
+    expect(observation).toContain("Funcionou tudo");
+    expect(observation).toContain("2026-11-11");
+    // What is still open is said, so the record cannot read as the whole of AC-32 or as a decision to ship.
+    expect(observation).toContain("step 9");
+    expect(observation).toContain("closes `shipped`");
+    // And it never turns one sentence into more: nothing is recorded as separately confirmed.
+    expect(observation).toContain("none is recorded as separately confirmed");
+    expect(observation).not.toMatch(/AC-32 (is|was) met|restore-drill: PASS/);
   });
 
   it("hand-off: device proof — the procedure is numbered, opens with Novo compromisso and ends with the runbook's drill", () => {

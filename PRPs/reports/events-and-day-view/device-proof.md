@@ -1,11 +1,12 @@
 # Device proof — AC-31 (events-and-day-view, phase 5)
 
-Status: OWED
+Status: OBSERVED
 
 This is the owner's proof, on his phone, against production, to be done after the release runbook's Step 6
 (`PRPs/reports/events-and-day-view/phase-5/release-runbook.md`): unit 14 has to be deployed as `v0.14.0` before there is
-anything to observe. It is a template. Nothing has been observed, no drill has been run on production data and no date of use
-exists, so this file claims none of them. The roadmap row of unit 14 stays `in-progress` until he decides.
+anything to observe. It began as a template. The owner's observation of 2026-11-11 is recorded at the end, in his own words and no further; the
+procedure and the decisions below stay as written. No drill has been run on production data since the commitments were
+created, so step 9 is still owed. The roadmap row of unit 14 stays `in-progress` until he decides.
 
 ## Procedure
 
@@ -27,7 +28,9 @@ exists, so this file claims none of them. The roadmap row of unit 14 stays `in-p
 
 ## Decisions awaiting the owner
 
-Open, not settled — each is a proposal an agent wrote, and none is validated until he says so:
+Open, not settled — each is a proposal an agent wrote, and none is validated until he says so. After testing on the phone on
+2026-11-11 he reported that everything worked and did not itemize these, so each stays as built and none is re-opened (the
+observation at the end has his words):
 
 - **The phase-4 strings — approved by the owner on 2026-10-27** (PRD D-W) and added to the microcopy table of
   `documentation/10-product/visual-identity.md`; nothing to decide here. Still open: the search field's placeholder
@@ -63,4 +66,15 @@ Open, not settled — each is a proposal an agent wrote, and none is validated u
 
 ## Observation (owner)
 
-Empty until the owner records it. Nothing has been observed and nothing is claimed.
+Recorded 2026-11-11 by the agent that deployed `v0.14.0` (Cloudflare version `5f1aaae2-3569-4c06-8b4c-3435415c520f`), from the owner's own words in that
+session. Nothing here goes beyond what he said.
+
+- **What he did:** he tested the feature on his phone, against production, after the deploy.
+- **What he reported:** "Funcionou tudo" — everything worked.
+- **What that covers and does not.** Asked in one message about procedure steps 1 to 8 (the create, edit and delete flow, the three
+  sources on *Hoje* and `/day`, search, any field Google has that he missed), the phone-only items (the zone select, the keyboard
+  over the sheet, the Android back gesture), reopening a sheet right after closing it (F2) and the open decisions D4-3, D4-4 and
+  D4-8, he answered with that one sentence. So no failure was reported anywhere, no missed Google field was named and no reopen
+  trigger of D4-3, D4-4 or D4-8 was reported; none of those points was itemized, so none is recorded as separately confirmed.
+- **Still open:** procedure step 9 (a fresh snapshot that holds a real event, through `scripts/restore-drill.mjs`, which is the
+  second half of PRD AC-32) and the owner's decision whether unit 14 closes `shipped`.
