@@ -5,8 +5,11 @@ owner's.** The relay pipeline never commits, pushes, opens a pull request, merge
 or reads a production token, so none of it has been done and nothing here is recorded as done. This file is a hand-off, not a
 log: the owner's results go into the records named in each step.
 
-**Status, 2026-11-11 (added after the text above was written):** Steps 1 and 2 are done — the owner merged PR #13 on
-2026-11-10 (merge commit `2b693b9`, `main` is at or past it). Steps 3 to 9 are still open, and nothing has been deployed.
+**Status, 2026-11-11 (added after the text above was written):** Steps 1 to 6 are done. The owner merged PR #13 on
+2026-11-10 (merge commit `2b693b9`); on 2026-11-11 chore C6 passed on a fresh production snapshot (Step 3,
+`c6-pre-migration-drill.md`), migration `0007` was applied to production (Step 4), `v0.14.0` was bumped and tagged on
+`3e1637a` (Step 5) and deployed as Cloudflare version `5f1aaae2-3569-4c06-8b4c-3435415c520f` (Step 6), with the smoke test passing. Steps 7 to 9 are
+still open: the device proof, the drill on a snapshot that holds an event, and the record.
 
 **Why the order is what it is.** Migration `0007` is additive and CREATE-only (`events`, `event_sync_links` and their
 indexes — no table is rewritten), so it ships BEFORE the code that uses it: the running `v0.13.0` app never sees a schema it

@@ -419,13 +419,15 @@ describe("AC-34 — traceability and the roadmap say what is true about unit 14"
     ]);
   });
 
-  // Updated 2026-11-11 at a fact, not loosened: PR #13 was merged on 2026-11-10 (merge commit 2b693b9),
-  // so the row's pinned state moved from "not yet merged or deployed" to "merged, not yet deployed".
-  it("traceability: the roadmap's unit-14 row says it is merged and not yet deployed, and stays in-progress", () => {
+  // Updated at facts, not loosened: PR #13 was merged on 2026-11-10 (merge commit 2b693b9), and the unit was
+  // deployed as v0.14.0 on 2026-11-11, so the row's pinned state moved from "not yet merged or deployed" to
+  // "merged, not yet deployed" to "merged and deployed as v0.14.0". It still must stay in-progress.
+  it("traceability: the roadmap's unit-14 row says it is merged and deployed as v0.14.0, and stays in-progress", () => {
     const row = lineMatching(mustRead(ROADMAP), /^\|\s*14\s*\|\s*`events-and-day-view`\s*\|/);
 
     expect(row).toContain("merge commit `2b693b9`");
-    expect(row).toContain("not yet deployed");
+    expect(row).toContain("deployed as `v0.14.0`");
+    expect(row).not.toContain("not yet deployed");
     expect(row).not.toContain("not yet merged");
     expect(row).not.toContain("nothing is built");
     expect(row).not.toContain("All five phases `pending`");
@@ -440,12 +442,12 @@ describe("AC-34 — traceability and the roadmap say what is true about unit 14"
     expect(now).not.toContain("five phases all `pending`");
   });
 
-  it("traceability: the roadmap's Now block says unit 14 is merged and not yet deployed", () => {
+  it("traceability: the roadmap's Now block says unit 14 is merged and deployed as v0.14.0", () => {
     const now = lineMatching(mustRead(ROADMAP), /^- \*\*Now:\*\*/);
 
     expect(now).not.toContain("implemented on the unit's feature branch");
     expect(now).toContain(
-      "all five phases are implemented and merged (PR #13, 2026-11-10) but not yet deployed",
+      "all five phases are implemented, merged (PR #13, 2026-11-10) and deployed as `v0.14.0` on 2026-11-11",
     );
   });
 });
