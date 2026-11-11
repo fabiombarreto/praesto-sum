@@ -1,12 +1,13 @@
 # Device proof — AC-31 (events-and-day-view, phase 5)
 
-Status: OBSERVED
+Status: OWED
 
 This is the owner's proof, on his phone, against production, to be done after the release runbook's Step 6
 (`PRPs/reports/events-and-day-view/phase-5/release-runbook.md`): unit 14 has to be deployed as `v0.14.0` before there is
-anything to observe. It began as a template. The owner's observation of 2026-11-11 is recorded at the end, in his own words and no further; the
-procedure and the decisions below stay as written. No drill has been run on production data since the commitments were
-created, so step 9 is still owed. The roadmap row of unit 14 stays `in-progress` until he decides.
+anything to observe. It is a template. The owner's phone test of 2026-11-11 ran against a local server, not production, so it is not this proof;
+it is recorded at the end with that correction and claims nothing about production. The procedure and the decisions below stay
+as written, and no drill has been run on production data that holds a commitment, so step 9 is owed. The roadmap row of unit
+14 stays `in-progress` until he decides.
 
 ## Procedure
 
@@ -28,9 +29,9 @@ created, so step 9 is still owed. The roadmap row of unit 14 stays `in-progress`
 
 ## Decisions awaiting the owner
 
-Open, not settled — each is a proposal an agent wrote, and none is validated until he says so. After testing on the phone on
-2026-11-11 he reported that everything worked and did not itemize these, so each stays as built and none is re-opened (the
-observation at the end has his words):
+Open, not settled — each is a proposal an agent wrote, and none is validated until he says so. His phone test of 2026-11-11
+was against a local server and did not itemize these, so each stays as built and none is re-opened (the observation at the
+end has the details):
 
 - **The phase-4 strings — approved by the owner on 2026-10-27** (PRD D-W) and added to the microcopy table of
   `documentation/10-product/visual-identity.md`; nothing to decide here. Still open: the search field's placeholder
@@ -66,15 +67,19 @@ observation at the end has his words):
 
 ## Observation (owner)
 
-Recorded 2026-11-11 by the agent that deployed `v0.14.0` (Cloudflare version `5f1aaae2-3569-4c06-8b4c-3435415c520f`), from the owner's own words in that
-session. Nothing here goes beyond what he said.
+Recorded 2026-11-11 by the agent that deployed `v0.14.0` (Cloudflare version `5f1aaae2-3569-4c06-8b4c-3435415c520f`), **and corrected the same day.**
+**This is not the device proof.** Nothing in this section is an observation of production.
 
-- **What he did:** he tested the feature on his phone, against production, after the deploy.
+- **What he did:** he tested the feature on his phone against a LOCAL server (not the production deployment), after the deploy.
 - **What he reported:** "Funcionou tudo" — everything worked.
-- **What that covers and does not.** Asked in one message about procedure steps 1 to 8 (the create, edit and delete flow, the three
-  sources on *Hoje* and `/day`, search, any field Google has that he missed), the phone-only items (the zone select, the keyboard
-  over the sheet, the Android back gesture), reopening a sheet right after closing it (F2) and the open decisions D4-3, D4-4 and
-  D4-8, he answered with that one sentence. So no failure was reported anywhere, no missed Google field was named and no reopen
-  trigger of D4-3, D4-4 or D4-8 was reported; none of those points was itemized, so none is recorded as separately confirmed.
-- **Still open:** procedure step 9 (a fresh snapshot that holds a real event, through `scripts/restore-drill.mjs`, which is the
-  second half of PRD AC-32) and the owner's decision whether unit 14 closes `shipped`.
+- **Correction.** The first version of this record said he had tested against production. That was the agent's inference, not
+  his words. Production disagrees: a read-only count of the production D1 database on 2026-11-11 found 0 rows in `events` and in
+  `event_sync_links`, and a fresh production snapshot held none either; the owner then said the test was against the local
+  server.
+- **Why it does not count as AC-31.** The criterion is the unit deployed to production, on his phone, with his own words about
+  any Google field he missed. The local test says the feature works on his phone against the dev server: a useful pre-check and
+  nothing more. Beyond that one sentence nothing is recorded as confirmed about the sheet's pickers, the keyboard, the back
+  gesture, reopening a sheet (F2) or the decisions D4-3, D4-4 and D4-8.
+- **Still open:** the whole procedure above against `praesto.fabiobarreto.workers.dev`, leaving at least one real commitment in
+  place; then procedure step 9 (a fresh snapshot that holds a real event, through `scripts/restore-drill.mjs`, the second half
+  of PRD AC-32); and the owner's decision whether unit 14 closes `shipped`.
